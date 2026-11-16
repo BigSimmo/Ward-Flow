@@ -65,7 +65,7 @@ describe("Governance as the access admin", () => {
     expect(screen.getByRole("heading", { name: "Nothing waiting for review" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open the Access log" })).toHaveAttribute(
       "href",
-      "/ward-flow/settings#access",
+      "/bedchart/settings#access",
     );
     expect(screen.queryByRole("button", { name: "Record review" })).not.toBeInTheDocument();
     expect(screen.queryByRole("radiogroup", { name: "Show in the review list" })).not.toBeInTheDocument();

@@ -16,7 +16,7 @@ vi.mock("@/components/ward-management/ward-flow-raise", async (original) => {
   };
 });
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/settings",
+  usePathname: () => "/bedchart/settings",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -93,7 +93,7 @@ describe("settings audited journey recovery", () => {
   beforeEach(() => {
     interception.raise = null;
     clearReferralDraftSession();
-    window.history.replaceState(null, "", "/ward-flow/settings");
+    window.history.replaceState(null, "", "/bedchart/settings");
   });
   afterEach(() => {
     cleanup();

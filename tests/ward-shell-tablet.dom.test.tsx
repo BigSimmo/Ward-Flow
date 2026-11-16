@@ -12,7 +12,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -62,7 +62,7 @@ function renderShell() {
 }
 
 beforeEach(() => {
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
   if (typeof window.requestAnimationFrame !== "function") {
     window.requestAnimationFrame = ((cb: FrameRequestCallback) =>
       setTimeout(() => cb(Date.now()), 0) as unknown as number) as typeof window.requestAnimationFrame;
@@ -177,8 +177,8 @@ describe("tablet portrait (769px to 1000px)", () => {
 
 describe("header titles for the report pages (v10 pass 2)", () => {
   it.each([
-    ["/ward-flow/reports/downtime", "Downtime pack"],
-    ["/ward-flow/reports/chronology", "Patient chronology"],
+    ["/bedchart/reports/downtime", "Downtime pack"],
+    ["/bedchart/reports/chronology", "Patient chronology"],
   ])("titles %s as %s", (pathname, title) => {
     route.pathname = pathname;
     renderShell();

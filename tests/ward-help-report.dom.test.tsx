@@ -6,7 +6,7 @@ import { HelpReport } from "@/components/ward-management/help/ward-help-report-v
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -16,7 +16,7 @@ vi.mock("@/components/ward-management/help/ward-help-report-picture", async (imp
   makeReportPicture: makePicture,
 }));
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
-  useTourFacts: () => ({ facts: {}, home: "/ward-flow", deskHome: "/ward-flow" }),
+  useTourFacts: () => ({ facts: {}, home: "/bedchart", deskHome: "/bedchart" }),
 }));
 
 const SAFE = "The board froze after I pressed Accept.";
@@ -27,7 +27,7 @@ function report(props: Partial<Parameters<typeof HelpReport>[0]> = {}) {
   render(
     <HelpReport
       screen="Home"
-      path="/ward-flow"
+      path="/bedchart"
       desk="Bed manager"
       version={{ id: "2026-11-08-help-report-a-problem", date: "2026-11-08" }}
       email="pilot@example.invalid"
@@ -100,7 +100,7 @@ describe("Report a problem", () => {
       ]),
     );
     expect(pairs).toEqual({
-      Screen: "Home (/ward-flow)",
+      Screen: "Home (/bedchart)",
       Desk: "Bed manager",
       Version: "latest change 8 Nov 2026",
       Browser: "This browser and window size",
@@ -156,7 +156,7 @@ describe("Report a problem", () => {
     const copied = writeText.mock.calls[0]?.[0] as string;
     expect(copied).toContain(SAFE);
     expect(copied.split("\n")[0]).toBe("Synthetic prototype.");
-    expect(copied).toContain("Screen: Home (/ward-flow)");
+    expect(copied).toContain("Screen: Home (/bedchart)");
     expect(copied).toContain("Desk: Bed manager");
     expect(screen.getByRole("status").textContent).toContain("Report copied.");
     expect(screen.getByTestId("ward-help-report-destination").textContent).toBe(

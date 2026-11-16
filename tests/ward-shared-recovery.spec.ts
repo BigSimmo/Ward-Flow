@@ -107,7 +107,7 @@ test("offline recovery: a save accepted before reload is checked by receipt and 
 
 test("stale board: five minutes without a successful refresh shows its time and one keyboard retry", async ({}, info) => {
   const { page } = desk;
-  await page.goto("/ward-flow/capacity", { waitUntil: "domcontentloaded" });
+  await page.goto("/bedchart/capacity", { waitUntil: "domcontentloaded" });
   await ready(page);
   let mode: "fail" | "hold" = "fail";
   let release!: () => void;
@@ -151,7 +151,7 @@ test("stale board: five minutes without a successful refresh shows its time and 
 
 test("Activity Undo: a desk reviews its own bed closure and waits for the server to confirm the inverse", async ({}, info) => {
   const { page } = desk;
-  await page.goto("/ward-flow/ward/rph-adult-secure", { waitUntil: "domcontentloaded" });
+  await page.goto("/bedchart/ward/rph-adult-secure", { waitUntil: "domcontentloaded" });
   await ready(page);
   const phone = isPhoneLayout(page);
   let bedId: string | null = null;
@@ -192,7 +192,7 @@ test("Activity Undo: a desk reviews its own bed closure and waits for the server
     const menu = page.getByTestId("ward-bar-phone-menu");
     if (!(await menu.isVisible())) {
       await page.getByTestId("ward-phone-dock-link").filter({ hasText: /^Home/u }).click();
-      await expect(page).toHaveURL(/\/ward-flow\/?(?:\?.*)?$/u);
+      await expect(page).toHaveURL(/\/bedchart\/?(?:\?.*)?$/u);
       await ready(page);
     }
     await expect(menu).toBeVisible();
@@ -219,7 +219,7 @@ test("Activity Undo: a desk reviews its own bed closure and waits for the server
   await expect(own).not.toContainText("A later change replaced this one");
   await expectAccessible(page, info, "Activity reports the confirmed inverse");
   // A phone went Home to reach the Menu, so it loads the ward page afresh rather than reloading Home.
-  if (phone) await page.goto("/ward-flow/ward/rph-adult-secure", { waitUntil: "domcontentloaded" });
+  if (phone) await page.goto("/bedchart/ward/rph-adult-secure", { waitUntil: "domcontentloaded" });
   else await page.reload({ waitUntil: "domcontentloaded" });
   await ready(page);
   if (phone) {
@@ -230,9 +230,9 @@ test("Activity Undo: a desk reviews its own bed closure and waits for the server
 
 test("sign-out return: cancelling preserves a waiting change and confirmed sign-out returns only to the authorised screen", async ({}, info) => {
   const { page } = desk;
-  await page.goto("/ward-flow/capacity", { waitUntil: "domcontentloaded" });
+  await page.goto("/bedchart/capacity", { waitUntil: "domcontentloaded" });
   await ready(page);
-  await page.evaluate(() => history.replaceState(history.state, "", "/ward-flow/capacity?display=ignored#ignored"));
+  await page.evaluate(() => history.replaceState(history.state, "", "/bedchart/capacity?display=ignored#ignored"));
   let release!: () => void;
   const hold = new Promise<void>((resolve) => {
     release = resolve;
@@ -266,7 +266,7 @@ test("sign-out return: cancelling preserves a waiting change and confirmed sign-
     await page.getByLabel("Password", { exact: true }).fill(accounts[0]!.password);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await ready(page);
-    await expect(page).toHaveURL(/\/ward-flow\/capacity$/u);
+    await expect(page).toHaveURL(/\/bedchart\/capacity$/u);
     await expect(page.getByTestId("ward-capacity-screen")).toBeVisible();
     await expectAccessible(page, info, "signed in on authorised screen without record, query or fragment");
   } finally {

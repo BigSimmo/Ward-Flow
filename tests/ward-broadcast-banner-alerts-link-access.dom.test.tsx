@@ -69,7 +69,7 @@ describe("broadcast banner Alerts link", () => {
   it("links the coordinator to Alerts", () => {
     renderBanner();
     const banner = screen.getByTestId("ward-broadcast-banner");
-    expect(within(banner).getByRole("link", { name: /^Alerts/u })).toHaveAttribute("href", "/ward-flow/alerts");
+    expect(within(banner).getByRole("link", { name: /^Alerts/u })).toHaveAttribute("href", "/bedchart/alerts");
   });
 
   it("shows the admin desk the alert with no link to Alerts", () => {

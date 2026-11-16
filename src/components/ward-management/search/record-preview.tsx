@@ -230,14 +230,14 @@ type ClinicalHistory = {
  */
 function deriveClinicalHistory(patient?: Patient): ClinicalHistory {
   return {
-    priorAdmissions: "Not recorded in Ward Flow",
-    lastDischarge: "Not recorded in Ward Flow",
+    priorAdmissions: "Not recorded in BedChart",
+    lastDischarge: "Not recorded in BedChart",
     communityKeyWorker: patient?.catchmentCommunityTeam ?? NOT_RECORDED,
-    knownRiskProfile: "Not recorded in Ward Flow",
+    knownRiskProfile: "Not recorded in BedChart",
   };
 }
 
-const NO_CLINICAL_NOTE = "No clinical note is recorded in Ward Flow.";
+const NO_CLINICAL_NOTE = "No clinical note is recorded in BedChart.";
 
 export function RecordPreview({
   selection,
@@ -877,7 +877,7 @@ export function RecordPreview({
 
           {/* 6. Coordinator Action Bar */}
           <div className={styles.dossierActionBar}>
-            <Link href="/ward-flow/referrals" className={styles.btnPrimary}>
+            <Link href="/bedchart/referrals" className={styles.btnPrimary}>
               <span>Intake board</span>
               <ChevronRight size={12} strokeWidth={1.75} aria-hidden="true" />
             </Link>

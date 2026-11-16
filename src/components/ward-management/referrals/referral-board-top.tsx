@@ -150,7 +150,7 @@ export function ReferralCoordinatorTop({
                   id: "beds",
                   value: beds.total,
                   label: "Beds ready",
-                  ...(isPhone ? { onClick: onBeds } : { href: "/ward-flow/hub" }),
+                  ...(isPhone ? { onClick: onBeds } : { href: "/bedchart/hub" }),
                   linkTestId: isPhone ? "ward-referral-phone-beds" : undefined,
                   testId: "ward-referral-figure-beds",
                 },

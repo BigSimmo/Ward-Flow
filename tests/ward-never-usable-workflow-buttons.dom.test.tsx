@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Untested-537 INV-ACTION-041 and INV-ACTION-161 (D-192 item 5): a signed-in desk that can never
 // send Review leave bed warnings or Request ward capacity review is not shown a greyed button.
-const navigation = vi.hoisted(() => ({ pathname: "/ward-flow" }));
+const navigation = vi.hoisted(() => ({ pathname: "/bedchart" }));
 const desk = vi.hoisted(() => ({ role: "ward" as string }));
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
@@ -24,7 +24,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 afterEach(() => {
   cleanup();
-  navigation.pathname = "/ward-flow";
+  navigation.pathname = "/bedchart";
 });
 
 function renderAs(role: "ward" | "ed" | "bed_manager" | "coordinator") {

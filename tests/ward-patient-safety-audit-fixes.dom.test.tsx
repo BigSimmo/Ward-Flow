@@ -127,7 +127,7 @@ describe("Legal now on the patient record", () => {
     const card = within(screen.getByTestId("ward-patient-legal-now"));
     expect(card.getByRole("button", { name: "Forms" })).toBeInTheDocument();
     const link = card.getByRole("link", { name: "Record a form" });
-    expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/legal-forms\?movement=[^&]+&record=1$/u);
+    expect(link.getAttribute("href")).toMatch(/^\/bedchart\/legal-forms\?movement=[^&]+&record=1$/u);
   });
 
   it("offers no Record a form for an arrived stay, which the Record a form sheet cannot take", () => {

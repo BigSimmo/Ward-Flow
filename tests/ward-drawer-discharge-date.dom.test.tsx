@@ -2,7 +2,7 @@ import { createRef, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/ward/rph-adult-secure",
+  usePathname: () => "/bedchart/ward/rph-adult-secure",
   useSearchParams: () => new URLSearchParams(window.location.search),
 }));
 vi.mock("next/link", () => ({

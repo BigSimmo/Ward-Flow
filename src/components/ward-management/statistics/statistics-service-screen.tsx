@@ -220,7 +220,7 @@ function ExecutiveServiceScreen({ serviceId }: { serviceId: string }) {
   );
 }
 
-const OUT_OF_AREA_HREF = "/ward-flow/out-of-area";
+const OUT_OF_AREA_HREF = "/bedchart/out-of-area";
 
 /** "Joondalup Health Campus Emergency Department" reads "Joondalup ED" beside the ED wait field. */
 function shortDepartmentName(name: string): string {

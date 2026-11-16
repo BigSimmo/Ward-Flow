@@ -61,7 +61,7 @@ export function searchContacts(
   return filterBySearchText(entries, query, entrySearchFields, { ignoreWords: CONTACT_WORDS, nearly }).map((entry) => ({
     entry,
     number: minute === null ? (entry.lines[0]?.number ?? null) : numberAt(entry, minute),
-    href: "/ward-flow/on-call",
+    href: "/bedchart/on-call",
   }));
 }
 
@@ -86,6 +86,6 @@ export function searchSuburbs(query: string): SuburbSearchResult[] {
     status: entry.status,
     clinic: entry.communityClinic,
     service: entry.healthService.displayName,
-    href: "/ward-flow/hub/catchments",
+    href: "/bedchart/hub/catchments",
   }));
 }

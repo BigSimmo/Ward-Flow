@@ -418,7 +418,7 @@ const AROUND: readonly Around[] = [
       // The row's own Review link, then its row, so the step never lights a row's Ask wards button.
       step(
         [
-          { sel: '#main-content a[href^="/ward-flow/movements/"]:not([href*="?"])', up: 1 },
+          { sel: '#main-content a[href^="/bedchart/movements/"]:not([href*="?"])', up: 1 },
           starts("movements-group-toggle-"),
         ],
         {
@@ -1056,7 +1056,7 @@ const AROUND: readonly Around[] = [
     keywords: "ward beds bed board my ward round",
     page: {
       purpose: "One ward's beds, who is coming and going, and the decisions due this shift.",
-      path: /^\/ward-flow\/ward\/[^/]+$/u,
+      path: /^\/bedchart\/ward\/[^/]+$/u,
       needs: "ward",
     },
     steps: [
@@ -1125,7 +1125,7 @@ const AROUND: readonly Around[] = [
     keywords: "emergency department ed board waiting next step",
     page: {
       purpose: "One emergency department's mental health patients, each row with its next step.",
-      path: /^\/ward-flow\/ed\/[^/]+$/u,
+      path: /^\/bedchart\/ed\/[^/]+$/u,
       needs: "ed",
     },
     steps: [

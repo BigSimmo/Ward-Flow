@@ -211,13 +211,13 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
     ? undefined
     : pathname === WARD_ADD_PERSON_HREF
       ? "Add patient"
-      : /^\/ward-flow\/people\/[^/]+\/?$/u.test(pathname)
+      : /^\/bedchart\/people\/[^/]+\/?$/u.test(pathname)
         ? "Patient"
         : // Review 5 Nov 2026: "Patient" here too, as on tablet and desktop; the page is the patient's.
-          /^\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname)
+          /^\/bedchart\/movements\/[^/]+\/?$/u.test(pathname)
           ? "Patient"
           : // The statistics tab's own word, so the lean bar never mixes "Statistics compare" with "EDs".
-            /^\/ward-flow\/statistics\/(services|wards|eds|teams|overview|compare)\/?$/u.test(pathname)
+            /^\/bedchart\/statistics\/(services|wards|eds|teams|overview|compare)\/?$/u.test(pathname)
             ? (
                 {
                   services: "Services",
@@ -231,7 +231,7 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
                 pathname.replace(/\/$/u, "").split("/").pop() as
                   "services" | "wards" | "eds" | "teams" | "overview" | "compare"
               ]
-            : /^\/ward-flow\/statistics\/weekly\/?$/u.test(pathname)
+            : /^\/bedchart\/statistics\/weekly\/?$/u.test(pathname)
               ? "Weekly"
               : place?.kind === "ward" && /\/answer\/?$/u.test(pathname)
                 ? "Ward answer"
@@ -241,30 +241,30 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
                   : undefined;
   const routeTitle =
     phoneRouteTitle ??
-    (/^\/ward-flow\/statistics\/ward\//u.test(pathname) ? "Ward statistics" : undefined) ??
-    (/^\/ward-flow\/statistics\/ed\//u.test(pathname) ? "Emergency department statistics" : undefined) ??
-    (/^\/ward-flow\/statistics\/community\//u.test(pathname) ? "Community statistics" : undefined) ??
-    (/^\/ward-flow\/statistics\/service\//u.test(pathname) ? "Service statistics" : undefined) ??
-    (/^\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname) ? "Patient" : undefined) ??
+    (/^\/bedchart\/statistics\/ward\//u.test(pathname) ? "Ward statistics" : undefined) ??
+    (/^\/bedchart\/statistics\/ed\//u.test(pathname) ? "Emergency department statistics" : undefined) ??
+    (/^\/bedchart\/statistics\/community\//u.test(pathname) ? "Community statistics" : undefined) ??
+    (/^\/bedchart\/statistics\/service\//u.test(pathname) ? "Service statistics" : undefined) ??
+    (/^\/bedchart\/movements\/[^/]+\/?$/u.test(pathname) ? "Patient" : undefined) ??
     // PL1 (3 Nov 2026): Catchments is a tab of Places, so the bar keeps the page's name.
-    (/^\/ward-flow\/hub\/catchments\/?$/u.test(pathname) ? "Places" : undefined) ??
+    (/^\/bedchart\/hub\/catchments\/?$/u.test(pathname) ? "Places" : undefined) ??
     (pathname === WARD_ED_HREF ? "All EDs" : undefined) ??
     (pathname === settingsHref() ? "Settings" : undefined) ??
     (pathname === officerHref() ? "Transport" : undefined) ??
     (pathname === onCallHref() ? "On-call" : undefined) ??
-    (/^\/ward-flow\/reports\/downtime\/?$/u.test(pathname) ? "Downtime pack" : undefined) ??
+    (/^\/bedchart\/reports\/downtime\/?$/u.test(pathname) ? "Downtime pack" : undefined) ??
     // Feature plan item 29: the coordinator's overnight page names itself, not "Ward Flow".
-    (/^\/ward-flow\/night\/?$/u.test(pathname) ? "Night view" : undefined) ??
+    (/^\/bedchart\/night\/?$/u.test(pathname) ? "Night view" : undefined) ??
     // F-77 (Audit 15, A15-25): About this demo names itself.
-    (/^\/ward-flow\/about\/?$/u.test(pathname) ? "About this demo" : undefined) ??
-    (/^\/ward-flow\/reports\/chronology\/?$/u.test(pathname) ? "Patient chronology" : undefined) ??
+    (/^\/bedchart\/about\/?$/u.test(pathname) ? "About this demo" : undefined) ??
+    (/^\/bedchart\/reports\/chronology\/?$/u.test(pathname) ? "Patient chronology" : undefined) ??
     (pathname === WARD_ADD_PERSON_HREF ? "Add patient" : undefined) ??
-    (/^\/ward-flow\/people\/[^/]+\/?$/u.test(pathname) ? "Patient" : undefined) ??
+    (/^\/bedchart\/people\/[^/]+\/?$/u.test(pathname) ? "Patient" : undefined) ??
     // Triage and risk (built 7 Nov 2026): the form and Start a triage name the page on every width.
-    (/^\/ward-flow\/people\/[^/]+\/triage\/?$/u.test(pathname) ? "Triage and risk" : undefined) ??
-    (/^\/ward-flow\/triage\/new\/?$/u.test(pathname) ? "Start a triage" : undefined) ??
+    (/^\/bedchart\/people\/[^/]+\/triage\/?$/u.test(pathname) ? "Triage and risk" : undefined) ??
+    (/^\/bedchart\/triage\/new\/?$/u.test(pathname) ? "Start a triage" : undefined) ??
     (place?.kind === "ward" && /\/answer\/?$/u.test(pathname) ? "Ward answer" : undefined) ??
-    (/^\/ward-flow\/board\//u.test(pathname) ? (place?.name ?? "Bed board") : undefined) ??
+    (/^\/bedchart\/board\//u.test(pathname) ? (place?.name ?? "Bed board") : undefined) ??
     place?.name ??
     [...WARD_VIEWS, ...WARD_NAV].find((entry) => entry.href === pathname)?.label ??
     (pathname === STATISTICS_OVERVIEW_HREF
@@ -281,9 +281,9 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
         : tab[1]
           ? `Statistics ${tab[1] === "eds" ? "EDs" : tab[1]}`
           : "Bed meeting agenda"))(
-      /^\/ward-flow\/(?:statistics\/(eds|services|teams|wards|weekly)|bed-meeting\/agenda)\/?$/u.exec(pathname),
+      /^\/bedchart\/(?:statistics\/(eds|services|teams|wards|weekly)|bed-meeting\/agenda)\/?$/u.exec(pathname),
     ) ??
-    "Ward Flow";
+    "BedChart";
   return routeTitle;
 }
 
@@ -300,13 +300,13 @@ export function fixedServiceFor(
 ): HealthService | undefined {
   if (place) {
     if (place.kind === "ward") {
-      const unitMatch = /^\/ward-flow\/ward\/([^/]+)/.exec(pathname) ?? /^\/ward-flow\/board\/([^/]+)/.exec(pathname);
+      const unitMatch = /^\/bedchart\/ward\/([^/]+)/.exec(pathname) ?? /^\/bedchart\/board\/([^/]+)/.exec(pathname);
       const unitId = unitMatch ? decodeURIComponent(unitMatch[1]) : undefined;
       const currentUnit = unitId ? units.find((u) => u.id === unitId) : units.find((u) => u.name === place.name);
       if (currentUnit) return unitHealthService(currentUnit);
     }
     if (place.kind === "ed") {
-      const edMatch = /^\/ward-flow\/ed\/([^/]+)/.exec(pathname);
+      const edMatch = /^\/bedchart\/ed\/([^/]+)/.exec(pathname);
       if (edMatch) return edHealthService(decodeURIComponent(edMatch[1]));
     }
   }

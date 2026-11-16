@@ -78,7 +78,7 @@ export const MORE_PAGES: readonly Around[] = [
     keywords: "night overnight first night shift after hours on call steps beds ready",
     page: {
       purpose: "The coordinator's overnight page: beds ready, ED waits by Step, who is on the way and on-call lines.",
-      path: /^\/ward-flow\/night$/u,
+      path: /^\/bedchart\/night$/u,
       needs: "night",
     },
     steps: [
@@ -136,7 +136,7 @@ export const MORE_PAGES: readonly Around[] = [
     keywords: "patient record movement person now history details documents status card",
     page: {
       purpose: "One patient's record: where they are now, their movement and the next step.",
-      path: /^\/ward-flow\/(?:people\/(?!new$)[^/]+|movements\/[^/]+)$/u,
+      path: /^\/bedchart\/(?:people\/(?!new$)[^/]+|movements\/[^/]+)$/u,
       needs: "patient",
     },
     steps: [
@@ -214,7 +214,7 @@ export const MORE_PAGES: readonly Around[] = [
     keywords: "add patient new record register umrn duplicate",
     page: {
       purpose: "Adds a new invented patient record. Only the core details are needed.",
-      path: /^\/ward-flow\/people\/new$/u,
+      path: /^\/bedchart\/people\/new$/u,
       needs: "patient-new",
     },
     steps: [
@@ -279,7 +279,7 @@ export const MORE_PAGES: readonly Around[] = [
     keywords: "bed board beds place move discharge shift brief",
     page: {
       purpose: "Every bed on one ward, who is in it, who is coming in and who is going out today and tomorrow.",
-      path: /^\/ward-flow\/board\/[^/]+$/u,
+      path: /^\/bedchart\/board\/[^/]+$/u,
       needs: "board",
     },
     steps: [
@@ -357,7 +357,7 @@ export const MORE_PAGES: readonly Around[] = [
     keywords: "ward answer accept decline bed request gates referral",
     page: {
       purpose: "One bed request at a time, for this ward to accept or decline.",
-      path: /^\/ward-flow\/ward\/[^/]+\/answer$/u,
+      path: /^\/bedchart\/ward\/[^/]+\/answer$/u,
       needs: "ward",
     },
     steps: [
@@ -432,7 +432,7 @@ export const MORE_PAGES: readonly Around[] = [
     page: {
       purpose:
         "Which community team covers a suburb, every community team from A to Z, and team names that read alike.",
-      path: /^\/ward-flow\/hub\/catchments$/u,
+      path: /^\/bedchart\/hub\/catchments$/u,
       needs: "community",
     },
     steps: [
@@ -506,7 +506,7 @@ export const MORE_PAGES: readonly Around[] = [
     keywords: "community team caseload referrals cto in hospital",
     page: {
       purpose: "One community team's referrals and patients, from a referral sent to their return to the team.",
-      path: /^\/ward-flow\/community\/[^/]+$/u,
+      path: /^\/bedchart\/community\/[^/]+$/u,
       needs: "community",
     },
     steps: [
@@ -607,7 +607,7 @@ export const MORE_PAGES: readonly Around[] = [
     keywords: "settings rules display theme alerts profile preferences",
     page: {
       purpose: "The network's rules and this device's own choices, in tabs.",
-      path: /^\/ward-flow\/settings$/u,
+      path: /^\/bedchart\/settings$/u,
       needs: "settings",
     },
     steps: [
@@ -702,7 +702,7 @@ export const MORE_PAGES: readonly Around[] = [
     page: {
       purpose:
         "A printable copy of the last snapshot, for when the system is down: beds by ward, the ED queue, pending moves and legal forms.",
-      path: /^\/ward-flow\/reports\/downtime$/u,
+      path: /^\/bedchart\/reports\/downtime$/u,
       needs: "downtime",
     },
     steps: [
@@ -755,7 +755,7 @@ export const MORE_PAGES: readonly Around[] = [
     keywords: "bed meeting agenda actions ed waits stranded",
     page: {
       purpose: "The bed meeting's agenda, built from fixed rules, and the actions agreed at earlier meetings.",
-      path: /^\/ward-flow\/bed-meeting\/agenda$/u,
+      path: /^\/bedchart\/bed-meeting\/agenda$/u,
       needs: "bed-meeting-agenda",
     },
     steps: [
@@ -829,7 +829,7 @@ export const MORE_PAGES: readonly Around[] = [
     keywords: "chronology pir post incident review timeline events export",
     page: {
       purpose: "One patient's events in time order, for a post-incident review, ready to print or download.",
-      path: /^\/ward-flow\/reports\/chronology$/u,
+      path: /^\/bedchart\/reports\/chronology$/u,
       needs: "chronology",
     },
     steps: [
@@ -867,7 +867,7 @@ export const MORE_PAGES: readonly Around[] = [
     keywords: "statistics compare wards eds chart pinned",
     page: {
       purpose: "Every ward and every ED side by side, as a chart or a table, with up to three wards pinned.",
-      path: /^\/ward-flow\/statistics\/compare$/u,
+      path: /^\/bedchart\/statistics\/compare$/u,
       needs: "statistics",
     },
     steps: [
@@ -938,7 +938,7 @@ export const MORE_PAGES: readonly Around[] = [
     keywords: "statistics services health service occupancy referrals accepted",
     page: {
       purpose: "Each health service's beds, where referrals were accepted and its open ED movements.",
-      path: /^\/ward-flow\/statistics\/services$/u,
+      path: /^\/bedchart\/statistics\/services$/u,
       needs: "statistics",
     },
     steps: [
@@ -998,7 +998,7 @@ export const MORE_PAGES: readonly Around[] = [
     keywords: "statistics wards occupancy stay held up table",
     page: {
       purpose: "Every ward's beds in use, stay so far and discharges held up.",
-      path: /^\/ward-flow\/statistics\/wards$/u,
+      path: /^\/bedchart\/statistics\/wards$/u,
       needs: "statistics",
     },
     steps: [
@@ -1055,7 +1055,7 @@ export const MORE_PAGES: readonly Around[] = [
     keywords: "statistics eds emergency department waits time since opening",
     page: {
       purpose: "Every emergency department's open movements and how long each has been open.",
-      path: /^\/ward-flow\/statistics\/eds$/u,
+      path: /^\/bedchart\/statistics\/eds$/u,
       needs: "statistics",
     },
     steps: [
@@ -1106,7 +1106,7 @@ export const MORE_PAGES: readonly Around[] = [
     keywords: "statistics community teams in a bed caseload",
     page: {
       purpose: "Each community team's patients in a bed, and those with a discharge date.",
-      path: /^\/ward-flow\/statistics\/teams$/u,
+      path: /^\/bedchart\/statistics\/teams$/u,
       needs: "statistics",
     },
     steps: [
@@ -1148,7 +1148,7 @@ export const MORE_PAGES: readonly Around[] = [
     keywords: "weekly report operations pilot measures week print",
     page: {
       purpose: "One week's operations: the pilot measures, where the time goes and the pressure that week.",
-      path: /^\/ward-flow\/statistics\/weekly$/u,
+      path: /^\/bedchart\/statistics\/weekly$/u,
       needs: "statistics",
     },
     steps: [

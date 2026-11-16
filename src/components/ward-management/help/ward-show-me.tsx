@@ -70,7 +70,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
   // Phone quick settings live on the page. Their old desktop section hashes open a device
   // sheet which deliberately omits these controls, covering the very target we need to light.
   const href =
-    device === "phone" && howTo && PHONE_QUICK_SETTINGS.has(howTo.id) && destination?.startsWith("/ward-flow/settings#")
+    device === "phone" && howTo && PHONE_QUICK_SETTINGS.has(howTo.id) && destination?.startsWith("/bedchart/settings#")
       ? destination.split("#")[0]
       : destination;
   const went = useRef(false);

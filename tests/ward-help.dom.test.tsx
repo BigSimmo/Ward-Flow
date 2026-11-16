@@ -16,7 +16,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/ward-flow/movements" };
+const route = { pathname: "/bedchart/movements" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -24,7 +24,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
-  useTourFacts: () => ({ facts: {}, home: "/ward-flow", deskHome: "/ward-flow" }),
+  useTourFacts: () => ({ facts: {}, home: "/bedchart", deskHome: "/bedchart" }),
 }));
 
 import {
@@ -57,7 +57,7 @@ import { siteDirectory } from "@/components/ward-management/ward-sites";
 const classes = { button: "b", glyph: "g", text: "t", line: "l", label: "x" };
 
 beforeEach(() => {
-  route.pathname = "/ward-flow/movements";
+  route.pathname = "/bedchart/movements";
   resetTourSeenForTests();
   if (typeof window.requestAnimationFrame !== "function") {
     window.requestAnimationFrame = ((cb: FrameRequestCallback) =>
@@ -72,9 +72,9 @@ afterEach(() => resetTourSeenForTests());
 describe("help content", () => {
   it("finds the screen by its own rail address, so Home never stands in for another page", () => {
     const entries = railEntries();
-    expect(screenHelpFor("/ward-flow/movements", entries)?.title).toBe("Movements");
-    expect(screenHelpFor("/ward-flow", entries)?.title).toBe("Home");
-    expect(screenHelpFor("/ward-flow/capacity/anything", entries)).toBeUndefined();
+    expect(screenHelpFor("/bedchart/movements", entries)?.title).toBe("Movements");
+    expect(screenHelpFor("/bedchart", entries)?.title).toBe("Home");
+    expect(screenHelpFor("/bedchart/capacity/anything", entries)).toBeUndefined();
   });
 
   it("keeps every screen to at most three main actions", () => {
@@ -140,7 +140,7 @@ describe("help sheet", () => {
   });
 
   it("answers the screen's own questions one at a time and offers the keyboard shortcuts at the foot", () => {
-    route.pathname = "/ward-flow/handover";
+    route.pathname = "/bedchart/handover";
     const onView = vi.fn();
     sheet("questions", { onView });
     const questions = screen.getByRole("region", { name: "On Handover" });
@@ -154,7 +154,7 @@ describe("help sheet", () => {
   });
 
   it("draws no screen card on a screen with no help page, instead of Home's help", () => {
-    route.pathname = "/ward-flow/constellation";
+    route.pathname = "/bedchart/constellation";
     sheet("screen");
     expect(screen.queryByTestId("ward-help-tasks-here")).toBeNull();
     expect(screen.getByTestId("ward-help-tasks")).toBeTruthy();
@@ -224,7 +224,7 @@ describe("help sheet", () => {
       dispatchEvent: () => false,
     })) as typeof window.matchMedia;
     try {
-      route.pathname = "/ward-flow/referrals";
+      route.pathname = "/bedchart/referrals";
       sheet("screen");
       const here = screen.getByTestId("ward-help-tasks-here");
       expect(here.textContent).toContain("Tap a referral to open it");

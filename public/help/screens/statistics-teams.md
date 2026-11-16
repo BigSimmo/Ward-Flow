@@ -16,6 +16,6 @@ Each community team's patients in a bed, and those with a discharge date.
 - Find a team. Type a team's name to find it in the list.
 - Teams. With patients lists the teams with someone in a bed. All teams lists every team.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

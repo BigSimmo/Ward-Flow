@@ -56,7 +56,7 @@ async function settleStreamUnderPausedClock(page: Page): Promise<void> {
 }
 
 async function gotoWard(page: Page, unitId: string): Promise<Locator> {
-  await page.goto(`/ward-flow/ward/${unitId}`, { waitUntil: "domcontentloaded" });
+  await page.goto(`/bedchart/ward/${unitId}`, { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle");
   const wardScreen = page.locator('[data-testid="ward-unit-screen"]:visible');
   // App Router can briefly retain the previous render while hydrating this route,
@@ -219,7 +219,7 @@ test.describe("@mockup Ward screen", () => {
 
     // DA-32 (overall review, 20 Oct 2026): an unknown ward shows the app's own "Page not found"
     // instead of the ward screen with a message inside it.
-    await page.goto(`/ward-flow/ward/${bogusUnitId}`, { waitUntil: "domcontentloaded" });
+    await page.goto(`/bedchart/ward/${bogusUnitId}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible({ timeout: 15_000 });
 
     // Not-found pages quote no ids (shell-12, 13 Oct 2026), and never a substituted unit.
@@ -246,7 +246,7 @@ test.describe("@mockup Ward screen", () => {
     // still exactly 10:00:00.
     await page.clock.install({ time: new Date("2026-08-26T09:59:00Z") });
     await page.clock.pauseAt(new Date("2026-08-26T10:00:00Z"));
-    await page.goto("/ward-flow/ward/rph-adult-secure", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/ward/rph-adult-secure", { waitUntil: "domcontentloaded" });
     await settleStreamUnderPausedClock(page);
     await page.waitForLoadState("networkidle");
     const wardScreen = page.locator('[data-testid="ward-unit-screen"]:visible');
@@ -291,7 +291,7 @@ test.describe("@mockup Ward screen", () => {
   // rather than leaving it behind a closed sheet (Codex, #558).
   test("the Tools sheet footer's Board time pill reopens Tools at the Demo row", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto("/ward-flow/referrals", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/referrals", { waitUntil: "domcontentloaded" });
     await page.getByTestId("ward-bar-tools-trigger").click();
     const sheet = page.getByTestId("ward-bar-tools-sheet");
     await expect(sheet).toBeVisible();
@@ -359,7 +359,7 @@ test.describe("@mockup Transport officer screen", () => {
    */
   test("gives the officer four actions and nothing else", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/ward-flow/transport/officer", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/transport/officer", { waitUntil: "domcontentloaded" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -434,7 +434,7 @@ test.describe("@mockup Transport officer screen", () => {
    */
   test("states it is showing every job rather than inventing an officer to own them", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/ward-flow/transport/officer", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/transport/officer", { waitUntil: "domcontentloaded" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -471,7 +471,7 @@ test.describe("@mockup Transport officer screen", () => {
   test("retains its operating structure in dark, forced-colours, and print modes", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ colorScheme: "dark" });
-    await page.goto("/ward-flow/transport/officer", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/transport/officer", { waitUntil: "domcontentloaded" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -496,7 +496,7 @@ test.describe("@mockup Transport officer screen", () => {
 
 /**
  * MERGE 03 (owner-approved 2026-09-05) folded the coordinator's live transport tracker into
- * `MovementsScreen`, and `/ward-flow/transport` became a redirect. These three tests kept
+ * `MovementsScreen`, and `/bedchart/transport` became a redirect. These three tests kept
  * navigating to that route and waiting for `ward-live-tracker`, an id nothing renders any more —
  * so they failed on `main` from the moment the merge landed, and would have gone on failing
  * whatever else changed.
@@ -547,7 +547,7 @@ test.describe("@mockup Movements — transport panel", () => {
    */
   test("tracks every vehicle by leg and by how long since the last stamp", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1024 });
-    await page.goto("/ward-flow/movements", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/movements", { waitUntil: "domcontentloaded" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -609,7 +609,7 @@ test.describe("@mockup Movements — transport panel", () => {
    */
   test("lists exactly the movements that carry a transport job, and states the rest explicitly", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1024 });
-    await page.goto("/ward-flow/movements", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/movements", { waitUntil: "domcontentloaded" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -667,7 +667,7 @@ test.describe("@mockup Movements — operating structure in dark, forced-colours
   test("retains its operating structure in dark, forced-colours, and print modes", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.emulateMedia({ colorScheme: "dark" });
-    await page.goto("/ward-flow/movements", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/movements", { waitUntil: "domcontentloaded" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -726,7 +726,7 @@ test.describe("@mockup Emergency department screen", () => {
    */
   test("shows a department its own patients, both clocks, and one outstanding item each", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1024 });
-    await page.goto("/ward-flow/ed/peel-ed", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/ed/peel-ed", { waitUntil: "domcontentloaded" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -776,7 +776,7 @@ test.describe("@mockup Emergency department screen", () => {
 
     // DA-32 (overall review, 20 Oct 2026): an unknown department shows the app's own "Page not
     // found" instead of the ED screen with a message inside it.
-    await page.goto(`/ward-flow/ed/${bogusEdId}`, { waitUntil: "domcontentloaded" });
+    await page.goto(`/bedchart/ed/${bogusEdId}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible({ timeout: 15_000 });
 
     // Not-found pages quote no ids (shell-12, 13 Oct 2026), and never a substituted department.
@@ -808,7 +808,7 @@ test.describe("@mockup Emergency department screen", () => {
     // Install before the paused instant so pauseAt cannot race the running fake clock.
     await page.clock.install({ time: new Date("2026-08-26T09:59:00Z") });
     await page.clock.pauseAt(new Date("2026-08-26T10:00:00Z"));
-    await page.goto("/ward-flow/ed/peel-ed", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/ed/peel-ed", { waitUntil: "domcontentloaded" });
     await settleStreamUnderPausedClock(page);
     await expect(page.getByTestId("ward-ed-screen")).toHaveCount(1, { timeout: 15_000 });
     await expect(page.getByTestId("ward-ed-screen")).toBeVisible({ timeout: 15_000 });
@@ -834,7 +834,7 @@ test.describe("@mockup Emergency department screen", () => {
    * comment in `ed-screen.tsx`). Pinned by id, per the task's own warning not to assume.
    */
   test("names transport, not examination, as WF-005's honest outstanding item", async ({ page }) => {
-    await page.goto("/ward-flow/ed/peel-ed", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/ed/peel-ed", { waitUntil: "domcontentloaded" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -861,7 +861,7 @@ test.describe("@mockup Emergency department screen", () => {
   test("marks handover ready only once a bed is pulled and transport is booked, mirroring the reducer's own precondition", async ({
     page,
   }) => {
-    await page.goto("/ward-flow/ed/peel-ed", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/ed/peel-ed", { waitUntil: "domcontentloaded" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -948,7 +948,7 @@ test.describe("@mockup Emergency department screen", () => {
     // Every peel-ed row opens two surfaces now (sheet, then record), measured at about five seconds
     // a row against the dev server, so the describe block's 45 seconds no longer covers the walk.
     test.setTimeout(120_000);
-    await page.goto("/ward-flow/ed/peel-ed", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/ed/peel-ed", { waitUntil: "domcontentloaded" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -1001,7 +1001,7 @@ test.describe("@mockup Emergency department screen", () => {
   test("retains its operating structure in dark, forced-colours, and print modes", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.emulateMedia({ colorScheme: "dark" });
-    await page.goto("/ward-flow/ed/peel-ed", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/ed/peel-ed", { waitUntil: "domcontentloaded" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -1074,7 +1074,7 @@ test.describe("@mockup Emergency department screen", () => {
     expect(edById("rph-ed"), "fixture assumption: rph-ed resolves to a real department").toBeDefined();
     expect(edById("peel-ed"), "fixture assumption: peel-ed resolves to a real department").toBeDefined();
 
-    await page.goto("/ward-flow/ed/rph-ed", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/ed/rph-ed", { waitUntil: "domcontentloaded" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -1103,7 +1103,7 @@ test.describe("@mockup Emergency department screen", () => {
     // And never peel-ed's own referral — the scoping property this test exists to prove.
     await expect(page.getByTestId("ward-ed-inbox-row-RF-013")).toHaveCount(0);
 
-    await page.goto("/ward-flow/ed/peel-ed", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/ed/peel-ed", { waitUntil: "domcontentloaded" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -1153,7 +1153,7 @@ test.describe("@mockup Emergency department screen", () => {
   test("rph-ed cannot record a decline without a reason, and the referral leaves the inbox once it can", async ({
     page,
   }) => {
-    await page.goto("/ward-flow/ed/rph-ed", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/ed/rph-ed", { waitUntil: "domcontentloaded" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -1319,7 +1319,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     }
 
     // --- Step 1: ED — record the examination (R67). The one permitted `goto`. ---
-    await page.goto("/ward-flow/ed/arm-ed", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/ed/arm-ed", { waitUntil: "domcontentloaded" });
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -1700,7 +1700,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
 test("@mockup on-call printing includes every directory line and preserves screen collapse", async ({ page }) => {
   // October 2026 contacts directory: collapsing a group hides its lines on screen only. Printing
   // lists every line, and returning to the screen keeps the group collapsed.
-  await page.goto("/ward-flow/on-call");
+  await page.goto("/bedchart/on-call");
   await expect(
     page.locator('div[hidden][id^="S:"]'),
     "React's streamed content is still staged, so the whole screen is duplicated in the document",

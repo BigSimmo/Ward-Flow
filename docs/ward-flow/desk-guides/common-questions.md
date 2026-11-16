@@ -24,9 +24,9 @@ Source: Help, Saved or not (`SAVED_OR_NOT`).
 
 Source: Help, Saved or not (`SAVED_OR_NOT`).
 
-### What if Ward Flow is down?
+### What if BedChart is down?
 
-> Tell the bed coordinator on shift. They decide when everyone switches to paper and pass the problem to the Ward Flow team.
+> Tell the bed coordinator on shift. They decide when everyone switches to paper and pass the problem to the BedChart team.
 
 Source: Help, When it is down (`WHEN_IT_IS_DOWN`). Screen: Downtime.
 
@@ -112,6 +112,6 @@ Source: Help, Executive desk guide limits (`DESK_GUIDES.executive`).
 
 ### Are these real patients?
 
-> Invented. Every patient, bed figure and record in Ward Flow is made up.
+> Invented. Every patient, bed figure and record in BedChart is made up.
 
 Source: Help, Glossary, Synthetic (`GLOSSARY`).

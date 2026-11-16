@@ -56,9 +56,9 @@ export function ShiftChecks({
             >
               Ask
             </Button>
-          ) : first && canOpen(`/ward-flow/ward/${first.id}`) ? (
+          ) : first && canOpen(`/bedchart/ward/${first.id}`) ? (
             <Link
-              href={`/ward-flow/ward/${first.id}`}
+              href={`/bedchart/ward/${first.id}`}
               aria-label={`Confirm beds on ${first.name}`}
               className={buttonClass({ variant: "ghost", size: "sm" })}
             >

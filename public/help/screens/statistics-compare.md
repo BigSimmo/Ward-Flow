@@ -21,6 +21,6 @@ Every ward and every ED side by side, as a chart or a table, with up to three wa
 - Side by side. Each ward or ED against the network mean, on the measure chosen.
 - Compare two wards. Choose two wards to set against the network.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

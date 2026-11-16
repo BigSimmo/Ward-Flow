@@ -351,7 +351,7 @@ describe("deletion audit", () => {
   });
 
   it("refuses a deletion under a developer-gated prefix", () => {
-    const result = runAudit([`${MOCKUP_ROUTE_ROOT}/ward-flow/handover/page.tsx`], [], {});
+    const result = runAudit([`${MOCKUP_ROUTE_ROOT}/bedchart/handover/page.tsx`], [], {});
     expect(result.violations.join()).toContain("developer-gated prefix /mockups/ward-flow");
   });
 
@@ -610,7 +610,7 @@ describe("the committed repository", () => {
     const prefixes = readDeveloperGatedPrefixes(process.cwd());
     // The developer hub, Care Plan and Caring Contacts prefixes went with their pages in the
     // PsychSift removal (batch 3a, 25 September 2026). Ward Flow and its sign-in sibling moved to
-    // /ward-flow and /ward-flow-sign-in on 19 October 2026, so nothing under /mockups is public.
+    // /bedchart and /bedchart-sign-in on 19 October 2026, so nothing under /mockups is public.
     expect(prefixes).toEqual([]);
   });
 

@@ -15,7 +15,7 @@ import { ConfirmHost } from "@/components/wf";
 configure({ getElementError: (message) => new Error(message?.split("\n")[0] ?? "Query failed") });
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));
 

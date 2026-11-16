@@ -669,7 +669,7 @@ function CapacityGlanceUnavailable({ open, onClose }: CapacityGlanceProps) {
   useEffect(() => {
     if (!open) return;
     onClose();
-    router.push("/ward-flow/capacity");
+    router.push("/bedchart/capacity");
   }, [open, onClose, router]);
   return null;
 }

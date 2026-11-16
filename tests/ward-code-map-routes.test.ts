@@ -3,12 +3,12 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 // The code map's route table (overview.md section 3.1) had drifted: /waiting and /bed-meeting/agenda
-// were added without a row and nothing failed. Every page.tsx under src/app/ward-flow must now be
+// were added without a row and nothing failed. Every page.tsx under src/app/bedchart must now be
 // named there in backticks. Statistics rows use a shorter form (`/compare` under `/statistics`),
 // so a statistics route may also be named by the part after /statistics.
 
 const ROOT = path.resolve(__dirname, "..");
-const APP = path.join(ROOT, "src/app/ward-flow");
+const APP = path.join(ROOT, "src/app/bedchart");
 
 function pageRoutes(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

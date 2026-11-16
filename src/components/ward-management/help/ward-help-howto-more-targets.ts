@@ -21,7 +21,7 @@ export const CAPACITY_WARD: TourTarget[] = [
 ];
 export const CAPACITY_DRAWER: TourTarget = { sel: '[data-testid="ward-capacity-ward-drawer"]' };
 export const MOVEMENT_ROW: TourTarget[] = [
-  { sel: '#main-content a[href^="/ward-flow/movements/"]' },
+  { sel: '#main-content a[href^="/bedchart/movements/"]' },
   { sel: '[data-testid^="movements-group-toggle-"]' },
 ];
 /** The name on a Movements row, which opens the movement's drawer beside the list. */

@@ -4,7 +4,7 @@ import { createRef, useEffect, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(window.location.search),
 }));

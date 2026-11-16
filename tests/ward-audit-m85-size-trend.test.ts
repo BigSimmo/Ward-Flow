@@ -8,24 +8,24 @@ import { HEADER, recordMonth } from "../scripts/ward-flow/script-size-trend.mjs"
 
 const sha = "d".repeat(40);
 const measurement = {
-  measured: { "/ward-flow": 561.24, "/ward-flow/ed": 520.06 },
-  budgets: { "/ward-flow": 570, "/ward-flow/ed": 529.6 },
+  measured: { "/bedchart": 561.24, "/bedchart/ed": 520.06 },
+  budgets: { "/bedchart": 570, "/bedchart/ed": 529.6 },
 };
 
 describe("M85: monthly phone script size record", () => {
   it("writes one row per screen from CI's measurement", () => {
     expect(recordMonth("", measurement, { month: "2026-11", sha })).toBe(
-      `${HEADER}\n2026-11,${sha},/ward-flow,561.2,570.0\n2026-11,${sha},/ward-flow/ed,520.1,529.6\n`,
+      `${HEADER}\n2026-11,${sha},/bedchart,561.2,570.0\n2026-11,${sha},/bedchart/ed,520.1,529.6\n`,
     );
   });
 
   it("keeps earlier months and replaces a re-recorded month instead of doubling it", () => {
     const october = recordMonth("", measurement, { month: "2026-10", sha });
     const november = recordMonth(october, measurement, { month: "2026-11", sha });
-    const again = recordMonth(november, { ...measurement, measured: { "/ward-flow": 559 } }, { month: "2026-11", sha });
+    const again = recordMonth(november, { ...measurement, measured: { "/bedchart": 559 } }, { month: "2026-11", sha });
     expect(again.split("\n").filter((line) => line.startsWith("2026-10"))).toHaveLength(2);
     expect(again.split("\n").filter((line) => line.startsWith("2026-11"))).toEqual([
-      `2026-11,${sha},/ward-flow,559.0,570.0`,
+      `2026-11,${sha},/bedchart,559.0,570.0`,
     ]);
   });
 

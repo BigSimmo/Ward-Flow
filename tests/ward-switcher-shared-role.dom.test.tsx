@@ -5,7 +5,7 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/ward/rph-adult-secure",
+  usePathname: () => "/bedchart/ward/rph-adult-secure",
   useRouter: () => ({ push: vi.fn() }),
 }));
 

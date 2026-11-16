@@ -718,7 +718,7 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
 
   function exportCsv() {
     downloadCsv(
-      "ward-flow-synthetic-ward-comparison.csv",
+      "bedchart-synthetic-ward-comparison.csv",
       [
         ["Synthetic ward", "Site", ...WARD_COLUMNS.map((column) => column.header)],
         ...shown.map((row) => [
@@ -898,7 +898,7 @@ function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
 
   function exportCsv() {
     downloadCsv(
-      "ward-flow-synthetic-ed-comparison.csv",
+      "bedchart-synthetic-ed-comparison.csv",
       [
         ["Synthetic department", "Site", ...ED_COLUMNS.map((column) => column.header), "Longest wait (minutes)"],
         ...rows.map((entry) => [

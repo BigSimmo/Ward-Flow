@@ -20,8 +20,8 @@ describe("public mockup crawler policy", () => {
     // Ward Flow left /mockups on 19 October 2026 and keeps the same header at its own address.
     expect(robotsRules.map((rule) => rule.source)).toEqual([
       "/mockups/:path*",
-      "/ward-flow/:path*",
-      "/ward-flow-sign-in",
+      "/bedchart/:path*",
+      "/bedchart-sign-in",
       "/:file([^/]+\\.html)",
       // A15-03 (13 Nov 2026): the manifest, install screenshots and app images skip the door.
       "/manifest.webmanifest",
@@ -30,10 +30,10 @@ describe("public mockup crawler policy", () => {
     ]);
     for (const rule of robotsRules)
       expect(rule.headers).toContainEqual({ key: "X-Robots-Tag", value: "noindex, nofollow" });
-    const wardParsed = tryToParsePath("/ward-flow/:path*");
+    const wardParsed = tryToParsePath("/bedchart/:path*");
     const wardMatches = new RegExp(wardParsed.regexStr!);
-    expect(wardMatches.test("/ward-flow")).toBe(true);
-    expect(wardMatches.test("/ward-flow/referrals")).toBe(true);
+    expect(wardMatches.test("/bedchart")).toBe(true);
+    expect(wardMatches.test("/bedchart/referrals")).toBe(true);
     expect(wardMatches.test("/ward-flow-push-sw.js")).toBe(false);
     const htmlRule = robotsRules.find((rule) => rule.source.endsWith(".html)"))!;
     expect(htmlRule.headers).toContainEqual({ key: "X-Robots-Tag", value: "noindex, nofollow" });

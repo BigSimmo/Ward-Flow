@@ -57,7 +57,7 @@ afterEach(() => {
 
 const CONTEXT = {
   screen: "Home",
-  path: "/ward-flow",
+  path: "/bedchart",
   desk: "Bed manager",
   browser: "Chrome 131 on Android",
   time: "now",

@@ -141,7 +141,7 @@ function block(css: string, selector: string): string {
 
 describe("offline note: one pinned note at a time", () => {
   it("hides the drawn offline note while a higher note is pinned in the banner holder", () => {
-    const css = read("src/app/ward-flow/ward-flow-layout.module.css");
+    const css = read("src/app/bedchart/ward-flow-layout.module.css");
     expect(css).toMatch(/\.bannerHolder > \* \+ \[data-wf-offline-slot\]\) > :global\(\[data-wf-offline-note\]\)/u);
   });
 });
@@ -303,7 +303,7 @@ describe("K15: Ward Flow's own z-index tokens", () => {
 
 describe("states", () => {
   it("ST4: the first-load note rests at the foot of the window at every width", () => {
-    const note = block(read("src/app/ward-flow/ward-flow-layout.module.css"), ".loadingNote");
+    const note = block(read("src/app/bedchart/ward-flow-layout.module.css"), ".loadingNote");
     expect(note).toContain("bottom: 0.75rem");
     expect(note).not.toContain("top:");
   });
@@ -322,7 +322,7 @@ describe("states", () => {
     const rule = print.slice(0, print.indexOf("}"));
     expect(rule).toContain("position: static !important");
     expect(rule).toContain("transform: none !important");
-    const layout = read("src/app/ward-flow/ward-flow-layout.module.css");
+    const layout = read("src/app/bedchart/ward-flow-layout.module.css");
     const paper = layout.slice(layout.lastIndexOf("@media print {"));
     expect(paper).toMatch(/\.bannerHolder:not\(:empty\)\)::after \{\s*display: none;/u);
   });
@@ -336,17 +336,17 @@ describe("states", () => {
     const css = read("src/components/ward-management/shell/ward-offline-banner.module.css");
     expect(block(css, ".banner")).toContain("pointer-events: none");
     expect(block(css, ".banner :is(a, button)")).toContain("pointer-events: auto");
-    const layout = read("src/app/ward-flow/ward-flow-layout.module.css");
+    const layout = read("src/app/bedchart/ward-flow-layout.module.css");
     const room = block(layout, ".shellContent:has(> .bannerHolder:not(:empty))::after");
     expect(room).toContain('content: ""');
     expect(room).toMatch(/block-size: \d/u);
   });
 
   it("ST6: the route error panel is drawn from kit tokens, not host classes", () => {
-    const panel = read("src/app/ward-flow/ward-flow-error-panel.tsx");
+    const panel = read("src/app/bedchart/ward-flow-error-panel.tsx");
     expect(panel).not.toMatch(/--surface-lux|--text-heading|--danger-soft|primaryControl/u);
     expect(panel).toContain('from "@/components/wf"');
-    expect(read("src/app/ward-flow/ward-flow-error-panel.module.css")).not.toMatch(/#[0-9a-f]{3,6}\b|rgb\(/iu);
+    expect(read("src/app/bedchart/ward-flow-error-panel.module.css")).not.toMatch(/#[0-9a-f]{3,6}\b|rgb\(/iu);
   });
 
   it("D7: the Bed alerts tag shrinks and wraps, so the chevron stays inside the card", () => {

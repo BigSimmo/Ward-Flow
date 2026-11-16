@@ -12,7 +12,7 @@ import { sessionDraftKey } from "@/components/ward-management/ward-session-draft
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/waiting",
+  usePathname: () => "/bedchart/waiting",
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));

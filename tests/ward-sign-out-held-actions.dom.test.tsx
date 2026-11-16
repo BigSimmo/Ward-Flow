@@ -90,7 +90,7 @@ beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
   vi.stubEnv("NEXT_PUBLIC_WARD_API_BASE_URL", "https://api.example.test");
   sessionStorage.clear();
-  window.history.replaceState({}, "", "/ward-flow");
+  window.history.replaceState({}, "", "/bedchart");
 });
 afterEach(() => {
   unregister?.();

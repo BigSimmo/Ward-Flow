@@ -12,7 +12,7 @@ vi.mock("@/components/wf", async (importOriginal) => ({
   useIsPhone: () => phone.value,
 }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/capacity",
+  usePathname: () => "/bedchart/capacity",
   useRouter: () => ({ push: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

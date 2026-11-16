@@ -746,7 +746,7 @@ function CreateSheet({
   const { canRefer, canTriage, ids } = usePhoneCreateOptions(byId);
   const canOpen = useCanOpenHref();
   // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
-  const currentUnitId = /^\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
+  const currentUnitId = /^\/bedchart\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
   const rows = CREATE_LINKS.flatMap((item) => {
     if (!ids.includes(item.id)) return [];
     const entry = item.href !== undefined ? { href: item.href } : byId.get(item.id);
@@ -800,14 +800,14 @@ function CreateSheet({
             icon: Send,
             label: "Ask wards for a bed",
             meta: "Choose the patient, then the wards",
-            href: "/ward-flow/waiting",
+            href: "/bedchart/waiting",
           },
           {
             key: "transport" as const,
             icon: Ambulance,
             label: "Book transport",
             meta: "For a patient ready to move",
-            href: "/ward-flow/transport/officer",
+            href: "/bedchart/transport/officer",
           },
           {
             key: "remind" as const,

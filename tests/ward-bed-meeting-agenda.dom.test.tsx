@@ -263,7 +263,7 @@ describe("bed meeting agenda", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/agenda/iu);
-    expect(screen.getByTestId("agenda-start-meeting")).toHaveAttribute("href", "/ward-flow/bed-meeting");
+    expect(screen.getByTestId("agenda-start-meeting")).toHaveAttribute("href", "/bedchart/bed-meeting");
     expect(screen.queryByTestId("bed-meeting-sheet-open")).not.toBeInTheDocument();
   });
 
@@ -327,7 +327,7 @@ describe("bed meeting agenda group filter (B1 extended, 4 Nov 2026)", () => {
     expect(section).toHaveTextContent(/Bed \d+/);
     expect(section).toHaveTextContent(/Closed since .* · review was /);
     const link = within(section).getAllByRole("link", { name: /^Open ward: .*, to review bed \d+$/ })[0]!;
-    expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/ward\/[a-z-]+$/);
+    expect(link.getAttribute("href")).toMatch(/^\/bedchart\/ward\/[a-z-]+$/);
   });
 });
 

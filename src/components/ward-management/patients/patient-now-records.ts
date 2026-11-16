@@ -420,7 +420,7 @@ export const PATIENT_NOW_RECORDS: Record<string, PatientNowRecord> = {
         },
       ],
       followUp:
-        "A follow up review was requested with the Peel Community Mental Health Team after the 25 Feb 2025 discharge. Ward Flow holds nothing further about what community contact happened between that discharge and the presentation open now. It is not a live feed of community team activity, only of the allocation and discharge events it has been told about.",
+        "A follow up review was requested with the Peel Community Mental Health Team after the 25 Feb 2025 discharge. BedChart holds nothing further about what community contact happened between that discharge and the presentation open now. It is not a live feed of community team activity, only of the allocation and discharge events it has been told about.",
     },
     documents: [
       {
@@ -562,9 +562,9 @@ export const PATIENT_NOW_RECORDS: Record<string, PatientNowRecord> = {
     community: {
       teams: [],
       absent:
-        "Not with a community team. Ward Flow holds no allocation record for this person, current or closed. Absence here means no team is allocated, not that the record is incomplete.",
+        "Not with a community team. BedChart holds no allocation record for this person, current or closed. Absence here means no team is allocated, not that the record is incomplete.",
       followUp:
-        "No community follow up is held. Ward Flow records allocation and discharge events it has been told about, and it has been told about none for this person.",
+        "No community follow up is held. BedChart records allocation and discharge events it has been told about, and it has been told about none for this person.",
     },
     documents: [
       {

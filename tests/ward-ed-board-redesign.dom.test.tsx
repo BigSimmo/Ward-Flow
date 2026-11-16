@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/ed/peel-ed",
+  usePathname: () => "/bedchart/ed/peel-ed",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -72,7 +72,7 @@ describe("ED board redesign", () => {
     expect(screen.queryByTestId("ward-ed-raise-referral-toggle")).toBeNull();
     expect(screen.queryByTestId("ward-ed-switch")).toBeNull();
     // Add patient keeps its place (P142).
-    expect(screen.getAllByTestId("ward-ed-add-patient")[0]).toHaveAttribute("href", "/ward-flow/people/new");
+    expect(screen.getAllByTestId("ward-ed-add-patient")[0]).toHaveAttribute("href", "/bedchart/people/new");
   });
 
   it("shows the Lists as one open card with three lists (handover build, 1 Nov 2026)", () => {
@@ -92,11 +92,11 @@ describe("ED board redesign", () => {
     renderEd();
     const foot = screen.getByTestId("ward-ed-elsewhere");
     const capacity = within(foot).getByRole("link", { name: "Statewide capacity" });
-    expect(capacity).toHaveAttribute("href", "/ward-flow/capacity");
+    expect(capacity).toHaveAttribute("href", "/bedchart/capacity");
     expect(capacity).toHaveAttribute("title", "Every unit's beds, on the Capacity page");
     expect(within(foot).getByRole("link", { name: "Events in the last 24 hours" })).toHaveAttribute(
       "href",
-      "/ward-flow/governance",
+      "/bedchart/governance",
     );
   });
 

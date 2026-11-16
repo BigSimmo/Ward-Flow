@@ -8,7 +8,7 @@ import { encodeRecordAddress } from "@/components/ward-management/shell/ward-rec
 
 afterEach(() => {
   cleanup();
-  window.history.replaceState(null, "", "/ward-flow/referrals");
+  window.history.replaceState(null, "", "/bedchart/referrals");
 });
 function mount() {
   return render(
@@ -23,7 +23,7 @@ function drawerOpen() {
 }
 async function navigate(id: string) {
   await act(async () => {
-    window.history.pushState(window.history.state, "", `/ward-flow/referrals?referral=${encodeRecordAddress(id)}`);
+    window.history.pushState(window.history.state, "", `/bedchart/referrals?referral=${encodeRecordAddress(id)}`);
   });
 }
 describe("navigation 97 referral targets", () => {
@@ -31,14 +31,14 @@ describe("navigation 97 referral targets", () => {
     window.history.replaceState(
       null,
       "",
-      `/ward-flow/referrals?referral=${encodeRecordAddress("RF-SYNTHETIC-MISSING")}`,
+      `/bedchart/referrals?referral=${encodeRecordAddress("RF-SYNTHETIC-MISSING")}`,
     );
     mount();
     expect(await screen.findByText(/requested referral is unavailable/)).toBeInTheDocument();
     expect(drawerOpen()).toBe(false);
   });
   it("honours a new same-route target after manual selection and after close", async () => {
-    window.history.replaceState(null, "", "/ward-flow/referrals");
+    window.history.replaceState(null, "", "/bedchart/referrals");
     const view = mount();
     const rows = screen.getAllByTestId(/^ward-referral-board-(card-)?select-/);
     const first = rows[0]!;

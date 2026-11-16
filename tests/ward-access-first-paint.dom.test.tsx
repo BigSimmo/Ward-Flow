@@ -27,7 +27,7 @@ const pending = () => document.documentElement.hasAttribute(WARD_DESK_PENDING_AT
 const held = () => document.cookie.split("; ").includes(`${WARD_DESK_HELD_COOKIE}=1`);
 const wholeNetwork = () => document.cookie.split("; ").includes(`${WARD_DESK_HELD_COOKIE}=0`);
 const clearHeld = () => {
-  document.cookie = `${WARD_DESK_HELD_COOKIE}=;path=/ward-flow;max-age=0`;
+  document.cookie = `${WARD_DESK_HELD_COOKIE}=;path=/bedchart;max-age=0`;
   document.cookie = `${WARD_DESK_HELD_COOKIE}=;max-age=0`;
 };
 
@@ -81,7 +81,7 @@ describe("H-0111 first load for a stored desk", () => {
  */
 describe("server page held for a desk other than the coordinator's", () => {
   it("sets the held cookie for another desk and clears it only for the coordinator's", () => {
-    window.history.replaceState(null, "", "/ward-flow/capacity");
+    window.history.replaceState(null, "", "/bedchart/capacity");
     window.sessionStorage.setItem(KEY, JSON.stringify(bedManager));
     runEarly();
     expect(held()).toBe(true);
@@ -95,7 +95,7 @@ describe("server page held for a desk other than the coordinator's", () => {
   });
 
   it("keeps the held cookie in step with the desk the app stores", () => {
-    window.history.replaceState(null, "", "/ward-flow");
+    window.history.replaceState(null, "", "/bedchart");
     setWardAccess({ role: "ed", scope: { kind: "ed", edId: "any-ed" } });
     expect(held()).toBe(true);
     // A service coordinator is not the whole network either.

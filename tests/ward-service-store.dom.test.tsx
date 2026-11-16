@@ -32,7 +32,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -63,7 +63,7 @@ function ServiceScopeProbe() {
   return <span data-testid="probe">{service ?? "null"}</span>;
 }
 
-function renderBar(pathname = "/ward-flow", Bar: typeof WardBar = WardBar) {
+function renderBar(pathname = "/bedchart", Bar: typeof WardBar = WardBar) {
   route.pathname = pathname;
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -74,7 +74,7 @@ function renderBar(pathname = "/ward-flow", Bar: typeof WardBar = WardBar) {
 }
 
 beforeEach(() => {
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
   window.sessionStorage.clear();
 });
 
@@ -165,7 +165,7 @@ describe("WardBar's Service selector, wired to the store", () => {
   // The sentence stays for screen readers only, so what the choice narrows is still announced.
   it("shows the Service heading, with the scope note for screen readers only", async () => {
     const user = userEvent.setup();
-    renderBar("/ward-flow", RetiredWardBar);
+    renderBar("/bedchart", RetiredWardBar);
     await user.click(screen.getByTestId("ward-bar-service-trigger"));
     const panel = screen.getByTestId("ward-bar-service-panel");
     expect(within(panel).getByText("Service")).toBeInTheDocument();
@@ -189,7 +189,7 @@ describe("WardBar's Service selector, wired to the store", () => {
     const { movements } = seedWardFlowState();
     const waiting = waitingInEds(movements, NOW_ANCHOR);
     const user = userEvent.setup();
-    renderBar("/ward-flow", RetiredWardBar);
+    renderBar("/bedchart", RetiredWardBar);
     await user.click(screen.getByTestId("ward-bar-service-trigger"));
     const panel = screen.getByTestId("ward-bar-service-panel");
     const options = within(panel).getAllByRole("button");

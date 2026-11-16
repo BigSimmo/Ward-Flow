@@ -6,7 +6,7 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const nav = vi.hoisted(() => ({ pathname: "/ward-flow/governance" }));
+const nav = vi.hoisted(() => ({ pathname: "/bedchart/governance" }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,

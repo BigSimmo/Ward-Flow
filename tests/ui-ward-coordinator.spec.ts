@@ -36,7 +36,7 @@ async function closePlacement(page: Page) {
 }
 
 async function gotoCoordinator(page: Page) {
-  await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
+  await page.goto("/bedchart", { waitUntil: "domcontentloaded" });
   // A second same-URL navigation can leave a hidden duplicate of the screen
   // in the tree. Strict getByTestId then fails even though one copy is visible
   // — match the command-view helper, which waits for a single visible screen.

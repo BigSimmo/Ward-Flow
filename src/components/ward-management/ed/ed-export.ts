@@ -80,5 +80,5 @@ export function downloadEdList<M extends EdExportMovement>(
   ctx: EdExportContext<M>,
   provenance: ListExportProvenance,
 ): void {
-  downloadCsv("ward-flow-synthetic-ed-handover.csv", edExportLines(movements, ctx), provenance);
+  downloadCsv("bedchart-synthetic-ed-handover.csv", edExportLines(movements, ctx), provenance);
 }

@@ -11,7 +11,7 @@ vi.mock("next/link", () => ({
 }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
-  usePathname: () => "/ward-flow/coordinator",
+  usePathname: () => "/bedchart/coordinator",
   useSearchParams: () => new URLSearchParams(),
 }));
 

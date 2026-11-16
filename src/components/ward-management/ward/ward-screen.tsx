@@ -985,7 +985,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           <WardNotFoundBody
             title="Ward not found"
             testId="ward-unit-unresolved"
-            list={{ href: "/ward-flow/wards", label: "All wards" }}
+            list={{ href: "/bedchart/wards", label: "All wards" }}
           >
             No ward matches this link.
           </WardNotFoundBody>
@@ -1168,7 +1168,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   }
 
   function fullWardReferralHref(patientId?: string): string {
-    return `/ward-flow/referrals/new?category=ward${patientId ? `&patientId=${encodeRecordAddress(patientId)}` : ""}&site=${encodeURIComponent(unit?.siteCode ?? "")}`;
+    return `/bedchart/referrals/new?category=ward${patientId ? `&patientId=${encodeRecordAddress(patientId)}` : ""}&site=${encodeURIComponent(unit?.siteCode ?? "")}`;
   }
 
   function handleRaiseWardReferral(bedOverride?: unknown) {

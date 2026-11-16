@@ -15,7 +15,7 @@ vi.mock("next/link", () => ({
 }));
 // The Go to a desk drawer reads the route; jsdom has no App Router.
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/settings",
+  usePathname: () => "/bedchart/settings",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

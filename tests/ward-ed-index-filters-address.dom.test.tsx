@@ -35,14 +35,14 @@ afterEach(() => {
 
 describe("All EDs filters in the address (DA-15)", () => {
   it("opens on the status and service filters the address names", async () => {
-    window.history.replaceState(null, "", "/ward-flow/ed?status=past-target&service=South+Metro");
+    window.history.replaceState(null, "", "/bedchart/ed?status=past-target&service=South+Metro");
     const { container } = renderIndex();
     await settle();
     expect(checked(container)).toEqual(expect.arrayContaining(["Past target", "South"]));
   });
 
   it("ignores a value it does not know rather than guessing", async () => {
-    window.history.replaceState(null, "", "/ward-flow/ed?status=Smith");
+    window.history.replaceState(null, "", "/bedchart/ed?status=Smith");
     const { container } = renderIndex();
     await settle();
     expect(checked(container)).toEqual(expect.arrayContaining(["All EDs", "All"]));

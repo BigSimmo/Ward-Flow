@@ -87,7 +87,7 @@ describe("Record departure from the release sheet", () => {
     expect(within(peek).getByText("Ready now")).toBeInTheDocument();
     expect(within(peek).getByRole("link", { name: "Open ward" })).toHaveAttribute(
       "href",
-      expect.stringMatching(/^\/ward-flow\/ward\//),
+      expect.stringMatching(/^\/bedchart\/ward\//),
     );
     fireEvent.keyDown(peek, { key: "Escape" });
     const destination = screen.getByTestId("ward-discharge-departure-destination");

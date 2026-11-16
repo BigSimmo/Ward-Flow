@@ -62,7 +62,7 @@ describe("M52 live header check matches the code", () => {
 
   it("makes one read-only https request with no credentials and keeps a dated result", async () => {
     const fetcher = vi.fn(async () => new Response("ok", { status: 200, headers: productionHeaders() }));
-    const result = await checkLiveSecurityHeaders("https://synthetic.invalid/ward-flow?x=1", {
+    const result = await checkLiveSecurityHeaders("https://synthetic.invalid/bedchart?x=1", {
       fetch: fetcher as unknown as typeof fetch,
       now: () => new Date("2026-11-10T00:00:00.000Z"),
     });
@@ -70,7 +70,7 @@ describe("M52 live header check matches the code", () => {
       ok: true,
       status: 200,
       at: "2026-11-10T00:00:00.000Z",
-      url: "https://synthetic.invalid/ward-flow",
+      url: "https://synthetic.invalid/bedchart",
     });
     expect(fetcher).toHaveBeenCalledOnce();
     const [, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];

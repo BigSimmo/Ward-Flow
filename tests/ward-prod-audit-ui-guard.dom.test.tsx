@@ -2,7 +2,7 @@ import { cleanup, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/waiting",
+  usePathname: () => "/bedchart/waiting",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
 
@@ -25,7 +25,7 @@ describe("CD-05: one prompt for one link tap", () => {
     renderHook(() => useDirtyStateGuard({ isDirty: true, confirmMessage: "Leave the drawer form?" }));
 
     const link = document.createElement("a");
-    link.href = "/ward-flow/movements";
+    link.href = "/bedchart/movements";
     document.body.appendChild(link);
     // Stop jsdom navigating; the guards run in the capture phase before this.
     link.addEventListener("click", (event) => event.preventDefault());
@@ -41,7 +41,7 @@ describe("CD-05: one prompt for one link tap", () => {
     renderHook(() => useDirtyStateGuard({ isDirty: true }));
 
     const link = document.createElement("a");
-    link.href = "/ward-flow/movements";
+    link.href = "/bedchart/movements";
     document.body.appendChild(link);
     const event = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 });
     link.dispatchEvent(event);

@@ -200,7 +200,7 @@ export function PersonPanel({
           <DrawerFootRow className={polish.pFootRow}>
             <MovementRecordLink movement={movement} />
             {/* Role views: the coordinator screen is the coordinator's tool. Note 8: its actions open here first. */}
-            {wardDesk || !canOpen("/ward-flow") ? null : (
+            {wardDesk || !canOpen("/bedchart") ? null : (
               <CoordinatorFootMenu
                 movement={movement}
                 onShowWards={() => setPanelTab("wards")}
@@ -489,10 +489,10 @@ export function PersonPanel({
                 Open {pullHolder.name} to release the bed or set a new pull time limit
               </Link>
             ) : null}
-            {movement.declines.length > 0 && !wardDesk && canOpen("/ward-flow") ? (
+            {movement.declines.length > 0 && !wardDesk && canOpen("/bedchart") ? (
               <Link
                 className={styles.inlineAction}
-                href="/ward-flow"
+                href="/bedchart"
                 data-testid={`delays-override-${movement.id}`}
                 onClick={() => {
                   setFocusMovementId(movement.id);

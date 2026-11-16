@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
  * Help; Close and Escape end it.
  */
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 const push = vi.fn();
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
@@ -17,7 +17,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
-  useTourFacts: () => ({ facts: {}, home: "/ward-flow", deskHome: "/ward-flow" }),
+  useTourFacts: () => ({ facts: {}, home: "/bedchart", deskHome: "/bedchart" }),
 }));
 
 const phone = { on: false };
@@ -45,7 +45,7 @@ function control(testId: string, rect = new DOMRect(400, 300, 160, 40)): HTMLEle
 }
 
 beforeEach(() => {
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
   phone.on = false;
   push.mockReset();
 });
@@ -62,11 +62,11 @@ describe("Show me player", () => {
   ])("opens %s on the phone page and keeps its desktop section destination", (id, tab) => {
     phone.on = true;
     const { unmount } = render(<WardShowMe id={id} onClose={() => {}} onBack={() => {}} />);
-    expect(push).toHaveBeenLastCalledWith("/ward-flow/settings");
+    expect(push).toHaveBeenLastCalledWith("/bedchart/settings");
     unmount();
     phone.on = false;
     render(<WardShowMe id={id} onClose={() => {}} onBack={() => {}} />);
-    expect(push).toHaveBeenLastCalledWith(`/ward-flow/settings#${tab}`);
+    expect(push).toHaveBeenLastCalledWith(`/bedchart/settings#${tab}`);
   });
 
   it("opens a phone quick setting on the page without a legacy section hash covering its target", async () => {
@@ -79,7 +79,7 @@ describe("Show me player", () => {
       // Next's navigation is the external boundary. Settings opens the legacy #display section
       // in its device sheet; Theme itself is a quick setting on the phone page, outside that sheet.
       useEffect(() => {
-        if (push.mock.lastCall?.[0] === "/ward-flow/settings#display") setSheet(true);
+        if (push.mock.lastCall?.[0] === "/bedchart/settings#display") setSheet(true);
       }, []);
       return (
         <>
@@ -103,7 +103,7 @@ describe("Show me player", () => {
       );
     }
     render(<PhoneSettings />);
-    expect(push).toHaveBeenCalledWith("/ward-flow/settings");
+    expect(push).toHaveBeenCalledWith("/bedchart/settings");
     await waitFor(() => expect(screen.getByTestId("ward-show-me-spot")).toBeInTheDocument());
     await waitFor(() => expect(screen.getByTestId("ward-show-me-card").contains(document.activeElement)).toBe(true));
     const dark = screen.getByRole("radio", { name: "Dark", hidden: true });
@@ -413,7 +413,7 @@ describe("Show me player", () => {
     expect(replacement).not.toBe(original);
     await waitFor(() => expect(replacement.closest("[inert]")).toBeNull());
     expect(screen.getByRole("button", { name: "Outside work", hidden: true }).closest("[inert]")).not.toBeNull();
-    route.pathname = "/ward-flow/handover";
+    route.pathname = "/bedchart/handover";
     rerender(<Work revision={1} />);
     expect(replacement.closest("[inert]")).not.toBeNull();
     await waitFor(() => expect(replacement.closest("[inert]")).toBeNull());
@@ -421,7 +421,7 @@ describe("Show me player", () => {
   it("opens the task's screen first, then lights each step and counts them", async () => {
     control("ward-handover-kpi-strip");
     render(<WardShowMe id="sign-off-handover" onClose={vi.fn()} onBack={vi.fn()} />);
-    expect(push).toHaveBeenCalledWith("/ward-flow/handover");
+    expect(push).toHaveBeenCalledWith("/bedchart/handover");
     await waitFor(() => expect(screen.getByTestId("ward-show-me-spot")).toBeTruthy());
     const card = screen.getByTestId("ward-show-me-card");
     // Placed by transform from the corner, as the tour is, so it never sits stuck in a corner.

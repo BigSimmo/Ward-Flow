@@ -17,6 +17,6 @@ Adds a new invented patient record. Only the core details are needed.
 9. Add patient. Adds the patient and opens their new record.
 10. Recently added. Records added lately, with how many were added today.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

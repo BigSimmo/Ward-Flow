@@ -903,7 +903,7 @@ is inferred.
 - **Date:** 10 October 2026 (`2026-10-10`). **Decided by:** Josh (`design/v9/design-system-v9.md` §9 & §14, harmonising D-41).
 - **Decision:** Across queues of 100 rows or fewer, filter chips (`HighlightPills`) highlight matching rows by default and dim non-matching rows with `--wf-dim` (`data-dim`, stating `"N of M highlighted, all rows stay"` with `Clear`). By explicit owner exception (D-41), the Delays board filters continue to hide non-matching rows and state the hidden count with `"Show everyone"`.
 - **Why:** Preserves context on standard queues so waiting patients never vanish silently, while honouring the approved Delays board narrowing contract.
-- **Subsequent note (25 October 2026):** The `HighlightPills` component no longer exists, and the Delays board is now the Waiting screen (`/ward-flow/waiting`). The names above are kept as they were decided.
+- **Subsequent note (25 October 2026):** The `HighlightPills` component no longer exists, and the Delays board is now the Waiting screen (`/bedchart/waiting`). The names above are kept as they were decided.
 
 ## D-52. 10 October page review rulings: time-axis overdue zone, 15px/20px strip figures, 8px people pips and incremental shared parts (10 October 2026)
 
@@ -1598,7 +1598,7 @@ is inferred.
 ## D-118. Page tops: Referrals and Ward phone limits up to 8 KB above main (10 November 2026)
 
 - **Date:** 10 November 2026 (`2026-11-10`). **Decided by:** Josh, on a decision card in the Ward Flow project (02:18 UTC), choosing "Allow up to 8 KB" on "Allow Referrals and Ward phone limits up to 8 KB above main?".
-- **Decision:** PR #1581 may set the phone first-load limits (`script-budget.json`) for `/ward-flow/referrals` and `/ward-flow/ward/rph-adult-secure` up to 8 KB above main alone's measured size, as D-116's approvals already allow for Statistics (8 KB) and bed meeting (6.6 KB). Every other route keeps the 5 KB rule.
+- **Decision:** PR #1581 may set the phone first-load limits (`script-budget.json`) for `/bedchart/referrals` and `/bedchart/ward/rph-adult-secure` up to 8 KB above main alone's measured size, as D-116's approvals already allow for Statistics (8 KB) and bed meeting (6.6 KB). Every other route keeps the 5 KB rule.
 - **Boundary:** applies to this PR only, after a trim has been tried; it approves no other raise and no release.
 
 ## D-119. Page tops: phone limits raised to measured sizes, trim after merge (10 November 2026)
@@ -2925,4 +2925,11 @@ D-238 is reserved for design Lane D's block (noted in PR #1677). D-239 is reserv
 - **Why:** a logo change touches the tab, home-screen icons, rail and front door just before the demo.
 - **Boundary:** no logo, icon or brand file changes now.
 
-The next free number is D-250.
+## D-250. The app is renamed BedChart, at bedchart.com and /bedchart addresses (16 November 2026)
+
+- **Date:** 16 November 2026, 12:43 to 1:41 PM AWST (04:43 to 05:41 UTC). **Decided by:** Josh, in the thread "Rename the app to BedChart": "Please review the entire app for me and update all the wording to reflect the new name BedChart", then "Yes go ahead", "Yes to all recommendations", "It should all be pointing at this new correct location in addition to all naming being updated", and "Yes, in this PR" on the card "Should the web addresses change from /ward-flow to /bedchart before the demo?".
+- **Decision:** (1) Every name the app shows says BedChart: screen text, page titles, the installed app's name, alerts, printouts, Help and its printable sheets, the offline page, What's new, the demo script, the desk guides and the pilot guides. `tests/ward-word-list.test.ts` keeps "Ward Flow" off screen. (2) Downloads are named `bedchart-...`. (3) Every screen's address moves from `/ward-flow/...` to `/bedchart/...` and sign-in to `/bedchart-sign-in`; old addresses forward permanently, query intact. (4) The signed-in site's one address is https://bedchart.com: `www.bedchart.com` and the old `ward-flow-shared-production.up.railway.app` address forward there, and the shared backend's `WARD_ALLOWED_ORIGIN` is `https://bedchart.com` (set on Railway 16 Nov, 05:01 UTC, with Josh's yes). (5) The Ward page's own "Ward flow" panel keeps its name for the demo.
+- **Why:** Josh chose the new name and domain. The backend accepts one exact website, so bedchart.com saves were refused with 403.
+- **Boundary:** the logo stays as D-249 says. The repository, CI check names, storage keys, environment setting names, database names, API paths and code names keep "ward-flow". Backend and database messages, and the internal and history documents, are left until after the demo.
+
+The next free number is D-251.

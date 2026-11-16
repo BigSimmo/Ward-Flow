@@ -1368,7 +1368,7 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
 }
 
 /**
- * `layout.tsx`'s (`src/app/ward-flow/layout.tsx`) own mount of the bar, wired to
+ * `layout.tsx`'s (`src/app/bedchart/layout.tsx`) own mount of the bar, wired to
  * `resolveWardPrimaryAction` — the "layout.tsx resolves the current route's action from
  * `WARD_PRIMARY_ACTIONS` and passes it" step archived D-16 calls for.
  *

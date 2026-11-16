@@ -176,7 +176,7 @@ export function PriorityQueue({
   onClearFilter,
   serviceScope,
   pullHoldMinutes = defaultWardConfiguration().pullHoldMinutes,
-  delaysHref = "/ward-flow/waiting",
+  delaysHref = "/bedchart/waiting",
   highlight,
   onClearHighlight,
   phone = false,

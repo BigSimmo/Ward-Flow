@@ -9,7 +9,7 @@ import { setForceDynamicLoading } from "./setup/jsdom.setup";
 
 vi.mock("next/navigation", async (original) => ({
   ...(await original<typeof import("next/navigation")>()),
-  usePathname: () => "/ward-flow/ward/scgh-adult-open",
+  usePathname: () => "/bedchart/ward/scgh-adult-open",
 }));
 
 afterEach(() => {

@@ -6,7 +6,7 @@ import { GLOSSARY } from "../src/components/ward-management/help/ward-help-conte
 import { ROLE_SCREENS, screenForPath } from "../src/components/ward-management/ward-role-access";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
 }));
 describe("Help glossary and compact Reference", () => {
@@ -38,7 +38,7 @@ describe("Help glossary and compact Reference", () => {
     const roles = screen.getByTestId("ward-help-roles");
     expect(roles.firstElementChild?.textContent).toContain("Executive · Your desk");
     expect(roles.firstElementChild?.hasAttribute("open")).toBe(true);
-    for (const anchor of roles.querySelectorAll<HTMLAnchorElement>('a[href^="/ward-flow"]')) {
+    for (const anchor of roles.querySelectorAll<HTMLAnchorElement>('a[href^="/bedchart"]')) {
       const id = screenForPath(anchor.getAttribute("href")!)?.screen;
       expect(id && ROLE_SCREENS.executive[id]).toBeTruthy();
     }

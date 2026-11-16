@@ -38,7 +38,7 @@ describe("Night entrance sign-in", () => {
     expect(screen.getByLabelText("Password")).toHaveValue("");
     expect(screen.getByRole("link", { name: /Explore the demo/ })).toHaveAttribute(
       "href",
-      "https://ward-flow-production.up.railway.app/ward-flow",
+      "https://ward-flow-production.up.railway.app/bedchart",
     );
   });
 

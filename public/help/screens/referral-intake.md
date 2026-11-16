@@ -20,6 +20,6 @@ Send a new referral to one or more wards, an ED or a community team.
 - The referral so far. Where the referral is going. It reads Fill in and send until it has gone.
 - Continue. Takes you to the next step still needed. It sends once every step is in.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

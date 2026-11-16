@@ -9,7 +9,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
  * Synthetic report only; the chrome must never reach an operational hook.
  */
 const guard = vi.hoisted(() => ({
-  path: "/ward-flow/statistics",
+  path: "/bedchart/statistics",
   phone: false,
   /** The authenticated executive: any operational hook is a failure. */
   strict: true,
@@ -107,7 +107,7 @@ function openChrome() {
 }
 
 beforeEach(() => {
-  guard.path = "/ward-flow/statistics";
+  guard.path = "/bedchart/statistics";
   guard.phone = false;
   guard.strict = true;
   guard.raw.mockClear();
@@ -203,7 +203,7 @@ describe("the executive chrome in the new frame", () => {
     const top = within(screen.getByTestId("ward-phone-menu")).getByTestId("ward-phone-menu-top");
     expect(top).toHaveTextContent("Bed alerts");
     expect(top).toHaveTextContent(`Network ${report.network.beds.ready} ready`);
-    expect(within(top).getByRole("link")).toHaveAttribute("href", "/ward-flow/capacity");
+    expect(within(top).getByRole("link")).toHaveAttribute("href", "/bedchart/capacity");
     expect(guard.raw).not.toHaveBeenCalled();
   });
 

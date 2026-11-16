@@ -94,7 +94,7 @@ describe("M91/M137 skip inventory", () => {
 
   it("the nightly browser workflow prints the inventory", () => {
     expect(read(".github/workflows/ward-flow-nightly-browsers.yml")).toMatch(
-      /run: node scripts\/ward-flow\/skip-inventory\.mjs >> "\$GITHUB_STEP_SUMMARY"/u,
+      /run: node scripts\/bedchart\/skip-inventory\.mjs >> "\$GITHUB_STEP_SUMMARY"/u,
     );
   });
 });

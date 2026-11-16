@@ -75,7 +75,7 @@ Evidence and limits are in the WA report (archived; see [the history index](../.
 
 This part covers every Ward Flow test file: everything matching `tests/ward-*`, `tests/ui-ward-*`
 and `tests/helpers/ward-*`, plus the one further file that imports from
-`src/components/ward-management` or `src/app/ward-flow` without carrying a `ward-` name
+`src/components/ward-management` or `src/app/bedchart` without carrying a `ward-` name
 (`tests/tracker-derivations.test.ts` was deleted on 1 Nov 2026 with its module; `tests/pressure-strip.dom.test.tsx` was deleted on 20 Oct 2026 — found by
 `grep -rl 'from "@/components/ward-management` over `tests/`). It also covers how these tests run:
 `vitest.config.mts`, the `chromium-mockups` Playwright project, `scripts/check-ward-expected-reds.mjs`
@@ -651,7 +651,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 #### Search hub (3 files)
 
 - **`tests/ward-hub-reconciliation-line.test.ts`** (96 lines) — the Search hub's reconciliation line
-- **`tests/ward-hub-route.test.ts`** (283 lines) — Ward Flow hub route (/ward-flow/hub)
+- **`tests/ward-hub-route.test.ts`** (283 lines) — Ward Flow hub route (/bedchart/hub)
 - **`tests/ward-hub-screen.dom.test.tsx`** (841 lines) — Ward Flow Master Search Hub — fixture assumptions (floors the discriminating population)
 
 #### Discharges (2 files)

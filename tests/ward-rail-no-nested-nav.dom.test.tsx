@@ -10,7 +10,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -48,7 +48,7 @@ function renderShell() {
 }
 
 beforeEach(() => {
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
 });
 
 afterEach(() => {

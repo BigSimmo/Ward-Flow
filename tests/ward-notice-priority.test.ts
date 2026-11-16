@@ -25,7 +25,7 @@ const PRIORITY = [
 const strip = (text: string) => text.replace(/\{\/\*[\s\S]*?\*\/\}/gu, "").replace(/\/\*[\s\S]*?\*\//gu, "");
 
 describe("one pinned note at a time, by priority", () => {
-  const layout = strip(readFileSync("src/app/ward-flow/layout.tsx", "utf8"));
+  const layout = strip(readFileSync("src/app/bedchart/layout.tsx", "utf8"));
   const start = layout.indexOf("<div className={styles.bannerHolder}");
   const holder = layout.slice(start, layout.indexOf("</div>", start));
 
@@ -45,7 +45,7 @@ describe("one pinned note at a time, by priority", () => {
   });
 
   it("hides every note after the first one present", () => {
-    const css = strip(readFileSync("src/app/ward-flow/ward-flow-layout.module.css", "utf8"));
+    const css = strip(readFileSync("src/app/bedchart/ward-flow-layout.module.css", "utf8"));
     // `!important`: a note's own, more specific display rule must not show it beside the first.
     expect(css).toMatch(/\.bannerHolder > \* \+ \* \{\s*display: none !important;\s*\}/u);
   });

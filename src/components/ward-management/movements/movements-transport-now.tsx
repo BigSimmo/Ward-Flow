@@ -20,7 +20,7 @@ import { LEG_STATE_LABEL, LEG_STATE_TONE, transportRouteLabels } from "./movemen
 import type { MovementPeopleList } from "./movement-people-sheet";
 import tr from "./movements-transport-now.module.css";
 
-const TRANSPORT_HREF = "/ward-flow/transport/officer";
+const TRANSPORT_HREF = "/bedchart/transport/officer";
 
 const LEG_GROUP_ORDER: readonly MovementLegState[] = ["Collected", "En route", "Accepted", "Arrived", "Cancelled"];
 const LEG_GROUP_WORD: Record<MovementLegState, string> = {

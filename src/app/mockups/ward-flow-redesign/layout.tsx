@@ -9,7 +9,7 @@ import { PreviewWorld } from "./_preview/preview-world";
 
 /**
  * The redesign mock-ups (October 2026 design review). Each page is drawn from the components in
- * `src/components/ward-redesign/`, fed by the same synthetic world as `/ward-flow`, so an approved
+ * `src/components/ward-redesign/`, fed by the same synthetic world as `/bedchart`, so an approved
  * page can move into the app as it is. Nothing here is built into the app until Josh approves that
  * page (D-74). Like every `/mockups` route it is not served in production; the layout checks that
  * itself as well as the proxy (A4-14).

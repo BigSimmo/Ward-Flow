@@ -271,9 +271,9 @@ describe("usePhonePush", () => {
     }
   });
 
-  // F-11: a trailing slash left Home (/ward-flow) outside the worker's scope.
+  // F-11: a trailing slash left Home (/bedchart) outside the worker's scope.
   it("registers the worker with a scope that covers Ward Flow Home", () => {
-    expect(PHONE_PUSH_SCOPE).toBe("/ward-flow");
+    expect(PHONE_PUSH_SCOPE).toBe("/bedchart");
     expect(PHONE_PUSH_WORKER_URL).toBe("/ward-flow-push-sw.js");
   });
 
@@ -933,24 +933,24 @@ describe("phone alert service worker", () => {
     const worker = loadWorker(["https://ward.example/mockups/ward-flow-digest"]);
     await worker.fire("notificationclick", click("/mockups/ward-flow-digest"));
     expect(worker.focused).toEqual([]);
-    expect(worker.opened).toEqual(["open /ward-flow/alerts"]);
+    expect(worker.opened).toEqual(["open /bedchart/alerts"]);
   });
 
   it("an open Ward Flow window is focused and taken to the alert's page", async () => {
-    const worker = loadWorker(["https://ward.example/ward-flow/beds"]);
-    await worker.fire("notificationclick", click("/ward-flow/alerts"));
-    expect(worker.focused).toEqual(["https://ward.example/ward-flow/beds"]);
-    expect(worker.opened).toEqual(["navigate /ward-flow/alerts"]);
+    const worker = loadWorker(["https://ward.example/bedchart/beds"]);
+    await worker.fire("notificationclick", click("/bedchart/alerts"));
+    expect(worker.focused).toEqual(["https://ward.example/bedchart/beds"]);
+    expect(worker.opened).toEqual(["navigate /bedchart/alerts"]);
   });
 
   // F-11: Home open in a window the worker does not control yet is reused, not doubled.
   it("reuses an uncontrolled Ward Flow window: focuses it and asks the page to open the alert", async () => {
-    const worker = loadWorker(["https://ward.example/ward-flow"], { controlled: false });
-    await worker.fire("notificationclick", click("/ward-flow/alerts"));
+    const worker = loadWorker(["https://ward.example/bedchart"], { controlled: false });
+    await worker.fire("notificationclick", click("/bedchart/alerts"));
     expect(worker.matchAllOptions).toEqual([{ type: "window", includeUncontrolled: true }]);
-    expect(worker.focused).toEqual(["https://ward.example/ward-flow"]);
+    expect(worker.focused).toEqual(["https://ward.example/bedchart"]);
     expect(worker.opened).toEqual([]);
-    expect(worker.posted).toEqual([{ type: "ward-flow-open", url: "/ward-flow/alerts" }]);
+    expect(worker.posted).toEqual([{ type: "ward-flow-open", url: "/bedchart/alerts" }]);
   });
 
   it("shows the server's words, and links only inside Ward Flow", async () => {
@@ -961,7 +961,7 @@ describe("phone alert service worker", () => {
     expect(worker.shown).toEqual([
       {
         title: "Ward Flow: 2 new act now items",
-        options: expect.objectContaining({ tag: "ward-flow-act-now", data: { url: "/ward-flow/alerts" } }),
+        options: expect.objectContaining({ tag: "ward-flow-act-now", data: { url: "/bedchart/alerts" } }),
       },
     ]);
   });

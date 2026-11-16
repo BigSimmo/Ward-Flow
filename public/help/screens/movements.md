@@ -25,8 +25,8 @@ Every patient moving to a bed, by stage, from referral to arrival.
 ## Jobs done here
 
 - Pull the bed for a patient. Once a ward accepts, open the movement and press Pull the bed on its Bed step. In Destination and placement, check the receiving ward, choose an observation level if asked, then press Pull the bed. The bed is kept within the pull time limit. A person always chooses the bed; nothing is placed automatically.
-- Book transport. Book by phone first. Then open a movement whose next step is Book transport, press Log booking on its Transport step and fill in the booking: who is collecting, the CAD number, the time, escort and legal status. Save transport booking. Ward Flow records it for the transport officer; it does not order the vehicle.
-- Book transport. Open the patient from Coming and going, press the Destination row, then Record transport booking. Fill in the booking made by phone and press Save transport booking. You may record a booking for a journey your ward sent. Ward Flow records the booking; it does not order a vehicle.
+- Book transport. Book by phone first. Then open a movement whose next step is Book transport, press Log booking on its Transport step and fill in the booking: who is collecting, the CAD number, the time, escort and legal status. Save transport booking. BedChart records it for the transport officer; it does not order the vehicle.
+- Book transport. Open the patient from Coming and going, press the Destination row, then Record transport booking. Fill in the booking made by phone and press Save transport booking. You may record a booking for a journey your ward sent. BedChart records the booking; it does not order a vehicle.
 - Cancel transport. On Movements, open a referral your ED sent. Under Transport booked with no bed pulled, choose a reason, then press Cancel the transport job. This control handles orphaned jobs only; ask the coordinator about ordinary bookings. No cancellation is possible after collection.
 - Cancel transport. On Coming and going, open the movement. Under Transport booked with no bed pulled, choose a reason, then Cancel the transport job. Only the sending ward recorded as booker may cancel; receiving the patient is not enough. Ask the coordinator about ordinary bookings. No cancellation is possible after collection.
 - Cancel transport. Open the movement and press its Destination row. Under Review & corrections, open Cancel transport, choose the reason and press Cancel transport. The bed stays pulled. Do this before you release a pulled bed, so the officer is not sent for a patient whose bed has gone.
@@ -36,6 +36,6 @@ Every patient moving to a bed, by stage, from referral to arrival.
 - Withdraw a ward's acceptance. On the movement's page, open Additional workflow controls, then Withdraw the ward's acceptance. Choose a reason and press Withdraw acceptance. The ward is told it no longer stands, a pulled bed is released and the movement goes back to Destination review.
 - Correct a stage recorded by mistake. On the movement's page, open Additional workflow controls, then Correct the recorded stage. Choose the stage to go back to and a reason, then press Correct the record. It corrects the record only; nobody moves.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

@@ -15,7 +15,7 @@ vi.mock("next/navigation", () => ({
   redirect: (url: string) => {
     throw new Error(`NEXT_REDIRECT ${url}`);
   },
-  usePathname: () => "/ward-flow/movements/x",
+  usePathname: () => "/bedchart/movements/x",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));
 

@@ -99,7 +99,7 @@ import railParts from "../shell-next/next-rail.module.css";
 import phone from "./ward-phone-menu.module.css";
 import { useFitDockLabels } from "./use-fit-dock-labels";
 import pageDock from "./ward-phone-page-dock.module.css";
-import layout from "@/app/ward-flow/ward-flow-layout.module.css";
+import layout from "@/app/bedchart/ward-flow-layout.module.css";
 
 const WardPublicSearch = dynamic(
   withLoadRetry(() => import("../ward-public-search").then((module) => module.WardPublicSearch)),
@@ -472,7 +472,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
   useRevealFocusedInRow();
   useEffect(() => noteWardRoute(pathname), [pathname]);
   useEffect(() => replayEarlyHeaderTap(), []);
-  // WF-42: a typed /ward-flow/activity opens this chrome's own Activity panel too.
+  // WF-42: a typed /bedchart/activity opens this chrome's own Activity panel too.
   useEffect(
     () =>
       subscribeActivityPanelRequest((request) => {
@@ -605,7 +605,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
             className={rail.rail}
             data-rail={preferences.open && !tabletLandscape ? "open" : "closed"}
             data-tablet={tabletLandscape ? "landscape" : undefined}
-            aria-label="Ward Flow sections"
+            aria-label="BedChart sections"
             data-testid="ward-rail"
           >
             <div className={rail.brand}>
@@ -613,7 +613,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                 <button
                   type="button"
                   className={rail.brandLink}
-                  aria-label="Ward Flow, open the menu"
+                  aria-label="BedChart, open the menu"
                   title="Open the menu"
                   data-testid="ward-rail-brand-open"
                   onClick={(event) => {
@@ -626,10 +626,10 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                   <ExecutiveMark />
                 </button>
               ) : (
-                <Link href={home} className={rail.brandLink} aria-label="Ward Flow WA, home">
+                <Link href={home} className={rail.brandLink} aria-label="BedChart WA, home">
                   <ExecutiveMark />
                   {/* R1-N01: the space keeps "Ward Flow WA" apart for axe's label-in-name check. */}
-                  <span className={rail.brandTitle}>Ward Flow</span> <span className={rail.brandStateText}>WA</span>
+                  <span className={rail.brandTitle}>BedChart</span> <span className={rail.brandStateText}>WA</span>
                 </Link>
               )}
               <button
@@ -648,7 +648,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
             {/* Josh, 31 Oct 2026: the executive and access admin desks hold no shift, so no shift card. */}
             {report ? <ExecutiveBedAlerts report={report} /> : null}
             <div className={rail.railScroll}>
-              <nav className={rail.railNav} aria-label="Ward Flow views">
+              <nav className={rail.railNav} aria-label="BedChart views">
                 <section className={rail.railGroup} aria-label="Executive menu" data-testid="ward-rail-role-menu">
                   <div className={rail.groupHead}>
                     <p className={rail.eyebrow}>Executive</p>
@@ -785,7 +785,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                     catalogue={report}
                     accessLifetime={shell.accessLifetime ?? ""}
                     canOpenHref={canOpen}
-                    placeholder="Search Ward Flow"
+                    placeholder="Search BedChart"
                   />
                 </div>
               ) : null}

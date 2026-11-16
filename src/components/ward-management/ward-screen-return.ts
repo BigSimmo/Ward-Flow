@@ -22,7 +22,7 @@ export function authorisedScreenReturn(raw: string, access: WardAccess, places: 
 /** Call after session cleanup. The next account must still pass its own access check. */
 export function rememberScreenReturn(raw: string): void {
   memory = undefined;
-  const path = safeScreenReturn(raw) ?? "/ward-flow";
+  const path = safeScreenReturn(raw) ?? "/bedchart";
   try {
     sessionStorage.setItem(KEY, path);
   } catch {

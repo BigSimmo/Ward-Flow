@@ -175,10 +175,10 @@ function judge(prFile, mainFile) {
 // Heavy routes with no budget line, reported so their size is at least visible. The triage page was
 // 719 KB of script on 11 November 2026, more than the largest budget.
 export const REPORT_ROUTES = Object.freeze([
-  "/ward-flow/people/PT-028/triage",
-  "/ward-flow/help",
-  "/ward-flow/activity",
-  "/ward-flow/governance",
+  "/bedchart/people/PT-028/triage",
+  "/bedchart/help",
+  "/bedchart/activity",
+  "/bedchart/governance",
 ]);
 
 /**
@@ -327,8 +327,8 @@ async function waitForServer(base, attempts = 60) {
 // Keep this paired with movementHref("WF-001") (tests/ward-script-budget.test.ts checks it), rather
 // than accepting any same-origin redirect.
 export const LEGACY_MOVEMENT_REDIRECT = Object.freeze({
-  route: "/ward-flow/movements/WF-001",
-  destination: "/ward-flow/movements/1nfzcp26wc0g",
+  route: "/bedchart/movements/WF-001",
+  destination: "/bedchart/movements/1nfzcp26wc0g",
 });
 
 /** Fetches a route's HTML as a phone would, following only the one configured legacy redirect. */

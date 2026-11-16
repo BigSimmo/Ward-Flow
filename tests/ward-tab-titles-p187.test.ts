@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { metadata as homeMetadata } from "@/app/ward-flow/page";
-import { generateMetadata as wardMetadata } from "@/app/ward-flow/ward/[unitId]/page";
+import { metadata as homeMetadata } from "@/app/bedchart/page";
+import { generateMetadata as wardMetadata } from "@/app/bedchart/ward/[unitId]/page";
 import { knownWardUnit } from "@/components/ward-management/ward-known-places";
 
 /** P187 (Josh, 27 Oct 2026): tab titles name the page first. Q272 (2 Nov 2026): then " — Ward Flow", as every page does. */

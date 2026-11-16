@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * the step so Help picks the tour up there. It starts on its own once, on a signed-in desk's home.
  */
 
-const route = { pathname: "/ward-flow" };
+const route = { pathname: "/bedchart" };
 const push = vi.fn();
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
@@ -17,8 +17,8 @@ vi.mock("next/navigation", () => ({
 
 const tourFacts = {
   facts: { readyBeds: 26, openMovements: 70, referralsWaiting: 7 },
-  home: "/ward-flow",
-  deskHome: "/ward-flow",
+  home: "/bedchart",
+  deskHome: "/bedchart",
 };
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({ useTourFacts: () => tourFacts }));
 
@@ -64,9 +64,9 @@ function card() {
 }
 
 beforeEach(() => {
-  route.pathname = "/ward-flow";
-  tourFacts.home = "/ward-flow";
-  tourFacts.deskHome = "/ward-flow";
+  route.pathname = "/bedchart";
+  tourFacts.home = "/bedchart";
+  tourFacts.deskHome = "/bedchart";
   phone.on = false;
   tablet.on = false;
   further.steps = [];
@@ -138,9 +138,9 @@ describe("tour player", () => {
   });
 
   it("goes to the desk's home first when opened from another page", () => {
-    route.pathname = "/ward-flow/movements";
+    route.pathname = "/bedchart/movements";
     render(<WardTour onClose={vi.fn()} />);
-    expect(push).toHaveBeenCalledWith("/ward-flow");
+    expect(push).toHaveBeenCalledWith("/bedchart");
   });
 
   it("lights the step's control when it is on screen, and centres the card when it is not", async () => {
@@ -193,9 +193,9 @@ describe("tour player", () => {
   it("goes to the desk's home again when the desk's access settles to another role while open", () => {
     const { rerender } = render(<WardTour onClose={vi.fn()} />);
     expect(push).not.toHaveBeenCalled();
-    tourFacts.home = "/ward-flow/statistics";
+    tourFacts.home = "/bedchart/statistics";
     rerender(<WardTour onClose={vi.fn()} />);
-    expect(push).toHaveBeenCalledWith("/ward-flow/statistics");
+    expect(push).toHaveBeenCalledWith("/bedchart/statistics");
   });
 
   it("holds the page behind still and inert, and gives focus back to what opened it", async () => {
@@ -303,12 +303,12 @@ describe("tour auto-start", () => {
       const { rerender } = render(<WardTourAutoStart onStart={onStart} />);
       act(() => vi.advanceTimersByTime(200));
       // The stored desk applies: another role, whose home this page is not.
-      tourFacts.home = "/ward-flow/statistics";
-      tourFacts.deskHome = "/ward-flow/statistics";
+      tourFacts.home = "/bedchart/statistics";
+      tourFacts.deskHome = "/bedchart/statistics";
       rerender(<WardTourAutoStart onStart={onStart} />);
       act(() => vi.advanceTimersByTime(2000));
       expect(onStart).not.toHaveBeenCalled();
-      route.pathname = "/ward-flow/statistics";
+      route.pathname = "/bedchart/statistics";
       rerender(<WardTourAutoStart onStart={onStart} />);
       act(() => vi.advanceTimersByTime(2000));
       // The welcome cards load on demand, so real time runs again while they arrive.
@@ -322,9 +322,9 @@ describe("tour auto-start", () => {
 
   it("starts on the page the app opens for the desk when the tour's own home differs", async () => {
     const onStart = vi.fn();
-    tourFacts.home = "/ward-flow/governance";
-    tourFacts.deskHome = "/ward-flow/settings";
-    route.pathname = "/ward-flow/settings";
+    tourFacts.home = "/bedchart/governance";
+    tourFacts.deskHome = "/bedchart/settings";
+    route.pathname = "/bedchart/settings";
     render(<WardTourAutoStart onStart={onStart} />);
     await startFromOffer();
     expect(onStart).toHaveBeenCalledTimes(1);
@@ -339,10 +339,10 @@ describe("tour auto-start", () => {
 
   it("stays quiet on another page and once the tour has been seen", async () => {
     const onStart = vi.fn();
-    route.pathname = "/ward-flow/handover";
+    route.pathname = "/bedchart/handover";
     const { unmount } = render(<WardTourAutoStart onStart={onStart} />);
     unmount();
-    route.pathname = "/ward-flow";
+    route.pathname = "/bedchart";
     act(() => markTourSeen("coordinator"));
     // TE-08: the old 50 ms wait ended before the 500 ms settle timer, so it proved nothing.
     const offered = vi.fn();

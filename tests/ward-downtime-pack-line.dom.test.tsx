@@ -12,7 +12,7 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
-const route = vi.hoisted(() => ({ pathname: "/ward-flow" }));
+const route = vi.hoisted(() => ({ pathname: "/bedchart" }));
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push: vi.fn() }),
@@ -65,7 +65,7 @@ function renderShell() {
 }
 
 function renderShellWithScreen() {
-  route.pathname = "/ward-flow/reports/downtime";
+  route.pathname = "/bedchart/reports/downtime";
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <WardAccessScope>
@@ -98,7 +98,7 @@ afterEach(() => {
   forgetDowntimePack();
   resetWardAccessStoreForTests();
   vi.restoreAllMocks();
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
 });
 
 describe("WardDowntimePackLine (fix plan item 9)", () => {
@@ -148,7 +148,7 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     act(() => setClock(SHIFT_CHANGE));
     const line = screen.getByTestId("ward-downtime-pack-line");
     expect(line.textContent).toMatch(/^Shift change downtime pack 3:00 pm ready\. Print it or save it as a PDF/u);
-    expect(screen.getByTestId("ward-downtime-pack-open").getAttribute("href")).toBe("/ward-flow/reports/downtime");
+    expect(screen.getByTestId("ward-downtime-pack-open").getAttribute("href")).toBe("/bedchart/reports/downtime");
   });
 
   it("builds the scheduled pack from the live board", () => {
@@ -233,7 +233,7 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
   });
 
   it("stays off the pack's own screen, which still follows the schedule", () => {
-    route.pathname = "/ward-flow/reports/downtime";
+    route.pathname = "/bedchart/reports/downtime";
     renderShell();
     act(() => setClock(ELEVEN));
     expect(lastDowntimePack()?.generatedAt).toBe(ELEVEN);
@@ -348,7 +348,7 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
    * pushes the page down (measured in Chromium after the fix).
    */
   it("sits in a banner holder that keeps its height, so the line pushes the page down", () => {
-    const css = readFileSync(resolve(process.cwd(), "src/app/ward-flow/ward-flow-layout.module.css"), "utf8");
+    const css = readFileSync(resolve(process.cwd(), "src/app/bedchart/ward-flow-layout.module.css"), "utf8");
     const start = css.indexOf("\n.bannerHolder {");
     expect(start).toBeGreaterThan(-1);
     expect(css.slice(start, css.indexOf("}", start))).toContain("flex-shrink: 0");

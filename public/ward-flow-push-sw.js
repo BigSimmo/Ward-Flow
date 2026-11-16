@@ -1,7 +1,7 @@
 /*
  * Ward Flow service worker: phone alerts (feature 4) and the offline fallback (PWA plan, Oct 2026).
  * Registered on every Ward Flow load (shell/ward-pwa-registration.tsx) and by the phone alerts
- * switch (shell/ward-phone-push.ts), both with scope /ward-flow, so Home is covered too.
+ * switch (shell/ward-phone-push.ts), both with scope /bedchart, so Home is covered too.
  *
  * Push: shows the notification the Ward Flow server sent and opens Ward Flow when it is tapped. It
  * shows only the server's generic words (a count, a site and "Synthetic demo data"), checked against
@@ -14,7 +14,7 @@
  * other request. A page is always fetched from the network; only when that fails is the offline
  * page shown in its place.
  */
-const WARD_FLOW_PATH = "/ward-flow";
+const WARD_FLOW_PATH = "/bedchart";
 const ALERTS_PATH = `${WARD_FLOW_PATH}/alerts`;
 const FALLBACK = { title: "Ward Flow: act now", body: "Open Alerts to review. Synthetic demo data." };
 // The only words a push may show: the templates pushPayload builds in backend/ward-flow/push.mjs.
@@ -41,7 +41,7 @@ const RENOTIFY_TAGS = ["ward-flow-act-now"];
 // the kind (act-now, jobs or team), never the payload words. Its own cache, without CACHE_PREFIX, so
 // activate never deletes it. Must match settings/settings-last-push.ts.
 const LAST_PUSH_CACHE = "ward-flow-last-push";
-const LAST_PUSH_KEY = "/ward-flow/__last-push";
+const LAST_PUSH_KEY = "/bedchart/__last-push";
 const PUSH_KINDS = { "ward-flow-act-now": "act-now", "ward-flow-jobs": "jobs", "ward-flow-team": "team" };
 
 // Bump CACHE_VERSION when the precache list or the caching rules change; activate deletes the rest.

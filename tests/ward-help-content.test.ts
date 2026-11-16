@@ -16,37 +16,37 @@ const entries = railEntries();
 
 describe("screen help", () => {
   it("gives detail pages their own help, never Home's", () => {
-    expect(screenHelpFor("/ward-flow/settings", entries)?.id).toBe("settings");
-    expect(screenHelpFor("/ward-flow/ward/u1", entries)?.id).toBe("ward");
-    expect(screenHelpFor("/ward-flow/ward/u1/answer", entries)?.id).toBe("ward-answer");
-    expect(screenHelpFor("/ward-flow/people/p1", entries)?.id).toBe("patient");
-    expect(screenHelpFor("/ward-flow/people/new", entries)?.id).toBe("add-patient");
-    expect(screenHelpFor("/ward-flow/ed/e1", entries)?.id).toBe("ed-board");
-    expect(screenHelpFor("/ward-flow/legal-forms", entries)?.id).toBe("legal-forms");
-    expect(screenHelpFor("/ward-flow/community/t1", entries)?.id).toBe("community-team");
-    expect(screenHelpFor("/ward-flow/constellation", entries)).toBeUndefined();
+    expect(screenHelpFor("/bedchart/settings", entries)?.id).toBe("settings");
+    expect(screenHelpFor("/bedchart/ward/u1", entries)?.id).toBe("ward");
+    expect(screenHelpFor("/bedchart/ward/u1/answer", entries)?.id).toBe("ward-answer");
+    expect(screenHelpFor("/bedchart/people/p1", entries)?.id).toBe("patient");
+    expect(screenHelpFor("/bedchart/people/new", entries)?.id).toBe("add-patient");
+    expect(screenHelpFor("/bedchart/ed/e1", entries)?.id).toBe("ed-board");
+    expect(screenHelpFor("/bedchart/legal-forms", entries)?.id).toBe("legal-forms");
+    expect(screenHelpFor("/bedchart/community/t1", entries)?.id).toBe("community-team");
+    expect(screenHelpFor("/bedchart/constellation", entries)).toBeUndefined();
   });
 
   it("names the screen as the desk's own menu does", () => {
-    expect(screenHelpFor("/ward-flow", entries, "coordinator")?.title).toBe("Home");
-    expect(screenHelpFor("/ward-flow/ward/u1", entries, "ward")?.title).toBe("My ward");
-    expect(screenHelpFor("/ward-flow/wards", entries, "ward")?.title).toBe("All wards");
-    expect(screenHelpFor("/ward-flow/ed/e1", entries, "ed")?.title).toBe("My ED board");
-    expect(screenHelpFor("/ward-flow/community/t1", entries, "community")?.title).toBe("My team");
-    expect(screenHelpFor("/ward-flow/community", entries, "community")?.title).toBe("Community");
+    expect(screenHelpFor("/bedchart", entries, "coordinator")?.title).toBe("Home");
+    expect(screenHelpFor("/bedchart/ward/u1", entries, "ward")?.title).toBe("My ward");
+    expect(screenHelpFor("/bedchart/wards", entries, "ward")?.title).toBe("All wards");
+    expect(screenHelpFor("/bedchart/ed/e1", entries, "ed")?.title).toBe("My ED board");
+    expect(screenHelpFor("/bedchart/community/t1", entries, "community")?.title).toBe("My team");
+    expect(screenHelpFor("/bedchart/community", entries, "community")?.title).toBe("Community");
   });
 
   it("answers each task on the screen where it is done", () => {
     const questions = (path: string) => screenHelpFor(path, entries)?.questions?.map((item) => item.question) ?? [];
-    expect(questions("/ward-flow/people/p1")).toEqual([
+    expect(questions("/bedchart/people/p1")).toEqual([
       "How do I ask more wards?",
       "How do I pull a bed?",
       "How do I change a destination?",
       "Why can't I book transport?",
     ]);
-    expect(questions("/ward-flow/referrals")).toContain("How do I ask more wards?");
-    expect(questions("/ward-flow/ward/u1")).toContain("Why can't I answer this referral?");
-    expect(questions("/ward-flow/handover")).toContain("How do I hand over to the next shift?");
+    expect(questions("/bedchart/referrals")).toContain("How do I ask more wards?");
+    expect(questions("/bedchart/ward/u1")).toContain("Why can't I answer this referral?");
+    expect(questions("/bedchart/handover")).toContain("How do I hand over to the next shift?");
   });
 
   it("lists each keyboard shortcut once", () => {
@@ -88,13 +88,13 @@ describe("help and tour audit fixes", () => {
 
   it("answers how to put a screen on the meeting room TV where the TV is opened (HF-10)", () => {
     const questions = (path: string) => screenHelpFor(path, entries)?.questions?.map((item) => item.question) ?? [];
-    for (const path of ["/ward-flow/capacity", "/ward-flow/ward/u1", "/ward-flow/ed/e1"]) {
+    for (const path of ["/bedchart/capacity", "/bedchart/ward/u1", "/bedchart/ed/e1"]) {
       expect(questions(path), path).toContain("How do I put this on the meeting room TV?");
     }
   });
 
   it("never tells staff the TV hides names, since every TV view shows them in full (D-83, WT-20)", () => {
-    const answers = ["/ward-flow/capacity", "/ward-flow/ward/u1", "/ward-flow/ed/e1"]
+    const answers = ["/bedchart/capacity", "/bedchart/ward/u1", "/bedchart/ed/e1"]
       .flatMap((path) => screenHelpFor(path, entries)?.questions ?? [])
       .map((item) => item.answer)
       .join(" ");
@@ -103,11 +103,11 @@ describe("help and tour audit fixes", () => {
   });
 
   it("names both ED row buttons that start a referral (WT-35)", () => {
-    expect(screenHelpFor("/ward-flow/ed/e1", entries)?.actions.join(" ")).toMatch(/Refer to a ward.*Ask for a bed/);
+    expect(screenHelpFor("/bedchart/ed/e1", entries)?.actions.join(" ")).toMatch(/Refer to a ward.*Ask for a bed/);
   });
 
   it("gives a phone a line it can use instead of a keyboard hint (HF-14)", () => {
-    const referrals = screenHelpFor("/ward-flow/referrals", entries);
+    const referrals = screenHelpFor("/bedchart/referrals", entries);
     expect(referrals?.actions.join(" ")).toContain("On a keyboard");
     expect(referrals?.phoneActions?.join(" ")).not.toMatch(/keyboard|Press \?/);
   });

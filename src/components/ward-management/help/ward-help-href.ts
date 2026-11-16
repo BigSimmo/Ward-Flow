@@ -23,7 +23,7 @@ export function howToHref(
     return undefined;
   }
   if (go === "home") return home;
-  if (go.startsWith("settings#")) return `/ward-flow/settings#${go.slice("settings#".length)}`;
+  if (go.startsWith("settings#")) return `/bedchart/settings#${go.slice("settings#".length)}`;
   const entry = railEntries().find((candidate) => candidate.id === go);
   const screen = entry ? screenForPath(entry.href)?.screen : undefined;
   if (!entry || !screen || !ROLE_SCREENS[role][screen]) return undefined;

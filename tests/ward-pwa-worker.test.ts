@@ -102,9 +102,9 @@ describe("the worker's caching rule (D-18)", () => {
     "/api/health",
     "/api/local-project-id",
     "/api",
-    "/ward-flow",
-    "/ward-flow/referrals",
-    "/ward-flow/beds?ward=rph",
+    "/bedchart",
+    "/bedchart/referrals",
+    "/bedchart/beds?ward=rph",
     "/ward-flow-push-sw.js",
     "/screenshots/home-narrow.webp",
     "/icons-elsewhere/thing",
@@ -115,11 +115,11 @@ describe("the worker's caching rule (D-18)", () => {
   });
 
   it("never keeps a Server Components payload, even on a static-looking path", () => {
-    expect(rule(request("/ward-flow/referrals", { header: { RSC: "1" } }), ORIGIN)).toBeNull();
+    expect(rule(request("/bedchart/referrals", { header: { RSC: "1" } }), ORIGIN)).toBeNull();
     expect(rule(request("/_next/static/chunks/app.js", { header: { RSC: "1" } }), ORIGIN)).toBeNull();
     expect(rule(request("/icons/icon-192", { header: { "Next-Router-Prefetch": "1" } }), ORIGIN)).toBeNull();
     expect(rule(request("/_next/static/chunks/app.js?_rsc=abc12"), ORIGIN)).toBeNull();
-    expect(rule(request("/ward-flow?_rsc=abc12"), ORIGIN)).toBeNull();
+    expect(rule(request("/bedchart?_rsc=abc12"), ORIGIN)).toBeNull();
   });
 
   it("leaves other methods and other sites alone", () => {
@@ -130,8 +130,8 @@ describe("the worker's caching rule (D-18)", () => {
   });
 
   it("takes Ward Flow page loads network first, and ignores a sibling such as ward-flow-digest", () => {
-    expect(rule(request("/ward-flow", { mode: "navigate" }), ORIGIN)).toBe("navigate");
-    expect(rule(request("/ward-flow/alerts", { mode: "navigate" }), ORIGIN)).toBe("navigate");
+    expect(rule(request("/bedchart", { mode: "navigate" }), ORIGIN)).toBe("navigate");
+    expect(rule(request("/bedchart/alerts", { mode: "navigate" }), ORIGIN)).toBe("navigate");
     expect(rule(request("/mockups/ward-flow-digest", { mode: "navigate" }), ORIGIN)).toBeNull();
     expect(rule(request("/", { mode: "navigate" }), ORIGIN)).toBeNull();
   });
@@ -275,7 +275,7 @@ describe("worker lifecycle", () => {
       });
       let reply: Promise<unknown> = Promise.resolve(undefined);
       listeners.fetch({
-        request: request("/ward-flow/referrals", { mode: "navigate" }),
+        request: request("/bedchart/referrals", { mode: "navigate" }),
         preloadResponse: Promise.resolve(undefined),
         respondWith: (promise: Promise<unknown>) => (reply = promise),
         waitUntil: () => {},
@@ -302,7 +302,7 @@ describe("worker lifecycle", () => {
       },
     });
     let answered = false;
-    for (const path of ["/api/health", "/ward-flow/beds?_rsc=1"]) {
+    for (const path of ["/api/health", "/bedchart/beds?_rsc=1"]) {
       listeners.fetch({ request: request(path), respondWith: () => (answered = true) });
     }
     expect(answered).toBe(false);
@@ -375,7 +375,7 @@ describe("what a push may show (PS-13)", () => {
     expect(cache).toBe("ward-flow-last-push");
     // Its own cache, outside CACHE_PREFIX, so activate never deletes it.
     expect(cache.startsWith("ward-flow-static-")).toBe(false);
-    expect(key).toBe("/ward-flow/__last-push");
+    expect(key).toBe("/bedchart/__last-push");
     expect(type).toBe("application/json");
     expect(Object.keys(record as object).sort()).toEqual(["at", "kind"]);
     const { at, kind } = record as { at: string; kind: string };
@@ -450,7 +450,7 @@ describe("what a push may show (PS-13)", () => {
       "Ward 4: Synthetic Person, bed 2. Open Alerts to review. Synthetic demo data.",
     ],
   ])("shows the fallback words for %s", async (_label, title, body) => {
-    expect(await shown({ title, body, url: "/ward-flow/alerts" })).toEqual({ ...FALLBACK, url: "/ward-flow/alerts" });
+    expect(await shown({ title, body, url: "/bedchart/alerts" })).toEqual({ ...FALLBACK, url: "/bedchart/alerts" });
   });
 
   it("checks the title and body separately, and keeps the length limits", async () => {
@@ -525,7 +525,7 @@ function navigationProbe(preloadResponse: Promise<unknown>, signal?: AbortSignal
   runInNewContext(WORKER_SOURCE, context);
   const navigate = context.fromNetworkFirst as (event: unknown) => Promise<unknown>;
   const result = navigate({
-    request: { ...request("/ward-flow/capacity", { mode: "navigate" }), signal },
+    request: { ...request("/bedchart/capacity", { mode: "navigate" }), signal },
     preloadResponse,
   });
   let settled = false;

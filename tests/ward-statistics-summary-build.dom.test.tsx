@@ -73,8 +73,8 @@ describe("the one unit finder (D-91)", () => {
   });
 
   it("opens on arrival at its anchor", () => {
-    expect(STATISTICS_UNIT_FINDER_HREF).toBe(`/ward-flow/statistics#${STATISTICS_UNIT_CHOOSER_ID}`);
-    window.history.replaceState(null, "", `/ward-flow/statistics#${STATISTICS_UNIT_CHOOSER_ID}`);
+    expect(STATISTICS_UNIT_FINDER_HREF).toBe(`/bedchart/statistics#${STATISTICS_UNIT_CHOOSER_ID}`);
+    window.history.replaceState(null, "", `/bedchart/statistics#${STATISTICS_UNIT_CHOOSER_ID}`);
     summary();
     expect(screen.getByTestId("ward-statistics-unit-finder")).toBeInTheDocument();
   });

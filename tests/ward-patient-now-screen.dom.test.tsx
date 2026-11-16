@@ -16,7 +16,7 @@ vi.mock("next/navigation", () => ({
   redirect: (url: string) => {
     throw new Error(`NEXT_REDIRECT ${url}`);
   },
-  usePathname: () => "/ward-flow/people/WF-009",
+  usePathname: () => "/bedchart/people/WF-009",
   useRouter: () => ({
     push: vi.fn(),
     replace: vi.fn(),
@@ -47,7 +47,7 @@ function expectedPatient(id: string) {
 
 /**
  * Antigravity built this screen (`docs/ward-flow-task-ledger.md` §7.7 does not name it directly,
- * but it is the route's default renderer at `/ward-flow/people/[patientId]`) and left it
+ * but it is the route's default renderer at `/bedchart/people/[patientId]`) and left it
  * uncommitted; this file proves what it renders now that the ward/site names it states are read
  * from `ward-sites.ts` rather than typed a second time (`tests/ward-flow-data-boundary.test.ts`)
  * and the "every figure is invented" disclosure carries its own marker sentence
@@ -71,7 +71,7 @@ async function renderPersonRoute(
   id: string,
   searchParams: Record<string, string | undefined> = {},
 ): Promise<ReactElement> {
-  const { default: WardPersonPage } = await import("@/app/ward-flow/people/[patientId]/page");
+  const { default: WardPersonPage } = await import("@/app/bedchart/people/[patientId]/page");
   const element = await WardPersonPage({
     // D-39: links carry the address code, so the route is opened the way a link opens it.
     params: Promise.resolve({ patientId: encodeRecordAddress(id) }),
@@ -354,7 +354,7 @@ describe("the patient-now screen", () => {
 
 describe("the ward person route", () => {
   it("sends an old raw-id person link on to its coded address, keeping the query (D-39)", async () => {
-    const { default: WardPersonPage } = await import("@/app/ward-flow/people/[patientId]/page");
+    const { default: WardPersonPage } = await import("@/app/bedchart/people/[patientId]/page");
     await expect(
       WardPersonPage({
         params: Promise.resolve({ patientId: "PT-005" }),
@@ -412,6 +412,6 @@ describe("the written history on a sample scenario is labelled as an example", (
     fireEvent.click(screen.getByRole("tab", { name: /^History/u }));
     const link = screen.getByTestId("pn-history-chronology");
     expect(link).toHaveTextContent("Chronology");
-    expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/reports\/chronology\?patient=[A-Za-z0-9-]+$/u);
+    expect(link.getAttribute("href")).toMatch(/^\/bedchart\/reports\/chronology\?patient=[A-Za-z0-9-]+$/u);
   });
 });

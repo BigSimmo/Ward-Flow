@@ -153,8 +153,8 @@ export function duplicateCaseHref(input: { patientId: PatientId; referrals: read
   const states = input.referrals
     .filter((referral) => referral.patientId === input.patientId)
     .map((referral) => referralState(referral));
-  if (states.includes("queued")) return "/ward-flow/referrals";
+  if (states.includes("queued")) return "/bedchart/referrals";
   if (states.includes("accepted"))
-    return `/ward-flow/people/${encodeURIComponent(encodeRecordAddress(input.patientId))}`;
+    return `/bedchart/people/${encodeURIComponent(encodeRecordAddress(input.patientId))}`;
   return undefined;
 }

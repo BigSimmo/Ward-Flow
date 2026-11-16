@@ -135,7 +135,7 @@ export function HelpQuestions({ screen }: { screen: (ScreenHelp & { id: string }
         </div>
       ) : null}
       <p className={s.note}>
-        Help answers how to use Ward Flow. For clinical questions, use your clinical guidelines or speak to the treating
+        Help answers how to use BedChart. For clinical questions, use your clinical guidelines or speak to the treating
         team.
       </p>
     </>

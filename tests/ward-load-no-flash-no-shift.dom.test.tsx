@@ -14,7 +14,7 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/governance",
+  usePathname: () => "/bedchart/governance",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -196,7 +196,7 @@ describe("desktop rail: the server render is the settled render", () => {
   // D-137 follow-up: the held cookie is shared across tabs, so a ward tab can get the coordinator's
   // server rail and bar; while this tab's desk is pending they stay hidden, with the same give-up.
   it("hides the server's rail and top bar while a stored desk is pending", () => {
-    const css = strip(readFileSync("src/app/ward-flow/ward-flow-layout.module.css", "utf8"));
+    const css = strip(readFileSync("src/app/bedchart/ward-flow-layout.module.css", "utf8"));
     const rule =
       /:global\(html\[data-wf-desk-pending\]\) \.shellRow :global\(\[data-testid="ward-rail"\]\),\s*:global\(html\[data-wf-desk-pending\]\) \.shellContent :global\(\[data-testid="ward-bar"\]\) \{([^}]*)\}/u.exec(
         css,

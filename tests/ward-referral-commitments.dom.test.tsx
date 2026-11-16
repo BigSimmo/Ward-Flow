@@ -36,7 +36,7 @@ describe("Coordinated call sheet (closing-the-loop package A)", () => {
     expect(screen.getByTestId("ward-call-sheet-fsh-older-adult")).toBeInTheDocument();
     // Screen and print only: no mail, share or outside link anywhere on the sheet.
     for (const link of within(sheet).queryAllByRole("link")) {
-      expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/referrals\?referral=/);
+      expect(link.getAttribute("href")).toMatch(/^\/bedchart\/referrals\?referral=/);
     }
     expect(sheet.innerHTML).not.toMatch(/mailto:|share/i);
     expect(sheet.textContent).not.toMatch(/suggested|recommended|best|priority score/i);

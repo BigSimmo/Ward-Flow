@@ -7,7 +7,7 @@ export const WAITING_VIEWS = ["needs-me", "form", "handover"] as const;
 export type WaitingViewId = (typeof WAITING_VIEWS)[number];
 
 /** The board's page, renamed from Delays in B4 step 3. Links go through `waitingHref`. */
-const WAITING_PATH = "/ward-flow/waiting";
+const WAITING_PATH = "/bedchart/waiting";
 
 /** A link that opens the board on one saved view, or on everyone when no view is named. */
 export function waitingHref(view?: WaitingViewId, edId?: string): string {

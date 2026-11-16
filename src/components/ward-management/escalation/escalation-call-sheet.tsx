@@ -133,7 +133,7 @@ export function EscalationCallSheet({
         <span className={contact.status} role="status">
           {said}
         </span>
-        <Link className={contact.link} href="/ward-flow/on-call" data-testid="ward-escalation-all-contacts">
+        <Link className={contact.link} href="/bedchart/on-call" data-testid="ward-escalation-all-contacts">
           All contacts
         </Link>
       </div>

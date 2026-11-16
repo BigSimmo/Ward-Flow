@@ -3,7 +3,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import StatisticsServicePage from "@/app/ward-flow/statistics/service/[serviceId]/page";
+import StatisticsServicePage from "@/app/bedchart/statistics/service/[serviceId]/page";
 import { lastDowntimePack } from "@/components/ward-management/reports/downtime-pack";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { StatisticsCommunityScreen } from "@/components/ward-management/statistics/statistics-community-screen";

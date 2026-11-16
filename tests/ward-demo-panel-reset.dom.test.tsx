@@ -14,7 +14,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { LiveChip } from "@/components/wf";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/capacity",
+  usePathname: () => "/bedchart/capacity",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

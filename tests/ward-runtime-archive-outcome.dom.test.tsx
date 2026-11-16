@@ -43,7 +43,7 @@ describe("archive completion feedback", () => {
     fireEvent.click(screen.getByTestId("ward-patient-archive-confirm"));
     expect(mocks.raise).toHaveBeenCalledTimes(1);
     await act(async () => confirm({ commandId: "archive-one", status: "accepted" }));
-    expect(mocks.replace).toHaveBeenCalledWith("/ward-flow/search");
+    expect(mocks.replace).toHaveBeenCalledWith("/bedchart/search");
   });
   it("reports a definitive refusal without claiming success", () => {
     mocks.raise.mockReturnValue({ commandId: "archive-two", status: "refused", message: "Care was recorded." });

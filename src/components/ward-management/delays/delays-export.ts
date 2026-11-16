@@ -72,5 +72,5 @@ export function downloadWaitingList<R extends DelaysExportRow>(
   ctx: DelaysExportContext<R>,
   provenance: ListExportProvenance,
 ): void {
-  downloadCsv("ward-flow-synthetic-waiting.csv", delaysExportLines(rows, ctx), provenance);
+  downloadCsv("bedchart-synthetic-waiting.csv", delaysExportLines(rows, ctx), provenance);
 }

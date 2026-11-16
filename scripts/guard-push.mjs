@@ -413,12 +413,12 @@ export function isWardFlowFile(filePath) {
   const normalized = filePath.replace(/\\/g, "/");
   return (
     normalized.startsWith("src/components/ward-management/") ||
-    normalized.startsWith("src/app/ward-flow/") ||
+    normalized.startsWith("src/app/bedchart/") ||
     normalized.startsWith("docs/ward-flow/") ||
     normalized.startsWith("scripts/ward-flow/") ||
     normalized === "scripts/run-ward-tests.mjs" ||
     /^tests\/(?:helpers\/|ui-)?ward-[^/]+$/.test(normalized) ||
-    normalized.includes("/ward-flow/") ||
+    normalized.includes("/bedchart/") ||
     normalized.includes("/ward-management/")
   );
 }

@@ -17,20 +17,20 @@ const digest = (data: readonly (readonly boolean[])[]) =>
 describe("ward desk QR code (item 42)", () => {
   it("holds the ward route on this origin only: no query, fragment, path or token", () => {
     expect(wardDeskUrl("https://wardflow.example.test", "rph-adult-secure")).toBe(
-      "https://wardflow.example.test/ward-flow/ward/rph-adult-secure",
+      "https://wardflow.example.test/bedchart/ward/rph-adult-secure",
     );
     // Whatever page Settings was opened on, only the origin is kept.
     expect(
-      wardDeskUrl("https://wardflow.example.test:8443/ward-flow/settings?desk=ward&token=abc#x", "rph-adult-secure"),
-    ).toBe("https://wardflow.example.test:8443/ward-flow/ward/rph-adult-secure");
+      wardDeskUrl("https://wardflow.example.test:8443/bedchart/settings?desk=ward&token=abc#x", "rph-adult-secure"),
+    ).toBe("https://wardflow.example.test:8443/bedchart/ward/rph-adult-secure");
     const url = new URL(wardDeskUrl("http://localhost:3377", "a b/c"));
     expect(url.search).toBe("");
     expect(url.hash).toBe("");
-    expect(url.pathname).toBe("/ward-flow/ward/a%20b%2Fc");
+    expect(url.pathname).toBe("/bedchart/ward/a%20b%2Fc");
   });
 
   it("encodes exactly the ward address, and the matrix is stable", async () => {
-    const url = "https://wardflow.example.test/ward-flow/ward/rph-adult-secure";
+    const url = "https://wardflow.example.test/bedchart/ward/rph-adult-secure";
     const { encode } = await import("uqr");
     const direct = encode(url, WARD_DESK_QR_OPTIONS);
     const matrix = await encodeWardDeskQr(url);
@@ -50,7 +50,7 @@ describe("ward desk QR code (item 42)", () => {
   });
 
   it("draws one unit square per dark module", async () => {
-    const matrix = await encodeWardDeskQr("http://localhost:3377/ward-flow/ward/rph-adult-secure");
+    const matrix = await encodeWardDeskQr("http://localhost:3377/bedchart/ward/rph-adult-secure");
     const dark = matrix.data.flat().filter(Boolean).length;
     expect(qrPath(matrix).match(/M/g)?.length).toBe(dark);
     // The four-module quiet zone is white.

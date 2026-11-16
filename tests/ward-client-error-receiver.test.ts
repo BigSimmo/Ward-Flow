@@ -14,7 +14,7 @@ import {
 import { logger } from "@/lib/logger";
 import { WARD_ACCESS_ROLES } from "@/components/ward-management/ward-role-access";
 
-const good = { type: "TypeError", route: "/ward-flow/people/[id]", release: "abc123", role: "ward" };
+const good = { type: "TypeError", route: "/bedchart/people/[id]", release: "abc123", role: "ward" };
 
 function post(body: unknown, headers: Record<string, string> = {}) {
   const text = typeof body === "string" ? body : JSON.stringify(body);
@@ -66,7 +66,7 @@ describe("client error receiver", () => {
     expect(response.status).toBe(204);
     expect(error).toHaveBeenCalledWith("ward.client_error", {
       errorType: "TypeError",
-      route: "/ward-flow/people/[id]",
+      route: "/bedchart/people/[id]",
       release: "abc123",
       role: "ward",
     });
@@ -92,7 +92,7 @@ describe("client error receiver", () => {
 
   it("logs a screen outside the list as other, never its address", async () => {
     const error = vi.spyOn(logger, "error");
-    await post({ ...good, route: "/ward-flow/test-patient-alpha" });
+    await post({ ...good, route: "/bedchart/test-patient-alpha" });
     expect(error).toHaveBeenCalledWith("ward.client_error", expect.objectContaining({ route: "other" }));
     expect(JSON.stringify(error.mock.calls)).not.toContain("alpha");
   });

@@ -66,7 +66,7 @@ describe("M55 workflows pin actions and declare permissions", () => {
   it("Dependabot watches both npm projects and the actions", () => {
     const config = readFileSync(path.join(ROOT, ".github/dependabot.yml"), "utf8");
     expect(config).toMatch(/package-ecosystem: npm\s+directory: \/\n/);
-    expect(config).toMatch(/package-ecosystem: npm\s+directory: \/backend\/ward-flow/);
+    expect(config).toMatch(/package-ecosystem: npm\s+directory: \/backend\/bedchart/);
     expect(config).toMatch(/package-ecosystem: github-actions\s+directories: \["\/", "\/\.github\/actions\/\*"\]\n/);
   });
 });

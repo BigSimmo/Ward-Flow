@@ -9,7 +9,7 @@ const router = vi.hoisted(() => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/people/new",
+  usePathname: () => "/bedchart/people/new",
   useRouter: () => router,
   useSearchParams: () => new URLSearchParams(window.location.search),
 }));

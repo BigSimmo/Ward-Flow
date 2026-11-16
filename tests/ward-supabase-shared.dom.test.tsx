@@ -63,7 +63,7 @@ beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_WARD_API_BASE_URL", "https://api.example.test");
   sessionStorage.clear();
   localStorage.removeItem(WARD_RECOVERY_VERIFIER_KEY);
-  window.history.replaceState({}, "", "/ward-flow");
+  window.history.replaceState({}, "", "/bedchart");
 });
 /** A stand-in for the app badge API, removed again by the caller. */
 function stubAppBadge() {
@@ -247,7 +247,7 @@ describe("Supabase shared sign-in", () => {
   it.each(["#error=access_denied&error_code=otp_expired&type=recovery", "#type=recovery&access_token=incomplete"])(
     "keeps sign-in usable after an invalid recovery link %s",
     async (fragment) => {
-      window.history.replaceState({}, "", "/ward-flow" + fragment);
+      window.history.replaceState({}, "", "/bedchart" + fragment);
       const fetcher = vi.fn(async () => Response.json({}, { status: 400 }));
       vi.stubGlobal("fetch", fetcher);
       render(<Probe />);
@@ -264,7 +264,7 @@ describe("Supabase shared sign-in", () => {
     async (fragment) => {
       vi.stubEnv("NEXT_PUBLIC_WARD_COORDINATOR_EMAIL", "nominated@example.invalid");
       vi.stubEnv("NEXT_PUBLIC_WARD_OPEN_SIGNUP", "true");
-      window.history.replaceState({}, "", "/ward-flow" + fragment);
+      window.history.replaceState({}, "", "/bedchart" + fragment);
       const fetcher = vi.fn<typeof fetch>(async () => Response.json({}));
       vi.stubGlobal("fetch", fetcher);
       render(<Probe />);
@@ -344,7 +344,7 @@ describe("Supabase shared sign-in", () => {
     window.history.replaceState(
       {},
       "",
-      "/ward-flow#type=recovery&access_token=access&refresh_token=refresh&expires_in=3600",
+      "/bedchart#type=recovery&access_token=access&refresh_token=refresh&expires_in=3600",
     );
     const fetcher = vi.fn(async () => Response.json({}, { status: 503 }));
     vi.stubGlobal("fetch", fetcher);
@@ -357,7 +357,7 @@ describe("Supabase shared sign-in", () => {
     expect(await screen.findByLabelText("Email")).toBeInTheDocument();
   });
   it("does not sign in with a recovery code opened on another device or browser (SEC-2)", async () => {
-    window.history.replaceState({}, "", "/ward-flow?code=synthetic-code");
+    window.history.replaceState({}, "", "/bedchart?code=synthetic-code");
     const fetcher = vi.fn(async () => Response.json({}, { status: 503 }));
     vi.stubGlobal("fetch", fetcher);
     render(<Probe />);
@@ -377,7 +377,7 @@ describe("Supabase shared sign-in", () => {
     // SEC-2: the browser that asked for the link holds the verifier.
     const verifier = "s".repeat(64);
     localStorage.setItem(WARD_RECOVERY_VERIFIER_KEY, JSON.stringify({ verifier, createdAt: Date.now() }));
-    window.history.replaceState({}, "", "/ward-flow?code=synthetic-code");
+    window.history.replaceState({}, "", "/bedchart?code=synthetic-code");
     let complete!: (response: Response) => void;
     const calls: string[] = [];
     let exchange: unknown;
@@ -422,7 +422,7 @@ describe("Supabase shared sign-in", () => {
 });
 
 it("keeps signup confirmation tokens out of workspace and storage", async () => {
-  window.history.replaceState({}, "", "/ward-flow#type=signup&access_token=confirmation&refresh_token=confirmation");
+  window.history.replaceState({}, "", "/bedchart#type=signup&access_token=confirmation&refresh_token=confirmation");
   const fetcher = vi.fn();
   vi.stubGlobal("fetch", fetcher);
   render(<Probe />);
@@ -596,7 +596,7 @@ it("keeps a reloaded record address, query and fragment when no sign-out return 
     "fetch",
     vi.fn(async () => Response.json({ actorId: user.id, access, accessUntil: Date.now() + 120_000, snapshot })),
   );
-  const loaded = "/ward-flow/people/PT-SYNTHETIC?tab=history#timeline";
+  const loaded = "/bedchart/people/PT-SYNTHETIC?tab=history#timeline";
   window.history.replaceState({}, "", loaded);
   const replace = vi.spyOn(window.history, "replaceState");
   const hook = renderHook(() => useWardSupabaseShared(true, async () => auth.adapter));

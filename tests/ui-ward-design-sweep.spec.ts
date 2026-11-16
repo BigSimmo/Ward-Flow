@@ -326,15 +326,15 @@ async function settledSweep(page: Page): Promise<Finding[]> {
  * container at 11, so Home holds at 11 until both agree.
  */
 const PHONE_TARGET_BASELINE: Readonly<Record<string, number>> = {
-  "/ward-flow": 11,
-  "/ward-flow/waiting": 2,
-  "/ward-flow/movements": 4,
-  "/ward-flow/ward/rph-adult-secure": 1,
-  "/ward-flow/board/rph-adult-secure": 2,
-  "/ward-flow/discharges": 2,
-  "/ward-flow/alerts": 1,
-  "/ward-flow/referrals": 2,
-  "/ward-flow/referrals/new": 2,
+  "/bedchart": 11,
+  "/bedchart/waiting": 2,
+  "/bedchart/movements": 4,
+  "/bedchart/ward/rph-adult-secure": 1,
+  "/bedchart/board/rph-adult-secure": 2,
+  "/bedchart/discharges": 2,
+  "/bedchart/alerts": 1,
+  "/bedchart/referrals": 2,
+  "/bedchart/referrals/new": 2,
 };
 
 test.describe("@mockup Ward design sweep: text size, target size and sticky bars", () => {
@@ -393,7 +393,7 @@ test.describe("@mockup Phone hit boxes: popup and form-step controls (Q377)", ()
   test.use({ colorScheme: "light", viewport: { width: 390, height: 844 } });
 
   test("arrival time buttons are drawn 40px tall with a 48px tap area", async ({ page }) => {
-    await openSettled(page, "/ward-flow/ed/rph-ed");
+    await openSettled(page, "/bedchart/ed/rph-ed");
     // The arrival plan opens from the ED's lists; the button can sit in a closed list on a phone.
     await page.locator('[data-testid^="ward-ed-outbox-arrival-plan-toggle-"]').first().dispatchEvent("click");
     const presets = page
@@ -421,7 +421,7 @@ test.describe("@mockup Phone hit boxes: popup and form-step controls (Q377)", ()
   });
 
   test("referral risk flag checkboxes are drawn 40px tall", async ({ page }) => {
-    await openSettled(page, "/ward-flow/referrals/new");
+    await openSettled(page, "/bedchart/referrals/new");
     const risk = page.getByRole("group", { name: /^Risk flags/u });
     // The Referral step (source, legal status, urgency) holds the risk flags.
     await page
@@ -447,9 +447,9 @@ test.describe("@mockup Phone hit boxes: popup and form-step controls (Q377)", ()
 const KNOWN_CONTRAST_FAILURES: Record<string, string> = {};
 
 const CONTRAST_ROUTES = [
-  { label: "Home", href: "/ward-flow" },
-  { label: "ED", href: "/ward-flow/ed" },
-  { label: "Statistics", href: "/ward-flow/statistics" },
+  { label: "Home", href: "/bedchart" },
+  { label: "ED", href: "/bedchart/ed" },
+  { label: "Statistics", href: "/bedchart/statistics" },
 ] as const;
 
 test.describe("@mockup Ward design sweep: painted-background contrast (R-STYLE-8)", () => {
@@ -493,9 +493,9 @@ test.describe("@mockup Ward design sweep: 200% text at 390 (R-STYLE-7)", () => {
   test.use({ colorScheme: "light", viewport: { width: 390, height: 844 } });
 
   for (const { label, href } of [
-    { label: "Home", href: "/ward-flow" },
-    { label: "Waiting", href: "/ward-flow/waiting" },
-    { label: "Referrals", href: "/ward-flow/referrals" },
+    { label: "Home", href: "/bedchart" },
+    { label: "Waiting", href: "/bedchart/waiting" },
+    { label: "Referrals", href: "/bedchart/referrals" },
   ]) {
     test(`${label} (${href}) h1 and top bar links are not clipped at 200% text`, async ({ page }) => {
       test.setTimeout(120_000);
@@ -537,23 +537,23 @@ test.describe("@mockup Ward design sweep: 200% text at 390 (R-STYLE-7)", () => {
  * Screens belong to other lanes, so a failing route is listed here rather than fixed from this lane.
  */
 const H1_ROUTES = [
-  "/ward-flow",
-  "/ward-flow/waiting",
-  "/ward-flow/capacity",
-  "/ward-flow/movements",
-  "/ward-flow/governance",
-  "/ward-flow/statistics",
-  "/ward-flow/referrals",
-  "/ward-flow/alerts",
-  "/ward-flow/discharges",
-  "/ward-flow/handover",
+  "/bedchart",
+  "/bedchart/waiting",
+  "/bedchart/capacity",
+  "/bedchart/movements",
+  "/bedchart/governance",
+  "/bedchart/statistics",
+  "/bedchart/referrals",
+  "/bedchart/alerts",
+  "/bedchart/discharges",
+  "/bedchart/handover",
 ] as const;
 
 test.describe("@mockup Ward design sweep: one short h1 per page (R-STYLE-9)", () => {
   test.use({ colorScheme: "light", viewport: { width: 1280, height: 800 } });
 
   // Owner: the screen lanes under D-225 (Discharges and Handover: unassigned). Capacity's h1 is now
-  // "Capacity" (Lane C, PR #1679). Failing today: /ward-flow/discharges 8 words, /ward-flow/handover
+  // "Capacity" (Lane C, PR #1679). Failing today: /bedchart/discharges 8 words, /bedchart/handover
   // 9 words. Remove the fixme once both are shortened.
   test.fixme("each main route has exactly one h1 of at most 4 words", async ({ page }) => {
     test.setTimeout(240_000);

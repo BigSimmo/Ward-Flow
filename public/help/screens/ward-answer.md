@@ -18,6 +18,6 @@ One bed request at a time, for this ward to accept or decline.
 10. Census. One square per bed: ready, pulled, closed or occupied.
 11. Recent answers. What this ward answered lately, and when.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

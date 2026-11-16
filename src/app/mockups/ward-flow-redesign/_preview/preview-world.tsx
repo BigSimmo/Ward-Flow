@@ -11,7 +11,7 @@ import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offli
 import layoutStyles from "../../../ward-flow/ward-flow-layout.module.css";
 
 /**
- * Preview only. The same synthetic world every `/ward-flow` page reads, pinned to the 10:42 night
+ * Preview only. The same synthetic world every `/bedchart` page reads, pinned to the 10:42 night
  * the fixtures were written for, so each mock-up shows the same figures as the running app and a
  * screenshot of one can sit beside the other. Nothing here saves or reaches a provider: the shared
  * connection is never turned on for a pinned clock.

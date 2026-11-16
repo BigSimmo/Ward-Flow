@@ -20,7 +20,7 @@ vi.mock("@/components/wf", async (original) => {
 });
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
 }));
 

@@ -19,7 +19,7 @@ function approvedStrings(): Set<string> {
   };
   walk(SCREEN_HELP);
   // Page-pattern help (for example a ward's answer page) is reached through screenHelpFor.
-  for (const path of ["/ward-flow/ward/example/answer", "/ward-flow/movements/example"]) walk(screenHelpFor(path, []));
+  for (const path of ["/bedchart/ward/example/answer", "/bedchart/movements/example"]) walk(screenHelpFor(path, []));
   return found;
 }
 

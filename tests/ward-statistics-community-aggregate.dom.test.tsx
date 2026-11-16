@@ -6,7 +6,7 @@ const guard = vi.hoisted(() => ({
   }),
 }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/statistics",
+  usePathname: () => "/bedchart/statistics",
   useRouter: () => ({ push: vi.fn() }),
 }));
 vi.mock("@/components/ward-management/shell/ward-access-store", async (original) => ({

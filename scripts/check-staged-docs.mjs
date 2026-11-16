@@ -10,23 +10,23 @@ export function selectedDocChecks(files, wardIndexes = false) {
     ? [
         [
           "scripts/ward-flow/screen-map.mjs",
-          /^(?:design\/third-edition-mockups\/|src\/app\/(?:ward-flow\/|ward-flow-sign-in\/|mockups\/ward-flow-digest\/)|docs\/ward-flow\/SCREEN-MAP\.md$|scripts\/ward-flow\/(?:screen-pairs|screen-map)\.mjs$)/u,
+          /^(?:design\/third-edition-mockups\/|src\/app\/(?:ward-flow\/|ward-flow-sign-in\/|mockups\/ward-flow-digest\/)|docs\/bedchart\/SCREEN-MAP\.md$|scripts\/bedchart\/(?:screen-pairs|screen-map)\.mjs$)/u,
         ],
         [
           "scripts/ward-flow/rules-index.mjs",
-          /^(?:docs\/history\/lessons\/|docs\/ward-flow\/RULES\.md$|scripts\/ward-flow\/rules-index\.mjs$)/u,
+          /^(?:docs\/history\/lessons\/|docs\/bedchart\/RULES\.md$|scripts\/bedchart\/rules-index\.mjs$)/u,
         ],
         [
           "scripts/ward-flow/owner-rulings-index.mjs",
-          /^(?:docs\/history\/archive\/dated-notes\/owner-.*\.md$|docs\/ward-flow\/owner-.*\.md$|docs\/ward-flow\/(?:decisions|OWNER-RULINGS)\.md$|scripts\/ward-flow\/owner-rulings-index\.mjs$)/u,
+          /^(?:docs\/history\/archive\/dated-notes\/owner-.*\.md$|docs\/bedchart\/owner-.*\.md$|docs\/bedchart\/(?:decisions|OWNER-RULINGS)\.md$|scripts\/bedchart\/owner-rulings-index\.mjs$)/u,
         ],
         [
           "scripts/ward-flow/mockup-manifest.mjs",
-          /^(?:design\/third-edition-mockups\/|scripts\/ward-flow\/mockup-manifest\.mjs$)/u,
+          /^(?:design\/third-edition-mockups\/|scripts\/bedchart\/mockup-manifest\.mjs$)/u,
         ],
         [
           "scripts/ward-flow/screen-verification.mjs",
-          /^(?:docs\/ward-flow\/(?:screen-verification\.json|SCREEN-VERIFICATION\.md)$|scripts\/ward-flow\/(?:screen-pairs|screen-verification|screen-verification-lib)\.mjs$|design\/third-edition-mockups\/MANIFEST\.json$)/u,
+          /^(?:docs\/bedchart\/(?:screen-verification\.json|SCREEN-VERIFICATION\.md)$|scripts\/bedchart\/(?:screen-pairs|screen-verification|screen-verification-lib)\.mjs$|design\/third-edition-mockups\/MANIFEST\.json$)/u,
         ],
       ]
     : [

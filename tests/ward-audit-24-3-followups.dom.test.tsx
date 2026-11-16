@@ -6,7 +6,7 @@ import type { WardSharedConnection } from "@/components/ward-management/ward-sha
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 
-const route = vi.hoisted(() => ({ pathname: "/ward-flow/referrals" }));
+const route = vi.hoisted(() => ({ pathname: "/bedchart/referrals" }));
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useSearchParams: () => new URLSearchParams(window.location.search),
@@ -127,7 +127,7 @@ function expectSaid(text: string | null, mode: Mode) {
 afterEach(() => {
   cleanup();
   vi.unstubAllEnvs();
-  route.pathname = "/ward-flow/referrals";
+  route.pathname = "/bedchart/referrals";
 });
 
 describe("SV-5 seclusion room status (shared mode)", () => {
@@ -218,7 +218,7 @@ describe("SV-5 discharge follow-up and care journey", () => {
 
 describe("SV-5 confirm bed release and SV-7 Retry on the ward screen", () => {
   function renderWard(type: WardFlowEvent["type"], answer: Parameters<typeof Answering>[0]["answer"]) {
-    route.pathname = "/ward-flow/ward/scgh-adult-open";
+    route.pathname = "/bedchart/ward/scgh-adult-open";
     const calls: WardFlowEvent[] = [];
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>

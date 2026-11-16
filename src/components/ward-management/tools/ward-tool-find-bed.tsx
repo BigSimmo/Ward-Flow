@@ -301,7 +301,7 @@ function ExecutiveResults({ filters, onNavigate }: { filters: Filters; onNavigat
       open: ward.openReady > 0,
       designation:
         ward.lockedReady > 0 && ward.openReady > 0 ? "Locked and open" : ward.lockedReady > 0 ? "Locked" : "Open",
-      href: `/ward-flow/statistics/ward/${encodeURIComponent(ward.id)}`,
+      href: `/bedchart/statistics/ward/${encodeURIComponent(ward.id)}`,
     }));
   return <ResultList rows={rows} onNavigate={onNavigate} />;
 }

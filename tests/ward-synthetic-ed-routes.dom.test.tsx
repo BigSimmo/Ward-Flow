@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
-import DepartmentPage, { generateMetadata } from "@/app/ward-flow/ed/[edId]/page";
-import StatisticsPage from "@/app/ward-flow/statistics/ed/[edId]/page";
+import DepartmentPage, { generateMetadata } from "@/app/bedchart/ed/[edId]/page";
+import StatisticsPage from "@/app/bedchart/statistics/ed/[edId]/page";
 import { activateScenarioNetwork } from "@/components/ward-management/ward-scenarios";
 import { edById } from "@/components/ward-management/ward-sites";
 

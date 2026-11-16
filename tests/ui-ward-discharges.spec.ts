@@ -25,7 +25,7 @@ import {
  * ⚠️ **RETARGETED 2026-09-06.** This journey used to read six per-unit bed-state spans off the
  * old `CapacityView` (`ward-management-modes.tsx`, `data-testid="ward-capacity-view"`), reached
  * by clicking the rail's "Capacity" link. MERGE 02 (owner-approved 2026-09-05) repointed that
- * same link at a real route, `/ward-flow/capacity` → `CapacityScreen`
+ * same link at a real route, `/bedchart/capacity` → `CapacityScreen`
  * (`capacity-screen.tsx`, `data-testid="ward-capacity-screen"`) — confirmed nothing routes
  * `mode === "capacity"` into `ModeBody` any more (`ward-management-modes.tsx`; only `network` and
  * `governance` still reach `WardModeWorkspace`), so `CapacityView` and its old testid are
@@ -59,7 +59,7 @@ const UNIT_ID = "rph-adult-secure";
 const UNIT_NAME = seedWardFlowState().units.find((unit) => unit.id === UNIT_ID)?.name ?? UNIT_ID;
 
 async function gotoWard(page: Page) {
-  await page.goto(`/ward-flow/ward/${UNIT_ID}`, { waitUntil: "load" });
+  await page.goto(`/bedchart/ward/${UNIT_ID}`, { waitUntil: "load" });
   await page.waitForLoadState("networkidle");
   // The same streamed-content guard the containment test below already uses, and that
   // `tests/ui-ward-referrals.spec.ts` uses twice, applied here for the identical reason: React's
@@ -144,7 +144,7 @@ async function goBackToWard(page: Page) {
   // link to any one unit. Reaching this specific ward from the rail is therefore two real clicks
   // now, through the index `ward-index.tsx` already provides for exactly this purpose
   // (`data-testid="ward-index-link-${unit.id}"`, one per ward).
-  await clickRailLink(page, "/ward-flow/wards");
+  await clickRailLink(page, "/bedchart/wards");
   await expect(page.getByTestId("ward-index")).toBeVisible({ timeout: 15_000 });
   await page.getByTestId(`ward-index-link-${UNIT_ID}`).click();
   await expect(page.getByTestId("ward-unit-screen")).toBeVisible({ timeout: 15_000 });
@@ -273,7 +273,7 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     // rerun on 27 Oct 2026.
     const unitName = seedWardFlowState().units.find((unit) => unit.id === UNIT_ID)?.name;
     expect(unitName, `fixture assumption: ${UNIT_ID} is a seeded unit`).toBeDefined();
-    await clickRailLink(page, "/ward-flow/wards");
+    await clickRailLink(page, "/bedchart/wards");
     await expect(page.getByTestId("ward-index")).toBeVisible({ timeout: 15_000 });
     // The ward card's name opens its side panel, which links to the Bed board (#1360).
     await page
@@ -281,7 +281,7 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
       .first()
       .click();
     await page.getByRole("dialog").getByRole("link", { name: "Bed board", exact: true }).click();
-    await page.waitForURL(`**/ward-flow/board/${UNIT_ID}`);
+    await page.waitForURL(`**/bedchart/board/${UNIT_ID}`);
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -360,7 +360,7 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     page,
   }) => {
     await page.setViewportSize({ width: 744, height: 900 });
-    await page.goto("/ward-flow/discharges", { waitUntil: "load" });
+    await page.goto("/bedchart/discharges", { waitUntil: "load" });
     await page.waitForLoadState("networkidle");
     // The streamed-content guard `tests/ui-ward-referrals.spec.ts` uses, and for the same reason:
     // React's streaming leaves a hidden staging copy of the whole screen in the document for a
@@ -465,7 +465,7 @@ test.describe("@mockup WA disposition pathways", () => {
       page,
     }) => {
       await page.setViewportSize({ width: 1440, height: 1024 });
-      await page.goto(`/ward-flow/ward/${release.unitId}?tab=departure-planning`);
+      await page.goto(`/bedchart/ward/${release.unitId}?tab=departure-planning`);
       await page.waitForLoadState("networkidle");
       await expect(page.getByRole("tab", { name: "Decisions (Ward record)" })).toHaveAttribute("aria-selected", "true");
       // Ward Hub (9 Oct 2026): the full bed list opens from the Home tab's Every bed card.
@@ -482,8 +482,8 @@ test.describe("@mockup WA disposition pathways", () => {
       await page.getByRole("button", { name: /Record that they have left/ }).click();
       await page.getByRole("button", { name: "Record discharge", exact: true }).click();
       await expect(page.locator(`[data-admission-id="${admission.id}"]`)).toHaveCount(0);
-      await clickRailLink(page, "/ward-flow/discharges");
-      await page.waitForURL((url) => url.pathname === "/ward-flow/discharges");
+      await clickRailLink(page, "/bedchart/discharges");
+      await page.waitForURL((url) => url.pathname === "/bedchart/discharges");
       // Settle navigation and the saved workspace before selecting Recorded (DC4, which replaced
       // History). A click during the screen transition must not leave this journey on the Now view.
       await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
@@ -520,7 +520,7 @@ test.describe("@mockup WA disposition pathways", () => {
 
   // v10: Plan departure left the hero; departure planning stays on the ward's Decisions tab.
   test("the ward's Decisions tab still holds departure planning", async ({ page }) => {
-    await page.goto(`/ward-flow/ward/${encodeURIComponent(release.unitId)}?tab=departure-planning`);
+    await page.goto(`/bedchart/ward/${encodeURIComponent(release.unitId)}?tab=departure-planning`);
     await expect(page.getByRole("tab", { name: "Decisions (Ward record)" })).toHaveAttribute("aria-selected", "true");
     await expect(page.getByRole("heading", { name: "Staffing", exact: true })).toBeVisible();
   });
@@ -532,7 +532,7 @@ test.describe("@mockup complete care dossier", () => {
     const a = seed.admissions.find((a) => a.state === "occupied" && a.expectedDischargeAt !== null && a.patientId)!;
     // DC4 (3 Nov 2026): Recorded lists only the last 7 days' discharges, so a current stay's record
     // opens from its Tasks link, as a ward clinician reaches it.
-    await page.goto(`/ward-flow/discharges?admissionId=${a.id}`);
+    await page.goto(`/bedchart/discharges?admissionId=${a.id}`);
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
     await giveOnBehalfReason(page);

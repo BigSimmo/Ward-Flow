@@ -8,15 +8,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  */
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
 
 const tourFacts = {
   facts: { readyBeds: 26, openMovements: 70, referralsWaiting: 7 },
-  home: "/ward-flow",
-  deskHome: "/ward-flow",
+  home: "/bedchart",
+  deskHome: "/bedchart",
 };
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({ useTourFacts: () => tourFacts }));
 

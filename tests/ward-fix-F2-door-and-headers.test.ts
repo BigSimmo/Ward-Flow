@@ -37,8 +37,8 @@ describe("A15-21 the door answers before old addresses", () => {
 
   it("still forwards the old addresses when the door is off", async () => {
     for (const [path, target] of [
-      ["/ward-flow/transport", "/ward-flow/transport/officer"],
-      ["/ward-flow/patients", "/ward-flow/search"],
+      ["/bedchart/transport", "/bedchart/transport/officer"],
+      ["/bedchart/patients", "/bedchart/search"],
     ]) {
       const response = await proxy(requestFor(`${path}?site=rph`));
       expect(response.status, path).toBe(307);
@@ -52,7 +52,7 @@ describe("A15-21 the door answers before old addresses", () => {
   it("sends a visitor with no pass to sign-in, not to the old address's target", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", "synthetic-front-door-secret-0123456789abcdef"); // gitleaks:allow
-    for (const path of ["/ward-flow/transport", "/ward-flow/queue", "/ward-flow/patients"]) {
+    for (const path of ["/bedchart/transport", "/bedchart/queue", "/bedchart/patients"]) {
       const response = await proxy(requestFor(path));
       const location = new URL(response.headers.get("location")!);
       expect(location.pathname, path).toBe("/sign-in");
@@ -62,7 +62,7 @@ describe("A15-21 the door answers before old addresses", () => {
     const moved = await proxy(requestFor("/mockups/ward-flow/capacity"));
     const location = new URL(moved.headers.get("location")!);
     expect(location.pathname).toBe("/sign-in");
-    expect(location.searchParams.get("next")).toBe("/ward-flow/capacity");
+    expect(location.searchParams.get("next")).toBe("/bedchart/capacity");
   });
 });
 

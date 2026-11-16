@@ -275,7 +275,7 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     expect(row).toBeInTheDocument();
 
     const link = within(row).getByRole("link");
-    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/ward-flow\/(people|search)/));
+    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/bedchart\/(people|search)/));
     expect(link.textContent).toMatch(/UM\d+|UMRN/);
   });
 
@@ -288,7 +288,7 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     expect(card).toBeInTheDocument();
 
     const link = within(card).getByRole("link");
-    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/ward-flow\/(people|search)/));
+    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/bedchart\/(people|search)/));
   });
 
   it("renders patient name and interactive UMRN link in the case inspector when a case is selected", () => {
@@ -298,7 +298,7 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
 
     const facts = screen.getByTestId("ward-out-of-area-subject-facts");
     const link = within(facts).getByRole("link");
-    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/ward-flow\/(people|search)/));
+    expect(link).toHaveAttribute("href", expect.stringMatching(/^\/bedchart\/(people|search)/));
     expect(link.textContent).toMatch(/UM\d+|UMRN/);
   });
 
@@ -540,7 +540,7 @@ describe("Out of area redesign", () => {
 // Usability review, 24 Oct 2026: the tab lives in the address, so Back from a record returns to it.
 describe("out-of-area tab in the address", () => {
   it("opens on the tab the address names and writes a fixed id when the tab changes", async () => {
-    window.history.replaceState(null, "", "/ward-flow/out-of-area?tab=history");
+    window.history.replaceState(null, "", "/bedchart/out-of-area?tab=history");
     renderBoard();
     await act(async () => {});
     expect(screen.getByRole("tab", { name: /^History/u })).toHaveAttribute("aria-selected", "true");

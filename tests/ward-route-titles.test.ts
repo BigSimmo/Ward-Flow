@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { generateMetadata as boardMetadata } from "@/app/ward-flow/board/[unitId]/page";
-import { generateMetadata as communityMetadata } from "@/app/ward-flow/community/[teamId]/page";
-import { generateMetadata as edMetadata } from "@/app/ward-flow/ed/[edId]/page";
-import { metadata as movementMetadata } from "@/app/ward-flow/movements/[movementId]/page";
-import { metadata as personMetadata } from "@/app/ward-flow/people/[patientId]/page";
+import { generateMetadata as boardMetadata } from "@/app/bedchart/board/[unitId]/page";
+import { generateMetadata as communityMetadata } from "@/app/bedchart/community/[teamId]/page";
+import { generateMetadata as edMetadata } from "@/app/bedchart/ed/[edId]/page";
+import { metadata as movementMetadata } from "@/app/bedchart/movements/[movementId]/page";
+import { metadata as personMetadata } from "@/app/bedchart/people/[patientId]/page";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { knownWardUnit } from "@/components/ward-management/ward-known-places";
 

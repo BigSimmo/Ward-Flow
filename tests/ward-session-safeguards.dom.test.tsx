@@ -61,7 +61,7 @@ it("leaves the bed meeting TV running, and locks again once the TV page is left 
   act(() => vi.advanceTimersByTime(IDLE_MS * 3));
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(signOut).not.toHaveBeenCalled();
-  route.pathname = "/ward-flow/coordinator";
+  route.pathname = "/bedchart/coordinator";
   rerender(tree());
   act(() => vi.advanceTimersByTime(IDLE_MS));
   expect(signOut).toHaveBeenCalledTimes(1);
@@ -222,7 +222,7 @@ it("logs the person a patient or movement page shows, and nothing on other pages
     patientId: "PT-0042",
     surface: "patient",
   });
-  expect(recordViewFor(screenForPath("/ward-flow/capacity"), movements)).toBeUndefined();
+  expect(recordViewFor(screenForPath("/bedchart/capacity"), movements)).toBeUndefined();
 });
 
 it("says '1 second', and signs out at once when woken after the deadline (audit 24-3 SM-5)", () => {

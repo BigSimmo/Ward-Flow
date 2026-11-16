@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const route = vi.hoisted(() => ({ pathname: "/ward-flow" }));
+const route = vi.hoisted(() => ({ pathname: "/bedchart" }));
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -39,14 +39,14 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 afterEach(() => {
   cleanup();
-  route.pathname = "/ward-flow";
+  route.pathname = "/bedchart";
   setWardFeatureFlagOnDevice("role-access", null);
   resetWardAccessStoreForTests();
   resetServiceScopeForTests();
 });
 
 function openToolsOnWardPage(unitId: string) {
-  route.pathname = `/ward-flow/ward/${unitId}`;
+  route.pathname = `/bedchart/ward/${unitId}`;
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <NextBar primaryAction={{ kind: "none" }} />
@@ -76,7 +76,7 @@ describe("the Tools header names the desk and its real scope", () => {
 
 describe("a slipped-dates row opens its record and keeps the page on Now", () => {
   it("leaves Now selected while the record (or its on-behalf reason) shows in the drawer", () => {
-    route.pathname = "/ward-flow/discharges";
+    route.pathname = "/bedchart/discharges";
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <DischargeBoard />

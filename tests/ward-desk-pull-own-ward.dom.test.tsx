@@ -3,7 +3,7 @@ import { useEffect, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/referrals",
+  usePathname: () => "/bedchart/referrals",
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
@@ -134,7 +134,7 @@ describe("Alerts: the ward desk pulls its own ward's accepted bed", () => {
 
 describe("Referrals board: the ward desk pulls its own ward's accepted bed", () => {
   const openBoardOn = (access: WardAccess) => {
-    window.history.replaceState(null, "", `/ward-flow/referrals?referral=${ACCEPTED!.referral.id}`);
+    window.history.replaceState(null, "", `/bedchart/referrals?referral=${ACCEPTED!.referral.id}`);
     renderAs(access, <ReferralBoard defaultSelectFirst />);
   };
 

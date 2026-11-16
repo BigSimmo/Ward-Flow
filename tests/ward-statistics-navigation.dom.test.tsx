@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { StatisticsNav } from "@/components/ward-management/statistics/statistics-nav";
 
-const routing = vi.hoisted(() => ({ pathname: "/ward-flow/statistics", push: vi.fn() }));
+const routing = vi.hoisted(() => ({ pathname: "/bedchart/statistics", push: vi.fn() }));
 vi.mock("next/navigation", () => ({ usePathname: () => routing.pathname, useRouter: () => ({ push: routing.push }) }));
 vi.mock("next/link", () => ({
   default: ({ children, ...props }: { children: ReactNode; href: string }) => <a {...props}>{children}</a>,
@@ -25,7 +25,7 @@ describe("one shared statistics navigation", () => {
     ["/community/bentley", "Teams"],
     ["/weekly", "Weekly"],
   ])("keeps the same destinations and exactly one current page on %s", (suffix, label) => {
-    routing.pathname = `/ward-flow/statistics${suffix}`;
+    routing.pathname = `/bedchart/statistics${suffix}`;
     render(<StatisticsNav />);
     const nav = within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" }));
     const links = nav.getAllByRole("link");
@@ -43,7 +43,7 @@ describe("one shared statistics navigation", () => {
     const current = nav.getByRole("link", { name: new RegExp(`^${label}(\\s*\\d+)?$`) });
     expect(current).toHaveAttribute("aria-current", "page");
     // Each unit kind's tab opens its index page (Statistics A, 9 Oct 2026), from a detail page too.
-    if (suffix.includes("/ward")) expect(current).toHaveAttribute("href", "/ward-flow/statistics/wards");
+    if (suffix.includes("/ward")) expect(current).toHaveAttribute("href", "/bedchart/statistics/wards");
   });
 
   it.each([
@@ -52,7 +52,7 @@ describe("one shared statistics navigation", () => {
     ["/weekly", undefined, "Weekly"],
     ["/service/North%20Metro", "North Metro", "Services"],
   ])("shows the same seven phone chips on %s (phone review F-12)", (suffix, slug, label) => {
-    routing.pathname = `/ward-flow/statistics${suffix}`;
+    routing.pathname = `/bedchart/statistics${suffix}`;
     render(<StatisticsNav variant="chips" activeSlug={slug} withSamples={false} />);
     const nav = within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" }));
     const links = nav.getAllByRole("link");
@@ -73,7 +73,7 @@ describe("one shared statistics navigation", () => {
   });
 
   it("uses the same destinations from the compact mobile section menu (the kit menu, no native select)", () => {
-    routing.pathname = "/ward-flow/statistics";
+    routing.pathname = "/bedchart/statistics";
     render(<StatisticsNav />);
     expect(document.querySelector("select")).toBeNull();
     const choose = (name: string) => {
@@ -85,8 +85,8 @@ describe("one shared statistics navigation", () => {
       "menu",
     );
     choose("Compare");
-    expect(routing.push).toHaveBeenCalledWith("/ward-flow/statistics/compare");
+    expect(routing.push).toHaveBeenCalledWith("/bedchart/statistics/compare");
     choose("Services");
-    expect(routing.push).toHaveBeenCalledWith("/ward-flow/statistics/services");
+    expect(routing.push).toHaveBeenCalledWith("/bedchart/statistics/services");
   });
 });

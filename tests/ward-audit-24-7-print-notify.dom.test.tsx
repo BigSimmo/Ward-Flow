@@ -8,7 +8,7 @@ import { afterEach, expect, it, vi } from "vitest";
 vi.mock("next/link", () => ({
   default: ({ children, href }: { children: ReactNode; href: string }) => <a href={href}>{children}</a>,
 }));
-vi.mock("next/navigation", () => ({ usePathname: () => "/ward-flow/reports/chronology" }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/bedchart/reports/chronology" }));
 vi.mock("@/components/ward-management/shell/ward-sound-store", async (original) => ({
   ...(await original<typeof import("@/components/ward-management/shell/ward-sound-store")>()),
   triggerUrgentBuzzAlert: vi.fn(),

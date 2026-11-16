@@ -101,8 +101,8 @@ describe("live audit item 19: sign-out leaves no readable Ward Flow cookie", () 
     syncWardDeskHeldCookie(false);
     syncWardDeskHeldCookie(null);
     expect(writes).toEqual([
-      "wardflow-desk-held=1;path=/ward-flow;SameSite=Strict;Secure",
-      "wardflow-desk-held=;path=/ward-flow;SameSite=Strict;max-age=0;Secure",
+      "wardflow-desk-held=1;path=/bedchart;SameSite=Strict;Secure",
+      "wardflow-desk-held=;path=/bedchart;SameSite=Strict;max-age=0;Secure",
     ]);
   });
 

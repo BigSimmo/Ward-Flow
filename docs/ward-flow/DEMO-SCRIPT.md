@@ -1,4 +1,4 @@
-# Ward Flow demonstration script
+# BedChart demonstration script
 
 <!-- last-checked: 2026-11-13 -->
 
@@ -20,7 +20,7 @@ Previous rewrites: 10 November, 24 October and 20 October 2026 (PR #510). Docume
 
 ## Read this first
 
-- **Ward Flow is a prototype on synthetic data.** It is not clinical decision support and not approved for
+- **BedChart is a prototype on synthetic data.** It is not clinical decision support and not approved for
   clinical use. Say so at the start and at the end. If asked whether it is a medical device, say: "We
   believe it sits outside the medical device definition. No regulatory adviser has confirmed that
   yet." Do not state it as settled.
@@ -42,7 +42,7 @@ demo code out for up to 10 minutes, and a shared venue network counts as one add
    left-hand menu shows only icons, the zoom is above 100% or the window is under 1201 px wide:
    press **Ctrl+0**. Below a 1920 x 1080 screen you will scroll about a dozen times during the run;
    full screen (**F11**) helps. Type the demo code and press **Open the demo**. If the **Welcome to
-   Ward Flow** cards appear, press **Not now**. Open it well before the audience arrives: a first
+   BedChart** cards appear, press **Not now**. Open it well before the audience arrives: a first
    open on a slow connection can take over ten seconds behind a "Loading page" notice.
 2. Check the footer starts "Synthetic prototype" and says "Not approved for clinical use".
 3. Rehearse once from start to finish **in this same tab**, Act 4 included, so every page's code is
@@ -70,8 +70,8 @@ demo takes off any time you added with **+15 min** or **+1 hour**, but not the r
 passed: after a 40-minute rehearsal the board reads about 11:20. That is
 fine; say it is a demonstration clock, not the time now. **Pause** beside the **Demo clock** holds board time if you need to stop
 mid-act; press **Resume** before carrying on. If you want a 10:42 start, close every
-Ward Flow tab and open the demo in one new tab just before the audience arrives, then Reset demo (a
-new tab opened while another Ward Flow tab is open takes that tab's clock). A reload does not put a
+BedChart tab and open the demo in one new tab just before the audience arrives, then Reset demo (a
+new tab opened while another BedChart tab is open takes that tab's clock). A reload does not put a
 drifted clock back: open a new tab. Do not reload after midnight: the demo starts a fresh day and
 loses every click. Keira's planned move is an hour after the last Reset demo; after that she stays
 on Home under **Past planned time** instead of **Rest of your shift**.
@@ -174,7 +174,7 @@ filters **Under a form** and **No bed yet**.
 **Say:**
 
 > "This is the emergency department's view: who is waiting for a mental health bed, how long, and
-> under which legal form. The ED's list stays in the order the ED keeps it. Ward Flow does not
+> under which legal form. The ED's list stays in the order the ED keeps it. BedChart does not
 > re-sort it or score anyone."
 
 **Do:** scroll down to **Under 8 hours** and click **Pellingworth, Keira**. A panel opens. Point to **Where the referral is** (Referral
@@ -193,7 +193,7 @@ board (the row just below Keira's):
 > that it ended, and it is prompting for the next form to be recorded. A person records it; the app
 > does not. That rule still needs legal review.
 >
-> Now look at this patient's form: 'Time not entered'. Ward Flow never works out when a form
+> Now look at this patient's form: 'Time not entered'. BedChart never works out when a form
 > expires. If a time is shown, it is the one typed from the paper form. If it wasn't written, the
 > app says so rather than guessing."
 
@@ -561,7 +561,7 @@ Keep this beside you. Each row is a press to avoid on the day, why, and what to 
 | **Save to file**, **Load from file**, **Receive message** in Tools                 | A download, a file chooser, and a stray message                                                                                          | **Esc**. Delete the download later                                                                                                                                                                                                                                                                                                            |
 | **Ask** (a ward to confirm its beds) on Capacity                                   | It records in one click, with no Undo. Not Keira                                                                                         | Leave it. Reset demo clears it                                                                                                                                                                                                                                                                                                                |
 | Inside **Triage**                                                                  | Its see-by windows are unsigned                                                                                                          | **Back**                                                                                                                                                                                                                                                                                                                                      |
-| Reload to fix the clock                                                            | A reload does not put a drifted clock back                                                                                               | Close every Ward Flow tab, open one new tab, then **Reset demo**                                                                                                                                                                                                                                                                              |
+| Reload to fix the clock                                                            | A reload does not put a drifted clock back                                                                                               | Close every BedChart tab, open one new tab, then **Reset demo**                                                                                                                                                                                                                                                                               |
 
 Things that happen without a wrong press:
 

@@ -852,13 +852,13 @@ function selfTest({ stdout = console.log, stderr = console.error } = {}) {
   // collapsed to its (possibly still-live) root.
   check(
     "moduleSpecifiersFor names a deep deleted route by its full path, not just its root",
-    moduleSpecifiersFor(`${MOCKUP_ROUTE_ROOT}/ward-flow/patients/[id]/page.tsx`).includes(
+    moduleSpecifiersFor(`${MOCKUP_ROUTE_ROOT}/bedchart/patients/[id]/page.tsx`).includes(
       "/mockups/ward-flow/patients/[id]",
     ),
   );
   check(
     "moduleSpecifiersFor does not also emit the bare root for a deep deleted route",
-    !moduleSpecifiersFor(`${MOCKUP_ROUTE_ROOT}/ward-flow/patients/[id]/page.tsx`).includes("/mockups/ward-flow"),
+    !moduleSpecifiersFor(`${MOCKUP_ROUTE_ROOT}/bedchart/patients/[id]/page.tsx`).includes("/mockups/ward-flow"),
   );
   check(
     "moduleSpecifiersFor still emits the bare root when the root's own page is what was deleted",

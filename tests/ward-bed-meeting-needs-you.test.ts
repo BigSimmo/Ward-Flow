@@ -94,7 +94,7 @@ describe("bed meeting actions in Needs you", () => {
     const rows = meetingRows(next);
     const ed = rows.find((row) => row.owner === "ED team")!;
     expect(inboxItemsForRole([ed], "ed")).toHaveLength(1);
-    expect(ed.href).toMatch(/^\/ward-flow\/movements\//);
+    expect(ed.href).toMatch(/^\/bedchart\/movements\//);
 
     const wardRow = rows.find((row) => row.owner === ward.name)!;
     expect(wardRow.title).toBe("Bed meeting action: Chase NDIS");

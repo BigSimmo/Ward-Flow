@@ -140,7 +140,7 @@ describe("two active bed requests for one person (audit F-19)", () => {
     const named = resolveSubjectPatient({ patientId: person }, state);
     expect(named.patient?.id).toBe(person);
     expect(subject.displayName).toBe(named.formalName);
-    expect(subject.patientHref).toContain("/ward-flow/people/");
+    expect(subject.patientHref).toContain("/bedchart/people/");
     expect(row!.href).toBe(referralBoardHref("R-dup-1"));
     expect(alertActionFor(row!, subject)).toEqual({
       kind: "link",

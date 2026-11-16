@@ -389,7 +389,7 @@ function CreateSheet({
   const { canRefer, ids } = usePhoneCreateOptions(byId);
   const headingId = useId();
   // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
-  const currentUnitId = /^\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
+  const currentUnitId = /^\/bedchart\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
   const rows = CREATE_LINKS.flatMap((item) => {
     if (!ids.includes(item.id)) return [];
     const entry = item.href !== undefined ? { href: item.href } : byId.get(item.id);

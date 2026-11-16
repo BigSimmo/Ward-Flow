@@ -43,7 +43,7 @@ const WARD_WORKSPACE_MODES = workspaceExpression.elements.map((element) => {
 if (new Set(WARD_WORKSPACE_MODES).size !== WARD_WORKSPACE_MODES.length)
   throw new Error("WARD_WORKSPACE_MODES must not contain duplicates");
 
-const PATH = "/ward-flow";
+const PATH = "/bedchart";
 
 /**
  * B1 (Josh, 19 Oct 2026): the rail shows the desk's own short menu and keeps every other page under
@@ -77,7 +77,7 @@ async function expectNoPageOverflow(page: Page) {
  * `document.documentElement` can never report an overflow on the coordinator route — `.screen`
  * sets `overflow: hidden` — so `expectNoPageOverflow` alone cannot catch a track inside the
  * region grid running wider than its box (Task 3 review Important 1). Only meaningful on
- * /ward-flow itself, where the region grid testid exists.
+ * /bedchart itself, where the region grid testid exists.
  */
 async function expectNoRegionGridOverflow(page: Page) {
   const overflow = await page.evaluate(() => {
@@ -322,7 +322,7 @@ test.describe("@mockup Ward Flow command view", () => {
       // Josh, 8 Nov 2026: the coordinator's dock Capacity tab is a button that opens Capacity at a
       // glance, whose own link opens the full page, so that tab is how a phone reaches Capacity.
       const capacityTab =
-        view.href === "/ward-flow/capacity" ? ['[data-testid="ward-phone-dock-capacity"]:visible'] : [];
+        view.href === "/bedchart/capacity" ? ['[data-testid="ward-phone-dock-capacity"]:visible'] : [];
       const link = page
         .locator(
           [
@@ -499,7 +499,7 @@ test.describe("@mockup Ward Flow command view", () => {
   // the "no brand link" count cannot pass on an empty page.
   test("uses the lean bar on phone, with Menu first and no brand link", async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 820 });
-    await page.goto("/ward-flow/queue", { waitUntil: "domcontentloaded" });
+    await page.goto("/bedchart/queue", { waitUntil: "domcontentloaded" });
 
     const menu = page.getByTestId("ward-bar-phone-menu");
     await expect(menu).toBeVisible({ timeout: 15_000 });

@@ -44,7 +44,7 @@ const TARGET = "WF-013";
 
 beforeEach(() => {
   server.reply = null;
-  window.history.replaceState(null, "", `/ward-flow/ward/${WARD.id}`);
+  window.history.replaceState(null, "", `/bedchart/ward/${WARD.id}`);
   window.sessionStorage.clear();
 });
 afterEach(() => cleanup());

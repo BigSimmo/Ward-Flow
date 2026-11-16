@@ -64,7 +64,7 @@ vi.mock("next/navigation", () => ({
   // The Ward Flow sidebar derives its role from the route (ward-nav-role-order.ts), so every
   // suite that renders a rail needs a pathname. A whole-module mock without one makes
   // `usePathname` undefined, which throws at render rather than returning a wrong answer.
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => router,
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -113,10 +113,10 @@ import { WardFlowSignInScreen } from "@/components/ward-flow-sign-in/ward-flow-s
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const REPO_ROOT = path.resolve(__dirname, "..");
-const WARD_FLOW_ROOT = path.join(REPO_ROOT, "src", "app", "ward-flow");
-const WARD_FLOW_SIGN_IN_ROOT = path.join(REPO_ROOT, "src", "app", "ward-flow-sign-in");
-const ROUTE_PREFIX = "/ward-flow";
-const SIGN_IN_ROUTE = "/ward-flow-sign-in";
+const WARD_FLOW_ROOT = path.join(REPO_ROOT, "src", "app", "bedchart");
+const WARD_FLOW_SIGN_IN_ROOT = path.join(REPO_ROOT, "src", "app", "bedchart-sign-in");
+const ROUTE_PREFIX = "/bedchart";
+const SIGN_IN_ROUTE = "/bedchart-sign-in";
 
 type WardFlowRoute = { route: string; dynamic: boolean };
 
@@ -125,7 +125,7 @@ type WardFlowRoute = { route: string; dynamic: boolean };
  * than imported, matching that file's own established pattern of every structural-contract test
  * owning its own filesystem scan, so a change to one enumeration can never silently blind the
  * other. Enumerated straight from the filesystem, never a hand-written list.
- * Includes both `/ward-flow` and its sibling `/ward-flow-sign-in` (R09).
+ * Includes both `/bedchart` and its sibling `/bedchart-sign-in` (R09).
  */
 function collectWardFlowRoutes(dir: string, segments: string[] = [], prefix = ROUTE_PREFIX): WardFlowRoute[] {
   const routes: WardFlowRoute[] = [];
@@ -147,7 +147,7 @@ const wardFlowRoutes = [
 ];
 
 /**
- * `/ward-flow/constellation` is a `redirect()`-only stub (its own doc comment: "Phase 2
+ * `/bedchart/constellation` is a `redirect()`-only stub (its own doc comment: "Phase 2
  * retired the constellation command view into the coordinator screen and the network diagram. The
  * route stays as a bookmark/deep-link backstop..."). It renders no landmark, no heading, and no
  * nav of its own — it is not one of the live routes the D5/D7/D8 measurements are about. (That
@@ -162,7 +162,7 @@ const wardFlowRoutes = [
  * stub for the same bookmark/deep-link reason `/constellation` is (see its own doc comment, before
  * it was deleted — see below).
  *
- * `/ward-flow/transport` joined this set under MERGE 03 (owner-approved 2026-09-05): the
+ * `/bedchart/transport` joined this set under MERGE 03 (owner-approved 2026-09-05): the
  * live vehicle tracker folded into `MovementsScreen`, and the old route is now a `redirect()`-only
  * stub for the same bookmark/deep-link reason `/constellation` and Morning were (see
  * transport/page.tsx's own doc comment).
@@ -202,7 +202,7 @@ type RouteRender = { route: string; render: () => ReactNode };
 
 /**
  * One entry per real, renderable Ward Flow page — the same component each page.tsx under
- * src/app/ward-flow/ actually mounts (checked against every page.tsx file directly), with
+ * src/app/bedchart/ actually mounts (checked against every page.tsx file directly), with
  * real fixture ids standing in for the two dynamic segments: `peel-ed` and `rph-adult-secure`, the
  * same instances tests/ward-nav.test.ts and the sibling `*.dom.test.tsx` suites already use, and
  * `WF-001` for the patient workspace's movement id (tests/ward-patient-page.dom.test.tsx uses the
@@ -216,10 +216,10 @@ type RouteRender = { route: string; render: () => ReactNode };
  * `docs/codebase-index.md`, `route-reachability.test.ts`'s allowlist, and this file's own
  * `RENDERABLE_ROUTES`/`REDIRECT_ONLY_ROUTES` pair). Found by the coverage test below going red
  * with "route(s) on disk with no test coverage" naming that route, not by inspection.
- * `/ward-flow/referrals/new` (Phase 7 Task 4) added this entry in the same commit that
+ * `/bedchart/referrals/new` (Phase 7 Task 4) added this entry in the same commit that
  * added the route, precisely to avoid repeating that omission; since 8 Oct 2026 it renders the board.
- * `/ward-flow/referrals` (Phase 7 Task 5, `ReferralBoard`) does the same.
- * `/ward-flow/out-of-area` (Phase 8 Task 5, `OutOfAreaBoard`) does the same again.
+ * `/bedchart/referrals` (Phase 7 Task 5, `ReferralBoard`) does the same.
+ * `/bedchart/out-of-area` (Phase 8 Task 5, `OutOfAreaBoard`) does the same again.
  */
 const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/statistics`, render: () => createElement(StatisticsScreen) },
@@ -327,11 +327,11 @@ const RENDERABLE_ROUTES: RouteRender[] = [
 ];
 
 describe("Ward Flow route/render-map coverage (sanity check on the scan and the map)", () => {
-  it("finds a nonempty, unique route population under src/app/ward-flow", () => {
+  it("finds a nonempty, unique route population under src/app/bedchart", () => {
     // A silently broken scan (wrong directory, wrong glob) would collapse this to 0 or a handful,
     // and every assertion below would then vacuously pass — so this is checked before trusting
     // any of them. Mirrors tests/ward-nav.test.ts's own sanity count. 21, not 20: Phase 8 Task 5
-    // added `/ward-flow/out-of-area` (`OutOfAreaBoard`) — see RENDERABLE_ROUTES's own doc
+    // added `/bedchart/out-of-area` (`OutOfAreaBoard`) — see RENDERABLE_ROUTES's own doc
     // comment.
     // 22 at the fold, not 21: the ward board branch added `/board/[unitId]` while Phase 8 added
     // `/out-of-area`, and each branch had moved this number to 21 for its own route. Both entries
@@ -369,7 +369,7 @@ describe("Ward Flow route/render-map coverage (sanity check on the scan and the 
      * separate branches. **Taking either side would have been wrong, and bumping the previous
      * literal by one would have been wrong for whichever route was not the one you were thinking
      * about.** Counted on disk at the moment of the merge with both routes present:
-     * `find src/app/ward-flow -name page.tsx | wc -l` = 35. Renderable 29 + redirect-only 6.
+     * `find src/app/bedchart -name page.tsx | wc -l` = 35. Renderable 29 + redirect-only 6.
      *
      * ⚠️ **This exact collision was written down in the assignment register hours before it
      * happened**, precisely because the obvious repair is the wrong one and the person resolving it
@@ -386,10 +386,10 @@ describe("Ward Flow route/render-map coverage (sanity check on the scan and the 
     // title kept reading "30 renderable + 3 redirect-only", a stale breakdown from before that move
     // that happened to still sum to the same total. Fixed here rather than carried forward with a
     // new number bolted onto an old, wrong one.
-    // 34, not 33: Task 4 (2026-09-06) added `/ward-flow/statistics/service/[serviceId]`
+    // 34, not 33: Task 4 (2026-09-06) added `/bedchart/statistics/service/[serviceId]`
     // (`StatisticsServiceScreen`), the fourth statistics section — one dynamic route serving all
     // five `HEALTH_SERVICES`. Counted by hand on disk immediately before this change
-    // (`find src/app/ward-flow -name page.tsx | wc -l` = 33) rather than by incrementing
+    // (`find src/app/bedchart -name page.tsx | wc -l` = 33) rather than by incrementing
     // the previous literal, per this file's own standing rule that a bumped literal is the repair
     // that is wrong for whichever other branch is adding a route at the same time. One route added,
     // none removed, so the corrected split moves to 28 renderable + 6 redirect-only = 34.
@@ -405,7 +405,7 @@ describe("Ward Flow route/render-map coverage (sanity check on the scan and the 
     // 36, not 35: `/statistics/community/[teamId]` arrived with the origin/main fold
     // (1d85db58e7, 2026-09-09) and had no entry in either map — the coverage test below is what
     // caught it, exactly as designed. One route added, none removed: 30 renderable + 6
-    // redirect-only = 36. Counted on disk (`find src/app/ward-flow -name page.tsx | wc -l`),
+    // redirect-only = 36. Counted on disk (`find src/app/bedchart -name page.tsx | wc -l`),
     // not by incrementing the literal, per this file's own standing rule.
     /*
      * 🔴 **40 — RE-DERIVED HERE, AND THE FACT THAT IT HAD TO BE RE-DERIVED *HERE TOO* IS THE
@@ -466,7 +466,7 @@ describe("Ward Flow route/render-map coverage (sanity check on the scan and the 
     // ⚠️ THE TITLE ABOVE STILL SAID "30 entries" AFTER THIS LINE MOVED TO 27, INDEPENDENTLY OF
     // ANYTHING BELOW — the same "count in a title is prose, so nothing recomputes it" trap this
     // comment block already names twice above. Fixed here rather than carried forward.
-    // 28, not 27: Task 4 (2026-09-06) added `/ward-flow/statistics/service/[serviceId]`
+    // 28, not 27: Task 4 (2026-09-06) added `/bedchart/statistics/service/[serviceId]`
     // (`StatisticsServiceScreen`), the fourth statistics section. One entry added, none removed:
     // 27 + 1 = 28. Moved in both this file and tests/ward-nav.test.ts together, per that file's own
     // comment on why the two RENDERABLE_ROUTES maps must move as a pair.
@@ -547,7 +547,7 @@ describe("Every Ward Flow route has exactly one <h1> (D7)", () => {
     });
   }
 
-  it.each(["/ward-flow/governance"])(
+  it.each(["/bedchart/governance"])(
     'AUD-12: places the visually hidden <h1> inside <main id="main-content"> on %s',
     (route) => {
       const entry = RENDERABLE_ROUTES.find((candidate) => candidate.route === route);

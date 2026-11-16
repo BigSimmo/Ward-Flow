@@ -62,7 +62,7 @@ describe.each([
     fireEvent.click(within(sheet).getByRole("button", { name: "Open patient" }));
     expect(push).toHaveBeenCalledTimes(1);
     const href = push.mock.calls[0][0] as string;
-    expect(href).toMatch(/^\/ward-flow\/people\/[^/]+$/u);
+    expect(href).toMatch(/^\/bedchart\/people\/[^/]+$/u);
     // D-39: the address carries a code, never the record number.
     expect(href).not.toContain("WF-009");
     expect(screen.queryByRole("button", { name: "Close patient details", hidden: true })).toBeNull();

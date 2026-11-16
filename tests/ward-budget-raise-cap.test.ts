@@ -13,30 +13,30 @@ import {
 // the cap it needs the PR's own docs/script-budget-history/ file to record Josh's yes.
 
 const root = path.resolve(import.meta.dirname, "..");
-const base = { "/ward-flow": 560.0, "/ward-flow/ed": 520.0 };
+const base = { "/bedchart": 560.0, "/bedchart/ed": 520.0 };
 
 describe("phone limit raise cap (D-82, D-121 item 5)", () => {
   it("allows a raise up to 5 KB per screen, and any lowering", () => {
     expect(RAISE_CAP_KB).toBe(5);
-    expect(raisesOverCap(base, { "/ward-flow": 565.0, "/ward-flow/ed": 500.0 })).toEqual([]);
+    expect(raisesOverCap(base, { "/bedchart": 565.0, "/bedchart/ed": 500.0 })).toEqual([]);
     // The allowance is per screen: two screens each raised by the full 5 KB still pass.
-    expect(raisesOverCap(base, { "/ward-flow": 565.0, "/ward-flow/ed": 525.0 })).toEqual([]);
+    expect(raisesOverCap(base, { "/bedchart": 565.0, "/bedchart/ed": 525.0 })).toEqual([]);
   });
 
   it("compares the exact raise, so a fraction above 5 KB fails", () => {
-    expect(raisesOverCap(base, { "/ward-flow": 565.04 })).toEqual([
-      { route: "/ward-flow", from: 560.0, to: 565.04, raise: 5.04 },
+    expect(raisesOverCap(base, { "/bedchart": 565.04 })).toEqual([
+      { route: "/bedchart", from: 560.0, to: 565.04, raise: 5.04 },
     ]);
   });
 
   it("flags a screen raised by more than 5 KB, and ignores a new screen", () => {
-    expect(raisesOverCap(base, { "/ward-flow": 565.1, "/ward-flow/new": 900 })).toEqual([
-      { route: "/ward-flow", from: 560.0, to: 565.1, raise: 5.1 },
+    expect(raisesOverCap(base, { "/bedchart": 565.1, "/bedchart/new": 900 })).toEqual([
+      { route: "/bedchart", from: 560.0, to: 565.1, raise: 5.1 },
     ]);
   });
 
   it("passes a raise above the cap only when the PR's history file records Josh's approval", () => {
-    const headBudgets = { "/ward-flow": 567.0 };
+    const headBudgets = { "/bedchart": 567.0 };
     expect(judgeRaiseCap({ baseBudgets: base, headBudgets, historyTexts: [] }).ok).toBe(false);
     expect(
       judgeRaiseCap({ baseBudgets: base, headBudgets, historyTexts: ["Raised the board 560.0 to 567.0. Trims tried."] })
@@ -57,7 +57,7 @@ describe("phone limit raise cap (D-82, D-121 item 5)", () => {
     "Recorded with Josh's explicit yes on 9 Nov 2026.",
     "Josh’s yes came on the decision card.",
   ])("accepts the affirmative approval form %j", (text) => {
-    expect(judgeRaiseCap({ baseBudgets: base, headBudgets: { "/ward-flow": 567.0 }, historyTexts: [text] }).ok).toBe(
+    expect(judgeRaiseCap({ baseBudgets: base, headBudgets: { "/bedchart": 567.0 }, historyTexts: [text] }).ok).toBe(
       true,
     );
   });
@@ -70,7 +70,7 @@ describe("phone limit raise cap (D-82, D-121 item 5)", () => {
     "Not approved by Josh yet.",
     "Josh approved is still pending for this raise.",
   ])("rejects the negative or pending text %j", (text) => {
-    expect(judgeRaiseCap({ baseBudgets: base, headBudgets: { "/ward-flow": 567.0 }, historyTexts: [text] }).ok).toBe(
+    expect(judgeRaiseCap({ baseBudgets: base, headBudgets: { "/bedchart": 567.0 }, historyTexts: [text] }).ok).toBe(
       false,
     );
   });

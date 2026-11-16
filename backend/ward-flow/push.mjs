@@ -19,7 +19,7 @@ const PUSH_SERVICE_HOSTS = Object.freeze([
   "push.apple.com",
   "notify.windows.com",
 ]);
-export const ALERTS_PATH = "/ward-flow/alerts";
+export const ALERTS_PATH = "/bedchart/alerts";
 const PUSH_TOPIC = "wardflowactnow";
 /**
  * Audit M158: the Web Push Topic per notification tag. A push service replaces a message still
@@ -139,7 +139,7 @@ export function freshAlerts(previousIds, current) {
   });
 }
 
-export const OFFICER_PATH = "/ward-flow/transport/officer";
+export const OFFICER_PATH = "/bedchart/transport/officer";
 
 /**
  * The notification for a batch of new items. Takes only `{ site, kind }` per item, so no

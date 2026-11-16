@@ -26,6 +26,6 @@ Every emergency department, with the people there waiting for a mental health be
 - Record that no transport is needed. On the ED board, open the row's actions and press Record no transport needed. The transport step is then skipped for this patient, and the ward records the arrival.
 - Record a medical deterioration after clearance. Open the person on the ED board and press Record medical deterioration, then Confirm deterioration and release reservation. It cancels the allocation, releases the bed, cancels transport not yet collected and pauses placement until cleared again.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

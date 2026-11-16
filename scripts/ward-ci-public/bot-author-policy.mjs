@@ -83,22 +83,22 @@ export const sensitivePathPatterns = [
   /^supabase\//u,
   /^backend\/(?:.+\/)?infra\/[^/]+\.sql$/iu,
   // Ward Flow's forward schema migrations and the list that orders them.
-  /^backend\/ward-flow\/(?:migrations\/[^/]+\.sql|migrations\.mjs)$/u,
+  /^backend\/bedchart\/(?:migrations\/[^/]+\.sql|migrations\.mjs)$/u,
   // Backend sign-in and role checks, the shared command engine and its input schemas.
-  /^backend\/ward-flow\/(?:auth|supabase-auth)\.mjs$/u,
-  /^backend\/ward-flow\/(?:engine|command-schemas)\.ts$/u,
+  /^backend\/bedchart\/(?:auth|supabase-auth)\.mjs$/u,
+  /^backend\/bedchart\/(?:engine|command-schemas)\.ts$/u,
   // Ward eligibility and the Mental Health Act legal-forms logic (not their styles or views).
   /^src\/components\/ward-management\/ward-eligibility\.ts$/u,
   /^src\/components\/ward-management\/(?:legal-forms\/)?[^/]*legal[^/]*\.ts$/u,
   /^data\/mha-[^/]*$/iu,
-  /^docs\/ward-flow\/governance\//u,
+  /^docs\/bedchart\/governance\//u,
   /^(?:src|data|docs|backend)\/(?:.*\/)?[^/]*clinic[^/]*(?:\/|$)/iu,
   // CI itself: the workflows and their local actions, the public CI scripts (this file included) and
   // the protected-test list.
   /^\.github\/workflows\//u,
   /^\.github\/actions\//u,
   /^scripts\/ward-ci-public\//u,
-  /^scripts\/ward-flow\/protected-safety-tests\.json$/u,
+  /^scripts\/bedchart\/protected-safety-tests\.json$/u,
 ];
 
 const PROTECTED_SAFETY_TESTS_URL = new URL("../ward-flow/protected-safety-tests.json", import.meta.url);

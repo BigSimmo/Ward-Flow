@@ -41,12 +41,12 @@ const base = (values.base ?? `http://127.0.0.1:${values.port}`).replace(/\/$/u, 
 if (!/^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/u.test(base))
   throw new Error("--base must be a loopback http address");
 const pages = {
-  tv: `${base}/ward-flow/bed-meeting?service=all`,
-  desk: `${base}/ward-flow/board/rph-adult-secure`,
+  tv: `${base}/bedchart/bed-meeting?service=all`,
+  desk: `${base}/bedchart/board/rph-adult-secure`,
 };
 const log = (message) => appendFileSync(path.join(out, "soak.log"), `${new Date().toISOString()} ${message}\n`);
 
-const portBusy = await fetch(`${base}/ward-flow`).then(
+const portBusy = await fetch(`${base}/bedchart`).then(
   () => true,
   () => false,
 );
@@ -64,7 +64,7 @@ async function waitForServer() {
   for (let attempt = 0; attempt < 120; attempt++) {
     if (server && server.exitCode !== null) throw new Error(`next start exited (${server.exitCode})`);
     try {
-      if ((await fetch(`${base}/ward-flow`)).ok) return;
+      if ((await fetch(`${base}/bedchart`)).ok) return;
     } catch {
       // Not listening yet.
     }

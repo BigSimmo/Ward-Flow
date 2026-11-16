@@ -7,7 +7,7 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/people/synthetic",
+  usePathname: () => "/bedchart/people/synthetic",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));
 

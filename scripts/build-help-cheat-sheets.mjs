@@ -46,7 +46,7 @@ export function screenGuideMarkdown(guide) {
     "",
     ...(guide.onPhone.length ? ["## On a phone", "", ...guide.onPhone.map((text) => `- ${text}`), ""] : []),
     ...(guide.jobs.length ? ["## Jobs done here", "", ...guide.jobs.map((text) => `- ${text}`), ""] : []),
-    "In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.",
+    "In BedChart, open Help and choose Show me around this screen to see each part lit in turn.",
     "",
     "_Prototype on synthetic data. Not for real patients._",
     "",
@@ -90,9 +90,9 @@ const escapeHtml = (text) =>
 export function cheatSheetHtml(sheet) {
   const list = (items, numbered = false) =>
     `<${numbered ? "ol" : "ul"}>${items.map((text) => `<li>${escapeHtml(text)}</li>`).join("")}</${numbered ? "ol" : "ul"}>`;
-  return `<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(sheet.title)} — Ward Flow</title>
+  return `<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(sheet.title)} — BedChart</title>
 <style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{margin:0;font:11pt/1.35 Arial,sans-serif;color:CanvasText;background:Canvas}main{max-width:182mm;margin:auto}h1{font-size:21pt;margin:0 0 3mm}h2{font-size:12pt;margin:5mm 0 2mm}header{border-bottom:1pt solid;padding-bottom:3mm}header p,footer p{margin:0}li{margin-bottom:2.5mm}ul,ol{padding-left:5mm;margin:0}.columns{display:grid;grid-template-columns:1.35fr 1fr;gap:9mm}section,li{break-inside:avoid}footer{border-top:.5pt solid;margin-top:5mm;padding-top:3mm;font-size:10pt}.draft{font-size:10pt}@media screen{body{padding:5mm}.draft{padding:2mm 0}}@media screen and (max-width:600px){.columns{grid-template-columns:1fr}}@media print{.draft{display:none}}</style></head>
-<body><main><header><h1>${escapeHtml(sheet.title)}</h1><p>Ward Flow · ${escapeHtml(sheet.homeName)}</p></header><p class="draft">Print on A4 at 100%. Use your browser’s Print command.</p><div class="columns"><div><section><h2>Jobs you do most</h2>${list(sheet.jobs, true)}</section><section><h2>What you cannot do</h2>${list(sheet.limits)}</section></div><div><section><h2>Colour code</h2>${list(sheet.legend)}</section><section><h2>Keyboard shortcuts</h2>${list(sheet.shortcuts)}</section></div></div><footer>
+<body><main><header><h1>${escapeHtml(sheet.title)}</h1><p>BedChart · ${escapeHtml(sheet.homeName)}</p></header><p class="draft">Print on A4 at 100%. Use your browser’s Print command.</p><div class="columns"><div><section><h2>Jobs you do most</h2>${list(sheet.jobs, true)}</section><section><h2>What you cannot do</h2>${list(sheet.limits)}</section></div><div><section><h2>Colour code</h2>${list(sheet.legend)}</section><section><h2>Keyboard shortcuts</h2>${list(sheet.shortcuts)}</section></div></div><footer>
 <p>Prototype on synthetic data. Not for real patients.</p>
 </footer></main></body></html>`;
 }
@@ -102,10 +102,10 @@ export function screenGuideHtml(guide) {
     `<${numbered ? "ol" : "ul"}>${items.map((text) => `<li>${escapeHtml(text)}</li>`).join("")}</${numbered ? "ol" : "ul"}>`;
   const section = (title, items, numbered) =>
     items.length ? `<section><h2>${escapeHtml(title)}</h2>${list(items, numbered)}</section>` : "";
-  return `<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(guide.title)} screen — Ward Flow</title>
+  return `<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(guide.title)} screen — BedChart</title>
 <style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{margin:0;font:11pt/1.35 Arial,sans-serif;color:CanvasText;background:Canvas}main{max-width:182mm;margin:auto}h1{font-size:21pt;margin:0 0 3mm}h2{font-size:12pt;margin:5mm 0 2mm}header{border-bottom:1pt solid;padding-bottom:3mm}header p,footer p{margin:0}li{margin-bottom:2.5mm}ul,ol{padding-left:5mm;margin:0}section,li{break-inside:avoid}footer{border-top:.5pt solid;margin-top:5mm;padding-top:3mm;font-size:10pt}.draft{font-size:10pt}@media screen{body{padding:5mm}.draft{padding:2mm 0}}@media print{.draft{display:none}}</style></head>
-<body><main><header><h1>${escapeHtml(guide.title)}</h1><p>Ward Flow · ${escapeHtml(guide.purpose)}</p></header><p class="draft">Print on A4 at 100%. Use your browser’s Print command.</p>${section("What is on the screen", guide.parts, true)}${section("On a phone", guide.onPhone)}${section("Jobs done here", guide.jobs)}<footer>
-<p>In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.</p>
+<body><main><header><h1>${escapeHtml(guide.title)}</h1><p>BedChart · ${escapeHtml(guide.purpose)}</p></header><p class="draft">Print on A4 at 100%. Use your browser’s Print command.</p>${section("What is on the screen", guide.parts, true)}${section("On a phone", guide.onPhone)}${section("Jobs done here", guide.jobs)}<footer>
+<p>In BedChart, open Help and choose Show me around this screen to see each part lit in turn.</p>
 <p>Prototype on synthetic data. Not for real patients.</p>
 </footer></main></body></html>`;
 }

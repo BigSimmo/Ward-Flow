@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { WARD_FLOW_PATH_PREFIX, isWardFlowPath } from "@/lib/developer-area/headers";
 
-const WARD_SOURCE_ROOTS = ["src/components/ward-management", "src/app/ward-flow"];
+const WARD_SOURCE_ROOTS = ["src/components/ward-management", "src/app/bedchart"];
 
 function walk(directory: string): string[] {
   return readdirSync(directory).flatMap((entry) => {
@@ -54,9 +54,9 @@ function importsAndCalls(file: string): { imports: string[]; networkCalls: strin
 
 describe("Ward Flow's isolated demo and shared-adapter boundary", () => {
   it("matches the exact route subtree", () => {
-    expect(WARD_FLOW_PATH_PREFIX).toBe("/ward-flow");
-    expect(isWardFlowPath("/ward-flow")).toBe(true);
-    expect(isWardFlowPath("/ward-flow/capacity")).toBe(true);
+    expect(WARD_FLOW_PATH_PREFIX).toBe("/bedchart");
+    expect(isWardFlowPath("/bedchart")).toBe(true);
+    expect(isWardFlowPath("/bedchart/capacity")).toBe(true);
     expect(isWardFlowPath("/ward-flow-archive")).toBe(false);
     expect(isWardFlowPath("/mockups/ward-flow")).toBe(false);
     expect(isWardFlowPath("/documents")).toBe(false);
@@ -107,8 +107,8 @@ describe("Ward Flow's isolated demo and shared-adapter boundary", () => {
     // The developer-key gate was removed on 28 September 2026 at Josh's request. Ward Flow is
     // synthetic, so the layout now mounts the provider directly; this guards against either gate
     // returning by accident.
-    const layout = readFileSync("src/app/ward-flow/layout.tsx", "utf8");
-    const layoutFile = "src/app/ward-flow/layout.tsx";
+    const layout = readFileSync("src/app/bedchart/layout.tsx", "utf8");
+    const layoutFile = "src/app/bedchart/layout.tsx";
 
     expect(layout).not.toContain("WardFlowAccessGate");
     expect(layout).not.toContain("DeveloperAreaGate");

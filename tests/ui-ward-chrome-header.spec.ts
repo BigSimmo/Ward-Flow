@@ -6,7 +6,7 @@ import { resolveWardPrimaryAction, WARD_PRIMARY_ACTIONS } from "@/components/war
 
 /**
  * BROWSER COVERAGE OF THE WARD FLOW SHELL BAR (`WardBar`, `shell/ward-bar.tsx`, mounted with
- * `WardRail` in `src/app/ward-flow/layout.tsx` above every ward route).
+ * `WardRail` in `src/app/bedchart/layout.tsx` above every ward route).
  *
  * ──────────────────────────────────────────────────────────────────────────────────────────────
  * 🔴 **THIS FILE CHANGED OWNER ON 2026-09-11. IT DID NOT CHANGE CONTRACT.**
@@ -61,7 +61,7 @@ import { resolveWardPrimaryAction, WARD_PRIMARY_ACTIONS } from "@/components/war
  * change as this rewrite:
  *
  *   1. The search results popup was clipped and unclickable at every width. At 1440x900 on
- *      `/ward-flow/waiting` with a query typed, the popup ran from y=108 to y=492 while its
+ *      `/bedchart/waiting` with a query typed, the popup ran from y=108 to y=492 while its
  *      scroll-container ancestor was only 114.5px tall — 377px of the popup was clipped, and
  *      `document.elementFromPoint` at the popup's own centre resolved to the sidebar, not the
  *      popup. 12 results existed; 0 were reachable by mouse. Asserted below as an actual
@@ -89,7 +89,7 @@ import { resolveWardPrimaryAction, WARD_PRIMARY_ACTIONS } from "@/components/war
  * `ui-smoke` flake that reintroducing 44px caused) — asserted with `toBeGreaterThanOrEqual` so a
  * legitimately taller control never reddens this file.
  *
- * FIXTURE: `/ward-flow/waiting` is the exact route the original audit measured faults 1-3
+ * FIXTURE: `/bedchart/waiting` is the exact route the original audit measured faults 1-3
  * against. The click test searches "Halloway", the family name on PT-001 (Talia Halloway,
  * `ward-patients-seed.ts`). A single letter "a" now ranks word-start names ahead of a buried
  * match and keeps six people, so Talia is no longer in that short list. The family name still
@@ -99,8 +99,8 @@ import { resolveWardPrimaryAction, WARD_PRIMARY_ACTIONS } from "@/components/war
  * `ui-ward-*.spec.ts`) or ARIA role/name, never a CSS Module class name, because those are hashed.
  */
 
-const DELAYS_ROUTE = "/ward-flow/waiting";
-const PUBLISHED_CHECKS_ROUTE = "/ward-flow/movements";
+const DELAYS_ROUTE = "/bedchart/waiting";
+const PUBLISHED_CHECKS_ROUTE = "/bedchart/movements";
 
 /**
  * A spread of route SHAPES, not a sample of pages: the coordinator home (no place), the audit's
@@ -111,13 +111,13 @@ const PUBLISHED_CHECKS_ROUTE = "/ward-flow/movements";
  * differs.
  */
 const COUNTED_ROUTES = [
-  "/ward-flow",
+  "/bedchart",
   DELAYS_ROUTE,
-  "/ward-flow/ward/rph-adult-secure",
+  "/bedchart/ward/rph-adult-secure",
   // A form route. Was `/referrals/new` until 8 Oct 2026, when that route became the Referrals board
   // with the referral slide-out open; the add-a-person form is the remaining full-page form.
-  "/ward-flow/people/new",
-  "/ward-flow/statistics/overview",
+  "/bedchart/people/new",
+  "/bedchart/statistics/overview",
   PUBLISHED_CHECKS_ROUTE,
 ] as const;
 
@@ -239,8 +239,8 @@ test.describe("@mockup phone navigation preparation", () => {
     // Josh, 8 Nov 2026: Referrals left the coordinator's dock for the Menu, and the dock's Capacity
     // tab now opens Capacity at a glance, so Referrals is reached from the Menu and Capacity from the
     // glance's "Open full Capacity" link.
-    { from: "menu", path: "/ward-flow/referrals", heading: /^Referrals$/ },
-    { from: "glance", path: "/ward-flow/capacity", heading: /^Capacity$/ },
+    { from: "menu", path: "/bedchart/referrals", heading: /^Referrals$/ },
+    { from: "glance", path: "/bedchart/capacity", heading: /^Capacity$/ },
   ] as const) {
     test(`phone ${destination.from} prepares ${destination.path} before the tap`, async ({ page, request }) => {
       const identity = await request.get("/api/local-project-id");
@@ -253,7 +253,7 @@ test.describe("@mockup phone navigation preparation", () => {
         if (new URL(request.url()).pathname.startsWith(`/_next/static/chunks/app${destination.path}/page-`))
           pageCodeRequested = true;
       });
-      await page.goto("/ward-flow", { waitUntil: "domcontentloaded" });
+      await page.goto("/bedchart", { waitUntil: "domcontentloaded" });
       await expect(page.locator("html")).toHaveAttribute("data-wf-bar-ready", "");
       if (destination.from === "menu") {
         await page.getByTestId("ward-bar-phone-menu").tap();
@@ -358,7 +358,7 @@ test.describe("@mockup Ward shell bar", () => {
   // underneath, so opening and closing the drawer is what must leave the shell alone.
   test("opening a person keeps the shared navigation and page design", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.goto("/ward-flow/waiting", { waitUntil: "networkidle" });
+    await page.goto("/bedchart/waiting", { waitUntil: "networkidle" });
     // The hero registers its band after hydration. Reading the unhydrated glass
     // colour compared initial loading with a ready page, rather than the panel swap.
     await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
@@ -734,8 +734,8 @@ test.describe("@mockup Ward shell bar", () => {
  */
 const UNWIRED_PRIMARY_KINDS: ReadonlySet<string> = new Set(["record-decision", "contact-team", "export-figures"]);
 const FORMER_UNWIRED_ROUTES: ReadonlyArray<readonly [string, string, string]> = [
-  ["/ward-flow/movements", "Record a decision", "Movements"],
-  [`/ward-flow/community/${COMMUNITY_TEAM_PAGES[0]!.id}`, "Contact a team", "a community team"],
+  ["/bedchart/movements", "Record a decision", "Movements"],
+  [`/bedchart/community/${COMMUNITY_TEAM_PAGES[0]!.id}`, "Contact a team", "a community team"],
 ];
 
 test.describe("@mockup Ward shell bar — item 43: the unwired primary action's popover", () => {
@@ -882,7 +882,7 @@ test("@mockup drawer workspace keeps All figures focus and every alert reachable
   const drawer = page.getByRole("dialog", { name: "Alerts" });
   await expect(drawer).toBeVisible();
   await drawer.getByTestId("ward-tasks-open-alerts").click();
-  await expect(page).toHaveURL(/\/ward-flow\/alerts(?:[?#]|$)/u);
+  await expect(page).toHaveURL(/\/bedchart\/alerts(?:[?#]|$)/u);
   await expect(
     page.locator('div[hidden][id^="S:"]'),
     "React's streamed content is still staged, so the queue is duplicated in the document",
@@ -902,7 +902,7 @@ test("@mockup drawer workspace keeps All figures focus and every alert reachable
 
 test("@mockup compact Referrals opens from Tools and retains a draft across sections", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 568 });
-  await gotoWardChrome(page, "/ward-flow/waiting");
+  await gotoWardChrome(page, "/bedchart/waiting");
   const toolsTrigger = page.getByTestId(PHONE_MENU[0]);
   await openFromBar(page, "ward-bar-tools-trigger", 390);
   const tools = page.getByRole("dialog", { name: "Tools", exact: true });

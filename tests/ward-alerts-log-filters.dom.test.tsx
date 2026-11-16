@@ -62,7 +62,7 @@ describe("Alerts as the desk's full log (AL2)", () => {
   it("opens Cleared from the address, and keeps #earlier working", () => {
     expect(alertsTabFromHash("#earlier")).toBe("earlier");
     expect(alertsTabFromHash("#broadcasts")).toBe("broadcasts");
-    window.history.replaceState(null, "", "/ward-flow/alerts#cleared");
+    window.history.replaceState(null, "", "/bedchart/alerts#cleared");
     mount();
     expect(screen.getByRole("tab", { name: /^Cleared/u })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("Nothing cleared this session")).toBeInTheDocument();

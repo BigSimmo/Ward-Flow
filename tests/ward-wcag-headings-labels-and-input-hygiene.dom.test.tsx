@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
-  usePathname: () => "/ward-flow/ed",
+  usePathname: () => "/bedchart/ed",
   useSearchParams: () => new URLSearchParams(),
 }));
 

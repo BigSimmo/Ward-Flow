@@ -41,7 +41,7 @@ export const EXAMPLE_PERSON: TriagePerson = {
       "Previous violence · Previous use of weapons · Absconding · Significant alcohol or drug use. Carries these flags only; you answer Rest of history today.",
     nowFlags: ["general.now.agit"],
   },
-  recordHref: "/ward-flow/people/code-example",
+  recordHref: "/bedchart/people/code-example",
 };
 
 /** The worked example's answers, as the mock-up opened on them. */

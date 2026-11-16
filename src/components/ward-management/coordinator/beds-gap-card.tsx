@@ -14,7 +14,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import styles from "./home-cards.module.css";
 
 /** Beds that fit's From ward dates link opens the forecast panel on Capacity itself. */
-export const HOME_FORECAST_HREF = "/ward-flow/capacity#capacity-forecast";
+export const HOME_FORECAST_HREF = "/bedchart/capacity#capacity-forecast";
 
 /**
  * Josh's notes 4 (9 Nov 2026): a bed type opens to the discharges behind tomorrow's figure, so the
@@ -70,7 +70,7 @@ export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsR
   const [lever, setLever] = useState<string | undefined>(undefined);
   const folded = condensed && !open;
   const capacityLink = (
-    <Link href="/ward-flow/capacity" className={styles.headLink}>
+    <Link href="/bedchart/capacity" className={styles.headLink}>
       Capacity
       <ChevronRight size={14} aria-hidden="true" />
     </Link>
@@ -168,7 +168,7 @@ export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsR
                               </li>
                             ))}
                           </ul>
-                          <Link href="/ward-flow/capacity" className={styles.headLink}>
+                          <Link href="/bedchart/capacity" className={styles.headLink}>
                             Chase on Capacity
                             <ChevronRight size={14} aria-hidden="true" />
                           </Link>

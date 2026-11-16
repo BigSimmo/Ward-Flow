@@ -339,7 +339,7 @@ describe("Handover page", () => {
     expect(wardRow).not.toBeNull();
     await user.click(wardRow!);
     const link = within(beds).getByRole("link", { name: "Open ward" });
-    expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/ward\/[^/?]+$/u);
+    expect(link.getAttribute("href")).toMatch(/^\/bedchart\/ward\/[^/?]+$/u);
   });
 });
 

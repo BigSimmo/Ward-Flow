@@ -6,7 +6,7 @@ Owner: pilot lead (to be named).
 _Updated 2026-11-08 - one sheet per desk, drawn from the desk guides and source at `d85618e6`;
 Documentation owns._
 
-One printed page for each desk. Each sheet says what the desk uses Ward Flow for, how to sign in,
+One printed page for each desk. Each sheet says what the desk uses BedChart for, how to sign in,
 the most common tasks, what not to use it for and who to contact. The tasks match the
 [competency check](../competency-check.md) done before an account goes live.
 

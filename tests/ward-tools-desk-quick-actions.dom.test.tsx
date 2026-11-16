@@ -9,7 +9,7 @@ import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/w
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

@@ -34,7 +34,7 @@ export async function changeDeviceAlerts(next: boolean, deps: DeviceAlertsDeps):
     if (wanted.current === true) {
       // Switched back on while this was running. That on found the phone busy and left it, so
       // turn the phone back on now (CodeRabbit review, #1365).
-      if ((await deps.setPhone(true)) === "on") toast("Alerts on, even with Ward Flow closed.");
+      if ((await deps.setPhone(true)) === "on") toast("Alerts on, even with BedChart closed.");
       return;
     }
     toast(answer === "off" ? "Alerts off on this device." : "Phone alerts could not be changed. Try again.");
@@ -54,9 +54,9 @@ export async function changeDeviceAlerts(next: boolean, deps: DeviceAlertsDeps):
   }
   toast(
     phoneAnswer === "on"
-      ? "Alerts on, even with Ward Flow closed."
+      ? "Alerts on, even with BedChart closed."
       : answer === "granted"
-        ? "Alerts on while Ward Flow is open."
+        ? "Alerts on while BedChart is open."
         : answer === "unsupported"
           ? "This browser cannot show notifications."
           : "Notifications are blocked for this site in the browser.",

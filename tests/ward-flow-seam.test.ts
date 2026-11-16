@@ -38,17 +38,17 @@ import { isRedesignMockup } from "./helpers/redesign-design-copies";
 
 /*
  * `src/app/sign-in` is Ward Flow's front door page (D-88, 27 October 2026). It is a sibling of
- * `/ward-flow` for the same reason as `/ward-flow-sign-in`: the ward layout mounts the provider, rail
+ * `/bedchart` for the same reason as `/bedchart-sign-in`: the ward layout mounts the provider, rail
  * and bar around every child, and the front door must load none of them. Unlike that screen it signs
  * a person in with Ward Flow's own Supabase hooks, so it IS ward code and moves with Ward Flow.
  */
 const WARD_DIRS = [
   "src/components/ward-management",
-  "src/app/ward-flow",
+  "src/app/bedchart",
   "src/app/sign-in",
   // The Ward Flow sign-in page (1 November 2026, Q164 to Q166) renders the front door's own sign-in
   // card, so like `src/app/sign-in` it IS ward code and moves with Ward Flow.
-  "src/app/ward-flow-sign-in",
+  "src/app/bedchart-sign-in",
   "src/components/ward-flow-sign-in",
 ];
 
@@ -168,12 +168,12 @@ const APPROVED_ROUTE_REFERENCES = new Map([
 ]);
 
 /**
- * Ward Flow's route, `/ward-flow` (or its route folder, `app/ward-flow`), followed by a path, quote,
+ * Ward Flow's route, `/bedchart` (or its route folder, `app/bedchart`), followed by a path, quote,
  * query or the `-sign-in` sibling. Since the route left `/mockups` (19 October 2026) a bare
  * `ward-flow` substring also matches unrelated names such as `ward-flow-v9-tokens.css` or
  * `docs/ward-flow/`, so this matches the route only.
  */
-const WARD_ROUTE_PATTERN = /(?:\bapp\/ward-flow|(?<![\w./-])\/ward-flow)(?=[/"'`?#)\s]|-sign-in|$)/mu;
+const WARD_ROUTE_PATTERN = /(?:\bapp\/bedchart|(?<![\w./-])\/bedchart)(?=[/"'`?#)\s]|-sign-in|$)/mu;
 
 function walk(dir: string): string[] {
   const found: string[] = [];
@@ -377,7 +377,7 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
       "@/lib/ward-time-zone",
     ]);
     // 4 -> 6 on 2026-09-12, when the sign-in screen arrived as a SIBLING route
-    // (`/ward-flow-sign-in`) whose path contains this guard's literal as a prefix. Raised
+    // (`/bedchart-sign-in`) whose path contains this guard's literal as a prefix. Raised
     // deliberately, like the module pin above: the two new entries are Ward Flow's own files, and
     // the reasons beside them say so rather than letting a bare count imply four more couplings.
     // 6 -> 7 on 2026-09-13: the digest is another intentional Ward-owned sibling. It serves the

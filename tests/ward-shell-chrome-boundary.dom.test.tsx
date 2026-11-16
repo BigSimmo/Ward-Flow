@@ -19,7 +19,7 @@ vi.mock("next/headers", () => ({
   headers: async () => new Headers({ "user-agent": "desktop", "sec-ch-ua-mobile": "?0" }),
 }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -44,7 +44,7 @@ vi.mock("../src/components/ward-management/shell-next/next-bar", async (original
   };
 });
 
-import Layout from "../src/app/ward-flow/layout";
+import Layout from "../src/app/bedchart/layout";
 
 async function renderLayout() {
   vi.spyOn(console, "error").mockImplementation(() => undefined);

@@ -28,7 +28,7 @@ import { HowWorkedOut } from "./capacity-how-worked-out";
 import { MismatchFigure } from "./capacity-mismatch-figure";
 import styles from "./capacity-page.module.css";
 
-const WAITING_HREF = "/ward-flow/waiting";
+const WAITING_HREF = "/bedchart/waiting";
 
 /**
  * Capacity issue 1 (Josh, 3 Nov 2026): a Mismatch card opens on what can be acted on. The figures

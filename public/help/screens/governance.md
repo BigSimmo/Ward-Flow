@@ -22,6 +22,6 @@ Recorded decisions to review, gaps by site and the audit trail for this session.
 
 - Look through the audit trail. Open Governance. Review lists events waiting for review, newest first: overrides, refused or stale actions and record access. Select one to see its facts, then press Reviewed, or Follow-up if it needs more. Audit trail lists what has been reviewed.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

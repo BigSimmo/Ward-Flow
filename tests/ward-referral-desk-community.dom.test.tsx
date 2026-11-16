@@ -4,7 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/referrals",
+  usePathname: () => "/bedchart/referrals",
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
@@ -112,7 +112,7 @@ describe("the community clinician's Referrals board", () => {
     expect(within(hero).getByText(`Referrals · ${teamWords(BUSY_TEAM)}`)).toBeInTheDocument();
     expect(within(hero).getByTestId("ward-referral-team-page")).toHaveAttribute(
       "href",
-      `/ward-flow/community/${communityTeamSlug(BUSY_TEAM)}`,
+      `/bedchart/community/${communityTeamSlug(BUSY_TEAM)}`,
     );
     expect(within(hero).queryByTestId("ward-referral-meeting")).not.toBeInTheDocument();
     expect(within(hero).queryByTestId("ward-referral-next-overdue")).not.toBeInTheDocument();

@@ -530,7 +530,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const handleExport = () => {
     try {
       const payload = {
-        product: "Ward Flow Statewide Bed Coordination",
+        product: "BedChart Statewide Bed Coordination",
         version: 6,
         exportedAt: new Date().toISOString(),
         // Round 3: the saved rules, never an unsaved draft, and no display settings (Load reads
@@ -540,7 +540,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const day = perthCalendarDay(new Date());
       const date = `${day.year}-${String(day.monthIndex + 1).padStart(2, "0")}-${String(day.day).padStart(2, "0")}`;
-      downloadBlob(blob, `ward-flow-rules-${date}.json`);
+      downloadBlob(blob, `bedchart-rules-${date}.json`);
       showToast("Saved rules downloaded.");
     } catch {
       showToast("The rules file could not be downloaded. Try again in a moment.");

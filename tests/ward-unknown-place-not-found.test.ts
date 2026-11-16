@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import BoardPage from "@/app/ward-flow/board/[unitId]/page";
-import CommunityTeamPage from "@/app/ward-flow/community/[teamId]/page";
-import EdDepartmentPage from "@/app/ward-flow/ed/[edId]/page";
-import StatisticsCommunityPage from "@/app/ward-flow/statistics/community/[teamId]/page";
-import WardStatisticsEdPage from "@/app/ward-flow/statistics/ed/[edId]/page";
-import StatisticsServicePage from "@/app/ward-flow/statistics/service/[serviceId]/page";
-import WardStatisticsUnitPage from "@/app/ward-flow/statistics/ward/[unitId]/page";
-import WardAnswerPage from "@/app/ward-flow/ward/[unitId]/answer/page";
-import WardUnitPage from "@/app/ward-flow/ward/[unitId]/page";
+import BoardPage from "@/app/bedchart/board/[unitId]/page";
+import CommunityTeamPage from "@/app/bedchart/community/[teamId]/page";
+import EdDepartmentPage from "@/app/bedchart/ed/[edId]/page";
+import StatisticsCommunityPage from "@/app/bedchart/statistics/community/[teamId]/page";
+import WardStatisticsEdPage from "@/app/bedchart/statistics/ed/[edId]/page";
+import StatisticsServicePage from "@/app/bedchart/statistics/service/[serviceId]/page";
+import WardStatisticsUnitPage from "@/app/bedchart/statistics/ward/[unitId]/page";
+import WardAnswerPage from "@/app/bedchart/ward/[unitId]/answer/page";
+import WardUnitPage from "@/app/bedchart/ward/[unitId]/page";
 import { knownWardUnit } from "@/components/ward-management/ward-known-places";
 import { allUnits } from "@/components/ward-management/ward-sites";
 

@@ -157,7 +157,7 @@ describe("referral work survives patient selection and interrupted registration"
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <a
-          href="/ward-flow/waiting"
+          href="/bedchart/waiting"
           onClick={(event) => {
             if (!event.defaultPrevented) followed();
             event.preventDefault();

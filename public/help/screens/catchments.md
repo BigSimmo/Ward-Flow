@@ -21,6 +21,6 @@ Which community team covers a suburb, every community team from A to Z, and team
 
 - One list at a time. Suburb, A to Z, Read alike or Services. Choose one to read that list.
 
-In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
+In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

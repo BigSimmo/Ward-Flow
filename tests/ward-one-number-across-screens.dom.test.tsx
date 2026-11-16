@@ -6,7 +6,7 @@ vi.mock("next/link", () => ({
   default: ({ children, ...props }: { children: ReactNode; href: string }) => <a {...props}>{children}</a>,
 }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));

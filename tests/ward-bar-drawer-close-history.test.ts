@@ -34,10 +34,10 @@ describe("closing a drawer and browser history", () => {
   });
 
   it("treats only a same-site link to another page as a pending navigation", () => {
-    const here = "http://localhost:3700/ward-flow?role=coordinator";
-    expect(isPendingNavigation("/ward-flow/ed/arm-ed", here)).toBe(true);
-    expect(isPendingNavigation("/ward-flow?tab=queue", here)).toBe(false);
+    const here = "http://localhost:3700/bedchart?role=coordinator";
+    expect(isPendingNavigation("/bedchart/ed/arm-ed", here)).toBe(true);
+    expect(isPendingNavigation("/bedchart?tab=queue", here)).toBe(false);
     expect(isPendingNavigation("#section", here)).toBe(false);
-    expect(isPendingNavigation("https://example.org/ward-flow/ed/arm-ed", here)).toBe(false);
+    expect(isPendingNavigation("https://example.org/bedchart/ed/arm-ed", here)).toBe(false);
   });
 });

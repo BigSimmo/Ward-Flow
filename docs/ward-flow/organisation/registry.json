@@ -12,11 +12,11 @@
   "roots": [
     "src/components/ward-management/**",
     "src/components/wf/**",
-    "src/app/ward-flow/**",
+    "src/app/bedchart/**",
     "src/app/ward-flow-v*-tokens.css",
     "src/app/ward-flow-shell-tokens.module.css",
     "src/components/ward-flow-sign-in/**",
-    "src/app/ward-flow-sign-in/**",
+    "src/app/bedchart-sign-in/**",
     "src/app/mockups/ward-flow-digest/**",
     "design/**",
     "docs/ward-flow/**",
@@ -151,7 +151,7 @@
     },
     {
       "id": "ward-routes",
-      "pattern": "src/app/ward-flow/**",
+      "pattern": "src/app/bedchart/**",
       "priority": 0,
       "owner": "ward-flow",
       "system": null,
@@ -171,7 +171,7 @@
     },
     {
       "id": "ward-sign-in-route",
-      "pattern": "src/app/ward-flow-sign-in/**",
+      "pattern": "src/app/bedchart-sign-in/**",
       "priority": 0,
       "owner": "ward-flow",
       "system": "safety-governance",

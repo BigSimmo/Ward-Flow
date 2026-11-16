@@ -474,7 +474,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             {staleRows.map((row) => (
               <li key={row.unit.id}>
                 <StatusGlyph tone="warning" size={9} />
-                <Link className={styles.checkName} href={`/ward-flow/ward/${row.unit.id}`}>
+                <Link className={styles.checkName} href={`/bedchart/ward/${row.unit.id}`}>
                   {row.unit.name}
                 </Link>
                 <span className={styles.checkAge}>
@@ -540,7 +540,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                           id: "in-use",
                           value: statewidePercent === null ? "Not recorded" : `${Math.round(statewidePercent)}%`,
                           label: "In use",
-                          href: "/ward-flow/capacity",
+                          href: "/bedchart/capacity",
                           testId: "ward-index-figure-in-use",
                         },
                       ]
@@ -606,7 +606,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                       ? {
                           label: "Open",
                           ariaLabel: `Open ${firstToConfirm.name}`,
-                          href: `/ward-flow/ward/${firstToConfirm.id}`,
+                          href: `/bedchart/ward/${firstToConfirm.id}`,
                           testId: "ward-index-open-count",
                         }
                       : undefined
@@ -932,7 +932,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 <li key={row.unit.id}>
                   <Link
                     className={styles.unplacedLink}
-                    href={`/ward-flow/ward/${row.unit.id}`}
+                    href={`/bedchart/ward/${row.unit.id}`}
                     data-testid={`ward-index-link-${row.unit.id}`}
                   >
                     {row.unit.name}
@@ -1087,7 +1087,7 @@ function WardCard({
         ) : (
           <Link
             className={styles.cardLink}
-            href={`/ward-flow/ward/${unit.id}`}
+            href={`/bedchart/ward/${unit.id}`}
             data-testid={`ward-index-link-${unit.id}`}
             aria-label={`Open ward: ${unit.name}`}
           >
@@ -1330,10 +1330,10 @@ function WardPhoneSheet({
       title={row.unit.name}
       description={`${row.service ?? "Not placed"} · ${row.siteShort} · ${cohortLabel(row.unit)}`}
       secondary={
-        countsOnly ? undefined : { label: "Bed board", onAction: () => router.push(`/ward-flow/board/${row.unit.id}`) }
+        countsOnly ? undefined : { label: "Bed board", onAction: () => router.push(`/bedchart/board/${row.unit.id}`) }
       }
       primary={
-        countsOnly ? undefined : { label: "Open ward", onAction: () => router.push(`/ward-flow/ward/${row.unit.id}`) }
+        countsOnly ? undefined : { label: "Open ward", onAction: () => router.push(`/bedchart/ward/${row.unit.id}`) }
       }
       className={styles.phoneSheet}
       data-testid="ward-index-phone-sheet"
@@ -1464,7 +1464,7 @@ function WardTable({
                 ) : (
                   <Link
                     className={buttonClass({ variant: "sec", size: "sm" })}
-                    href={`/ward-flow/ward/${row.unit.id}`}
+                    href={`/bedchart/ward/${row.unit.id}`}
                     data-testid={`ward-index-link-${row.unit.id}`}
                     aria-label={`Enter ${row.unit.name}`}
                   >

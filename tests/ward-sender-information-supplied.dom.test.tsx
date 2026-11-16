@@ -12,7 +12,7 @@ import type { Referral } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/ward-flow/referrals" }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/bedchart/referrals" }));
 const seed = seedWardFlowState();
 const origin = seed.units[0];
 const foreign = seed.units.filter((unit) => unit.id !== origin.id).slice(0, 2);

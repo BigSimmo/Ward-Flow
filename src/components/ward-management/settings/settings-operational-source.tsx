@@ -16,7 +16,7 @@ export function copyExecutiveSettingsDiagnostics(configuration: WardConfiguratio
   return copyTextToClipboard(
     JSON.stringify(
       {
-        product: "Ward Flow Statewide Bed Coordination",
+        product: "BedChart Statewide Bed Coordination",
         version: 6,
         exportedAt: new Date().toISOString(),
         configuration,

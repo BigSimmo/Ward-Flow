@@ -49,7 +49,7 @@ export function WardDeskEmptyQueue({
     <p className={styles.v6Empty} data-testid="ward-referral-board-own-ward-empty">
       {`No referral or bed offer for ${wardName ?? "your ward"}. `}
       {onTheirWay > 0 ? (
-        <Link href="/ward-flow/movements" className={desk.link}>
+        <Link href="/bedchart/movements" className={desk.link}>
           {`${onTheirWay} ${onTheirWay === 1 ? "person is" : "people are"} already coming and going`}
         </Link>
       ) : null}

@@ -2,7 +2,7 @@ import { createRef, type ReactNode } from "react";
 import { fireEvent, render, screen, within, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/referrals/new",
+  usePathname: () => "/bedchart/referrals/new",
   useSearchParams: () => new URLSearchParams(window.location.search),
 }));
 vi.mock("next/link", () => ({
@@ -115,7 +115,7 @@ describe("ready-bed dossier tells the truth", () => {
     expect(screen.getByText("None recorded")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Review current referrals/ })).toHaveAttribute(
       "href",
-      "/ward-flow/referrals",
+      "/bedchart/referrals",
     );
     expect(document.body).not.toHaveTextContent("Medically cleared");
     expect(document.body).not.toHaveTextContent("Bed locked for transit");

@@ -22,7 +22,7 @@ Severity: medium. Confidence: high.
 
 ### W3. ED hero cuts off "Under a form" at two in-between desktop widths
 
-Where: ED board (/ward-flow/ed/rph-ed), 1025-1060 and 1201-1260 (just after the rail opens). Light, and dark the same.
+Where: ED board (/bedchart/ed/rph-ed), 1025-1060 and 1201-1260 (just after the rail opens). Light, and dark the same.
 Seen: the fourth figure's label runs under the "On TV" button and is clipped, 16px over at 1025 and 35px over at 1201 ("Under a fo", "Under ."). At 1201 the list headers "Referral" and "Next" also run together.
 Cause: the Q229 fix, ed-overview.module.css:225-233 (`@media (min-width: 64.0625rem)` with `flex-wrap: nowrap; flex: 0 0 auto`), stops the wrap but the figures cannot shrink.
 Recommend: let the title column shrink first, or tighten the figure gutters, so all four figures fit from 1025px.
@@ -30,7 +30,7 @@ Severity: medium. Confidence: high. Evidence: W-3-ed-hero-1201.jpg.
 
 ### W4. Community team "Team list" is crushed on portrait tablets
 
-Where: Community team (/ward-flow/community/midland), 769 to about 880px, including 820. Light and dark.
+Where: Community team (/bedchart/community/midland), 769 to about 880px, including 820. Light and dark.
 Seen: the row title column is 39px wide at 769, 70px at 800 and 90px at 820. Titles stack one word per line ("7-day / follow- / up / due / today") and names truncate to "Thor…" or "Sallowfield, …". This is separate from Q228's tab row and summary card.
 Cause: team-2026.module.css:679 `.lr { grid-template-columns: 16px minmax(0,1fr) 110px auto }` in a half-width column (line 78, `1fr 1fr !important`), so the fixed 110px "when" column and the button take most of the row.
 Recommend: stack the Team list and Team flow cards in one column below about 900px.

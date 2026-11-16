@@ -124,7 +124,7 @@ import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
  * (R-FIGS-16, PR #1683). This sweep measured the wards table in CI at min-content 772px and
  * max-content 872px, so the pin is 880px (55rem) in `statistics-compare.module.css`.
  */
-const OWNED = "/ward-flow/statistics/compare";
+const OWNED = "/bedchart/statistics/compare";
 const OWNED_TABLES: readonly { readonly testId: string; readonly columns: number; readonly minWidthPx: number }[] = [
   { testId: "ward-statistics-compare-wards", columns: 6, minWidthPx: 880 },
   { testId: "ward-statistics-compare-eds", columns: 4, minWidthPx: 560 },
@@ -167,17 +167,17 @@ const OWNED_TABLES: readonly { readonly testId: string; readonly columns: number
  * absent from the check, which is why the figure is printed on every run.
  */
 /** The Out of area page and its placement table (see the travel-time note below). */
-const OUT_OF_AREA_ROUTE = "/ward-flow/out-of-area";
+const OUT_OF_AREA_ROUTE = "/bedchart/out-of-area";
 const OUT_OF_AREA_TESTID = "ward-out-of-area-table";
 
 const ROUTES = [
   OWNED,
   OUT_OF_AREA_ROUTE,
-  "/ward-flow/escalation",
-  "/ward-flow/discharges",
-  "/ward-flow/referrals",
-  "/ward-flow/search",
-  "/ward-flow/queue",
+  "/bedchart/escalation",
+  "/bedchart/discharges",
+  "/bedchart/referrals",
+  "/bedchart/search",
+  "/bedchart/queue",
 ] as const;
 
 /**
@@ -622,13 +622,13 @@ const TYPE_SIZE_BY_NAME: Readonly<Record<string, number>> = {
 /** Named directly, never through a redirect that would read as another screen's coverage. */
 const TYPE_FLOOR_ROUTES = [
   {
-    route: "/ward-flow/waiting",
+    route: "/bedchart/waiting",
     expect: ["delays-cause", "delays-profile", "delays-wait", "delays-since", "banner", "badge"],
   },
   // Home v7 (Josh, 22 Oct 2026): the queue's tier labels sit behind the Flow list (Q340).
-  { route: "/ward-flow", expect: ["command-tier", "banner", "badge"], everyoneWaiting: true },
-  { route: "/ward-flow/movements", expect: ["banner", "badge"] },
-  { route: "/ward-flow/capacity", expect: ["banner", "badge"] },
+  { route: "/bedchart", expect: ["command-tier", "banner", "badge"], everyoneWaiting: true },
+  { route: "/bedchart/movements", expect: ["banner", "badge"] },
+  { route: "/bedchart/capacity", expect: ["banner", "badge"] },
 ] as const;
 
 test.describe("@mockup the ward type floor is met where it is painted, not where it is declared", () => {
@@ -703,7 +703,7 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
   // table, with a person open (their panel replaces the rail beside it).
   test("the Delays board keeps its exact declared waiting-column sizes with a person open", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto("/ward-flow/waiting", { waitUntil: "load" });
+    await page.goto("/bedchart/waiting", { waitUntil: "load" });
     await expect(page.getByRole("searchbox", { name: "Find a person or ED" })).toBeEnabled();
     const first = page.getByTestId(/^delays-select-/u).first();
     // The searchbox is enabled in the server HTML too, so it does not prove React has hydrated. A
@@ -738,7 +738,7 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
    */
   test("the badge still meets the floor below 40rem, where a phone override once undid it", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto("/ward-flow/waiting", { waitUntil: "load" });
+    await page.goto("/bedchart/waiting", { waitUntil: "load" });
     await page.waitForLoadState("networkidle");
     await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
 
@@ -766,7 +766,7 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
 test("@mockup the Delays hidden-count note keeps Show everyone reachable at every width", async ({ page }) => {
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 844 });
-    await page.goto("/ward-flow/waiting", { waitUntil: "networkidle" });
+    await page.goto("/bedchart/waiting", { waitUntil: "networkidle" });
     const count = page.getByTestId("delays-shown-count");
     const everyone = await count.textContent();
     // Plan item 2i: a phone's hero folds its figures away and keeps the next step, which narrows the
@@ -783,7 +783,7 @@ test("@mockup the Delays hidden-count note keeps Show everyone reachable at ever
 });
 
 test("@mockup print-only referral tables have measurable thresholds", async ({ page }) => {
-  await page.goto("/ward-flow/referrals");
+  await page.goto("/bedchart/referrals");
   await page.waitForLoadState("networkidle");
   // Option A (9 Oct 2026) puts each table in its own view tab, so open that tab before measuring.
   const views = [

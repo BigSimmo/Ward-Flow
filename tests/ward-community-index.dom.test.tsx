@@ -16,7 +16,7 @@ vi.mock("next/link", () => ({
 // The live rail (`shell-next/next-rail-body.tsx`) reads the router for its account menu, which jsdom
 // has no App Router for, so it is mocked as the sibling shell-next suites mock it.
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow",
+  usePathname: () => "/bedchart",
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
@@ -51,10 +51,10 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * Only a browser journey can close that, and no assertion below should be read as having closed it.
  */
 
-const TEAM_ROUTE_PREFIX = "/ward-flow/community";
+const TEAM_ROUTE_PREFIX = "/bedchart/community";
 
 /** The index route itself — the thing the root nav names, checked below. */
-const INDEX_ROUTE = "/ward-flow/community";
+const INDEX_ROUTE = "/bedchart/community";
 
 function renderInProvider(node: ReactNode) {
   return render(<WardFlowProvider initialNow={NOW_ANCHOR}>{node}</WardFlowProvider>);
@@ -126,7 +126,7 @@ describe("The community index's OWN reachability — the assertion that outranks
   // PL1 (Josh, 3 Nov 2026): Community left the sidebar. Places, on the root rail, lists every
   // community team, and the community desk's own menu keeps the index as "My team".
   it("is reachable from the ward-flow root rail through Places, and stays in the community desk's menu", () => {
-    expect(railHrefs, "the root rail does not link Places").toContain("/ward-flow/hub");
+    expect(railHrefs, "the root rail does not link Places").toContain("/bedchart/hub");
     expect(
       roleMenu(railEntries(), "community").main.map((item) => ("href" in item ? item.href : "")),
       "the community desk's own menu does not link the community team index",

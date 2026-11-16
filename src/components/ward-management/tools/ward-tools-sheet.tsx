@@ -93,7 +93,7 @@ const ToolLogDelay = dynamic(
   },
 );
 
-const root = "/ward-flow";
+const root = "/bedchart";
 
 export type ToolsSheetToolId =
   | "update-bed"
@@ -423,7 +423,7 @@ function UpdateBedWards({ onNavigate }: { onNavigate: () => void }) {
  */
 function searchWardFlow(words: string, close: () => void): boolean {
   const input =
-    document.querySelector<HTMLInputElement>('input[placeholder="Search Ward Flow"]') ??
+    document.querySelector<HTMLInputElement>('input[placeholder="Search BedChart"]') ??
     document.querySelector<HTMLInputElement>('input[data-testid="ward-patient-typeahead-input"]');
   if (!input) return false;
   close();
@@ -1280,7 +1280,7 @@ function ToolsSheetView({
                   className={buttonClass({ variant: "pri", size: "sm" })}
                   onClick={() => setNoSearch(!searchWardFlow(query.trim(), onNavigate))}
                 >
-                  Search Ward Flow
+                  Search BedChart
                 </button>
                 <button
                   type="button"

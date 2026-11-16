@@ -207,14 +207,14 @@ export function AboutDemoScreen() {
     <main id="main-content" className={styles.main} data-testid="ward-about-demo">
       <Hero
         level={1}
-        title={signedIn ? "About Ward Flow" : "About this demo"}
+        title={signedIn ? "About BedChart" : "About this demo"}
         titleMeta="Synthetic data only · Not for clinical use"
       >
         <HeroTop
           quickBar={false}
           figures={
             <HeroFigures
-              label={signedIn ? "Ward Flow" : "This demo"}
+              label={signedIn ? "BedChart" : "This demo"}
               testId="about-figures"
               items={[
                 { id: "patients", value: 0, label: "real patients", testId: "about-figure-patients" },
@@ -262,8 +262,8 @@ export function AboutDemoScreen() {
           <Card aria-labelledby="about-what-title" data-testid="about-what" id="about-what">
             <CardHead iconPlain icon={Info} id="about-what-title" title="What this is" />
             <p className={styles.lead}>
-              Ward Flow is a prototype for coordinating psychiatric beds across Western Australia: who needs a bed,
-              where one is free, and what is holding each move up. Nothing on screen should guide anyone&apos;s care.
+              BedChart is a prototype for coordinating psychiatric beds across Western Australia: who needs a bed, where
+              one is free, and what is holding each move up. Nothing on screen should guide anyone&apos;s care.
             </p>
             <div className={styles.isGrid}>
               <div>
