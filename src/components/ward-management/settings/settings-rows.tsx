@@ -120,7 +120,9 @@ export function parseRuleTyped(
     if (clock !== undefined) return clock;
   }
   if (!/^\d+$/u.test(typed)) return null;
-  const byNumber = reachable.filter((value) => new RegExp(`^${typed}[^\\d:]*$`, "u").test(plainWords(format(value))));
+  const byNumber = reachable.filter((value) =>
+    new RegExp(String.raw`^${typed}[^\d:]*$`, "u").test(plainWords(format(value))),
+  );
   return byNumber.length === 1 ? byNumber[0]! : null;
 }
 
