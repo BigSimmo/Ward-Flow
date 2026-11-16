@@ -62,6 +62,7 @@
 }
 
 .close {
+  position: relative;
   display: grid;
   place-items: center;
   width: 40px;
@@ -72,6 +73,14 @@
   background: color-mix(in srgb, var(--wf-hero-ink) 9%, transparent);
   color: var(--wf-hero-ink);
   cursor: pointer;
+}
+
+/* The house 48px tap area round the 40px face (Josh, 16 Nov 2026: the close was hard to hit). */
+.close::after,
+.closeLight::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
 }
 
 .close svg {
@@ -510,6 +519,7 @@
 }
 
 .closeLight {
+  position: relative;
   display: grid;
   place-items: center;
   width: 40px;

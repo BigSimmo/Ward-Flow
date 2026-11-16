@@ -37,9 +37,6 @@ export function shortDuration(minutes: number): string {
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
 }
 
-/** The settings a phone shows on its first screen (Find a setting lands there, not in a sheet). */
-export const PHONE_QUICK_SETTINGS: ReadonlySet<string> = new Set(["theme", "density", "buzz"]);
-
 export function wardsText(count: number): string {
   return `${count} ${count === 1 ? "ward" : "wards"}`;
 }

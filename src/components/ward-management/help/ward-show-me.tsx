@@ -9,7 +9,6 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 
 import { OverlayPortal, useModalFocus } from "@/components/wf";
 import { hasOpenSheet, subscribeToSheetStack, topSheetRoot } from "@/components/wf/sheet-focus";
-import { PHONE_QUICK_SETTINGS } from "@/components/ward-management/settings/settings-screen-model";
 import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { WARD_OFFLINE_LINK_NOTICE } from "@/components/ward-management/shell/ward-offline-links";
 import { showMeAvailable } from "./ward-help-task-list";
@@ -67,12 +66,9 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
   // Open the screen the job is done on, once, when Show me starts somewhere else. Already on that
   // screen, a different Settings tab is opened through the hash, which Settings listens for.
   const destination = permitted ? howToHref(howTo?.go, role, deskHome ?? home) : undefined;
-  // Phone quick settings live on the page. Their old desktop section hashes open a device
-  // sheet which deliberately omits these controls, covering the very target we need to light.
-  const href =
-    device === "phone" && howTo && PHONE_QUICK_SETTINGS.has(howTo.id) && destination?.startsWith("/ward-flow/settings#")
-      ? destination.split("#")[0]
-      : destination;
+  // D-257: Theme, Row density and Buzz sound sit in the Display and Alerts sheets on a phone too, so
+  // their section hash opens the sheet that holds the control.
+  const href = destination;
   const went = useRef(false);
   // M111 (10 Nov 2026): offline, the router cannot fetch another screen and falls back to a full
   // load, which leaves the app (A1-18). Show me stays put and says so, as an offline link tap does.

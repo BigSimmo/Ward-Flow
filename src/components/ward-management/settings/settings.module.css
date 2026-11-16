@@ -125,8 +125,11 @@
   outline-offset: 2px;
 }
 
+/* UI sweep (16 Nov 2026): the field fills the box's height, so the whole box takes the tap and the
+   click, not a 17px line of text. */
 .findBox input {
   flex: 1 1 auto;
+  align-self: stretch;
   min-width: 0;
   border: 0;
   outline: 0;
@@ -856,10 +859,24 @@
   min-width: 0;
 }
 
+/* A long name wraps to a second line rather than ending in "…" (Josh, 16 Nov 2026). */
 .phoneWhoName {
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+
+/* The kit's phone hero title is a two-line clamp. Safari counts every line inside it, the avatar's
+   initials included, so the role line and the avatar's lower edge were cut off (Josh, 16 Nov 2026,
+   screenshot). The identity row is a flex row with its own clamps, so the title here is not clamped. */
+.phoneProfile h1 {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: none;
+  line-clamp: none;
 }
 
 .phoneWhoRole {
@@ -939,11 +956,6 @@
   padding: 0 var(--wf-s-1);
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
   color: var(--wf-ink-1);
-}
-
-.phoneHeadMeta {
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  color: var(--wf-ink-2);
 }
 
 .phoneCard,
@@ -1041,16 +1053,9 @@
   display: none;
 }
 
-/* Audit settings-21: the phone page lists Theme, Row density and Buzz above the
- * areas, so their sheets do not repeat them. A phone has no sidebar and no keyboard shortcuts. */
-.phoneSheetBody
-  :is(
-    [data-setting="theme"],
-    [data-setting="density"],
-    [data-setting="buzz"],
-    [data-setting="sidebar"],
-    [data-setting="shortcuts"]
-  ) {
+/* A phone has no sidebar and no keyboard shortcuts. Theme, Row density and Buzz sound now live in
+ * their sheets (Settings overhaul, Josh 16 Nov 2026), not in a block on the page. */
+.phoneSheetBody :is([data-setting="sidebar"], [data-setting="shortcuts"]) {
   display: none;
 }
 
@@ -1181,12 +1186,6 @@
   }
 }
 
-/* v10 phone (11 Oct 2026): the switch's track carries its state; the On or Off word (aria-hidden)
-   leaves the phone rows, as in the mockup. Only the phone "On this phone" card uses this class. */
-.phoneSwitch > span:last-child {
-  display: none;
-}
-
 /* v10 phone sheets: the switch alone shows its state; the On or Off word stays for wider screens
  * (it is aria-hidden; the switch's aria-checked carries the state). */
 .phoneSheetBody [role="switch"] > span:last-child {
@@ -1258,4 +1257,45 @@
 .phoneSheetBody div:has(> [data-setting="recent-changes"]) {
   row-gap: var(--wf-s-1);
   margin-block-end: 0;
+}
+
+/* Who can change what on a phone (Josh, 16 Nov 2026): the three-column table ran off the side of
+ * the sheet. Each row becomes a short block: the setting, then who, then how, with no sideways scroll. */
+.phoneSheetBody [data-setting="who-can"] .tableWrap {
+  overflow: visible;
+}
+
+.phoneSheetBody [data-setting="who-can"] :is(table, tbody, tr, td) {
+  display: block;
+  min-width: 0;
+  width: auto;
+}
+
+.phoneSheetBody [data-setting="who-can"] thead {
+  display: none;
+}
+
+.phoneSheetBody [data-setting="who-can"] tr {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneSheetBody [data-setting="who-can"] tr:first-child {
+  border-top: 0;
+}
+
+.phoneSheetBody [data-setting="who-can"] td {
+  padding: 0;
+  border: 0;
+}
+
+.phoneSheetBody [data-setting="who-can"] td + td {
+  margin-top: 2px;
+}
+
+/* The Alerts row's Off chip sits before its chevron (Settings overhaul, Josh 16 Nov 2026). */
+.phoneAreaValue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
 }

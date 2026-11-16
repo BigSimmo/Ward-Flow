@@ -4355,7 +4355,7 @@
         {
           "path": "src/components/ward-management/hub/hub-screen.tsx",
           "line": 725,
-          "sha256": "b5a3c4d74ede5724888665c75daf3268b21786bdefacbe91297a91bdf18a63a4"
+          "sha256": "09065251411644e6c2aefd163f99e38e1f0d3389e907d649f4c2a96ce240276e"
         },
         {
           "path": "src/components/ward-management/capacity/capacity-ward-drawer.tsx",
@@ -5193,7 +5193,7 @@
       "control": "Save Configuration"
     },
     "review": {
-      "reviewedOn": "2026-11-14",
+      "reviewedOn": "2026-11-16",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5207,8 +5207,8 @@
         },
         {
           "path": "src/components/ward-management/settings/settings-screen.tsx",
-          "line": 450,
-          "sha256": "0a4981afa278525796f6c4c6f9a6bfadf59f8d5bd3e9d12655115f15a00ffb42"
+          "line": 460,
+          "sha256": "eec4155433f9c712afc1e5051315e9d1813391288c2f579a1109602065ab5f84"
         }
       ]
     }
