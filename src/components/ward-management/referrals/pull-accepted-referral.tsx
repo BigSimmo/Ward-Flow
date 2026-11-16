@@ -14,7 +14,13 @@ import { legalStatusMismatchWarning } from "../ward-eligibility";
 import { legalFormStatusWarning } from "../ward-legal-form-fit";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { BED_PULL_UNDO_TOAST_MS } from "../ward-operational-defaults";
-import { BED_PULL_UNDONE, bedPullUndoEvent, nextPullTarget, startedJourneyPull } from "../ward-bed-pull-undo";
+import {
+  BED_PULL_UNDONE,
+  STARTED_JOURNEY_UNDONE,
+  bedPullUndoEvent,
+  nextPullTarget,
+  startedJourneyPull,
+} from "../ward-bed-pull-undo";
 import { formatInstantWithDay } from "../ward-clock";
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { WardCommandOutcome } from "../ward-shared-client";
@@ -294,8 +300,10 @@ export function PullAcceptedReferral({
     pulledAt: number,
     undo: (at: number) => WardFlowEvent,
     outcome: WardCommandOutcome | undefined,
-    /** What Undo leaves behind: a new journey has started without the bed; a pulled-again one stays open. */
-    left = "The movement has started without the bed.",
+    /** What Undo leaves behind: a new journey ends (D-262); a pulled-again one stays open. */
+    left = STARTED_JOURNEY_UNDONE,
+    /** D-262: this tap also started the journey, so the host's Undo ends it too. */
+    startedJourney = false,
   ) {
     if (!desk) return;
     if (onPulled) {
@@ -305,6 +313,7 @@ export function PullAcceptedReferral({
         desk,
         ...(actingAs === undefined ? {} : { actingUnitId: actingAs }),
         at: pulledAt,
+        ...(startedJourney ? { startedJourney: true as const } : {}),
       });
       onDone();
       return;
@@ -413,6 +422,8 @@ export function PullAcceptedReferral({
               );
             },
             outcome,
+            STARTED_JOURNEY_UNDONE,
+            true,
           );
         } else {
           setMessage("The movement has started without the bed. Open it to pull the bed.");

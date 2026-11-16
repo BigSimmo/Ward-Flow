@@ -27,6 +27,7 @@ import {
   type PulledBed,
   pullUndoTransportBookedLine,
 } from "./pull-bed-facts";
+import { STARTED_JOURNEY_UNDONE } from "./ward-bed-pull-undo";
 
 // WS-03: the one-step pull loads only when someone opens it.
 const PullAcceptedReferral = dynamic(
@@ -156,6 +157,7 @@ export function usePullBedStep(): PullBedStep {
             reason: "pull_made_in_error",
             ...(pulled.actingUnitId ? { actingUnitId: pulled.actingUnitId } : {}),
             expectedPull: { unitId: pulled.entry.unitId, stageIndex },
+            ...(pulled.startedJourney ? { endsStartedJourney: true as const } : {}),
           }),
         (outcome) => {
           const failure =
@@ -178,8 +180,14 @@ export function usePullBedStep(): PullBedStep {
             toast?.dismiss(toastId);
           }
           setKept((rows) => rows.filter((row) => row !== pulled));
-          // The released pull leaves its movement open without a bed, as the patient page's Undo does.
-          toast?.push({ tone: "success", title: `Bed pull undone for ${pulled.name}. The movement stays open.` });
+          // The released pull leaves its movement open without a bed, as the patient page's Undo does,
+          // unless this tap also started the journey: that Undo ends it too (D-262).
+          toast?.push({
+            tone: "success",
+            title: pulled.startedJourney
+              ? `Bed pull undone for ${pulled.name}. ${STARTED_JOURNEY_UNDONE}`
+              : `Bed pull undone for ${pulled.name}. The movement stays open.`,
+          });
         },
       );
     },

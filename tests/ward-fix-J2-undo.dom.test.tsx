@@ -89,7 +89,11 @@ describe("A9-02: Home Act now pull offers Undo for the whole window", () => {
     fireEvent.click(within(toast).getByRole("button", { name: "Undo" }));
     await waitFor(() => expect(journey().stage).not.toBe("pulled"));
     expect(current!.rejections).toEqual([]);
-    expect(await screen.findByText("Bed pull undone. The movement has started without the bed.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Bed pull undone. The referral is back, ready for Pull the bed."),
+    ).toBeInTheDocument();
+    // D-262: the Undo of a one-tap pull also ends the journey that tap started.
+    expect(journey().closure?.outcome).toBe("did_not_proceed");
   });
 });
 

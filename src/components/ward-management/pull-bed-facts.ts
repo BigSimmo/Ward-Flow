@@ -95,6 +95,8 @@ export type PulledBed = {
   actingUnitId?: string;
   /** The pull's own time, as the movement's `to: "pulled"` stage change records it. */
   at: Instant;
+  /** D-262: this tap also started the journey (one-tap Pull the bed), so its Undo ends it too. */
+  startedJourney?: true;
 };
 
 /** The last moment the pull can be undone from its row ("Undo pull · until 10:47"). */

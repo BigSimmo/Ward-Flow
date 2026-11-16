@@ -22,6 +22,9 @@ export type BedPullUndoTarget = {
 /** What the toast says once a bed pull's Undo is accepted. */
 export const BED_PULL_UNDONE = "Bed pull undone.";
 
+/** D-262: after Undo of a one-tap pull, the journey it started has ended and the referral is back. */
+export const STARTED_JOURNEY_UNDONE = "The referral is back, ready for Pull the bed.";
+
 type ReleasePullEvent = Extract<WardFlowEvent, { type: "RELEASE_PULL" }>;
 
 /**
