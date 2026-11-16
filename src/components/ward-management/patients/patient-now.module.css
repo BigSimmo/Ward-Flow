@@ -2715,6 +2715,13 @@
   margin-left: var(--wf-s-2);
 }
 
+/* D-250 (16 Nov 2026): a tag that does not fit wraps onto a second line instead of being cut off at
+   the screen edge. A line that fits stays one line. */
+.phIdSub {
+  flex-wrap: wrap;
+  row-gap: var(--wf-s-1);
+}
+
 .phMoreRow {
   display: flex;
   align-items: center;

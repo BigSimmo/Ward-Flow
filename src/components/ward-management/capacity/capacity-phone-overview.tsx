@@ -1,9 +1,9 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import { ChevronRight } from "lucide-react";
 
-import { Card, CardHead, WindowWord } from "@/components/wf";
+import { Card, CardHead, ShowMoreRow, WindowWord } from "@/components/wf";
 import { BedSquares, bedSquaresTag } from "@/components/ward-management/bed-squares";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { closedBedsPastReview } from "@/components/ward-management/ward-bed-closure-review";
@@ -56,6 +56,9 @@ export function PhoneOverview({
   const toCheck = networkRows.filter((row) => checkIds.has(row.unit.id));
   const extras = wardExtras(units, model.bedReleases ?? [], now);
   const detailIdBase = useId();
+  // D-250: the first 8 wards, then a Show more row, so the list matches its count.
+  const [showAllToCheck, setShowAllToCheck] = useState(false);
+  const toCheckHidden = Math.max(0, toCheck.length - 8);
   return (
     <div className={styles.phoneOverview}>
       {executive ? null : <HeldUpCard releases={heldUpReleases} now={now} />}
@@ -72,8 +75,8 @@ export function PhoneOverview({
         {toCheck.length === 0 ? (
           <p className={styles.railEmpty}>Every open ward has a ready bed and a fresh count.</p>
         ) : (
-          <ul className={styles.railRows}>
-            {toCheck.slice(0, 8).map((row) => {
+          <ul className={styles.railRows} id={`${detailIdBase}-to-check`}>
+            {(showAllToCheck ? toCheck : toCheck.slice(0, 8)).map((row) => {
               const ward = wardOf.get(row.unit.id);
               const stale = !isConfirmationFresh(row.unit, now);
               return (
@@ -106,6 +109,15 @@ export function PhoneOverview({
             })}
           </ul>
         )}
+        {toCheckHidden > 0 ? (
+          <ShowMoreRow
+            onClick={() => setShowAllToCheck((all) => !all)}
+            expanded={showAllToCheck}
+            controls={`${detailIdBase}-to-check`}
+          >
+            {showAllToCheck ? "Show fewer" : `Show ${toCheckHidden} more`}
+          </ShowMoreRow>
+        ) : null}
         {onAllWards ? (
           <button type="button" className={styles.railFoot} onClick={onAllWards}>
             All {networkRows.length} wards · bed map

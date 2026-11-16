@@ -709,6 +709,53 @@ a.cellBody {
   }
 }
 
+/* D-250 (16 Nov 2026): on a tablet or desktop an inline band too long for its row (the ED page's
+   Switch ED at 1280) scrolls sideways under a right-hand fade instead of being cut off. The fade is
+   scroll-driven, so a band that fits (its cells stretch to the row's end) is drawn as before. */
+@property --wf-row-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes wfRowFadeEnd {
+  0%,
+  90% {
+    --wf-row-fade-end: 36px;
+  }
+  100% {
+    --wf-row-fade-end: 0px;
+  }
+}
+
+@media (min-width: 46.5rem) {
+  .cells[data-variant="inline"] {
+    margin-block: -4px;
+    padding-block: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-padding-right: 48px;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, black calc(100% - var(--wf-row-fade-end)), transparent);
+    mask-image: linear-gradient(90deg, black calc(100% - var(--wf-row-fade-end)), transparent);
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .cells[data-variant="inline"] {
+      animation-name: wfRowFadeEnd;
+      animation-duration: 1ms;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll(self inline);
+    }
+  }
+
+  .cells[data-variant="inline"]::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* UI sweep (16 Nov 2026): on a tablet or desktop "Ask" is drawn 18px tall; a tap band brings it to
    40px without moving the pill's words. */
 @media (min-width: 46.5rem) {

@@ -558,8 +558,9 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                           : {
                               // Capacity's hero figure: spare only while the selector nets bed types.
                               id: "short",
-                              value: Math.abs(bedGap),
-                              label: bedGap > 0 ? "Spare" : "Short",
+                              // D-250: a gap of 0 reads "Enough" with no number, not "Short 0".
+                              value: bedGap === 0 ? "Enough" : Math.abs(bedGap),
+                              label: bedGap === 0 ? "Bed gap" : bedGap > 0 ? "Spare" : "Short",
                               testId: "ward-index-figure-short",
                             },
                         {

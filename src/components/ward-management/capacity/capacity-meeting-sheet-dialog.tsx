@@ -66,7 +66,8 @@ export function BedMeetingSheetDialog({
     ? `, ${perthDateText(calendarDateOf(now, dayZero), { weekday: "long", day: "numeric", month: "long" })}`
     : "";
 
-  const shortWord = short.gap > 0 ? "Spare" : "Short";
+  // D-250: a gap of 0 reads "Enough" with no number, not "Short 0".
+  const shortWord = short.gap === 0 ? "Bed gap" : short.gap > 0 ? "Spare" : "Short";
   const spare = short.spare.map((kind) => `${shortNeed(kind.need).toLowerCase()} ${kind.count} spare`);
   const figures = [
     {
@@ -84,7 +85,7 @@ export function BedMeetingSheetDialog({
       id: "short",
       label: shortWord,
       window: "now" as const,
-      value: Math.abs(short.gap),
+      value: short.gap === 0 ? "Enough" : Math.abs(short.gap),
       // Review P4-5: the bed gap is counted across the network (bed-meeting-derivations), so a
       // one-service sheet says so, as Capacity's own network figures do.
       sub: [...(sheet.service === null ? [] : ["Network-wide"]), `${short.waiting} need a bed`, ...spare].join(" · "),

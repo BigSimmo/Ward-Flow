@@ -173,12 +173,13 @@ export function FindAWard({
               ? "Locked"
               : stale === undefined
                 ? "Fits"
-                : "Count not current"
+                : // D-250: the tag says what its group heading says.
+                  "Fits, bed count old"
             : unsuitable
               ? "Not suitable"
               : noBed
                 ? "No bed now"
-                : "Needs a reason"}
+                : "Needs a recorded reason"}
         </span>
       </label>
     );
