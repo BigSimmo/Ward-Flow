@@ -16,7 +16,6 @@ import { formatInstant } from "@/components/ward-management/ward-clock";
 import { WARD_HISTORY_TRAVERSAL_CANCELLED } from "@/components/ward-management/use-dirty-state-guard";
 import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { useTrainingMode } from "@/components/ward-management/demo-reset/ward-training-mode";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search-lazy";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import { WARD_ALERTS_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
@@ -39,7 +38,6 @@ import {
   referralSheetRequestFromSearch,
   type ReferralSheetRequest,
 } from "@/components/ward-management/referrals/referral-sheet-link";
-import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { wardTasksAreActionableForRole } from "@/components/ward-management/ward-chrome-role";
 // The Tools sheet (Tools review, 15 Oct 2026): one scrolling sheet in groups, Demo at the foot.
@@ -306,13 +304,6 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
   const now = useWardFlowClock();
   // Phone Live chips read "Live HH:MM" from this one clock (v10 phone hero, `publishLiveClock`).
   const liveClockFace = formatInstant(now);
-  // D-194 (Josh, 13 Nov 2026, under D-150): training keeps its scripted clock, so the header names it
-  // "Training clock" rather than passing it off as the real Perth time.
-  const training = useTrainingMode();
-  // RC 2.6 (F-113): outside training the board clock is the demo's scripted time, with no real-time zone label.
-  const clockWords = training ? `Training clock ${liveClockFace}` : `Board time ${liveClockFace}`;
-  // UX audit (21 Oct 2026): offline, the clock's live dot turns amber so it agrees with the banner.
-  const online = useOnlineStatus();
   useEffect(() => {
     publishLiveClock(liveClockFace);
   }, [liveClockFace]);
@@ -1126,24 +1117,11 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         {/* A page's own header tools land here (`ward-bar-page-tools.tsx`). Empty on most pages. */}
         <div id={WARD_BAR_PAGE_TOOLS_ID} className={styles.pageTools} data-testid="ward-bar-page-tools" />
 
-        {/* Josh, 30 Oct 2026: no "Synthetic prototype" pill or mark in the mock-ups' header. The page
-            footer's synthetic-data notice stays on every page, and the Demo menu opens from the
-            board clock and from Tools. */}
-
-        {/* A7 (overall review, 20 Oct 2026): the demo clock's one place. It opens the demo
-            controls in Tools; the rail no longer repeats it. At 1000px and below the bar has no
-            room (CSS hides it): the tablet Menu sheet keeps its "Board time" line and phone page
-            Live chips read the same time (`publishLiveClock` above). */}
-        <WardDemoClockPopover
-          className={`${styles.demoClock} ${polish.clockKeep}`}
-          testId="ward-bar-demo-clock"
-          title={`${clockWords}${online ? "" : ". Offline"}`}
-          aria-label={`${clockWords}${online ? "" : ". Offline"}`}
-        >
-          <span className={styles.demoClockDot} data-offline={online ? undefined : "true"} aria-hidden="true" />
-          <span className={styles.demoClockLabel}>{training ? "Training clock" : "Board time"}</span>{" "}
-          <span className={styles.demoClockTime}>{liveClockFace}</span>
-        </WardDemoClockPopover>
+        {/* Josh, 30 Oct 2026: no "Synthetic prototype" pill or mark in the header. The page footer's
+            synthetic-data notice stays on every page.
+            Josh, 16 Nov 2026: no Board time pill in the header on any screen either; the room goes to
+            the search. The rail's shift card and the Menu sheet show the time, phone page Live chips
+            read it (`publishLiveClock` above), and Tools opens the Demo menu. */}
 
         {/* The shell's synthetic-data marker for screen readers (visually hidden, so no pill shows). */}
         <span

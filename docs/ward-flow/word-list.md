@@ -184,7 +184,7 @@ Added 26 October 2026 with the Help glossary, so the two stay in step.
 | **Shift brief**          | A ward's sheet for the shift: who came in, is going, is stuck or is overdue.                         |
 | **Notices**              | A ward's own messages under the bell: buzzes, urgent tasks and notices.                              |
 | **Activity**             | The header drawer of recent changes and notices.                                                     |
-| **Board time**           | The clock every screen works from: Perth time (AWST) when signed in; the demo labels it Board time.  |
+| **Board time**           | The clock every screen works from, shown at the top of the menu: Perth time (AWST) when signed in.   |
 | **Demo**                 | The Demo panel: scenario, clock and reset for the invented data. The live pill reads "Demo 10:42".   |
 | **Synthetic**            | Invented. Every patient, bed figure and record in Ward Flow is made up.                              |
 
