@@ -7,9 +7,13 @@
  * `clearWardFlowBrowserData` sweeps it at sign-out, and the in-memory copy below registers its own
  * reset, so the next person at the device starts from the standard sheet.
  *
- * **Item ids only, never typed text.** The stored value is `{ pinned, links }`, two arrays of ids
- * from the closed list `CREATE_ITEM_IDS`, checked on every read. Anything else (free text, a stale
- * build's value, tampering) reads as "not arranged", never as an error.
+ * **Item ids only, never typed text.** The stored value is `{ pinned, links, hidden }`, three arrays
+ * of ids from the closed list `CREATE_ITEM_IDS`, checked on every read (a value saved before `hidden`
+ * existed reads as an empty one). Anything else (free text, a stale build's value, tampering) reads as
+ * "not arranged", never as an error.
+ *
+ * More starts (Josh, 16 Nov 2026): the Tools the coordinator already has can be added too. They start
+ * under "Not shown", so the standard sheet is unchanged until someone adds one.
  */
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
@@ -18,10 +22,35 @@ export const CREATE_SHEET_STORAGE_KEY = "ward-flow-create-sheet";
 const createSheetChangeEvent = "ward-flow-create-sheet-change";
 
 /** Every start the coordinator's + sheet can show, in the standard order. */
-const CREATE_ITEM_IDS = ["triage", "call-log", "ask", "transport", "delays", "remind", "wards", "add-patient"] as const;
+const CREATE_ITEM_IDS = [
+  "triage",
+  "call-log",
+  "ask",
+  "transport",
+  "delays",
+  "remind",
+  "wards",
+  "add-patient",
+  "bed-finder",
+  "feed",
+  "leave-due",
+  "messages",
+  "contacts",
+  "form-times",
+  "catchment",
+  "figures",
+  "find-patient",
+  "broadcast",
+] as const;
 export type CreateItemId = (typeof CREATE_ITEM_IDS)[number];
 
-export type CreateSheetLayout = { pinned: readonly CreateItemId[]; links: readonly CreateItemId[] };
+export type CreateSheetLayout = {
+  pinned: readonly CreateItemId[];
+  links: readonly CreateItemId[];
+  /** Starts this person took off the sheet; any start not placed anywhere takes its standard place. */
+  hidden?: readonly CreateItemId[];
+};
+export type ResolvedCreateLayout = { pinned: CreateItemId[]; links: CreateItemId[]; hidden: CreateItemId[] };
 
 /** The standard sheet: the day's starts as full rows, the rarer ones as links (Josh, 8 and 15 Nov 2026). */
 const STANDARD_CREATE_LAYOUT: CreateSheetLayout = Object.freeze({
@@ -59,33 +88,41 @@ export function parseCreateSheet(raw: string | null): CreateSheetLayout | null {
     return null;
   }
   if (typeof value !== "object" || value === null) return null;
-  const { pinned, links } = value as { pinned?: unknown; links?: unknown };
-  if (!Array.isArray(pinned) || !Array.isArray(links)) return null;
+  const { pinned, links, hidden = [] } = value as { pinned?: unknown; links?: unknown; hidden?: unknown };
+  if (!Array.isArray(pinned) || !Array.isArray(links) || !Array.isArray(hidden)) return null;
   const seen = new Set<CreateItemId>();
   const take = (list: unknown[]) =>
     list.filter((id): id is CreateItemId => isItemId(id) && !seen.has(id) && Boolean(seen.add(id)));
-  const layout = { pinned: Object.freeze(take(pinned)), links: Object.freeze(take(links)) };
+  const layout = {
+    pinned: Object.freeze(take(pinned)),
+    links: Object.freeze(take(links)),
+    hidden: Object.freeze(take(hidden)),
+  };
   return Object.freeze(layout);
 }
 
 /**
  * The sheet to draw from what this desk may start (`available`): the stored arrangement, or the
  * standard one. A start the person never placed (new in a later build) keeps its standard place, at
- * the end of its group.
+ * the end of its group: pinned, a quick link, or "Not shown" for a start the standard sheet leaves off.
  */
 export function resolveCreateLayout(
   stored: CreateSheetLayout | null,
   available: ReadonlySet<CreateItemId>,
-): { pinned: CreateItemId[]; links: CreateItemId[] } {
+): ResolvedCreateLayout {
   const layout = stored ?? STANDARD_CREATE_LAYOUT;
-  const placed = new Set<CreateItemId>([...layout.pinned, ...layout.links]);
+  const hiddenStored = layout.hidden ?? [];
+  const placed = new Set<CreateItemId>([...layout.pinned, ...layout.links, ...hiddenStored]);
   const pinned = layout.pinned.filter((id) => available.has(id));
   const links = layout.links.filter((id) => available.has(id));
+  const hidden = hiddenStored.filter((id) => available.has(id));
   for (const id of CREATE_ITEM_IDS) {
     if (placed.has(id) || !available.has(id)) continue;
-    (STANDARD_CREATE_LAYOUT.pinned.includes(id) ? pinned : links).push(id);
+    if (STANDARD_CREATE_LAYOUT.pinned.includes(id)) pinned.push(id);
+    else if (STANDARD_CREATE_LAYOUT.links.includes(id)) links.push(id);
+    else hidden.push(id);
   }
-  return { pinned, links };
+  return { pinned, links, hidden };
 }
 
 function getSnapshot(): CreateSheetLayout | null {

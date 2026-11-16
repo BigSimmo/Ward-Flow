@@ -78,3 +78,84 @@
   width: 18px;
   height: 18px;
 }
+
+/* More starts (Josh, 16 Nov 2026): minus takes a start off the sheet, plus adds it back. */
+.editRowLead {
+  padding-left: 0;
+}
+
+/* The minus or plus sits close to the start's own icon, so a long name ("Ask wards for a bed") fits. */
+.editRowLead > .editButton:first-child {
+  margin-right: -10px;
+}
+
+.editRemove {
+  color: var(--wf-danger-ink);
+}
+
+.editAdd {
+  color: var(--wf-accent);
+}
+
+/* Edit bar (Josh, 16 Nov 2026): a small picture of the bar, then one picker per spot. */
+.barPreview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  grid-auto-flow: column;
+  align-items: center;
+  gap: 4px;
+  margin: var(--wf-s-2) 0 var(--wf-s-3);
+  padding: 10px 8px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface-2);
+}
+
+.barSpot {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barSpot svg {
+  width: 22px;
+  height: 22px;
+}
+
+.barPlus {
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--wf-accent);
+  color: var(--wf-on-accent);
+}
+
+.barPlus svg {
+  width: 18px;
+  height: 18px;
+}
+
+.barSpots {
+  display: grid;
+  gap: var(--wf-s-2);
+}
+
+.barField.barField {
+  align-items: center;
+}
+
+/* With the minus or plus in front, a long name wraps to a second line instead of being cut. */
+.editRowLead > span > span {
+  white-space: normal;
+}

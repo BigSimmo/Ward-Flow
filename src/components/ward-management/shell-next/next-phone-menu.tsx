@@ -45,6 +45,7 @@ import {
   type RailEntry,
 } from "@/components/ward-management/shell/ward-rail-entries";
 import { nextRoleMenu } from "@/components/ward-management/shell-next/next-role-menu";
+import { saveDockChoice, useDockChoices, type DockDesk } from "@/components/ward-management/shell/ward-dock-store";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { useAccessNavFilter } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlagCheck } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -87,6 +88,17 @@ type DockSlot =
   | { readonly kind: "tools" };
 
 const page = (id: string, label: string): DockPage => ({ kind: "page", id, label });
+
+/** A slot's stored key (`ward-dock-store.ts`): its kind, or `page:<rail id>`. */
+const slotKey = (slot: DockSlot): string => (slot.kind === "page" ? `page:${slot.id}` : slot.kind);
+
+/** One choice for a dock spot (Josh, 16 Nov 2026): what it opens, under the Menu's own group. */
+export type DockOption = {
+  readonly key: string;
+  readonly label: string;
+  readonly group: string;
+  readonly icon: typeof Plus;
+};
 
 export type ResolvedDockSlot =
   Exclude<DockSlot, DockPage> | { readonly kind: "page"; readonly entry: RailEntry; readonly label: string };
@@ -177,6 +189,7 @@ function phoneMenuModel(
   accessNav: (entries: readonly RailEntry[]) => RailEntry[] = (entries) => [...entries],
   roleLabel: string = CHROME_ROLE_LABELS[role],
   accessAdmin = false,
+  chosen?: readonly string[],
 ) {
   // A page that needs a larger screen (the bed meeting TV view) is not offered on a phone at all.
   // Role access plan: only the screens the desk's role may open.
@@ -190,26 +203,113 @@ function phoneMenuModel(
     return entry ? [{ kind: "page", entry, label: slot.label }] : [];
   };
   const dockSlots = accessAdmin ? ADMIN_DOCK : DOCK[dockRole];
-  const dock = dockSlots.left.flatMap(resolve);
-  const dockRight = dockSlots.right.flatMap(resolve);
+  const menu = nextRoleMenu(entries, role, accessAdmin);
+  // Edit bar (Josh, 16 Nov 2026): each spot can open any page this desk may open, or Alerts,
+  // Activity, Tools or Find a bed. A spot left standard, or holding a choice this desk cannot open
+  // now, keeps its standard slot; a choice already in another spot is never shown twice.
+  const standard = [...dockSlots.left, ...dockSlots.right];
+  // The Tools bed finder is on the coordinator's and site bed manager's Tools too, not only the ED's menu.
+  const bedFinderDesk = !accessAdmin && (role === "coordinator" || role === "bed_manager");
+  const { options, slotFor } = dockOptions(standard, menu, byId, roleLabel, bedFinderDesk);
+  const picked = standard.map((fallback, index) => {
+    const key = chosen?.[index];
+    return (key !== undefined && slotFor.get(key)) || fallback;
+  });
+  const seen = new Set<string>();
+  const unique = picked.map((slot, index) => {
+    const key = slotKey(slot);
+    if (!seen.has(key)) {
+      seen.add(key);
+      return slot;
+    }
+    return standard[index];
+  });
+  const dock = unique.slice(0, dockSlots.left.length).flatMap(resolve);
+  const dockRight = unique.slice(dockSlots.left.length).flatMap(resolve);
   const needs = strictNeeds(byId, counts);
   // Nothing twice: a page in the dock or under Needs you leaves its group, and New referral is the +.
   const shown = new Set([
     "referral-intake",
     ...[...dock, ...dockRight].flatMap((slot) => (slot.kind === "page" ? [slot.entry.id] : [])),
-    ...(dockRight.some((slot) => slot.kind === "alerts") ? ["alerts"] : []),
-    ...(dockRight.some((slot) => slot.kind === "bed-finder") ? [BED_FINDER_ID] : []),
+    ...([...dock, ...dockRight].some((slot) => slot.kind === "alerts") ? ["alerts"] : []),
+    ...([...dock, ...dockRight].some((slot) => slot.kind === "bed-finder") ? [BED_FINDER_ID] : []),
     ...needs.flatMap((need) => (need.entryId ? [need.entryId] : [])),
   ]);
   // B1 (Josh, 19 Oct 2026): the role's own menu first, then everything else in the rail's groups.
   // ROLE BRANCH (admin): Governance leads the access admin's own menu, as on the rail.
-  const menu = nextRoleMenu(entries, role, accessAdmin);
   const main = menu.main.filter((item) => !shown.has(item.id));
   const groups = [
     { label: roleLabel, entries: main },
     ...menu.more.map((group) => ({ ...group, entries: group.entries.filter((entry) => !shown.has(entry.id)) })),
   ].filter((group) => group.entries.length > 0);
-  return { entries, byId, dock, dockRight, needs, groups };
+  return {
+    entries,
+    byId,
+    dock,
+    dockRight,
+    needs,
+    groups,
+    dockStandard: standard.map(slotKey),
+    // Each spot's key, or null where the desk cannot open that spot now (it is not drawn).
+    dockKeys: unique.map((slot) => (resolve(slot).length > 0 ? slotKey(slot) : null)),
+    dockLeftCount: dockSlots.left.length,
+    dockOptions: options,
+  };
+}
+
+/**
+ * What a dock spot may open on this desk: Alerts (the coordinator's one queue, or the Alerts screen),
+ * the desk's own menu pages under its name, then every other page in the rail's groups, then Activity,
+ * Tools and, where this desk has it, Find a bed. Labels are the role's own (My ward, not Wards).
+ */
+function dockOptions(
+  standard: readonly DockSlot[],
+  menu: ReturnType<typeof nextRoleMenu>,
+  byId: ReadonlyMap<string, RailEntry>,
+  roleLabel: string,
+  bedFinderDesk: boolean,
+): { options: DockOption[]; slotFor: Map<string, DockSlot> } {
+  const options: DockOption[] = [];
+  const slotFor = new Map<string, DockSlot>();
+  const iconFor = (slot: DockSlot): typeof Plus => {
+    if (slot.kind === "page") return slot.id === "command" ? House : (byId.get(slot.id)?.icon ?? House);
+    if (slot.kind === "activity") return Activity;
+    if (slot.kind === "tools") return Wrench;
+    if (slot.kind === "bed-finder") return BedSingle;
+    return Bell;
+  };
+  const add = (slot: DockSlot, label: string, group: string) => {
+    const key = slotKey(slot);
+    if (slotFor.has(key)) return;
+    slotFor.set(key, slot);
+    options.push({ key, label, group, icon: iconFor(slot) });
+  };
+  // A standard page keeps the short name the dock gives it (Home, My ward).
+  const dockLabel = new Map(standard.flatMap((slot) => (slot.kind === "page" ? [[slot.id, slot.label]] : [])));
+  const queue = standard.some((slot) => slot.kind === "queue");
+  if (queue) add({ kind: "queue" }, "Alerts", roleLabel);
+  else if (byId.has("alerts")) add({ kind: "alerts" }, "Alerts", roleLabel);
+  const pageOption = (entry: { id: string; label: string }, group: string) => {
+    if (entry.id === "alerts" || entry.id === "referral-intake") return;
+    add(page(entry.id, dockLabel.get(entry.id) ?? entry.label), dockLabel.get(entry.id) ?? entry.label, group);
+  };
+  let bedFinder: string | undefined =
+    standard.find((slot) => slot.kind === "bed-finder")?.label ?? (bedFinderDesk ? "Find a bed" : undefined);
+  for (const item of menu.main) {
+    if ("kind" in item) bedFinder ??= item.label;
+    else pageOption(item, roleLabel);
+  }
+  for (const group of menu.more) for (const entry of group.entries) pageOption(entry, group.label);
+  add({ kind: "activity" }, "Activity", "More");
+  add({ kind: "tools" }, "Tools", "More");
+  if (bedFinder !== undefined) add({ kind: "bed-finder", label: bedFinder }, bedFinder, "More");
+  // A standard slot is always a choice, so going back to it never depends on the lists above.
+  for (const slot of standard) {
+    if (slot.kind === "page") {
+      if (byId.has(slot.id)) add(slot, slot.label, roleLabel);
+    } else if (slot.kind === "bed-finder") add(slot, slot.label, "More");
+  }
+  return { options, slotFor };
 }
 
 /**
@@ -677,7 +777,7 @@ preloadWhenIdle(loadCapacityGlance);
 
 function PhoneMenuSheetsRetry(props: PhoneMenuSheetsProps) {
   const [Sheets, setSheets] = useState<ComponentType<PhoneMenuSheetsProps> | null>(null);
-  const opened = props.open || props.createOpen || props.switcherOpen;
+  const opened = props.open || props.createOpen || props.switcherOpen || props.bar.open;
   const latest = useRef(props);
   useEffect(() => {
     latest.current = props;
@@ -695,6 +795,7 @@ function PhoneMenuSheetsRetry(props: PhoneMenuSheetsProps) {
         latest.current.onClose();
         latest.current.onCloseCreate();
         latest.current.onCloseSwitcher();
+        latest.current.bar.onClose();
         announceToWardShell("Menu could not load. Check the connection, then try again.");
       },
     );
@@ -733,13 +834,14 @@ export function NextPhoneMenu({
   const [createOpen, setCreateOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [capacityOpen, setCapacityOpen] = useState(false);
+  const [barOpen, setBarOpen] = useState(false);
   const [capacityMounted, setCapacityMounted] = useState(false);
   if (!capacityMounted && capacityOpen) setCapacityMounted(true);
   const capacityOpenerRef = useRef<HTMLElement | null>(null);
   // The sheets mount on the first open, not on page load: mounting the dynamic component would fetch
   // its chunk straight away instead of when the browser is idle.
   const [sheetsMounted, setSheetsMounted] = useState(false);
-  if (!sheetsMounted && (open || createOpen || switcherOpen)) setSheetsMounted(true);
+  if (!sheetsMounted && (open || createOpen || switcherOpen || barOpen)) setSheetsMounted(true);
   const [query, setQuery] = useState("");
   // DR-08: Create returns focus to the dock's + that opened it, not to Menu. Cleared when Menu opens,
   // so the Menu sheet still returns to Menu.
@@ -766,6 +868,9 @@ export function NextPhoneMenu({
   const dockRole = shellRole;
   const flagOn = useWardFeatureFlagCheck();
   const accessNav = useAccessNavFilter();
+  // Edit bar (Josh, 16 Nov 2026): this desk's own choice of dock, kept on this device.
+  const dockDesk: DockDesk = accessAdmin ? "admin" : dockRole;
+  const dockChosen = useDockChoices()[dockDesk];
   const {
     entries,
     byId,
@@ -773,7 +878,11 @@ export function NextPhoneMenu({
     dockRight,
     needs: overdueNeeds,
     groups,
-  } = phoneMenuModel(shellRole, counts, dockRole, flagOn, accessNav, deskRoleLabel, accessAdmin);
+    dockStandard,
+    dockKeys,
+    dockLeftCount,
+    dockOptions: barOptions,
+  } = phoneMenuModel(shellRole, counts, dockRole, flagOn, accessNav, deskRoleLabel, accessAdmin, dockChosen);
   // Q161 (Josh, 1 Nov 2026): a page no dock tab owns lights the bar's Menu button instead.
   const dockOwnsPage = dockOwnsPath([...dock, ...dockRight], pathname);
   useEffect(() => {
@@ -860,7 +969,7 @@ export function NextPhoneMenu({
   const needs = [...actNowNeed(actNowCount, oneAlertsQueue), ...overdueNeeds];
   // Nothing twice: with one Alerts queue the dock always carries Alerts, so it leaves its group.
   const menuGroups =
-    oneAlertsQueue && dockRight.some((slot) => slot.kind === "queue")
+    oneAlertsQueue && [...dock, ...dockRight].some((slot) => slot.kind === "queue")
       ? groups
           .map((group) => ({ ...group, entries: group.entries.filter((entry) => entry.id !== "alerts") }))
           .filter((group) => group.entries.length > 0)
@@ -925,7 +1034,23 @@ export function NextPhoneMenu({
           onCloseCreate={closeCreate}
           onNewReferral={onNewReferral}
           top={<NextPhoneMenuTop onGo={close} />}
-          activityRow={!dockRight.some((slot) => slot.kind === "activity")}
+          bar={{
+            open: barOpen,
+            onOpen: () => {
+              close();
+              closeCreate();
+              setBarOpen(true);
+              announceToWardShell("Edit bar opened.");
+            },
+            onClose: () => setBarOpen(false),
+            options: barOptions,
+            current: dockKeys,
+            standard: dockStandard,
+            leftCount: dockLeftCount,
+            chosen: dockChosen !== undefined,
+            onSave: (slots) => saveDockChoice(dockDesk, slots),
+          }}
+          activityRow={![...dock, ...dockRight].some((slot) => slot.kind === "activity")}
         />
       ) : null}
 
