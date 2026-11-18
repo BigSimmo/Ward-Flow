@@ -30,7 +30,7 @@ import { WARD_SCENARIOS, type WardScenario } from "@/components/ward-management/
 import { STOP_TRANSPORT_REASONS, TRANSPORT_WHEREABOUTS } from "@/components/ward-management/ward-change-reasons";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { undoStepTypeFor } from "@/components/ward-management/ward-undo";
-import { FUZZED_EVENT_TYPES, nextEvent, seededRandom } from "./helpers/ward-engine-fuzz";
+import { FUZZED_EVENT_TYPES, nextEvent, seededRandom, unsweptBuilderCount } from "./helpers/ward-engine-fuzz";
 import { undoComparableWorld, undoOf } from "./helpers/ward-legal-figure-sweep";
 import { createPreparationProfile } from "../scripts/ward-flow/test-preparation-profile.mjs";
 
@@ -865,6 +865,19 @@ describe("engine safety under random event sequences", () => {
     }
   });
 
+  // Nightly CI, 10-17 Nov 2026: 203 builders but 12 sweep steps x 16 seeds = 192 visits, so every
+  // nightly window skipped 11 builders and its coverage check failed for whichever types landed in
+  // the gap (REQUEST_WARD_STAFF in the 17 Nov window, seeds 332385-332400). The sweep now grows
+  // with the builder list, so any 16 consecutive seeds visit every builder.
+  it("sweeps every builder in any 16-seed window, including the 17 Nov nightly one", () => {
+    for (const firstSeed of [1, 332273, 332385, 332401, 400_000, 2 ** 31])
+      expect(unsweptBuilderCount(firstSeed), `seeds ${firstSeed}+16`).toBe(0);
+  });
+
+  it("keeps beds whole across the 17 Nov nightly window (seeds 332385-332400)", () => {
+    for (let seed = 332385; seed <= 332400; seed += 1) expect(runSeed(seed).failure, `seed ${seed}`).toBeNull();
+  });
+
   // Seed 332344 with the one-tap pull route: a ward moves the pulled stay to another of its beds, and
   // the engine writes that bed on the journey and on its own referral. One person, one bed.
   it("treats a pulled journey and its own referral holding the same bed as one hold", () => {
@@ -908,6 +921,12 @@ describe("engine safety under random event sequences", () => {
     `keeps beds whole across ${SEQUENCES} seeded sequences of ${STEPS} events`,
     () => {
       let completed = false;
+      // The pinned 17 Nov window calls runSeed before this test, and earlier replay checks can
+      // add undo types. Start from a clean slate so the coverage checks and profile describe only
+      // this window (SEQUENCES * STEPS events from FIRST_SEED), not those earlier runs.
+      FUZZED_EVENT_TYPES.clear();
+      UNDONE_STEP_TYPES.clear();
+      fuzzProfile.reset();
       try {
         let refused = 0;
         for (let seed = FIRST_SEED; seed < FIRST_SEED + SEQUENCES; seed += 1) {
