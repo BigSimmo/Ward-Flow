@@ -2951,6 +2951,13 @@ button.helpLink {
     min-width: 0;
   }
 }
+/* Below 360 px the four figures' unwrapped labels need more than the row (327 px at 320), so the
+   hero clipped In use's "85%" and its bands. There the labels may wrap and the columns share the row. */
+@media (max-width: 22.4375rem) {
+  .capHero :has(> [data-wf-hero-figure]) {
+    grid-auto-columns: minmax(min-content, 1fr);
+  }
+}
 /* A count label's window word (the kit's WindowWord) in the hero's quiet ink. */
 .winWord[data-wf-window] {
   color: var(--wf-hero-ink-3);

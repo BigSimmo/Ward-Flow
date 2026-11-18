@@ -2,12 +2,14 @@
 
 import { Printer } from "lucide-react";
 import { Button } from "@/components/wf";
+import { printPage } from "@/components/ward-management/use-printing";
 
 /**
  * A list's Print button: the browser's own print of the page as it shows, as Discharges, the call
  * sheet and the chronology already do. The page's print styles drop the controls; names print in
  * full, as on screen (D-102 keeps names out of downloaded files only). The kit's default size (36px),
- * as the Export beside it.
+ * as the Export beside it. Patients, which offers a choice of prints, uses `ListPrintMenu`
+ * (ward-list-print-menu.tsx) instead, so the menu stays out of the other pages' scripts.
  */
 export function ListPrintButton({
   variant = "sec",
@@ -28,7 +30,7 @@ export function ListPrintButton({
     "aria-label": "Print this list",
     "data-print-hide": true,
     "data-testid": testId,
-    onClick: () => window.print(),
+    onClick: () => printPage(),
   } as const;
   return iconOnly ? <Button {...shared} iconOnly /> : <Button {...shared}>Print</Button>;
 }
