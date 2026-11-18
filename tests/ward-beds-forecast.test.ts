@@ -307,10 +307,10 @@ describe("forecastFigureText", () => {
     expect(forecastFigureText(-3)).toBe("short by 3");
     expect(forecastFigureText(0)).toBe("none");
     expect(forecastFigureText(4)).toBe("4");
-    expect(forecastHeadline(-3)).toBe("Likely short by 3 beds");
-    expect(forecastHeadline(-1)).toBe("Likely short by 1 bed");
-    expect(forecastHeadline(0)).toBe("No beds likely free");
-    expect(forecastHeadline(6)).toBe("6 beds likely free");
+    expect(forecastHeadline(-3)).toBe("Short by 3 beds");
+    expect(forecastHeadline(-1)).toBe("Short by 1 bed");
+    expect(forecastHeadline(0)).toBe("No beds free");
+    expect(forecastHeadline(6)).toBe("6 beds free");
     expect(forecastRangeEnd(-23)).toBe("23 short");
     expect(forecastRangeEnd(0)).toBe("none free");
     expect(forecastRangeEnd(30)).toBe("30 free");

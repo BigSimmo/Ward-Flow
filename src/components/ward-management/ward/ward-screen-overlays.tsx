@@ -11,12 +11,7 @@ import { reviewAtFrom } from "../ward-closure-choice";
 import { admissionCriteriaEligibility } from "@/components/ward-management/ward-flow-reducer";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import { useUndoableStep } from "../use-undoable-step";
-import {
-  bedClosureReasonChoices,
-  bedLabel,
-  wardClosureReasonLabel,
-  type WardClosureReason,
-} from "../ward-bed-closure-reason";
+import { bedLabel, wardClosureReasonLabel, type WardClosureReason } from "../ward-bed-closure-reason";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { WardBedDossierDrawer } from "./ward-screen-lazy";
 import { notRecordedMessage } from "./ward-screen-messages";
@@ -146,9 +141,12 @@ export function WardScreenBedDrawer({
     reviewAfter = "",
     // R-BEDS-4: a reason added from the drawer to a bed already closed, written in place.
     again?: { reason: string },
+    // A14-19: the reason chosen as the bed closes; "" (Not given) leaves it out.
+    closeReason = "",
   ) => {
     // Item 6: "Review in" read to a time at the tap; "Not known" leaves it out.
     const reviewAt = closed && !again ? reviewAtFrom(reviewAfter, now) : undefined;
+    const reason = (again?.reason ?? (closed ? closeReason : "")) as WardClosureReason | "";
     return runBedStep(
       {
         type: "SET_BED_CLOSED",
@@ -159,12 +157,12 @@ export function WardScreenBedDrawer({
         bedNumber,
         closed,
         ...(reviewAt !== undefined ? { reviewAt } : {}),
-        ...(again ? { reason: again.reason as WardClosureReason } : {}),
+        ...(reason ? { reason } : {}),
       },
       {
         success: closed
-          ? again
-            ? `${bedLabel(bedNumber)} closed: ${wardClosureReasonLabel(again.reason as WardClosureReason)}. It is not offered until it is reopened.`
+          ? reason
+            ? `${bedLabel(bedNumber)} closed: ${wardClosureReasonLabel(reason)}. It is not offered until it is reopened.`
             : `${bedLabel(bedNumber)} closed. It is not offered until it is reopened.`
           : `${bedLabel(bedNumber)} reopened.`,
         undo: (at) => ({
@@ -180,19 +178,6 @@ export function WardScreenBedDrawer({
           : closed
             ? `Undone. ${bedLabel(bedNumber)} is open again.`
             : `Undone. ${bedLabel(bedNumber)} is closed again.`,
-        // D-148 (Josh, 11 Nov 2026): closing stays one tap; its toast offers an optional reason.
-        ...(closed && !again
-          ? {
-              choices: bedClosureReasonChoices({
-                role: bedClosureRole,
-                unitId: unit.id,
-                actingUnitId: unitId,
-                bedNumber,
-                // The reasoned close keeps the first close's review time (item 6).
-                ...(reviewAt !== undefined ? { reviewAt } : {}),
-              }),
-            }
-          : {}),
       },
     );
   };
@@ -342,7 +327,8 @@ export function WardScreenBedDrawer({
             bedClosure={{
               onCloseBed:
                 bedClosureAllowed && selectedBedItem?.status === "ready" && !selectedBedItem.heldFor
-                  ? (reviewAfter: string) => setBedClosed(selectedBed, true, reviewAfter)
+                  ? (reviewAfter: string, reason: string) =>
+                      setBedClosed(selectedBed, true, reviewAfter, undefined, reason)
                   : undefined,
               onReopenBed:
                 bedClosureAllowed && selectedBedItem?.status === "closed" && closedByNumber

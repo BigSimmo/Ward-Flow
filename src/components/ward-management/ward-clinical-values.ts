@@ -379,7 +379,7 @@ export const CLINICAL_VALUES = {
   // forecast alert rules and the rail's handover prompt join it with the figures they already ran on.
   forecastShortAlert: {
     status: "synthetic",
-    name: "Forecast alert raised when a bed type is likely this many beds short tomorrow",
+    name: "Alert raised when a bed type is expected to be this many beds short tomorrow",
     group: "Alerts and holds",
     value: 3,
     unit: "count",
@@ -387,7 +387,7 @@ export const CLINICAL_VALUES = {
   },
   forecastEdRiskLead: {
     status: "synthetic",
-    name: "Forecast alert raised when someone in ED will pass the access target within",
+    name: "Alert raised when someone in ED is expected to pass the access target within",
     group: "Alerts and holds",
     value: 12 * MINUTES_PER_HOUR,
     unit: "minutes",
@@ -395,7 +395,7 @@ export const CLINICAL_VALUES = {
   },
   forecastWorseAlert: {
     status: "synthetic",
-    name: "Forecast alert raised when tomorrow's likely free beds dropped since the last look by",
+    name: "Alert raised when tomorrow's expected free beds dropped since the last look by",
     group: "Alerts and holds",
     value: 2,
     unit: "count",

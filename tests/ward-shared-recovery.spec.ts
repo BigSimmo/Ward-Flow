@@ -176,6 +176,8 @@ test("Activity Undo: a desk reviews its own bed closure and waits for the server
   }
   const request = nextCommand(page);
   await page.getByTestId("ward-drawer-close-bed").click();
+  // A14-19: the press asks why the bed is closing; Not given closes it with no reason.
+  await page.getByRole("menuitem", { name: "Not given", exact: true }).click();
   const command = await request;
   expect((await command.response())?.status()).toBe(200);
   const commandId = command.postDataJSON().commandId as string;

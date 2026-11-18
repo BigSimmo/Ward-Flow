@@ -118,6 +118,21 @@ describe("D-187 item 4 (Q25): the arrivals corridor never reads 'involuntary' fr
 });
 
 describe("D-187 item 16 (Q38): the Mark absent Undo says what it restores", () => {
+  it("asks first, and Cancel leaves the patient on the ward (A12-02, D-263)", async () => {
+    const root = renderPatient();
+    fireEvent.click(
+      within(screen.getByTestId("ward-patient-change-card")).getByRole("button", { name: "Mark absent" }),
+    );
+    expect(
+      await screen.findByText("This starts the missing person steps. You can undo it straight after."),
+    ).toBeVisible();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    });
+    expect(root).toHaveAttribute("data-patient-mode", "ward");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   const legalStatusOf = (patientId: string | null) => seed.patients.find((p) => p.id === patientId)?.legalStatus;
   const stay = seed.admissions.find(
     (a) =>
@@ -168,6 +183,12 @@ describe("D-187 item 16 (Q38): the Mark absent Undo says what it restores", () =
     fireEvent.click(
       within(screen.getByTestId("ward-patient-change-card")).getByRole("button", { name: "Mark absent" }),
     );
+    // A12-02 (D-263): the kit's styled confirm asks first, and nothing changes until Confirm.
+    expect(await screen.findByText("Mark absent without leave?")).toBeVisible();
+    expect(root).toHaveAttribute("data-patient-mode", "ward");
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    });
     expect(root).toHaveAttribute("data-patient-mode", "awol");
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /Undo/ }));
@@ -181,6 +202,10 @@ describe("D-187 item 16 (Q38): the Mark absent Undo says what it restores", () =
     const root = renderPatient();
     fireEvent.click(screen.getByRole("button", { name: "Start synthetic leave" }));
     fireEvent.click(within(screen.getByTestId("ward-patient-leave-card")).getByRole("button", { name: "Mark absent" }));
+    const confirm = await screen.findByRole("button", { name: "Confirm" });
+    await act(async () => {
+      fireEvent.click(confirm);
+    });
     expect(root).toHaveAttribute("data-patient-mode", "awol");
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /Undo/ }));

@@ -376,13 +376,13 @@ export function SettingsRulesPane({
               iconPlain
               id="forecast-alerts-title"
               icon={Telescope}
-              title="Forecast alerts"
+              title="Alerts from recorded dates"
               meta="Coordinators only. Your defaults"
             />
             <RuleRow
               {...common("forecastShort")}
               testId="setting-forecast-short"
-              sub="Likely this many short"
+              sub="Expected this many short"
               noun="bed type short alert"
               range={rangeOf("forecastShort", "setting-forecast-short-range", FORECAST_SHORT_ALERT_RANGE_BEDS)}
               onChange={(beds) => setRule({ forecastShortBeds: beds })}
@@ -392,7 +392,7 @@ export function SettingsRulesPane({
               {...common("forecastEdLead")}
               testId="setting-forecast-ed-lead"
               sub="Passes the ED target within"
-              noun="Access target forecast alert"
+              noun="Access target alert"
               range={rangeOf("forecastEdLead", "setting-forecast-ed-lead-range", FORECAST_ED_RISK_LEAD_RANGE_MINUTES)}
               onChange={(minutes) => setRule({ forecastEdLeadMinutes: minutes })}
               onReset={() => setRule({ forecastEdLeadMinutes: saved.forecastEdLead })}
@@ -401,7 +401,7 @@ export function SettingsRulesPane({
               {...common("forecastWorse")}
               testId="setting-forecast-worse"
               sub="Drop since you looked"
-              noun="forecast worse alert"
+              noun="expected beds worse alert"
               range={rangeOf("forecastWorse", "setting-forecast-worse-range", FORECAST_WORSE_ALERT_RANGE_BEDS)}
               onChange={(beds) => setRule({ forecastWorseBeds: beds })}
               onReset={() => setRule({ forecastWorseBeds: saved.forecastWorse })}

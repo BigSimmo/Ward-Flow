@@ -253,7 +253,7 @@ export function useSharedForecastHistory(generation: number) {
   const sendReason = useCallback(
     async (reason: ForecastMissReasonEntry, expectedVersion: string | null): Promise<ForecastReasonSaveOutcome> => {
       if (!call || !isCurrent() || state.status !== "shared" || state.reasonWriteVersion !== 1)
-        return { status: "unavailable", message: "Read the latest forecast record before recording a reason." };
+        return { status: "unavailable", message: "Read the latest track record before recording a reason." };
       const startedRevision = historyRevision(call, identity);
       const takeMutation = (reply: unknown) => {
         const canAdopt = startedRevision === historyRevision(call, identity);
@@ -264,7 +264,7 @@ export function useSharedForecastHistory(generation: number) {
       try {
         const reply = await call({ generation, reason, expectedVersion });
         if (!isCurrent())
-          return { status: "unavailable", message: "The working view changed. Open the forecast record again." };
+          return { status: "unavailable", message: "The working view changed. Open the track record again." };
         const saved = sharedForecastReply(reply, generation);
         if (saved.status !== "shared" || saved.reasonWriteVersion !== 1)
           return {
@@ -275,7 +275,7 @@ export function useSharedForecastHistory(generation: number) {
         return { status: "accepted" };
       } catch (error) {
         if (!isCurrent())
-          return { status: "unavailable", message: "The working view changed. Open the forecast record again." };
+          return { status: "unavailable", message: "The working view changed. Open the track record again." };
         const failure = error as { code?: unknown; history?: unknown };
         if (failure?.code === "reason-conflict") {
           if (sharedForecastReply(failure.history, generation).status === "shared") takeMutation(failure.history);
@@ -287,7 +287,7 @@ export function useSharedForecastHistory(generation: number) {
         if (failure?.code === "world-changed" || failure?.code === "reason-basis-required")
           return {
             status: "unavailable",
-            message: "The record changed. Read the latest forecast record before recording again.",
+            message: "The record changed. Read the latest track record before recording again.",
           };
         return {
           status: "uncertain",

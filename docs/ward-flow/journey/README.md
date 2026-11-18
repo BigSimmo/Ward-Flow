@@ -184,6 +184,10 @@ Every person, ward and figure named anywhere in it is invented.
 
 </details>
 
+## Six demo fixes — 18 Nov 2026 (`claude/project-thread-is87vo`, D-263)
+
+The source digests for `ed/ed-screen.tsx`, `alerts/alerts-screen.tsx`, `patients/patient-now-screen.tsx` and `ward/ward-screen-overlays.tsx` were re-reviewed. The edits are a toast's words (no transport needed Undo), on-screen wording (Forecast to Expected), a confirm before the uncited `RECORD_ABSENT_WITHOUT_LEAVE` dispatch, and the bed close reason passed into the uncited `SET_BED_CLOSED` dispatch with the toast's reason choices removed. Every cited dispatch, its payload and role is unchanged. Cited lines moved with the added code: in `patient-now-screen.tsx` by 6 or 17 lines, in `ward-screen-overlays.tsx` by 14 or 15 lines.
+
 ## BedChart rename — 16 Nov 2026 (`claude/project-thread-wrpgfx`)
 
 The source digests for every reviewed screen were re-reviewed after the rename to BedChart (D-250): the edits change only on-screen text ("Ward Flow" to "BedChart") and route strings (`/ward-flow` to `/bedchart`). Every event dispatch, role, line count and cited line is unchanged.
@@ -380,3 +384,5 @@ After `build/history` was merged into the phase 2 integration branch (14 Nov 202
 After the late-arrival main line (without the held server sweep) was merged into the phase 2 integration branch (14 Nov 2026), the late side's command models were kept with this branch's notes added back. Each cited line was found again by its text, except five `ward-access-state.ts` citations (`RECORD_LEGAL_FORM_CODE`, `EXTEND_BROADCAST_ALERT`, `ADD_BROADCAST_ALERT_UNITS`, `RAISE_PULL_NOW`, `RECORD_SUPPORT_NOTIFICATION`), whose place checks moved to the shared place-rule table; they now cite its one call (`placeRefusal`), as this branch already did.
 
 `GatedAction` moved from the kit to `shell/gated-action.tsx` (the kit imports no ward code), so `ward/ward-drawer-discharge-date.tsx` changed one import path only. No dispatch, role or cited line changed; only its digest was re-recorded.
+
+The source digests for `ed/ed-screen.tsx`, `alerts/alerts-screen.tsx`, `patients/patient-now-screen.tsx` and `ward/ward-screen-overlays.tsx` were re-reviewed when PR #1704 took in main's D-263 changes (18 November 2026). Both sides' edits were already reviewed on their own branches; the merge changes no cited dispatch, payload or role. Cited lines were moved by a line-by-line diff map from the PR's version to the merged file, and each was checked to still point at the same code.

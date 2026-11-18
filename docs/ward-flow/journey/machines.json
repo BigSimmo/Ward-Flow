@@ -1767,7 +1767,7 @@
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
         "line": 1,
-        "sha256": "fc655e32f96f6ab8f94916502b36da3894d97c8303dde0f1438df4963094a5d5"
+        "sha256": "c354dd0b59311d9aca98a00a530f933532efe79e8f6e1fe528318b53458ae5c6"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",

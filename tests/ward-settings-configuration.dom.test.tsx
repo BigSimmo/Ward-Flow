@@ -388,8 +388,8 @@ describe("settings screen configuration draft", () => {
       "Transfer acceptance",
       "Transport booked",
       "Bed type short tomorrow",
-      "Access target forecast",
-      "Forecast got worse",
+      "Expected to pass access target",
+      "Expected beds got worse",
     ]) {
       expect(modal, name).toHaveTextContent(name);
     }

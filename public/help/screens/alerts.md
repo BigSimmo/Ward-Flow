@@ -11,10 +11,10 @@ What is addressed to this desk right now, across every movement and referral.
 3. Yours and Broadcast alert. Yours highlights the alerts addressed to you. Broadcast alert sends one alert to several desks.
 4. Today. Alerts raised and acted on today, what is being checked, and any broadcasts.
 5. Open, Cleared and Broadcasts. Open alerts, the ones cleared, and the broadcasts sent.
-6. Show open alerts. Act now, Waiting, Forecast, Reminders, Notices, Snoozed or Yours. All shows every one again.
+6. Show open alerts. Act now, Waiting, Expected, Reminders, Notices, Snoozed or Yours. All shows every one again.
 7. Arrange by. Urgency lists act now first. Lanes and Owner group the alerts in columns.
 8. Open an alert. Each alert opens the record it is about.
-9. Forecast. Forecast lines set in Settings: beds likely to be short tomorrow, the ED access target and a worse forecast. With none today, the Forecast filter shows 0.
+9. Expected from recorded dates. Lines set in Settings: beds expected to be short tomorrow, the ED access target and expected beds that got worse. With none today, the Expected filter shows 0.
 10. Notices. For information only, such as an arrival running late.
 11. The order. How the list is ordered: act now first, then waiting, oldest first in each.
 

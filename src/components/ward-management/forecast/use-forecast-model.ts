@@ -455,7 +455,7 @@ export function useForecastMissReasons() {
     ? undefined
     : shared.status === "shared" && shared.reasonWriteVersion === 1
       ? undefined
-      : "Read the shared forecast record. Protected reason editing is not available yet.";
+      : "Read the shared track record. Protected reason editing is not available yet.";
   const versionFor = (day: number) => (shared.status === "shared" ? (shared.reasonVersions?.[day] ?? null) : null);
   const record = useCallback(
     async (

@@ -75,7 +75,7 @@ const FILTER_LABEL: Record<OpenFilter, string> = {
   all: "All",
   act: "Act now",
   wait: "Waiting",
-  forecast: "Forecast",
+  forecast: "Expected",
   reminders: "Reminders",
   notices: "Notices",
   snoozed: "Snoozed",

@@ -16,7 +16,7 @@ Each ward's confirmed beds, what is ready, pulled or closed, and when it was las
 8. Find a bed. Opens the bed finder to see which wards have a bed ready of the kind needed. A person always chooses.
 9. Every ward. Each ward's beds, ready and being made ready, one square a bed. Choose a ward to open its panel.
 10. Held up. Discharges due by tomorrow that are held up, with what is holding each one.
-11. Forecast. Tomorrow's spare and short beds by bed type, from the discharge dates wards recorded. Open shows the detail.
+11. Expected from recorded dates. Tomorrow's spare and short beds by bed type, from the discharge dates wards recorded. Open shows the detail.
 
 ## Jobs done here
 
