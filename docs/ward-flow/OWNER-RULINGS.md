@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/his
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**812 rulings/items extracted, across 43 of 44 files.**
+**813 rulings/items extracted, across 43 of 44 files.**
 **0 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 **1 file(s) recorded as holding no ruling of their own**, each with its reason. See below.
 
@@ -32,7 +32,7 @@ line, in the order discovered — confirm which instance you mean before citing 
 
 ---
 
-## ID index — 562 distinct IDs
+## ID index — 563 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -421,6 +421,7 @@ safe global key across 30 files.
 | `D-259` | `decisions.md`:2985 | D-259. The demo script matches the screen words after the 16 November walk (16 November 2026) |
 | `D-260` | `decisions.md`:2991 | D-260. A Privacy and data page tracks the Australian and WA health data rules (16 November 2026) |
 | `D-261` | `decisions.md`:2997 | D-261. Build the BedChart Folded B logo into the site now (16 November 2026) |
+| `D-263` | `decisions.md`:3005 | D-263. Mark absent asks first, Close this bed asks a reason, and figures say expected, not forecast (18 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -729,7 +730,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-250 item(s):
+251 item(s):
 
 - `D-1` — line 279, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 289, heading: "D-2. Railway is disconnected"
@@ -981,6 +982,7 @@ safe global key across 30 files.
 - `D-259` — line 2985, heading: "D-259. The demo script matches the screen words after the 16 November walk (16 November 2026)"
 - `D-260` — line 2991, heading: "D-260. A Privacy and data page tracks the Australian and WA health data rules (16 November 2026)"
 - `D-261` — line 2997, heading: "D-261. Build the BedChart Folded B logo into the site now (16 November 2026)"
+- `D-263` — line 3005, heading: "D-263. Mark absent asks first, Close this bed asks a reason, and figures say expected, not forecast (18 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 

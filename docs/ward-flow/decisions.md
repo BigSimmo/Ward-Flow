@@ -3002,4 +3002,12 @@ D-253 is reserved by other threads (PR #1700, PR #1702 and the handover). D-254 
 - **Supersedes:** D-249 (keep today's logo until after the demo).
 - **Boundary:** the visible name change is D-250's (PR #1701). Josh still plans a staff "what do you see" test and an IP Australia trade mark search before any public use.
 
-The next free number is D-262.
+## D-263. Mark absent asks first, Close this bed asks a reason, and figures say expected, not forecast (18 November 2026)
+
+- **Date:** 18 November 2026, 2:56 PM AWST (06:56 UTC). **Decided by:** Josh, in the thread "Fix Forecast wording and Mark absent check": "Yes go ahead", then "Please complete all of them in the thread". D-262 is held by PR #1704, so this is D-263.
+- **Decision:** (1) A12-02: Mark absent asks "Mark absent without leave?" first, with one Confirm and a Cancel, through the kit's styled confirm. Undo still follows. (2) A12-01: Record no transport needed stays one press. Its message says Undo brings Log booking back, and the undone message says Log booking is back. (3) A14-19: Close this bed asks why as it closes, from the ward closure reasons plus "Not given", so it stays two taps. Undo still follows. (4) K40: on-screen bed figures say "Expected from recorded dates" instead of "Forecast", and "likely" is dropped beside "Not a prediction".
+- **Why:** the 13 and 16 November demo audits (A12-01, A12-02, A14-19, K40) found one-press controls that could spoil a later demo act, and wording that called the same figure a forecast and not a prediction.
+- **Supersedes:** D-148's "no confirm step is added" for Close this bed (its reason now comes before the close, not on the toast), and D-180's "decide after the demo" for A12-01 and A12-02.
+- **Boundary:** no clinical rule, signed value, event or permission changes. K15 (the order check on a move within one site) and K21 (the triage see-by windows, signed on 14 November by D-209 item 7) were asked separately.
+
+The next free number is D-264.
