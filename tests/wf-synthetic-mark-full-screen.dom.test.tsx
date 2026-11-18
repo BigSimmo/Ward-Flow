@@ -80,8 +80,11 @@ describe("enlarged views carry the mark", () => {
         <MovementsScreen />
       </WardFlowProvider>,
     );
-    const timelineSwitch = screen.getByRole("switch", { name: "Show timeline" });
-    if (timelineSwitch.getAttribute("aria-checked") !== "true") fireEvent.click(timelineSwitch);
+    // D-265 (18 Nov 2026): the timeline is the "Graph" view of the Graph or Table switch.
+    const graph = within(screen.getByRole("radiogroup", { name: "Show today’s traffic as" })).getByRole("radio", {
+      name: "Graph",
+    });
+    if (graph.getAttribute("aria-checked") !== "true") fireEvent.click(graph);
     const traffic = screen.getByRole("region", { name: "Today’s traffic" });
     const horizon = traffic.querySelector("[data-testid='ward-movement-horizon']") as HTMLElement;
     expect(marksIn(horizon)).toHaveLength(0);
@@ -111,8 +114,8 @@ describe("enlarged views carry the mark", () => {
           <MovementsScreen />
         </WardFlowProvider>,
       );
-      const timelineSwitch = screen.queryByRole("switch", { name: "Show timeline" });
-      if (timelineSwitch && timelineSwitch.getAttribute("aria-checked") !== "true") fireEvent.click(timelineSwitch);
+      const graph = screen.queryByRole("radio", { name: "Graph" });
+      if (graph && graph.getAttribute("aria-checked") !== "true") fireEvent.click(graph);
       fireEvent.click(screen.getAllByRole("button", { name: "Enlarge" })[0]);
       const dialog = screen.getByRole("dialog", { name: "Full screen movement timeline" });
       expect(marksIn(dialog)).toHaveLength(1);

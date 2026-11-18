@@ -637,7 +637,7 @@ describe("the movements board never shows a closed movement as a person still wa
 
   it("selects and focuses either movement tab using arrows, Home and End", async () => {
     renderScreen();
-    const open = screen.getByRole("tab", { name: /Open and resolved/u });
+    const open = screen.getByRole("tab", { name: /^All\b/u });
     const resolved = screen.getByRole("tab", { name: /Resolved today/u });
     open.focus();
     for (const [key, expected] of [
@@ -738,9 +738,12 @@ describe("the movements board never shows a closed movement as a person still wa
  * screen has to say the refusals are not shown, and why** — an absence that is not stated reads as
  * a measured none.
  */
-/** M3 (3 Nov 2026): the timeline sits behind a switch on a tablet or laptop, so turn it on. */
+/** D-265 (18 Nov 2026): the timeline is the "Graph" view of the Graph or Table switch, so choose Graph. */
 function showTimeline() {
-  const timelineSwitch = screen.getByRole("switch", { name: "Show timeline" });
+  const timelineSwitch = within(screen.getByRole("radiogroup", { name: "Show today’s traffic as" })).getByRole(
+    "radio",
+    { name: "Graph" },
+  );
   if (timelineSwitch.getAttribute("aria-checked") !== "true") fireEvent.click(timelineSwitch);
 }
 
@@ -1141,10 +1144,10 @@ describe("movements board tab in the address", () => {
     await act(async () => {});
     expect(screen.getByRole("tab", { name: /Resolved today/u })).toHaveAttribute("aria-selected", "true");
 
-    fireEvent.click(screen.getByRole("tab", { name: /Open and resolved/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /^All\b/u }));
     await act(async () => {});
     expect(new URLSearchParams(window.location.search).get("tab")).toBeNull();
-    expect(screen.getByRole("tab", { name: /Open and resolved/u })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /^All\b/u })).toHaveAttribute("aria-selected", "true");
 
     fireEvent.click(screen.getByRole("tab", { name: /Resolved today/u }));
     await act(async () => {});
@@ -1159,23 +1162,34 @@ describe("movements board tab in the address", () => {
       </WardFlowProvider>,
     );
     await act(async () => {});
-    expect(screen.getByRole("tab", { name: /Open and resolved/u })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /^All\b/u })).toHaveAttribute("aria-selected", "true");
   });
 });
 
 describe("M3: the worklist leads and check in lives on Transport (3 Nov 2026)", () => {
-  it("keeps the timeline behind a switch that hides and shows it (shown by default, Note 7)", () => {
+  it("swaps the timeline for the worklist with a Graph or Table switch (Graph by default, D-265)", () => {
     window.localStorage.removeItem("ward-flow-movements-timeline");
     renderScreen();
     const panel = screen.getByRole("region", { name: "Today’s traffic" });
-    const timelineSwitch = within(panel).getByRole("switch", { name: "Show timeline" });
-    if (timelineSwitch.getAttribute("aria-checked") === "true") fireEvent.click(timelineSwitch);
-    expect(within(panel).queryByRole("heading", { name: /hour timeline$/u })).toBeNull();
-    expect(panel).toHaveTextContent(/\d+ active corridors?/u);
-    fireEvent.click(timelineSwitch);
-    expect(timelineSwitch).toHaveAttribute("aria-checked", "true");
+    expect(within(panel).getByRole("heading", { level: 2, name: "Today’s traffic" })).toBeInTheDocument();
+    const view = within(panel).getByRole("radiogroup", { name: "Show today’s traffic as" });
+    const graph = within(view).getByRole("radio", { name: "Graph" });
+    const table = within(view).getByRole("radio", { name: "Table" });
+    if (graph.getAttribute("aria-checked") !== "true") fireEvent.click(graph);
     expect(within(panel).getByRole("heading", { name: "48 hour timeline" })).toBeInTheDocument();
-    expect(window.localStorage.getItem("ward-flow-movements-timeline")).toBe("on");
+    expect(panel).toHaveTextContent(/\d+ active corridors?/u);
+
+    fireEvent.click(table);
+    expect(table).toHaveAttribute("aria-checked", "true");
+    expect(graph).toHaveAttribute("aria-checked", "false");
+    expect(within(panel).queryByRole("heading", { name: /hour timeline$/u })).toBeNull();
+    expect(panel).toHaveTextContent(/Table: \d+ open, longest wait first/u);
+    expect(window.localStorage.getItem("ward-flow-movements-timeline")).toBe("table");
+
+    fireEvent.click(graph);
+    expect(graph).toHaveAttribute("aria-checked", "true");
+    expect(within(panel).getByRole("heading", { name: "48 hour timeline" })).toBeInTheDocument();
+    expect(window.localStorage.getItem("ward-flow-movements-timeline")).toBe("graph");
   });
 
   it("opens the Check in drawer here for each leg still to be recorded, with a link on to Transport (Note 7)", async () => {

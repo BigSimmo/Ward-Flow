@@ -92,7 +92,7 @@ describe("Movements redesign: the coordinator's board", () => {
       expect(stage).not.toHaveAttribute("aria-pressed");
       expect(stage).toHaveAttribute("aria-haspopup", "dialog");
       expect(stage).not.toHaveAttribute("data-highlighted");
-      expect(stage.textContent).toMatch(/none waiting|longest /u);
+      expect(stage.textContent).toMatch(/None waiting|longest /u);
     }
     fireEvent.click(stages[0]!);
     const sheet = screen.getByTestId("movement-people-sheet");
@@ -127,7 +127,7 @@ describe("Movements redesign: the coordinator's board", () => {
       within(screen.getByTestId("movement-people-sheet")).getByRole("heading", { name: "Urgency tier 1" }),
     ).toBeInTheDocument();
     // Page tops (Josh, 9 Nov 2026): the title names the page, not who is moving.
-    expect(screen.getByText(/^Journeys/u).textContent).not.toMatch(/moving/);
+    expect(screen.getByText(/^Movements/u, { selector: "[data-wf-hero-title]" }).textContent).not.toMatch(/moving/);
   });
 
   it("offers the officers' Transport board and the coordinator's queue on the coordinator desk", () => {

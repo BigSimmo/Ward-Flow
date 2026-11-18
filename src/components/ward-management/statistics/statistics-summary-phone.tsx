@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, Building2, ChevronRight, Clock, Download, Layers, Search, Siren } from "lucide-react";
+import { Activity, Building2, ChevronRight, Clock, Download, Ellipsis, Layers, Search, Siren } from "lucide-react";
 
 import {
   GroupHead,
@@ -10,10 +10,10 @@ import {
   HeroAct,
   HeroBand,
   HeroFigures,
-  HeroQuickChips,
   HeroTop,
   IconTile,
   LiveChip,
+  Menu,
   PhoneListRow,
   PhoneSheet,
   Segmented,
@@ -225,7 +225,6 @@ function StatisticsSummaryPhoneView({
   totalBeds,
   services,
   onOpenUnit,
-  unitFinderOpen = false,
   exportFigures,
 }: {
   ready: number;
@@ -252,6 +251,7 @@ function StatisticsSummaryPhoneView({
   services?: readonly NetworkServiceRow[];
   /** Opens the one unit finder. Left out (bed manager), the chip is not offered. */
   onOpenUnit?: () => void;
+  /** Kept for callers; the menu (D-265) shows its own open state. */
   unitFinderOpen?: boolean;
   /** The figures the Export chip downloads, as the desktop's. */
   exportFigures?: StatisticsExport;
@@ -441,44 +441,6 @@ function StatisticsSummaryPhoneView({
                 />
               )
             }
-            chips={
-              <HeroQuickChips
-                label="Statistics tools"
-                items={[
-                  ...(onOpenUnit
-                    ? [
-                        {
-                          id: "unit",
-                          label: "Open a unit",
-                          icon: <Search size={16} strokeWidth={1.75} aria-hidden="true" />,
-                          onClick: onOpenUnit,
-                          expanded: unitFinderOpen,
-                          testId: "ward-statistics-tool-open-unit",
-                        },
-                      ]
-                    : []),
-                  ...(exportFigures
-                    ? [
-                        {
-                          id: "export",
-                          label: "Export",
-                          icon: <Download size={16} strokeWidth={1.75} aria-hidden="true" />,
-                          onClick: () => downloadStatisticsFigures(exportFigures, now, dayZero, zone),
-                          testId: "ward-statistics-export",
-                        },
-                      ]
-                    : []),
-                  {
-                    id: "history",
-                    label: "Example history",
-                    icon: <Clock size={16} strokeWidth={1.75} aria-hidden="true" />,
-                    onClick: () => setStatisticsSamples(!samples),
-                    pressed: samples,
-                    testId: "ward-statistics-example-history",
-                  },
-                ]}
-              />
-            }
             band={
               services && services.length > 0 ? (
                 <HeroBand
@@ -507,20 +469,61 @@ function StatisticsSummaryPhoneView({
 
         {/* v10: the switch stays pinned under the bar while its list scrolls, and lets go after it. */}
         <div className={styles.segGroup}>
-          {siteDesk ? null : (
-            <Segmented<"hospital" | "ward">
-              className={cx(styles.seg, styles.segPinned)}
-              size="md"
-              label="List beds by"
-              value={group}
-              onChange={setGroup}
-              // No counts, so the switch does not look like the Wards chip above it.
+          {/* D-265 (Josh, 18 Nov 2026, option A): the hero's three tool chips moved into one "…" menu
+              beside the list switch, so more of the list shows on the first screen. */}
+          <div className={styles.segRow}>
+            {siteDesk ? null : (
+              <Segmented<"hospital" | "ward">
+                className={cx(styles.seg, styles.segPinned)}
+                size="md"
+                label="List beds by"
+                value={group}
+                onChange={setGroup}
+                // No counts, so the switch does not look like the Wards chip above it.
+                items={[
+                  { id: "hospital", label: "By hospital" },
+                  { id: "ward", label: "By ward" },
+                ]}
+              />
+            )}
+            <Menu
+              label="Statistics tools"
+              align="end"
+              className={styles.toolsMenu}
               items={[
-                { id: "hospital", label: "By hospital" },
-                { id: "ward", label: "By ward" },
+                ...(onOpenUnit ? [{ id: "unit", label: "Open a unit", icon: Search, onSelect: onOpenUnit }] : []),
+                ...(exportFigures
+                  ? [
+                      {
+                        id: "export",
+                        label: "Export",
+                        icon: Download,
+                        onSelect: () => downloadStatisticsFigures(exportFigures, now, dayZero, zone),
+                      },
+                    ]
+                  : []),
+                {
+                  id: "history",
+                  label: "Example history",
+                  icon: Clock,
+                  checked: samples,
+                  closeOnSelect: true,
+                  onSelect: () => setStatisticsSamples(!samples),
+                },
               ]}
+              trigger={(props) => (
+                <button
+                  {...props}
+                  type="button"
+                  className={styles.toolsTrigger}
+                  aria-label="Statistics tools: Open a unit, Export, Example history"
+                  data-testid="ward-statistics-tools-menu"
+                >
+                  <Ellipsis size={20} strokeWidth={1.75} aria-hidden="true" />
+                </button>
+              )}
             />
-          )}
+          </div>
 
           <ul className={styles.list} aria-label={group === "hospital" ? "Hospitals by beds ready" : "Wards A to Z"}>
             {group === "hospital"

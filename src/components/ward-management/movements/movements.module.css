@@ -2161,3 +2161,8 @@
     display: contents;
   }
 }
+
+/* D-265 (18 Nov 2026): Table chosen on the traffic bar, so the worklist comes first. */
+.tableFirst .primary {
+  order: -1;
+}

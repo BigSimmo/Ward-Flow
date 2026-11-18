@@ -3,8 +3,8 @@
    columns split by neutral hairlines, no boxes inside the panel). */
 .pipeline {
   display: grid;
-  gap: var(--wf-s-3);
-  margin-top: var(--wf-s-3);
+  gap: var(--wf-s-2);
+  min-width: 0;
 }
 
 .head {
@@ -12,7 +12,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2) var(--wf-s-3);
-  padding-inline: var(--wf-s-4);
 }
 
 .title {
@@ -39,12 +38,6 @@
   gap: var(--wf-s-2) var(--wf-s-4);
 }
 
-.hint {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
 .keyBands {
   display: flex;
   flex-wrap: wrap;
@@ -58,6 +51,11 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+.keyBands > .keyLabel {
+  color: var(--wf-ink-2);
+  font-weight: 600;
 }
 
 .keyBands i {
@@ -90,10 +88,10 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--wf-s-2);
+  gap: 6px;
   min-width: 0;
   min-height: var(--wf-row-touch);
-  padding: var(--wf-s-3);
+  padding: 10px var(--wf-s-3);
   border: 0;
   border-radius: 0;
   background: var(--wf-surface);
@@ -125,57 +123,55 @@
   gap: 6px;
   min-width: 0;
   color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  font: 600 var(--wf-fs-13) / 20px var(--wf-font);
+}
+
+.nameText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .step {
   flex: none;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border: 1px solid var(--wf-line);
   border-radius: 50%;
   background: var(--wf-surface-2);
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-12) / 18px var(--wf-mono);
+  font: 600 var(--wf-fs-12) / 16px var(--wf-mono);
   text-align: center;
 }
 
-.stageTop {
-  display: flex;
-  align-items: baseline;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-
 .stageCount {
-  font: 600 var(--wf-fs-20) / 1 var(--wf-mono);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-16) / 20px var(--wf-mono);
   font-variant-numeric: tabular-nums;
 }
 
 .share {
+  min-width: 3ch;
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
+  font-weight: 500;
+  line-height: 20px;
+  text-align: end;
 }
 
 .stageBar.stageBar {
   width: 100%;
-  height: 8px;
+  height: 6px;
 }
 
 .foot {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  min-height: 20px;
   align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 20px;
 }
 
 .stageWait {
@@ -195,22 +191,27 @@
 }
 
 .stagePast {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-  white-space: nowrap;
-}
-
-.stagePast[data-past="true"] {
-  padding: 3px 7px;
+  padding: 1px 7px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--wf-danger) 12%, transparent);
   color: var(--wf-danger-ink, var(--wf-ink-1));
+  font-size: var(--wf-fs-12);
   font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
 }
 
+/* D-265 (Josh, 18 Nov 2026): on a tablet the six stages stay in one row and scroll sideways. */
 @media (max-width: 75rem) {
   .flow {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(10.5rem, 1fr));
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+
+  .item {
+    scroll-snap-align: start;
   }
 }

@@ -1,17 +1,15 @@
-/* Timeline switch bar (M3, 3 Nov 2026): one quiet row, so the worklist below leads the page. */
+/* Graph or Table bar (D-265, 18 Nov 2026): one quiet row on the card edges, no inset. */
 .bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-3);
-  min-height: 44px;
-  padding: var(--wf-s-2) var(--wf-s-4);
-}
-
-.bar[data-open="true"] {
-  border-bottom: 1px solid var(--wf-line);
+  gap: var(--wf-s-2) var(--wf-s-3);
+  min-height: 36px;
+  margin-bottom: var(--wf-s-2);
 }
 
 .title {
+  margin: 0;
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
 }

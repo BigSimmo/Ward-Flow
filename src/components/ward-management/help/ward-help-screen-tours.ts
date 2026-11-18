@@ -386,19 +386,20 @@ const AROUND: readonly Around[] = [
         title: "Transport, Find a bed, Corridors",
         body: "Transport opens the transport jobs, Find a bed the bed finder, and Corridors the routes in use now.",
       }),
-      step(id("movements-stage-band"), {
-        title: "Journey stages",
+      // D-265: the hero's stage band shows on a phone; a tablet or laptop has the stage cards instead.
+      step([id("movements-stage-band"), named("Stages", "nav")], {
+        title: "Stages",
         body: "How many are at each stage, from Referred to on the way, with the longest wait in each.",
       }),
       step(id("movements-tabs"), {
-        title: "Open and resolved",
-        body: "The open movements, or Resolved today for those closed since midnight.",
+        title: "All and Resolved today",
+        body: "All shows the open movements and today's resolved ones. Resolved today shows only those closed since midnight.",
       }),
-      // M3: the timeline sits behind its switch, shown by default (Note 7); light the switch when it is hidden.
+      // D-265: the timeline shows by default; light the Graph or Table bar when Table is chosen.
       step([id("ward-movement-horizon"), id("movements-timeline-switch")], {
         device: "desk",
         title: "The timeline",
-        body: "What is coming up for each receiving ward. Its switch hides or shows it.",
+        body: "What is coming up for each receiving ward. Graph or Table above it swaps it for the people list.",
       }),
       step(named("Transport right now", "section"), {
         device: "desk",
