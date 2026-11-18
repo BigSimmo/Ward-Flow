@@ -90,7 +90,7 @@ export function ForecastTrackRecordTiles({
     <>
       <Tile
         testId="ward-statistics-forecast"
-        title="Forecast track record"
+        title="Expected beds track record"
         now={
           consideredCount === 0 ? undefined : (
             <Now tone={heldCount === consideredCount ? "success" : undefined}>
@@ -100,8 +100,8 @@ export function ForecastTrackRecordTiles({
         }
         sub={
           record.days.length === 0
-            ? "Discharge dates that were met, by ward · needs two days of forecasts"
-            : `Discharge dates that were met, by ward · ${record.inRange} of ${record.days.length} ${record.days.length === 1 ? "day" : "days"} inside the forecast range`
+            ? "Discharge dates that were met, by ward · needs two days of expected figures"
+            : `Discharge dates that were met, by ward · ${record.inRange} of ${record.days.length} ${record.days.length === 1 ? "day" : "days"} inside the expected range`
         }
       >
         {/* Statistics pages fold nothing away in a disclosure (the presentation rule), so the record
@@ -116,20 +116,20 @@ export function ForecastTrackRecordTiles({
           {showRecord ? "Hide the record" : "Show the record"}
         </Button>
         <div id={recordId} hidden={!showRecord}>
-          <h3 className={styles.groupHead}>Forecast against what happened</h3>
+          <h3 className={styles.groupHead}>Expected against what happened</h3>
           {record.days.length === 0 ? (
             <p className={styles.caption} data-testid="ward-statistics-forecast-empty">
-              Needs two days of forecasts.
+              Needs two days of expected figures.
             </p>
           ) : (
             <>
               <p className={styles.caption}>
                 {record.inRange} of {record.days.length} {record.days.length === 1 ? "day" : "days"} landed inside the
-                forecast range. Average miss {record.averageMiss} {record.averageMiss === 1 ? "bed" : "beds"}.
+                expected range. Average miss {record.averageMiss} {record.averageMiss === 1 ? "bed" : "beds"}.
               </p>
               <p className={styles.caption} data-testid="ward-statistics-forecast-reasons">
                 {missSummary.missed === 0
-                  ? "No day differed from its forecast."
+                  ? "No day differed from its expected figure."
                   : `${missSummary.missed} ${missSummary.missed === 1 ? "day" : "days"} differed. Known causes: ${
                       missSummary.known.length === 0
                         ? "none recorded"
@@ -144,7 +144,7 @@ export function ForecastTrackRecordTiles({
                     <div className={styles.kv}>
                       <span>Day {day.day}</span>
                       <span>
-                        forecast {kindRangeWord(day.forecast.likely)}, was {kindRangeWord(day.actual)}
+                        expected {kindRangeWord(day.forecast.likely)}, was {kindRangeWord(day.actual)}
                         {day.inRange ? "" : ", outside the range"}
                       </span>
                     </div>

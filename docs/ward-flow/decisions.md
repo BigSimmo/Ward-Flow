@@ -170,7 +170,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-145](#d-145-repository-review-fixes-features-and-code-health-approved-11-november-2026)                                                              | Repository review: fixes, features and code health approved                                       | Active                                           |
 | [D-146](#d-146-performance-audit-fixes-and-the-phone-speed-target-11-november-2026)                                                                     | Performance audit fixes and the phone speed target                                                | Active                                           |
 | [D-147](#d-147-demo-code-tries-keep-per-address-keying-until-a-trusted-proxy-is-set-11-november-2026)                                                   | Demo-code tries keep per-address keying until a trusted proxy is set                              | Active                                           |
-| [D-148](#d-148-closing-a-bed-stays-one-tap-and-its-toast-offers-a-reason-11-november-2026)                                                              | Closing a bed stays one tap, and its toast offers a reason                                        | Active                                           |
+| [D-148](#d-148-closing-a-bed-stays-one-tap-and-its-toast-offers-a-reason-11-november-2026)                                                              | Closing a bed stays one tap, and its toast offers a reason                                        | Partly replaced by D-263                         |
 | [D-149](#d-149-a-record-whose-only-links-are-withdrawn-referrals-can-be-archived-11-november-2026)                                                      | A record whose only links are withdrawn referrals can be archived                                 | Active                                           |
 | [D-150](#d-150-the-signed-in-site-runs-on-real-perth-time-11-november-2026)                                                                             | The signed-in site runs on real Perth time                                                        | Active                                           |
 | [D-151](#d-151-a-bed-tile-says-when-a-change-is-waiting-to-save-11-november-2026)                                                                       | A bed tile says when a change is waiting to save                                                  | Active                                           |
@@ -273,6 +273,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-259](#d-259-the-demo-script-matches-the-screen-words-after-the-16-november-walk-16-november-2026)                                                    | The demo script matches the screen words after the 16 November walk                               | Active                                           |
 | [D-260](#d-260-a-privacy-and-data-page-tracks-the-australian-and-wa-health-data-rules-16-november-2026)                                                 | A Privacy and data page tracks the Australian and WA health data rules                            | Active                                           |
 | [D-261](#d-261-build-the-bedchart-folded-b-logo-into-the-site-now-16-november-2026)                                                                     | Build the BedChart Folded B logo into the site now                                                | Active                                           |
+| [D-263](#d-263-mark-absent-asks-first-close-this-bed-asks-a-reason-and-figures-say-expected-not-forecast-18-november-2026)                              | Mark absent asks first, Close this bed asks a reason, and figures say expected, not forecast      | Active                                           |
 
 ---
 
@@ -3002,4 +3003,12 @@ D-253 is reserved by other threads (PR #1700, PR #1702 and the handover). D-254 
 - **Supersedes:** D-249 (keep today's logo until after the demo).
 - **Boundary:** the visible name change is D-250's (PR #1701). Josh still plans a staff "what do you see" test and an IP Australia trade mark search before any public use.
 
-The next free number is D-262.
+## D-263. Mark absent asks first, Close this bed asks a reason, and figures say expected, not forecast (18 November 2026)
+
+- **Date:** 18 November 2026, 2:56 PM AWST (06:56 UTC). **Decided by:** Josh, in the thread "Fix Forecast wording and Mark absent check": "Yes go ahead", then "Please complete all of them in the thread". D-262 is claimed by open PR #1704, so this is D-263.
+- **Decision:** (1) A12-02: Mark absent asks "Mark absent without leave?" first, with one Confirm and a Cancel, through the kit's styled confirm. Undo still follows. (2) A12-01: Record no transport needed stays one press. Its message says Undo brings Log booking back, and the undone message says Log booking is back. (3) A14-19: Close this bed asks why as it closes, from the ward closure reasons plus "Not given", so it stays two taps. Undo still follows. (4) K40: on-screen bed figures say "Expected from recorded dates" instead of "Forecast", and "likely" is dropped beside "Not a prediction".
+- **Why:** the 13 and 16 November demo audits (A12-01, A12-02, A14-19, K40) found one-press controls that could spoil a later demo act, and wording that called the same figure a forecast and not a prediction.
+- **Supersedes:** D-148's "no confirm step is added" for Close this bed (its reason now comes before the close, not on the toast), and D-180's "decide after the demo" for A12-01 and A12-02.
+- **Boundary:** no clinical rule, signed value, event or permission changes. K15 (the order check on a move within one site) and K21 (the triage see-by windows, signed on 14 November by D-209 item 7) were asked separately.
+
+The next free number is D-264.

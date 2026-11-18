@@ -180,7 +180,7 @@ export function EdBoardRedesign({ edId }: EdScreenProps) {
         event.type === "RECORD_LEGAL_FORM_RECEIVED"
           ? { type: "UNDO_LEGAL_FORM_RECORD", role: "ed", now: at, movementId: event.movementId }
           : { type: "UNDO_ED_STEP", role: "ed", now: at, ...subject },
-      undone: edStepUndone(who),
+      undone: edStepUndone(who, event),
     });
   }
   /** Phone: Board, Needs you and Lists are one tap apart (v10 ED page, phone). */

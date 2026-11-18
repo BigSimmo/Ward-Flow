@@ -67,7 +67,7 @@ export function ForecastCard({
     <Card id="capacity-forecast" aria-labelledby="capacity-forecast-card-title" data-testid={testId}>
       <CardHead
         id="capacity-forecast-card-title"
-        title="Forecast"
+        title="Expected from recorded dates"
         meta={networkWide ? "From ward dates · Network-wide" : "From ward dates"}
         action={
           <Button

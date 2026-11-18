@@ -336,8 +336,8 @@ export const MORE_PAGES: readonly Around[] = [
       },
       {
         target: [id("ward-board-forecast-share"), id("ward-board-beds")],
-        title: "Tomorrow's forecast",
-        body: "How many of this ward's discharges count in tomorrow's forecast, confirmed or expected.",
+        title: "Tomorrow's expected beds",
+        body: "How many of this ward's discharges count in tomorrow's expected beds, confirmed or expected.",
       },
       {
         target: id("ward-board-work-band"),

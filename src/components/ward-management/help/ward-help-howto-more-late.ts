@@ -599,7 +599,7 @@ export const CRAWL_JOBS_LATE: readonly HowTo[] = [
     title: "Record leave, a return or absence without leave",
     keywords: "leave start leave due back return record return absent without leave awol missing",
     answer:
-      "Open the patient. On Record a change, press Start leave, choose the kind of leave and when they are expected back, then Record leave; the bed is kept. Press Record return when they are back. If they do not come back, press Mark absent. Undo shows straight after.",
+      "Open the patient. On Record a change, press Start leave, choose the kind of leave and when they are expected back, then Record leave; the bed is kept. Press Record return when they are back. If they do not come back, press Mark absent, then Confirm. Undo shows straight after.",
     desks: ["ward", "coordinator"],
     acts: ["RECORD_LEAVE_BED", "END_LEAVE_BED", "RECORD_ABSENT_WITHOUT_LEAVE"],
     go: ["wards", "home"],

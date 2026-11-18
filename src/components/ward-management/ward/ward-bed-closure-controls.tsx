@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Button } from "@/components/wf";
+import { ChevronDown } from "lucide-react";
+import { Button, Menu, type MenuItem } from "@/components/wf";
 import { ClosureChoice, REVIEW_AFTER_CHOICES } from "../ward-closure-choice";
 import styles from "./ward-bed-dossier-drawer.module.css";
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
@@ -21,10 +22,17 @@ import { WARD_CLOSURE_REASONS, wardClosureReasonLabel } from "../ward-bed-closur
  *
  * Item 6 (10 Nov 2026): closing offers "Review in", "Not known" by default, so the bed is looked at
  * again. The time only prompts ("Review 14:00", "Review overdue"); reopening is always this tap.
+ *
+ * A14-19 (Josh, 18 Nov 2026, D-263): "Close this bed" opens the kit menu "Why is this bed closing?"
+ * (the ward closure reasons, then "Not given", then "Cancel"), so closing stays two taps and the
+ * reason is chosen as the bed closes. Escape, Cancel or a tap outside backs out with nothing changed.
  */
 export type BedClosureActions = {
-  /** Set only for a ready bed this desk may close. `reviewAfter` is the "Review in" id ("" for Not known). */
-  onCloseBed?: (reviewAfter: string) => void;
+  /**
+   * Set only for a ready bed this desk may close. `reviewAfter` is the "Review in" id ("" for Not
+   * known); `reason` is the closure reason id ("" for Not given).
+   */
+  onCloseBed?: (reviewAfter: string, reason: string) => void;
   /** Set only for a bed closed by number that this desk may reopen. */
   onReopenBed?: () => void;
   /** On a bed closed by number: "Review 14:00" or "Review overdue", when a review time was chosen. */
@@ -32,6 +40,9 @@ export type BedClosureActions = {
   /** Set only on a bed closed with no reason, for a desk that may record one (R-BEDS-4). */
   onAddClosureReason?: (reasonId: string) => void;
 };
+
+/** The question "Close this bed" asks before it closes (A14-19). */
+const CLOSE_BED_QUESTION = "Why is this bed closing?";
 
 export function BedClosureControls({
   onCloseBed,
@@ -48,6 +59,18 @@ export function BedClosureControls({
 }) {
   const [reviewAfter, setReviewAfter] = useState("");
   if (!onCloseBed && !onReopenBed) return <>{children}</>;
+  const closeWith = (reason: string) => {
+    onCloseBed?.(reviewAfter, reason);
+    setReviewAfter("");
+  };
+  const reasonItems: MenuItem[] = [
+    { kind: "heading", id: "why", label: CLOSE_BED_QUESTION },
+    ...WARD_CLOSURE_REASONS.map((entry) => ({ id: entry.id, label: entry.label, onSelect: () => closeWith(entry.id) })),
+    { id: "not-given", label: "Not given", onSelect: () => closeWith("") },
+    { kind: "separator", id: "cancel-rule" },
+    // Cancel only closes the menu; focus goes back to "Close this bed".
+    { id: "cancel", label: "Cancel", onSelect: () => {} },
+  ];
   return (
     <>
       {onAddClosureReason ? (
@@ -69,19 +92,23 @@ export function BedClosureControls({
         />
       ) : null}
       {onCloseBed ? (
-        <Button
-          variant="sec"
-          size={size}
-          className={styles.pill}
-          data-testid="ward-drawer-close-bed"
-          aria-describedby="ward-drawer-close-bed-note"
-          onClick={() => {
-            onCloseBed(reviewAfter);
-            setReviewAfter("");
-          }}
-        >
-          Close this bed
-        </Button>
+        <Menu
+          label={CLOSE_BED_QUESTION}
+          items={reasonItems}
+          trigger={(props) => (
+            <Button
+              {...props}
+              variant="sec"
+              size={size}
+              iconEnd={ChevronDown}
+              className={styles.pill}
+              data-testid="ward-drawer-close-bed"
+              aria-describedby="ward-drawer-close-bed-note"
+            >
+              Close this bed
+            </Button>
+          )}
+        />
       ) : null}
       {onReopenBed ? (
         <Button

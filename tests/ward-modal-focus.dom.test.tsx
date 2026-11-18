@@ -4,7 +4,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Dialog, useModalFocus, type UseModalFocusOptions } from "@/components/wf";
+import { Button, Dialog, Menu, useModalFocus, type UseModalFocusOptions } from "@/components/wf";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { WardDailySheetDialog } from "@/components/ward-management/board/ward-daily-sheet";
@@ -232,6 +232,39 @@ describe("useModalFocus", () => {
       openLayer("Captured");
       fireEvent.keyDown(screen.getByRole("button", { name: "Captured first" }), { key: "Escape" });
       expect(screen.queryByRole("dialog", { name: "Captured" })).toBeNull();
+      expect(screenShortcut).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener("keydown", screenShortcut);
+    }
+  });
+
+  // A14-19 (18 Nov 2026): the phone bed sheet is a capture-phase layer; a kit Menu open inside it
+  // closes alone on Escape and hands focus back to its trigger, and the sheet stays open.
+  it("in the capture phase, leaves Escape to a kit Menu open inside the panel", () => {
+    const screenShortcut = vi.fn();
+    window.addEventListener("keydown", screenShortcut);
+    try {
+      render(
+        <Layer name="Sheet" focusOnOpen="immediate" keyPhase="capture">
+          <Menu
+            label="Pick one"
+            items={[{ id: "a", label: "First pick", onSelect: () => {} }]}
+            trigger={(props) => <Button {...props}>Choose</Button>}
+          />
+        </Layer>,
+      );
+      openLayer("Sheet");
+      const trigger = screen.getByRole("button", { name: "Choose" });
+      fireEvent.click(trigger);
+      const item = screen.getByRole("menuitem", { name: "First pick" });
+      expect(item).toHaveFocus();
+      fireEvent.keyDown(item, { key: "Escape" });
+      expect(screen.queryByRole("menu")).toBeNull();
+      expect(trigger).toHaveFocus();
+      expect(screen.getByRole("dialog", { name: "Sheet" })).toBeInTheDocument();
+      // The next Escape closes the sheet as before.
+      fireEvent.keyDown(trigger, { key: "Escape" });
+      expect(screen.queryByRole("dialog", { name: "Sheet" })).toBeNull();
       expect(screenShortcut).not.toHaveBeenCalled();
     } finally {
       window.removeEventListener("keydown", screenShortcut);

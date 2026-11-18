@@ -42,7 +42,7 @@ export function WardForecastShare({
   return (
     <section className={styles.panel} aria-labelledby={headingId} data-testid="ward-board-forecast-share">
       <h2 id={headingId} className={own.heading}>
-        Your part in tomorrow&apos;s forecast
+        Your part in tomorrow&apos;s expected beds
       </h2>
       <p className={styles.lead} data-testid="ward-board-forecast-share-counted">
         {countedSentence(confirmed, expected, heldUp, overdue)}
@@ -84,8 +84,8 @@ function plural(count: number, word: string): string {
 function countedSentence(confirmed: number, expected: number, heldUp: number, overdue: number): string {
   const counted =
     confirmed + expected === 0
-      ? "Tomorrow's forecast counts none of this ward's discharges yet."
-      : `Tomorrow's forecast counts ${plural(confirmed + expected, "discharge")} from this ward: ${confirmed} confirmed, ${expected} expected.`;
+      ? "Tomorrow's expected beds count none of this ward's discharges yet."
+      : `Tomorrow's expected beds count ${plural(confirmed + expected, "discharge")} from this ward: ${confirmed} confirmed, ${expected} expected.`;
   const notLikely = [heldUp > 0 ? `${heldUp} held up` : null, overdue > 0 ? `${overdue} overdue` : null].filter(
     (part): part is string => part !== null,
   );

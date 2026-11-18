@@ -15,7 +15,7 @@ Every bed on one ward, who is in it, who is coming in and who is going out today
 7. Order the beds. Longest stay, Soonest to leave or Bed order.
 8. Every bed. One tile per bed, with the patient and their stay so far. Choose a bed to see who is in it and record a change.
 9. Long stays. Long stays and people ready to leave who are still here, with what they are waiting for.
-10. Tomorrow's forecast. How many of this ward's discharges count in tomorrow's forecast, confirmed or expected.
+10. Tomorrow's expected beds. How many of this ward's discharges count in tomorrow's expected beds, confirmed or expected.
 11. Before handover. What needs you before the next handover. They have left, Record hold-up and Mark them back act on each row.
 12. Going out and coming in. Going out, Coming in and Since yesterday. Going out shows confirmed discharges today and tomorrow, or switch to expected.
 

@@ -107,7 +107,7 @@ function ForecastMissReasonForm({
     try {
       result = (await onRefresh?.()) ?? {
         status: "unavailable",
-        message: "Close and reopen the forecast record to check the latest reason. Your choice is still here.",
+        message: "Close and reopen the track record to check the latest reason. Your choice is still here.",
       };
     } catch {
       result = { status: "unavailable", message: "The latest record could not be checked. Your choice is still here." };

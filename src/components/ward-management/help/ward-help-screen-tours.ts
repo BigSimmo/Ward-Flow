@@ -360,7 +360,7 @@ const AROUND: readonly Around[] = [
         body: "Discharges due by tomorrow that are held up, with what is holding each one.",
       }),
       step([id("capacity-forecast-card"), id("capacity-phone-forecast")], {
-        title: "Forecast",
+        title: "Expected from recorded dates",
         body: "Tomorrow's spare and short beds by bed type, from the discharge dates wards recorded. Open shows the detail.",
       }),
     ],
@@ -1026,7 +1026,7 @@ const AROUND: readonly Around[] = [
       }),
       step(id("ward-alerts-filters"), {
         title: "Show open alerts",
-        body: "Act now, Waiting, Forecast, Reminders, Notices, Snoozed or Yours. All shows every one again.",
+        body: "Act now, Waiting, Expected, Reminders, Notices, Snoozed or Yours. All shows every one again.",
       }),
       step(named("Arrange by", '[role="radiogroup"]'), {
         device: "desk",
@@ -1035,9 +1035,9 @@ const AROUND: readonly Around[] = [
       }),
       step(id("ward-alerts-open"), { title: "Open an alert", body: "Each alert opens the record it is about." }),
       // With no forecast line today the group is not drawn, so the Forecast filter stands in.
-      step([id("ward-alerts-forecast"), { sel: '[data-testid="ward-alerts-filters"] button', text: "Forecast" }], {
-        title: "Forecast",
-        body: "Forecast lines set in Settings: beds likely to be short tomorrow, the ED access target and a worse forecast. With none today, the Forecast filter shows 0.",
+      step([id("ward-alerts-forecast"), { sel: '[data-testid="ward-alerts-filters"] button', text: "Expected" }], {
+        title: "Expected from recorded dates",
+        body: "Lines set in Settings: beds expected to be short tomorrow, the ED access target and expected beds that got worse. With none today, the Expected filter shows 0.",
       }),
       step(id("ward-alerts-notices"), {
         title: "Notices",

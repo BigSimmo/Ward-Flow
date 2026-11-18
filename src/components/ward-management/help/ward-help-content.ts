@@ -346,7 +346,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     actions: [
       "Act on the top alert first.",
       "Each alert opens the record it is about.",
-      "Use the chips to show one kind, such as Act now, Forecast or Yours.",
+      "Use the chips to show one kind, such as Act now, Expected or Yours.",
     ],
     questions: [
       {
@@ -354,9 +354,9 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
         answer: "Act now first, then waiting. Oldest first in each.",
       },
       {
-        question: "Where do forecast alerts come from?",
+        question: "Where do Expected alerts come from?",
         answer:
-          "From the forecast lines set in Settings: beds likely to be short tomorrow, the ED access target and a forecast that got worse.",
+          "From the lines set in Settings: beds expected to be short tomorrow, the ED access target and expected beds that got worse.",
       },
       {
         question: "Can I put an alert off until later?",

@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { useEffect, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -21,7 +21,8 @@ import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 
 /**
  * H-0978 / WS-15 (Josh 26 Oct 2026, "Close the exact bed"): Close this bed in the bed drawer marks
- * that exact bed Closed, never another tile, and Reopen this bed clears it. Synthetic seed only.
+ * that exact bed Closed, never another tile, and Reopen this bed clears it. A14-19 (Josh, 18 Nov
+ * 2026, D-263): the press asks "Why is this bed closing?" first. Synthetic seed only.
  */
 const UNIT = seedWardFlowState().units.find((unit) => boundedBedAvailability(unit).available >= 2)!.id;
 
@@ -61,6 +62,7 @@ describe("closing the exact bed from the bed drawer", () => {
     const bed = Math.min(...ready);
     fireEvent.click(card(bed));
     fireEvent.click(screen.getByTestId("ward-drawer-close-bed"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Not given" }));
 
     expect(flow!.units.find((unit) => unit.id === UNIT)!.closedBeds?.map((mark) => mark.bedNumber)).toEqual([bed]);
     expect(card(bed)).toHaveAttribute("data-state", "closed");
@@ -90,6 +92,7 @@ describe("closing the exact bed from the bed drawer", () => {
     const bed = Math.min(...bedsIn("ready"));
     fireEvent.click(card(bed));
     fireEvent.click(screen.getByTestId("ward-drawer-close-bed"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Not given" }));
     fireEvent.click(screen.getByTestId("ward-drawer-reopen-bed"));
     const toggle = screen.getByTestId("bed-drawer-history-toggle");
     fireEvent.click(toggle);
@@ -120,6 +123,7 @@ describe("closing a bed with a review time (item 6)", () => {
     fireEvent.click(screen.getByRole("button", { name: "In 4 hours" }));
     expect(choice).toHaveAttribute("data-value", "4");
     fireEvent.click(screen.getByTestId("ward-drawer-close-bed"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Not given" }));
 
     const now = flow!.now;
     const mark = flow!.units.find((unit) => unit.id === UNIT)!.closedBeds!.at(-1)!;
@@ -130,8 +134,9 @@ describe("closing a bed with a review time (item 6)", () => {
     );
   });
 
-  // PR #1626 review: a reason chosen on the toast (D-148) closes the bed again, and keeps the time.
-  it("keeps the review time when a reason is added from the toast", async () => {
+  // A14-19 (Josh, 18 Nov 2026, D-263): the reason is chosen as the bed closes, in one step, and the
+  // review time rides with it.
+  it("closes with the reason chosen as it closes, keeping the review time", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <ToastProvider>
@@ -143,22 +148,60 @@ describe("closing a bed with a review time (item 6)", () => {
     const bed = Math.min(...bedsIn("ready"));
     fireEvent.click(card(bed));
     fireEvent.click(screen.getByRole("button", { name: "In 4 hours" }));
+    const before = flow!.units.find((unit) => unit.id === UNIT)!.closedBeds?.length ?? 0;
     fireEvent.click(screen.getByTestId("ward-drawer-close-bed"));
+    const menu = screen.getByRole("menu", { name: "Why is this bed closing?" });
+    expect(
+      within(menu)
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
+    ).toEqual([
+      "Infection outbreak",
+      "Staffing",
+      "Building or maintenance",
+      "Other operational reason",
+      "Not given",
+      "Cancel",
+    ]);
+    // Nothing is closed until a reason (or Not given) is pressed.
+    expect(flow!.units.find((unit) => unit.id === UNIT)!.closedBeds?.length ?? 0).toBe(before);
     const reviewAt = flow!.now + 240;
-    // The menu loads on use (off the first load); until then the same choices are plain buttons.
-    const toast = await screen.findByTestId("toast");
-    const staffing = await within(toast)
-      .findByRole("button", { name: "Staffing" })
-      .catch(() => null);
-    await act(async () => {
-      if (staffing) fireEvent.click(staffing);
-      else fireEvent.click(await within(toast).findByTestId("toast-choices"));
-    });
-    if (!staffing)
-      await act(async () => {
-        fireEvent.click(await screen.findByRole("menuitem", { name: "Staffing" }));
-      });
+    fireEvent.click(within(menu).getByRole("menuitem", { name: "Staffing" }));
     const mark = flow!.units.find((unit) => unit.id === UNIT)!.closedBeds!.at(-1)!;
     expect(mark).toMatchObject({ bedNumber: bed, reason: "staffing", reviewAt });
+    const toast = screen.getByTestId("toast");
+    expect(toast).toHaveTextContent(`Bed ${String(bed).padStart(2, "0")} closed: Staffing. It is not offered`);
+    // The toast keeps its Undo and no longer offers a reason.
+    expect(within(toast).getByRole("button", { name: "Undo" })).toBeInTheDocument();
+    expect(within(toast).queryByTestId("toast-choices")).toBeNull();
+  });
+
+  it("backs out on Escape or Cancel with nothing changed, focus back on Close this bed", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <Grab />
+          <WardScreen unitId={UNIT} />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    const bed = Math.min(...bedsIn("ready"));
+    fireEvent.click(card(bed));
+    const before = flow!.units.find((unit) => unit.id === UNIT)!.closedBeds?.length ?? 0;
+    const trigger = screen.getByTestId("ward-drawer-close-bed");
+    fireEvent.click(trigger);
+    // Focus moves into the choice, on its first reason.
+    expect(screen.getByRole("menuitem", { name: "Infection outbreak" })).toHaveFocus();
+    fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(trigger).toHaveFocus();
+    // The drawer is still open on the same bed.
+    expect(screen.getByTestId("ward-drawer-close-bed")).toBeInTheDocument();
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole("menuitem", { name: "Cancel" }));
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(trigger).toHaveFocus();
+    expect(flow!.units.find((unit) => unit.id === UNIT)!.closedBeds?.length ?? 0).toBe(before);
+    expect(card(bed)).toHaveAttribute("data-state", "ready");
   });
 });

@@ -1081,7 +1081,7 @@ function AlertsWorkspace() {
           now={now}
           className={styles.group}
           readOnly={access.role === "bed_manager"}
-          head={(count) => <GroupHead tone="warning" label="Forecast" count={count} />}
+          head={(count) => <GroupHead tone="warning" label="Expected from recorded dates" count={count} />}
         />
       ) : null}
       {nothingNow || !showsGroup("wait", waitShown.length)
@@ -1140,7 +1140,9 @@ function AlertsWorkspace() {
       <ForecastAlertsGroup
         now={now}
         readOnly={access.role === "bed_manager"}
-        head={(count) => <GroupHead tone="warning" label="Forecast" count={count} aside="tomorrow" />}
+        head={(count) => (
+          <GroupHead tone="warning" label="Expected from recorded dates" count={count} aside="tomorrow" />
+        )}
       />
     ) : null;
   const lanesView = (
