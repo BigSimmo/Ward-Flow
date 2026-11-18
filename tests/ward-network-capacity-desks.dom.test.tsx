@@ -71,7 +71,7 @@ describe("Capacity for the bed coordinator", () => {
     );
     expect(screen.getByTestId("capacity-mismatch")).toHaveTextContent("By bed type · now");
     // Wave 4 (D-191, ruling 8): the forecast is a rail card; the chart opens in its drawer.
-    expect(screen.getByRole("heading", { name: "Forecast" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Expected from recorded dates" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Bed map" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Bed meeting/ })).toBeInTheDocument();
     expect(screen.getByTestId("ward-capacity-governance")).toBeInTheDocument();

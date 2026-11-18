@@ -261,12 +261,12 @@ export function forecastFigureText(value: number): string {
   return String(value);
 }
 
-/** The headline sentence: "6 beds likely free", "Likely short by 3 beds", or "No beds likely free". */
+/** The headline sentence: "6 beds free", "Short by 3 beds", or "No beds free". */
 export function forecastHeadline(value: number): string {
   const beds = (count: number) => (count === 1 ? "1 bed" : `${count} beds`);
-  if (value < 0) return `Likely short by ${beds(-value)}`;
-  if (value === 0) return "No beds likely free";
-  return `${beds(value)} likely free`;
+  if (value < 0) return `Short by ${beds(-value)}`;
+  if (value === 0) return "No beds free";
+  return `${beds(value)} free`;
 }
 
 /** One end of the range: "23 short", "none free" or "30 free". */

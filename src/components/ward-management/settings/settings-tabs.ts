@@ -129,7 +129,9 @@ const MOVED: Partial<Record<string, Partial<SettingsSearchEntry>>> = {
 };
 
 const ADDED: readonly SettingsSearchEntry[] = [
-  ...RULES.filter((entry) => entry.group === "Deadlines and reply targets" || entry.group === "Forecast alerts")
+  ...RULES.filter(
+    (entry) => entry.group === "Deadlines and reply targets" || entry.group === "Alerts from recorded dates",
+  )
     .filter((entry) => entry.key !== "morning")
     .map((entry) => ({
       id: entry.setting,

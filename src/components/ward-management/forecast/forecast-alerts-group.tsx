@@ -35,7 +35,7 @@ export function ForecastAlertsGroup({
   const alerts = useForecastAlerts(now);
   if (alerts.length === 0) return null;
   return (
-    <section className={className} aria-label="Forecast" data-testid="ward-alerts-forecast">
+    <section className={className} aria-label="Expected from recorded dates" data-testid="ward-alerts-forecast">
       {head(alerts.length)}
       <ul className={styles.alertList}>
         {alerts.map((alert) => (
@@ -81,9 +81,9 @@ function ForecastAlertRow({ alert, now, readOnly }: { alert: ForecastAlert; now:
     case "kind_short":
       return row(
         `${BED_KIND_LABEL[alert.id]} short tomorrow`,
-        `Likely ${kindRangeWord(alert.likely)}, at worst ${kindRangeWord(alert.low)}. Alert set at ${bedsWord(alert.threshold)} or more short (Settings).`,
+        `Expected ${kindRangeWord(alert.likely)}, at worst ${kindRangeWord(alert.low)}. Alert set at ${bedsWord(alert.threshold)} or more short (Settings).`,
         "/bedchart/capacity",
-        "See forecast",
+        "See expected beds",
       );
     case "ed_access_risk":
       return row(
@@ -96,10 +96,10 @@ function ForecastAlertRow({ alert, now, readOnly }: { alert: ForecastAlert; now:
       );
     case "forecast_worse":
       return row(
-        "Forecast got worse",
+        "Expected beds got worse",
         `Tomorrow moved from ${kindRangeWord(alert.from)} to ${kindRangeWord(alert.to)} since you looked at ${formatInstantWithDay(alert.since, now)}. Alert set at a drop of ${bedsWord(alert.threshold)} or more (Settings).`,
         "/bedchart/capacity",
-        "See forecast",
+        "See expected beds",
       );
   }
 }

@@ -31,7 +31,7 @@ export function ForecastBriefPanel({ now }: { now: Instant }) {
       </p>
       {latest ? (
         <p className={styles.caption}>
-          {`Forecast recorded ${formatInstantWithDay(latest.forecastAt, now)}: ${kindRangeWord(latest.forecast.likely)} for the next day. Result recorded ${formatInstantWithDay(latest.actualAt, now)}: ${kindRangeWord(latest.actual)}.`}
+          {`Expected figure recorded ${formatInstantWithDay(latest.forecastAt, now)}: ${kindRangeWord(latest.forecast.likely)} for the next day. Result recorded ${formatInstantWithDay(latest.actualAt, now)}: ${kindRangeWord(latest.actual)}.`}
         </p>
       ) : null}
     </div>

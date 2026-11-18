@@ -100,10 +100,10 @@ export function ruleDiffs(before: WardConfiguration, after: WardConfiguration): 
     parts.push(`Bed type short alert ${a.forecastShort} to ${b.forecastShort} beds`);
   }
   if (a.forecastEdLead !== b.forecastEdLead) {
-    parts.push(`Access target forecast alert ${shortDuration(a.forecastEdLead)} to ${shortDuration(b.forecastEdLead)}`);
+    parts.push(`Access target alert ${shortDuration(a.forecastEdLead)} to ${shortDuration(b.forecastEdLead)}`);
   }
   if (a.forecastWorse !== b.forecastWorse) {
-    parts.push(`Forecast worse alert ${a.forecastWorse} to ${b.forecastWorse} beds`);
+    parts.push(`Expected beds worse alert ${a.forecastWorse} to ${b.forecastWorse} beds`);
   }
   return parts;
 }
