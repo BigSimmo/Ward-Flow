@@ -188,17 +188,18 @@ describe("M103: each printed sheet's time, second identifier and whole rows (sta
 
 /** Declarations of `@media print` rules whose selector matches, from a stylesheet's text (16 Nov walk). */
 function printDeclsOf(css: string, selector: RegExp): Record<string, string> {
-  const found: Record<string, string> = {};
+  // A Map, not an object keyed by parsed property names (CodeQL prototype-polluting assignment).
+  const found = new Map<string, string>();
   postcss.parse(css).walkAtRules("media", (media) => {
     if (!/print/.test(media.params)) return;
     media.walkRules((rule) => {
       if (!selector.test(rule.selector)) return;
       rule.walkDecls((decl) => {
-        found[decl.prop] = decl.important ? `${decl.value} !important` : decl.value;
+        found.set(decl.prop, decl.important ? `${decl.value} !important` : decl.value);
       });
     });
   });
-  return found;
+  return Object.fromEntries(found);
 }
 
 describe("16 Nov live walk: other prints", () => {

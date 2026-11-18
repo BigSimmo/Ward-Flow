@@ -47,17 +47,18 @@ const dayZero = new Date("2026-11-16T00:00:00+08:00");
 
 /** Declarations of `@media print` rules whose selector matches, from a stylesheet's text. */
 function printDecls(css: string, selector: RegExp): Record<string, string> {
-  const found: Record<string, string> = {};
+  // A Map, not an object keyed by parsed property names (CodeQL prototype-polluting assignment).
+  const found = new Map<string, string>();
   postcss.parse(css).walkAtRules("media", (media) => {
     if (!/print/.test(media.params)) return;
     media.walkRules((rule) => {
       if (!selector.test(rule.selector)) return;
       rule.walkDecls((decl) => {
-        found[decl.prop] = decl.important ? `${decl.value} !important` : decl.value;
+        found.set(decl.prop, decl.important ? `${decl.value} !important` : decl.value);
       });
     });
   });
-  return found;
+  return Object.fromEntries(found);
 }
 
 describe("handover pack prints the pack, not the patient page", () => {
