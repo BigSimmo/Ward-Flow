@@ -206,6 +206,7 @@
   .flow {
     grid-template-columns: repeat(6, minmax(10.5rem, 1fr));
     overflow-x: auto;
+    overflow-y: hidden;
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
     scrollbar-width: thin;
