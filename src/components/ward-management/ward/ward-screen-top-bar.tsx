@@ -115,8 +115,9 @@ type WardScreenTopBarProps = {
 
 /** The shift's name, then its hours in the quieter weight ("Day shift" "7:00 am to 3:00 pm"). */
 function splitShift(line: string): { name: string; hours: string } {
-  const match = /^(.*?)\s+(\d{1,2}:\d{2}(?:\s[ap]m)?\s+to\s+\d{1,2}:\d{2}(?:\s[ap]m)?)$/u.exec(line);
-  return match ? { name: match[1]!, hours: match[2]! } : { name: line, hours: "" };
+  // Anchored at the end only, with the name taken as the text before it: no lazy prefix to backtrack.
+  const match = /\s(\d{1,2}:\d{2}(?:\s[ap]m)?\sto\s\d{1,2}:\d{2}(?:\s[ap]m)?)$/u.exec(line);
+  return match ? { name: line.slice(0, match.index).trimEnd(), hours: match[1]! } : { name: line, hours: "" };
 }
 
 export function WardScreenTopBar({
