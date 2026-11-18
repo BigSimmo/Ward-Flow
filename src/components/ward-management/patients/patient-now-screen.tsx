@@ -252,6 +252,12 @@ export function PatientNowScreen({
   const router = useOptionalRouter();
   // Audit A3-10 (13 Oct 2026): Mark absent offers the standard toast with Undo, as other moves do.
   const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
+  // A question can stay open while the board clock moves on, so a step recorded after one reads
+  // the latest board minute, not the one from the press (review of #1709: Undo's 5 minute window).
+  const latestNowRef = useRef(now);
+  useEffect(() => {
+    latestNowRef.current = now;
+  }, [now]);
 
   // `now` is a demo-clock `Instant` (minutes from `dayZero`), not a wall-clock millisecond
   // timestamp, so the calendar date used to derive a patient's age must be rebuilt from `dayZero`.
@@ -722,7 +728,7 @@ export function PatientNowScreen({
         {
           type: "RECORD_ABSENT_WITHOUT_LEAVE",
           role: routeRole,
-          now,
+          now: latestNowRef.current,
           admissionId: stay.id,
           actingUnitId: stay.unitId,
         },
