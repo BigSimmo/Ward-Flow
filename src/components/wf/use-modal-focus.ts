@@ -123,6 +123,16 @@ export function handleModalKeyDown(event: KeyboardEvent, options: ModalKeyOption
   // trap stays out of the way.
   if (!isTopmostSheet(modalId)) return;
   if (event.key === "Escape") {
+    // A14-19 (18 Nov 2026): a kit Menu open inside a capture-phase panel (the phone bed sheet) takes
+    // Escape itself, closing only the menu and returning focus to its trigger, as the bubble phase
+    // already allows. The menu marks the key handled, so the screen's own window keys skip it.
+    if (
+      capture &&
+      event.target instanceof Element &&
+      panel?.contains(event.target) &&
+      event.target.closest('[role="menu"]')
+    )
+      return;
     if (!closeOnEscape) {
       // A layer that ignores Escape still owns it in the capture phase, so the screen behind
       // (the idle lock's, for one) cannot act on it either.
