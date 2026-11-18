@@ -747,6 +747,7 @@ tr[data-dim="true"] > :is(td, th) :is(a, b, strong, em, span, time, abbr, small,
    once and never re-pointed by a theme. Used only inside print rules in ward-flow-print.css. */
 :root {
   --wf-print-ink: #000;
+  --wf-print-paper: #fff;
   --wf-print-muted: #5b6573;
   --wf-print-blank: #8a94a0;
   --wf-print-line: #b8c2cc;
