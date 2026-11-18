@@ -42,6 +42,9 @@ describe("M103: every printed page says Page x of y", () => {
       pages[rule.params || "(default)"] = rule.toString();
     });
     expect(pages["(default)"]).toMatch(COUNTER);
+    // A set margin gives the counter room even in a zero-margin PDF export (moved here from the
+    // census print test, 18 Nov 2026, so that test renders rather than reads source).
+    expect(pages["(default)"]).toMatch(/margin:\s*\d+mm/);
     expect(pages["shared-clinical-output"]).toMatch(COUNTER);
   });
 
