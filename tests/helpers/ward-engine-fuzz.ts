@@ -2674,6 +2674,60 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // Nightly coverage fix (18 Nov 2026): the staff builder above sends a request OR a close, by a coin
+  // toss, so a window whose one sweep visit drew the other side never sent this one (nightly runs of
+  // 10, 15 and 17 Nov). Weight 0 and last, so only the sweep sends them and weighted draws stay as
+  // they were. The close names the newest open request, or a missing one (refused) when none is open.
+  [
+    0,
+    (state, random) => {
+      const unit = pick(random, state.units);
+      return {
+        type: "REQUEST_WARD_STAFF",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        shift: "this_shift",
+        count: 1,
+        reasons: ["high_acuity"],
+      };
+    },
+  ],
+  [
+    0,
+    (state, random) => {
+      const open = (state.staffRequests ?? []).filter((record) => record.outcome === undefined).at(-1);
+      const unitId = open?.unitId ?? id(pick(random, state.units));
+      return {
+        type: "CLOSE_WARD_STAFF_REQUEST",
+        requestId: open?.id ?? MISSING_ID,
+        unitId,
+        actingUnitId: unitId,
+        outcome: "withdrawn",
+      };
+    },
+  ],
+  // The same for taking an inbox row (nightly run of 14 Nov): its builder sends a release instead
+  // whenever the row is held, or on a coin toss. Sends the take; a row already held refuses it.
+  [0, inboxEvent("TAKE_INBOX_ITEM_OWNERSHIP")],
+  // The same for a bed step's Undo (nightly runs of 11, 13 and 16 Nov): the general Undo builder sends
+  // it only when a bed step is the record it lands on. Aimed at the newest bed step, or at a missing
+  // bed (refused) when there is none, so the sweep always covers it.
+  [
+    0,
+    (state, random) => {
+      const record = (state.undoRecords ?? [])
+        .flatMap((candidate) =>
+          candidate.kind === "step" && candidate.undoType === "UNDO_BED_STEP" ? [candidate] : [],
+        )
+        .at(-1);
+      return {
+        type: "UNDO_BED_STEP",
+        ...(record ? { role: record.role, ...undoSubjectField(state, record.subjectId) } : {}),
+        ...(record?.unitId ? { actingUnitId: record.unitId } : {}),
+        ...(record ? {} : { unitId: id(pick(random, state.units)), bedNumber: 9999 }),
+      };
+    },
+  ],
 ];
 
 /**
@@ -2785,15 +2839,60 @@ export function nowFor(state: WardFlowState, step: number): number {
   return NOW_ANCHOR + state.clockOffsetMinutes + step * 5;
 }
 
-/** One step in this many is a sweep step (see `nextEvent`). */
+/** One step in this many is a sweep step (see `nextEvent`), unless more are needed (below). */
 const SWEEP_EVERY = 8;
+
+/**
+ * Consecutive seeds whose sweep steps together must visit every builder: the safety test's default
+ * run and the nightly window (`engine-fuzz-window.mjs`) are 16 seeds.
+ */
+const SWEEP_WINDOW_SEEDS = 16;
+
+/**
+ * Sweep steps per seed: one in `SWEEP_EVERY`, or more when the builder list has outgrown that, so
+ * any `SWEEP_WINDOW_SEEDS` consecutive seeds still visit every builder. Before 18 Nov 2026 the count
+ * was fixed at 12 per 100 steps (192 per window) while the list had grown to 203, so each nightly
+ * window skipped 11 builders and its coverage check failed for whichever types landed in that gap.
+ */
+function sweepsPerSeed(steps: number): number {
+  return Math.max(Math.floor(steps / SWEEP_EVERY), Math.ceil(ALL_BUILDERS.length / SWEEP_WINDOW_SEEDS));
+}
+
+/** The index of the builder this step sweeps, or undefined for a weighted draw. */
+function sweepIndex(seed: number | undefined, step: number, steps: number): number | undefined {
+  if (seed === undefined) return undefined;
+  const perSeed = sweepsPerSeed(steps);
+  const every = Math.max(1, Math.floor(steps / perSeed));
+  const visit = Math.floor(step / every);
+  if (step % every !== every - 1 || visit >= perSeed) return undefined;
+  return (seed * perSeed + visit) % ALL_BUILDERS.length;
+}
+
+function sweepBuilder(seed: number | undefined, step: number, steps: number): Builder | undefined {
+  const index = sweepIndex(seed, step, steps);
+  return index === undefined ? undefined : ALL_BUILDERS[index][1];
+}
+
+/**
+ * How many builders no sweep step visits across `seeds` consecutive seeds of `steps` steps, so a
+ * test can pin that any nightly window sweeps every builder. The last step is the hand-over draft.
+ */
+export function unsweptBuilderCount(firstSeed: number, seeds = SWEEP_WINDOW_SEEDS, steps = 100): number {
+  const visited = new Set<number>();
+  for (let seed = firstSeed; seed < firstSeed + seeds; seed += 1)
+    for (let step = 0; step < steps - 1; step += 1) {
+      const index = sweepIndex(seed, step, steps);
+      if (index !== undefined) visited.add(index);
+    }
+  return ALL_BUILDERS.length - visited.size;
+}
 
 /**
  * The next event for this state. Never null: retries until a builder has a subject.
  *
- * With `seed`, every `SWEEP_EVERY`th step takes the next builder in list order instead of a
- * weighted draw, starting where the previous seed's sweep stopped (100 steps make 12 sweep steps),
- * so a run of consecutive seeds sends every event type at least once however small its weight.
+ * With `seed`, every `SWEEP_EVERY`th step (closer when `sweepsPerSeed` needs more) takes the next
+ * builder in list order instead of a weighted draw, starting where the previous seed's sweep stopped,
+ * so any `SWEEP_WINDOW_SEEDS` consecutive seeds send every builder at least once however small its weight.
  * Still reproducible from the seed alone. A builder with no subject falls back to a weighted draw.
  */
 export function nextEvent(
@@ -2806,10 +2905,7 @@ export function nextEvent(
 ): WardFlowEvent {
   currentNow = nowFor(state, step);
   currentPullRoute = options.pullRoute === true;
-  const sweep =
-    seed !== undefined && step % SWEEP_EVERY === SWEEP_EVERY - 1
-      ? ALL_BUILDERS[(seed * Math.floor(steps / SWEEP_EVERY) + Math.floor(step / SWEEP_EVERY)) % ALL_BUILDERS.length][1]
-      : undefined;
+  const sweep = sweepBuilder(seed, step, steps);
   // A support notification's Undo lasts five minutes, one step here, so a weighted draw rarely
   // lands on it in time. Sometimes press it at once, as the toast offers, so the coverage run sees it.
   const justTold = (state.undoRecords ?? []).at(-1);

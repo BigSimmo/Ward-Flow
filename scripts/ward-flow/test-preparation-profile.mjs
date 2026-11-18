@@ -23,6 +23,10 @@ export function createPreparationProfile(label, directory = process.env.WARD_TES
         milliseconds[name] = (milliseconds[name] ?? 0) + performance.now() - start;
       }
     },
+    reset() {
+      for (const name of Object.keys(counters)) delete counters[name];
+      for (const name of Object.keys(milliseconds)) delete milliseconds[name];
+    },
     snapshot(metadata = {}) {
       return { schemaVersion: 1, label, counters: { ...counters }, milliseconds: { ...milliseconds }, metadata };
     },
