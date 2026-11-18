@@ -38,9 +38,11 @@ const snapshot = () => memory ?? readPref();
 const serverSnapshot = (): TrafficView => "graph";
 
 function setTrafficView(next: TrafficView) {
-  memory = next;
+  // Only a fixed word is stored, never the control's value itself (CodeQL clear-text storage: the
+  // shared segmented control also carries patient fields elsewhere, so its value reads as sensitive).
+  memory = next === "table" ? "table" : "graph";
   try {
-    window.localStorage.setItem(KEY, next);
+    window.localStorage.setItem(KEY, memory === "table" ? "table" : "graph");
   } catch {
     // Private window or blocked storage: the switch still works for this visit.
   }
