@@ -33,7 +33,7 @@ describe("smart alert preferences (item 20)", () => {
     expect(inQuietHours(7 * 60, quiet)).toBe(false);
     expect(inQuietHours(12 * 60, quiet)).toBe(false);
     expect(inQuietHours(23 * 60, { ...quiet, on: false })).toBe(false);
-    expect(quietHoursText(quiet)).toBe("22:00 to 07:00");
+    expect(quietHoursText(quiet)).toBe("10:00 pm to 7:00 am");
   });
 
   it("always lets act now through, even in quiet hours", () => {

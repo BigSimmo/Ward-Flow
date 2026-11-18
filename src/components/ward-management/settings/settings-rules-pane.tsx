@@ -137,6 +137,7 @@ export function SettingsRulesPane({
       savedDisplay: entry.display(saved[key]),
       defaultValue: DEFAULT_RULES[key],
       defaultDisplay: entry.display(DEFAULT_RULES[key]),
+      format: entry.display,
       usedBy: entry.shownOn,
       unavailableReason: blockReason,
       effect: effectFor(key),

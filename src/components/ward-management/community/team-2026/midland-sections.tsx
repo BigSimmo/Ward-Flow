@@ -8,17 +8,12 @@
 
 import { useState, type HTMLAttributes } from "react";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { minuteOfDay } from "@/components/ward-management/ward-clock";
+import { formatInstant } from "@/components/ward-management/ward-clock";
 import type { CommunityTeamSection } from "../community-screen-hero";
 import { TeamCaseload, TeamHospital } from "./team-caseload";
 import { TeamClinicians } from "./team-clinicians";
 import { TeamHome } from "./team-home";
 import { TeamReferrals } from "./team-referrals";
-
-const clockOf = (now: Instant) => {
-  const m = minuteOfDay(now);
-  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
-};
 
 export function MidlandTeamSections({
   panel,
@@ -39,7 +34,7 @@ export function MidlandTeamSections({
   return (
     <>
       <div {...panel("home")}>
-        <TeamHome go={go} now={clockOf(now)} />
+        <TeamHome go={go} now={formatInstant(now)} />
       </div>
       <div {...panel("caseload")}>
         <TeamCaseload caseManager={caseManager} setCaseManager={setCaseManager} find={find} />

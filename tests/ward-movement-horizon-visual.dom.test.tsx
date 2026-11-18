@@ -37,10 +37,11 @@ function renderMovementsScreen() {
   return view;
 }
 
-/** M3 (3 Nov 2026): the timeline sits behind a switch on a tablet or laptop, so turn it on. */
+/** D-265 (18 Nov 2026): the timeline is the "Graph" view of the Graph or Table switch, so choose Graph. */
 function showTimeline() {
-  const timelineSwitch = screen.getByRole("switch", { name: "Show timeline" });
-  if (timelineSwitch.getAttribute("aria-checked") !== "true") fireEvent.click(timelineSwitch);
+  const view = screen.getByRole("radiogroup", { name: "Show today’s traffic as" });
+  const graph = within(view).getByRole("radio", { name: "Graph" });
+  if (graph.getAttribute("aria-checked") !== "true") fireEvent.click(graph);
 }
 
 describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {

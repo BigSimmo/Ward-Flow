@@ -18,6 +18,19 @@ describe("typed clock time", () => {
     expect(minuteOfDayFromClockText("23:59")).toBe(1439);
   });
 
+  it("reads am/pm as screens show it (page scores, 16 Nov 2026)", () => {
+    expect(minuteOfDayFromClockText("11:59 pm")).toBe(1439);
+    expect(minuteOfDayFromClockText("11:59pm")).toBe(1439);
+    expect(minuteOfDayFromClockText("2:40 PM")).toBe(880);
+    expect(minuteOfDayFromClockText("9 am")).toBe(540);
+    expect(minuteOfDayFromClockText("9.30 a.m.")).toBe(570);
+    expect(minuteOfDayFromClockText("12:00 am")).toBe(0);
+    expect(minuteOfDayFromClockText("12:15 pm")).toBe(735);
+    for (const text of ["0 am", "13 pm", "13:00 pm", "9:60 am", "9 m", "pm"]) {
+      expect(minuteOfDayFromClockText(text)).toBeUndefined();
+    }
+  });
+
   it("refuses half-typed or impossible times rather than guessing", () => {
     for (const text of [
       "",

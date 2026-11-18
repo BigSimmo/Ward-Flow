@@ -15,6 +15,7 @@ import { useCallback } from "react";
 
 import { createBrowserStore } from "@/lib/client-store-factory";
 
+import { formatInstant } from "@/components/ward-management/ward-clock";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 
@@ -94,11 +95,8 @@ export function inQuietHours(minute: number, quiet: QuietHours): boolean {
     : minute >= quiet.start || minute < quiet.end;
 }
 
-const clock = (minute: number) =>
-  `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
-
 export const quietHoursText = (quiet: Pick<QuietHours, "start" | "end">) =>
-  `${clock(quiet.start)} to ${clock(quiet.end)}`;
+  `${formatInstant(quiet.start)} to ${formatInstant(quiet.end)}`;
 
 /**
  * Splits newly appeared rows into what to show now. Act now always; due soon only when chosen and

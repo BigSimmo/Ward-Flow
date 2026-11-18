@@ -1101,9 +1101,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const isRollupConfirmedToday = Boolean(rollupConfirmation && dayOf(rollupConfirmation.confirmedAt) === dayOf(now));
   const morningRollupDeadlineMinutes = configuration?.morningRollupDeadlineMinutes ?? 570;
   const morningRollupDeadlinePassed = minuteOfDay(now) >= morningRollupDeadlineMinutes;
-  const rollupHour = Math.floor(morningRollupDeadlineMinutes / 60);
-  const rollupMin = morningRollupDeadlineMinutes % 60;
-  const morningRollupTimeLabel = `${String(rollupHour).padStart(2, "0")}:${String(rollupMin).padStart(2, "0")}`;
+  const morningRollupTimeLabel = formatInstant(morningRollupDeadlineMinutes);
 
   function handleConfirmMorningRollup() {
     if (!unit) return;
@@ -1423,7 +1421,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         setDeclineOpenFor(undefined);
         setDeclineReason(undefined);
         // A9-05: say what was recorded, as the Answer view does ("waitlisted" or "declined").
-        setToastMessage(declineToastText(declineReason));
+        const declined = movements.find((movement) => movement.id === movementId);
+        setToastMessage(declineToastText(declineReason, declined && resolvePatientIdentity(declined).formalName));
       },
     );
   }

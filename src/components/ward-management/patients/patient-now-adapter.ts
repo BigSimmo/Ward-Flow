@@ -1,7 +1,7 @@
 import {
   clockZoneLabel,
-  formatClock24,
-  formatClock24WithDay,
+  formatInstant,
+  formatInstantWithDay,
   formatSince,
   type ClockZoneLabel,
   type Instant,
@@ -36,8 +36,8 @@ function legalDocumentStatus(movement: Movement, now: Instant): string {
   if (position.ended) return FORM_RECORDED_ENDED;
   if (position.typedEndAt === undefined) return "Active";
   // Stress test 14 Nov (F3): a typed end on another day names the day, not a bare clock face.
-  // A legal form time keeps the 24-hour face it was entered with (D-93, D-218).
-  return `Runs to ${now > 0 ? formatClock24WithDay(position.typedEndAt, now) : formatClock24(position.typedEndAt)}`;
+  // D-254: a legal form time reads am/pm on screen.
+  return `Runs to ${now > 0 ? formatInstantWithDay(position.typedEndAt, now) : formatInstant(position.typedEndAt)}`;
 }
 
 export interface ResolvedPatientNow {

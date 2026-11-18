@@ -191,7 +191,7 @@ export function handoverPackModel(input: HandoverPackInput, dayZero?: Date): Han
             ? FORM_RECORDED_ENDED
             : input.paperExpiryAt === undefined
               ? NOT_RECORDED
-              : typedTimeLine(input.paperExpiryAt, now, dayZero),
+              : typedTimeLine(input.paperExpiryAt, now, dayZero, "sheet"),
           missing: !formRecordedEnded(input.movement) && input.paperExpiryAt === undefined,
         },
       ],

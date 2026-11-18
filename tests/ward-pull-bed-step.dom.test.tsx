@@ -187,7 +187,7 @@ describe("After a pull (ruling item 3)", () => {
     });
 
     const kept = await screen.findByTestId("pulled-row-undo");
-    expect(kept).toHaveTextContent(/^Undo pull · until \d\d:\d\d$/u);
+    expect(kept).toHaveTextContent(/^Undo pull · until \d{1,2}:\d\d [ap]m$/u);
     const keptRow = kept.closest("li")!;
     expect(keptRow).toHaveAttribute("data-pulled-referral-id", first!.referral.id);
     expect(keptRow).toHaveTextContent(`Bed pulled at ${first!.unitName}`);
@@ -209,7 +209,9 @@ describe("After a pull (ruling item 3)", () => {
     }
     // The toast says one clock time and offers the same Undo (shared parts spec item 4; FM-13, the kit's
     // " · Undo until HH:MM" from `undo.until`).
-    expect(screen.getByText(`· Undo until ${kept.textContent!.slice(-5)}`)).toBeInTheDocument();
+    expect(
+      screen.getByText(`· Undo until ${kept.textContent!.replace(/^Undo pull · until /u, "")}`),
+    ).toBeInTheDocument();
 
     await act(async () => {
       fireEvent.click(kept);
@@ -262,13 +264,13 @@ describe("Undo pull from the kept row (review FA-2, FA-10, FR-1)", () => {
   });
 });
 
-describe("Undo pull keeps the person on the list (review P4-1)", () => {
+describe("Undo pull keeps the person on the list (review P4-1, D-262)", () => {
   beforeEach(() => {
     window.sessionStorage.clear();
     current = undefined;
   });
 
-  it("brings the row and the count back after Undo, and Pull the bed pulls on the same movement", async () => {
+  it("brings the row and the count back after Undo, ends the journey the tap started, and Pull the bed starts afresh (D-262)", async () => {
     renderWith(<ActNow />);
     const before = acceptedReferralsAwaitingPull(current!.referrals, current!.units, current!.movements);
     const [first] = before;
@@ -293,30 +295,33 @@ describe("Undo pull keeps the person on the list (review P4-1)", () => {
     await act(async () => {
       fireEvent.click(await screen.findByTestId("pulled-row-undo"));
     });
-    await screen.findByText(/^Bed pull undone for /u);
+    await screen.findByText(/^Bed pull undone for .*The referral is back, ready for Pull the bed\.$/u);
 
-    // The count and the row are back, naming the movement the Undo left open without a bed.
+    // D-262: the count and the row are back, and the journey this tap started has ended.
     const after = acceptedReferralsAwaitingPull(current!.referrals, current!.units, current!.movements);
     expect(after).toHaveLength(before.length);
-    const journey = current!.movements.find((movement) => movement.referralId === referralId && !movement.closure);
-    expect(journey?.stage).toBe("accepted_awaiting_bed");
-    expect(after.find((item) => item.referral.id === referralId)?.movementId).toBe(journey!.id);
+    const ended = current!.movements.filter((movement) => movement.referralId === referralId);
+    expect(ended).toHaveLength(1);
+    expect(ended[0]!.closure?.outcome).toBe("did_not_proceed");
+    expect(after.find((item) => item.referral.id === referralId)?.movementId).toBeUndefined();
     await waitFor(() => expect(rowFor()).not.toBeNull());
 
-    // Pull the bed again: the form shows the recorded facts and pulls on that same movement.
+    // Pull the bed again: the form shows the recorded facts and starts a new journey.
     fireEvent.click(
       within(rowFor()!)
         .getAllByRole("button", { name: /^Pull the bed for / })
         .at(-1)!,
     );
-    await screen.findByTestId("ward-pull-accepted-recorded");
+    await screen.findByTestId(`ward-pull-accepted-${referralId}`);
+    answerOpenFacts();
     const confirm = screen.getByTestId("ward-pull-accepted-confirm");
     expect(confirm).not.toHaveAttribute("aria-disabled", "true");
     await act(async () => {
       fireEvent.click(confirm);
     });
     const open = current!.movements.filter((movement) => movement.referralId === referralId && !movement.closure);
-    expect(open.map((movement) => movement.id)).toEqual([journey!.id]);
+    expect(open).toHaveLength(1);
+    expect(open[0]!.id).not.toBe(ended[0]!.id);
     expect(open[0]!.stage).toBe("pulled");
     expect(acceptedReferralsAwaitingPull(current!.referrals, current!.units, current!.movements)).toHaveLength(
       before.length - 1,
@@ -416,7 +421,7 @@ describe("Home keeps the pulled row (ruling item 3)", () => {
     });
     // The list stays even when this was the last row to pull.
     const kept = within(await screen.findByTestId("home-accepted-to-pull")).getByTestId("pulled-row-undo");
-    expect(kept).toHaveTextContent(/^Undo pull · until \d\d:\d\d$/u);
+    expect(kept).toHaveTextContent(/^Undo pull · until \d{1,2}:\d\d [ap]m$/u);
     expect(kept.closest("li")).toHaveAttribute("data-pulled-referral-id", first.referral.id);
     expect(kept.closest("section")).toHaveAccessibleName("Act now");
   });

@@ -381,7 +381,7 @@ export const LATE_JOBS: readonly HowTo[] = [
         body: "Network, Compare, Services, Wards, EDs, Teams and Weekly. Every figure is from synthetic records.",
       },
       {
-        target: { sel: '[data-testid="ward-statistics-export"]' },
+        target: { sel: '[data-testid="ward-statistics-export"], [data-testid="ward-statistics-tools-menu"]' },
         title: "Export the figures",
         body: "Downloads the figures at the top of the page as a spreadsheet file, on a computer.",
       },

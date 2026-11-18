@@ -45,7 +45,7 @@ import {
   broadcastKind,
   type BroadcastKind,
 } from "./ward-broadcast-model";
-import { useDeskInScope } from "@/components/ward-management/shell/ward-access";
+import { useDeskInScope, WardPrintAttribution } from "@/components/ward-management/shell/ward-access";
 import { directiveAcknowledgements, isAlertLive, replyBoard } from "./global-alert-view";
 
 import {
@@ -1330,6 +1330,10 @@ function AlertsWorkspace() {
     <div className={styles.screen} data-testid="ward-alerts-page" data-ward-design="v8">
       {pull.sheet}
       <main id="main-content" ref={alertsMainRef} tabIndex={-1} className={styles.main}>
+        {/* 16 Nov walk: on paper the print time also heads the list, so a reader sees its age first. */}
+        <p className={styles.printStamp} data-testid="ward-alerts-print-stamp">
+          <WardPrintAttribution />
+        </p>
         <AlertsHero
           isPhone={isPhone}
           wardName={wardName}

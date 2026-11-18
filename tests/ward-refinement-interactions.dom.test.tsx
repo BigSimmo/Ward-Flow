@@ -94,7 +94,7 @@ describe("Q004 refinement interaction regressions", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("returns from Resolved today to Open and resolved and focuses the requested attention record", async () => {
+  it("returns from Resolved today to All and focuses the requested attention record", async () => {
     renderMovements();
     const { button, movementId } = firstAttentionTarget();
     const resolvedTab = screen.getByRole("tab", { name: /Resolved today/u });
@@ -107,7 +107,7 @@ describe("Q004 refinement interaction regressions", () => {
 
     fireEvent.click(button);
     await act(async () => {});
-    expect(screen.getByRole("tab", { name: /Open and resolved/u })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /^All\b/u })).toHaveAttribute("aria-selected", "true");
     expect(recordFor(movementId)).toHaveFocus();
     expect(screen.queryByRole("dialog")).toBeNull();
   });

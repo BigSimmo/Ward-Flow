@@ -1000,6 +1000,13 @@ export type WardFlowEvent =
        * different pull made since. Absent for every other caller, which behave as before.
        */
       expectedPull?: { unitId: string; stageIndex: number };
+      /**
+       * D-262 (Josh, 16 Nov 2026): the Undo of a one-tap Pull the bed (WT-08), which started the
+       * journey and pulled its bed in one event, also ends that journey as "did not proceed", so the
+       * referral is back as accepted with no bed pulled and the counts are as they were. Honoured
+       * only with `expectedPull`, so it never ends a journey that has moved on since.
+       */
+      endsStartedJourney?: true;
     }
   // Feature 11 (Josh, 9 Nov 2026): extend a pulled bed's Pull time limit, declared beside its rule.
   | ExtendPullEvent

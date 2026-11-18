@@ -74,7 +74,7 @@ import pageTop from "../page-top-hero.module.css";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { MovementDrawer } from "./movement-drawer";
 import { MovementHorizonGantt } from "./movement-horizon-gantt-lazy";
-import { MovementsTimelineSwitch } from "./movements-timeline-switch";
+import { MovementsTimelineSwitch, useTrafficView } from "./movements-timeline-switch";
 import { rankCorridorPairs } from "./movement-corridor-pairs";
 import { isCoordinatorStep, movementNextStep } from "./movement-next-step";
 import { useSenderPresentation } from "../ward-sender-presentation";
@@ -232,6 +232,7 @@ export function MovementsScreen() {
   const [sideView, setSideView] = useState<"transport" | "shape">(returned?.sideView ?? "transport");
   // Phone (v10): the timeline, corridors and transport panels open as sheets from nav cards.
   const isPhone = useIsPhone();
+  const trafficView = useTrafficView();
   const [phoneSheet, setPhoneSheet] = useState<"arrivals" | "corridors" | "transport" | "shape" | null>(null);
   // v10 phone: Arrivals ahead reads as a list; the timeline opens under it on request.
   const [phoneArrivalsTimeline, setPhoneArrivalsTimeline] = useState(false);
@@ -491,7 +492,7 @@ export function MovementsScreen() {
   }, [service, units]);
 
   // Phone: the first tab is "Open", so its rows and count are the open movements only; closed ones
-  // are on "Resolved today". Tablet and desktop list both and say so ("Open and resolved", device
+  // are on "Resolved today". Tablet and desktop list both and say so ("All", device
   // audit 11 Oct 2026: "Every movement 77" read as a clash with the hero's 70 open).
   const worklistMovements = useMemo(() => {
     const scoped = isInServiceScope ? movements.filter(isInServiceScope) : movements;
@@ -891,7 +892,7 @@ export function MovementsScreen() {
             eyebrow={community && teamName ? `Movements · ${teamName} team` : undefined}
             title={
               <>
-                Journeys <span className={pageTop.titleSoft}>in progress</span>
+                Movements <span className={pageTop.titleSoft}>in progress</span>
               </>
             }
             aside={<LiveChip state="live" onHero />}
@@ -939,6 +940,8 @@ export function MovementsScreen() {
                     tone="warning"
                     testId="movements-queue"
                     title={`${myQueue.length} in your queue`}
+                    // Live walk 16 Nov 2026: one line on why this differs from the open count.
+                    sub={`Waiting on you, of ${openMovements.length} open`}
                     action={{
                       label: "Next in my queue",
                       phoneLabel: "Next",
@@ -992,32 +995,36 @@ export function MovementsScreen() {
                 />
               }
               // Page tops (v6 mock-up, QA 10 Nov 2026): each stage's count and longest wait, the same
-              // figures and wait colours as the Journey stages strip below (StagePipeline).
+              // figures and wait colours as the Stages strip below (StagePipeline).
+              // D-265 (18 Nov 2026): on a tablet or laptop the stage cards under the tabs carry these
+              // counts, so the band shows on a phone only, where the cards are not drawn.
               band={
-                <HeroBand
-                  title="Journey stages"
-                  aside="longest wait"
-                  testId="movements-stage-band"
-                  cells={openStages
-                    .filter((stage) => stage.id !== "arrived")
-                    .map((stage) => {
-                      const wait = stage.movements[0] ? Math.max(0, now - stage.movements[0].openedAt) : undefined;
-                      return {
-                        id: stage.id,
-                        label: STAGE_SHORT[stage.id],
-                        value: stage.movements.length,
-                        sub: wait === undefined ? "none waiting" : durMinutes(wait),
-                        subTone:
-                          wait === undefined
-                            ? undefined
-                            : wait >= accessTarget
-                              ? ("danger" as const)
-                              : wait >= ED_SEVERE_PRESSURE_WAIT_MINUTES
-                                ? ("warning" as const)
-                                : undefined,
-                      };
-                    })}
-                />
+                isPhone ? (
+                  <HeroBand
+                    title="Stages"
+                    aside="longest wait"
+                    testId="movements-stage-band"
+                    cells={openStages
+                      .filter((stage) => stage.id !== "arrived")
+                      .map((stage) => {
+                        const wait = stage.movements[0] ? Math.max(0, now - stage.movements[0].openedAt) : undefined;
+                        return {
+                          id: stage.id,
+                          label: STAGE_SHORT[stage.id],
+                          value: stage.movements.length,
+                          sub: wait === undefined ? "none waiting" : durMinutes(wait),
+                          subTone:
+                            wait === undefined
+                              ? undefined
+                              : wait >= accessTarget
+                                ? ("danger" as const)
+                                : wait >= ED_SEVERE_PRESSURE_WAIT_MINUTES
+                                  ? ("warning" as const)
+                                  : undefined,
+                        };
+                      })}
+                  />
+                ) : undefined
               }
             />
           </Hero>
@@ -1028,7 +1035,7 @@ export function MovementsScreen() {
             <div className={cx(styles.folderSwitch, folderTabClasses.switch)} role="tablist" aria-label="Movements">
               {(
                 [
-                  { id: "every", label: isPhone ? "Open" : "Open and resolved", count: worklistMovements.length },
+                  { id: "every", label: isPhone ? "Open" : "All", count: worklistMovements.length },
                   { id: "resolved", label: "Resolved today", count: worklistClosedToday.length },
                 ] as const
               ).map((tab) => (
@@ -1100,6 +1107,7 @@ export function MovementsScreen() {
           >
             <MovementsTimelineSwitch
               summary={`${activeCorridorCount} active ${activeCorridorCount === 1 ? "corridor" : "corridors"}`}
+              tableSummary={`Table: ${openMovements.length} open, longest wait first`}
             >
               <MovementHorizonGantt
                 lanes={horizonLanes}
@@ -1115,7 +1123,8 @@ export function MovementsScreen() {
           </section>
         )}
 
-        <div className={cx(styles.columns, flow.layout)}>
+        {/* D-265 (18 Nov 2026): with Table chosen, the worklist takes the timeline's place first. */}
+        <div className={cx(styles.columns, flow.layout, !isPhone && trafficView === "table" && styles.tableFirst)}>
           <aside className={styles.secondary} aria-label="Movement details">
             {/* Movements redesign (1 Nov 2026, Q102): no separate Tier 1 card. The hero's Tier 1
                 count highlights those rows in the worklist, so the side column has one job. */}

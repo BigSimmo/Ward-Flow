@@ -242,8 +242,12 @@ export function HandoverPage() {
   // clinician's own department (no Beds tab, no bed counts, no sign-off).
   const { ownWard, edDesk, edName } = desk.handoverDeskOf(access, units);
   const allRecordsLabel = ownWard?.name ?? edName ?? allRecordsScopeLabel(access);
-  const isPhoneWidth = useIsPhone();
-  const isTabletPortrait = useIsTabletPortrait();
+  // Page scores 16 Nov 2026 (Other prints, +3): an A4 page is phone-narrow, so a plain browser Print
+  // swapped in the phone tree and printed almost nothing. While printing, the screen keeps the
+  // desktop table, which prints every group.
+  const printing = useMediaQuery("print");
+  const isPhoneWidth = useIsPhone() && !printing;
+  const isTabletPortrait = useIsTabletPortrait() && !printing;
   /* iPad portrait (820px, device audit 11 Oct 2026): list rows and the rail as a slide-over. */
   const portrait = isTabletPortrait && !isPhoneWidth;
 
@@ -372,8 +376,9 @@ export function HandoverPage() {
   );
   const thresholds = useDueSoonThresholds();
   const ctx: ColumnContext = useMemo(
-    () => ({ now, cutoff, readyBeds, dayZero, thresholds }),
-    [now, cutoff, readyBeds, dayZero, thresholds],
+    // D-254: while the browser prints this screen, legal form times take the 24-hour sheet face.
+    () => ({ now, cutoff, readyBeds, dayZero, thresholds, face: printing ? ("sheet" as const) : ("screen" as const) }),
+    [now, cutoff, readyBeds, dayZero, thresholds, printing],
   );
 
   /* highlight, never hide */
@@ -435,7 +440,8 @@ export function HandoverPage() {
   /* columns */
   // iPad landscape (1001px and up) fits the Standard columns to the card too, so Next step is not cut
   // at the card edge behind a sideways scroll (layout sweep 25 Oct 2026).
-  const fitsCard = useMediaQuery("(min-width: 62.5625rem)");
+  // While printing, the table fits the paper the same way it fits a wide card (page scores 16 Nov).
+  const fitsCard = useMediaQuery("(min-width: 62.5625rem)") || printing;
   const fitted = fitsCard && !present && !sheetOpen && customColumns === null && density === "std";
   const columnIds =
     customColumns ?? (fitted ? DENSITY_COLUMNS.std.filter((id) => id !== "lo") : DENSITY_COLUMNS[density]);

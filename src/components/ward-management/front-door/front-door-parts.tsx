@@ -307,15 +307,18 @@ export function DoorBanner({
   title,
   body,
   children,
+  id,
 }: {
   tone: DoorBannerTone;
   icon: DoorBannerIcon;
   title: string;
   body?: string | null;
   children?: ReactNode;
+  /** Lets a field name this message with `aria-describedby`. */
+  id?: string;
 }) {
   return (
-    <div className={`${styles.banner} ${BANNER_TONE[tone]}`} role={tone === "danger" ? "alert" : "status"}>
+    <div id={id} className={`${styles.banner} ${BANNER_TONE[tone]}`} role={tone === "danger" ? "alert" : "status"}>
       <BannerIcon icon={icon} />
       <p>
         <b>{title}</b>

@@ -1,8 +1,6 @@
 import { useId } from "react";
 
-import { Waypoints } from "lucide-react";
-
-import { IconTile, StatusGlyph, durMinutes } from "@/components/wf";
+import { SrOnly, StatusGlyph, durMinutes } from "@/components/wf";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { JourneyStage } from "./movements-derivations";
 import { STAGE_SHORT } from "./movements-screen-helpers";
@@ -27,6 +25,10 @@ import styles from "./stage-pipeline.module.css";
  * (open, and which stage holds the longest wait; the hero already counts those past target) beside
  * the wait key; the stages are numbered columns split by hairlines, each with its share of open
  * movements, and only a stage with waits past target gets a red chip.
+ *
+ * Compact pass (Josh, 18 Nov 2026, D-265): each stage is one line (number, name, count, share), the
+ * wait bar, then the longest wait with any past-target chip beside it. On a tablet the six stages
+ * stay in one row that scrolls sideways instead of wrapping to two rows.
  */
 export function StagePipeline({
   stages,
@@ -63,22 +65,21 @@ export function StagePipeline({
         </span>
       ) : null}
       <div className={styles.head}>
-        {/* Movements audit item 9 (9 Nov 2026): the same icon tile and title as every section. */}
-        <IconTile icon={Waypoints} />
+        {/* D-265 (18 Nov 2026): the heading sits on the card edge with no icon tile, in line with the
+            tabs above and the traffic bar below, and names the longest wait itself. */}
         <h2 className={styles.title}>
-          Journey stages
+          Stages
           <span className={styles.summary}>
             {totalOpen} open
             {worst !== undefined && worstStageId !== undefined
-              ? ` · ${STAGE_SHORT[worst.id]} holds the longest wait`
+              ? ` · longest wait in ${STAGE_SHORT[worst.id]}, ${durMinutes(longest(worst))}`
               : ""}
           </span>
         </h2>
-        {/* Note 7 (9 Nov 2026): the how-to sits in the header beside the key, not as a loose line
-            under the strip; each stage's tooltip still gives its count in each wait band. */}
+        {/* Each stage's tooltip still gives its count in each wait band (Note 7, 9 Nov 2026). */}
         <span className={styles.aside}>
-          <span className={styles.hint}>Choose a stage to see its patients</span>
           <span className={styles.keyBands} aria-label="Wait bands">
+            <span className={styles.keyLabel}>Wait</span>
             {WAIT_BANDS.map((band, index) => (
               <span key={band}>
                 <i className={board[`band${index}`]} aria-hidden="true" />
@@ -117,29 +118,29 @@ export function StagePipeline({
                   <span className={styles.step} aria-hidden="true">
                     {index + 1}
                   </span>
-                  {STAGE_SHORT[stage.id]}
-                </span>
-                <span className={styles.stageTop}>
+                  <span className={styles.nameText}>{STAGE_SHORT[stage.id]}</span>
                   <span className={styles.stageCount}>{stage.movements.length}</span>
-                  <span className={styles.share}>{share}% of open</span>
+                  <span className={styles.share}>
+                    {share}%<SrOnly> of open</SrOnly>
+                  </span>
                 </span>
                 <BandBar bands={bands} className={styles.stageBar} />
                 <span className={styles.foot}>
                   <span className={styles.stageWait}>
                     {wait === undefined ? (
-                      "none waiting"
+                      "None waiting"
                     ) : (
                       <>
                         {warn ? <StatusGlyph tone="warning" size={9} /> : null}
-                        longest <b>{durMinutes(wait)}</b>
+                        <SrOnly>longest </SrOnly>
+                        <b>{durMinutes(wait)}</b>
                       </>
                     )}
                   </span>
-                  <span className={styles.chips}>
-                    <span className={styles.stagePast} data-past={pastTarget > 0 ? "true" : undefined}>
-                      {pastTarget > 0 ? `${pastTarget} past ${targetLabel}` : "On target"}
-                    </span>
-                  </span>
+                  {/* D-265: only a stage with waits past target says so; "On target" is gone. */}
+                  {pastTarget > 0 ? (
+                    <span className={styles.stagePast}>{`${pastTarget} past ${targetLabel}`}</span>
+                  ) : null}
                 </span>
               </button>
             </li>

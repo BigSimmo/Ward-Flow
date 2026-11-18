@@ -77,6 +77,15 @@ describe("M103 rendered sheets: print time", () => {
     expect(text(container)).toMatch(/Prepared \d{2}:\d{2}/u);
   });
 
+  // 16 Nov walk: the call sheet's print isolation hid the shell footer, so it printed no Printed by.
+  it("the call sheet carries the shared Printed by footer inside its paper", () => {
+    const { getByTestId } = render(inProvider(<CallSheet />));
+    const sheet = getByTestId("ward-call-sheet");
+    const footer = sheet.querySelector('[data-testid="ward-print-footer"]');
+    expect(footer).not.toBeNull();
+    expect(footer?.querySelector('[data-testid="ward-print-attribution"]')?.textContent).toMatch(/^Printed by /u);
+  });
+
   it("the patient chronology says when it was generated, with the full date and zone", () => {
     const { container } = render(inProvider(<PatientChronologyScreen initialPatientId="PT-026" />));
     expect(text(container)).toMatch(/Generated \w{3} \d{1,2} \w{3} \d{4}, \d{2}:\d{2} demo time/u);

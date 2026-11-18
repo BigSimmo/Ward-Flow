@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
-import { clockState, DEFAULT_DUE_SOON_THRESHOLDS, formatClock24WithDay } from "@/components/ward-management/ward-clock";
+import { clockState, DEFAULT_DUE_SOON_THRESHOLDS, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
@@ -148,7 +148,7 @@ describe("the delays screen states the legal deadline it is already reacting to"
       expect(dueAt, `${movement.id} lost its deadline between the filter and the assertion`).toBeDefined();
       const clock = typedClock(movement.id);
       expect(
-        within(clock).getByText(`${legalFormName(form!)} ends ${formatClock24WithDay(dueAt!, NOW_ANCHOR)}`),
+        within(clock).getByText(`${legalFormName(form!)} ends ${formatInstantWithDay(dueAt!, NOW_ANCHOR)}`),
         `${movement.id}: the panel does not state its form and typed time`,
       ).toBeDefined();
       const standing = typedTimeStanding(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
@@ -183,7 +183,7 @@ describe("the delays screen states the legal deadline it is already reacting to"
     // note above), so WF-006 must be chosen before its wording can be read at all.
     const clock = typedClock("WF-006");
     expect(
-      within(clock).getByText(`${legalFormName(wf006!.legalForm!)} ended ${formatClock24WithDay(dueAt!, now)}`),
+      within(clock).getByText(`${legalFormName(wf006!.legalForm!)} ended ${formatInstantWithDay(dueAt!, now)}`),
     ).toBeDefined();
     expect(within(clock).getByText("passed")).toBeDefined();
     expect(clock.textContent ?? "", "a passed typed time is counting down past zero").not.toMatch(COUNTDOWN_WORDS);

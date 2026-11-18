@@ -237,6 +237,44 @@ describe("Stepper", () => {
     expect(spin).toHaveAttribute("aria-valuenow", "4");
     expect(screen.getByRole("button", { name: "Increase escorts" })).toHaveAttribute("aria-disabled", "true");
   });
+
+  it("with parse, takes a typed value inside its bounds and puts the shown value back otherwise", async () => {
+    function Harness() {
+      const [value, setValue] = useState(2);
+      return (
+        <Stepper
+          value={value}
+          onChange={setValue}
+          min={1}
+          max={4}
+          noun="escorts"
+          display={`${value} escorts`}
+          parse={(text) => (/^\d+$/u.test(text.trim()) ? Number(text.trim()) : null)}
+        />
+      );
+    }
+    render(<Harness />);
+    const spin = screen.getByRole("spinbutton", { name: "Escorts" });
+    expect(spin).toHaveValue("2 escorts");
+    await userEvent.clear(spin);
+    await userEvent.type(spin, "3{Enter}");
+    expect(spin).toHaveAttribute("aria-valuenow", "3");
+    expect(spin).toHaveValue("3 escorts");
+    // Outside the bounds: nothing changes.
+    await userEvent.clear(spin);
+    await userEvent.type(spin, "9{Enter}");
+    expect(spin).toHaveAttribute("aria-valuenow", "3");
+    expect(spin).toHaveValue("3 escorts");
+    // Words it cannot read, left by Tab: the shown value comes back.
+    await userEvent.clear(spin);
+    await userEvent.type(spin, "lots");
+    await userEvent.tab();
+    expect(spin).toHaveValue("3 escorts");
+    // Up still steps.
+    spin.focus();
+    await userEvent.keyboard("{ArrowUp}");
+    expect(spin).toHaveAttribute("aria-valuenow", "4");
+  });
 });
 
 describe("Timer", () => {

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRefocusAfterRowLeaves } from "@/components/ward-management/use-refocus-after-row-leaves";
-import { StatusGlyph } from "@/components/wf";
+import { StatusGlyph, useOptionalToast } from "@/components/wf";
 import styles from "./ward-answer-view.module.css";
 import { declineToastText } from "./ward-decline-toast-text";
 
@@ -19,7 +19,14 @@ export function useAnswerToast() {
     const timer = setTimeout(() => setToastMessage(null), 3500);
     return () => clearTimeout(timer);
   }, [toastMessage]);
-  const toastDeclined = (reason: string | undefined) => triggerToast(declineToastText(reason));
+  // 16 Nov walk: a recorded decline shows on the shared toast, where Accept's does; this page's own
+  // line carries it only where no toast region is mounted. A decline has no Undo event to offer.
+  const kit = useOptionalToast();
+  const toastDeclined = (reason: string | undefined, who?: string) => {
+    const text = declineToastText(reason, who);
+    if (kit) kit.push({ tone: "success", title: text, testId: "ward-answer-decline-toast" });
+    else triggerToast(text);
+  };
   return { toastMessage, setToastMessage, triggerToast, toastDeclined };
 }
 

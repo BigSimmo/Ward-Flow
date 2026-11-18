@@ -614,7 +614,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Finding your way",
           "export",
-          { sel: '[data-testid="ward-statistics-export"]' },
+          { sel: '[data-testid="ward-statistics-export"], [data-testid="ward-statistics-tools-menu"]' },
           "Take the figures with you",
           "Export the figures is there when you need them for a report or briefing.",
         ),

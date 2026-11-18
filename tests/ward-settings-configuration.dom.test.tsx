@@ -271,28 +271,42 @@ describe("settings screen configuration draft", () => {
     expect(Number(screen.getByTestId("probe-audit-count").textContent)).toBe(beforeAuditCount + 1);
   });
 
+  it("lets a rule value be typed as well as stepped, inside the same bounds (live walk 16 Nov 2026)", () => {
+    renderSettings();
+    const box = screen.getByTestId("morning-rollup-display");
+    fireEvent.change(box, { target: { value: "10:15" } });
+    fireEvent.keyDown(box, { key: "Enter" });
+    expect(rollupStepper()).toHaveAttribute("aria-valuenow", "615");
+    expect(box).toHaveValue("10:15 am");
+    // A time the stepper could not reach puts the shown value back.
+    fireEvent.change(box, { target: { value: "23:59" } });
+    fireEvent.blur(box);
+    expect(rollupStepper()).toHaveAttribute("aria-valuenow", "615");
+    expect(box).toHaveValue("10:15 am");
+  });
+
   it("morning rollup deadline stepper updates the draft and dispatches on save", () => {
     renderSettings();
-    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:30");
+    expect(screen.getByTestId("morning-rollup-display")).toHaveValue("9:30 am");
     expect(rollupStepper()).toHaveAttribute("aria-valuenow", "570");
 
     // Click plus button (increase by 15m to 09:45 AM / 585)
     fireEvent.click(screen.getByRole("button", { name: "Increase morning bed numbers due time" }));
-    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:45");
+    expect(screen.getByTestId("morning-rollup-display")).toHaveValue("9:45 am");
     expect(rollupStepper()).toHaveAttribute("aria-valuenow", "585");
     expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("570"); // not saved yet
 
     // Click minus button twice (decrease by 30m to 09:15 AM / 555)
     fireEvent.click(screen.getByRole("button", { name: "Decrease morning bed numbers due time" }));
     fireEvent.click(screen.getByRole("button", { name: "Decrease morning bed numbers due time" }));
-    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("09:15");
+    expect(screen.getByTestId("morning-rollup-display")).toHaveValue("9:15 am");
     expect(rollupStepper()).toHaveAttribute("aria-valuenow", "555");
 
     // Step up three times to 600 (10:00 AM)
     for (let press = 0; press < 3; press += 1) {
       fireEvent.click(screen.getByRole("button", { name: "Increase morning bed numbers due time" }));
     }
-    expect(screen.getByTestId("morning-rollup-display")).toHaveTextContent("10:00");
+    expect(screen.getByTestId("morning-rollup-display")).toHaveValue("10:00 am");
     expect(screen.getByTestId("probe-morning-rollup")).toHaveTextContent("570");
 
     // Save coordination rules

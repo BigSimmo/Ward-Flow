@@ -10,9 +10,9 @@ Every patient moving to a bed, by stage, from referral to arrival.
 2. Highlight movements. Tier 1 and the other figures highlight those movements in the list below. Nothing is hidden.
 3. Your queue. How many are waiting on you. Next in my queue opens the first one.
 4. Transport, Find a bed, Corridors. Transport opens the transport jobs, Find a bed the bed finder, and Corridors the routes in use now.
-5. Journey stages. How many are at each stage, from Referred to on the way, with the longest wait in each.
-6. Open and resolved. The open movements, or Resolved today for those closed since midnight.
-7. The timeline. What is coming up for each receiving ward. Its switch hides or shows it.
+5. Stages. How many are at each stage, from Referred to on the way, with the longest wait in each.
+6. All and Resolved today. All shows the open movements and today's resolved ones. Resolved today shows only those closed since midnight.
+7. The timeline. What is coming up for each receiving ward. Graph or Table above it swaps it for the people list.
 8. Transport right now. Each transport leg on the go, grouped by stage, such as Collected and Accepted.
 9. Find a movement. Type a name, UMRN or ED. Order beside it sets how the list is sorted.
 10. Open a movement. Movements are listed by stage. Open one to see its bed, transport and legal form in one place.

@@ -1000,7 +1000,8 @@ export function OfficerScreen() {
             </div>
             <strong className={styles.nextCardName}>{officerListPatientName(topJob)}</strong>
             <span className={styles.nextCardLine} data-testid="ward-officer-next-identity">
-              {dobFor(topJob) ? `DOB ${dobFor(topJob)} · ` : null}
+              {/* Page scores 16 Nov 2026: the date of birth is said once on the card, here. */}
+              {`DOB ${identityFor(topJob).dob} · `}
               {umrnFor(topJob) ? <span className={styles.mono}>{umrnFor(topJob)}</span> : UMRN_NOT_SHOWN}
             </span>
             <span className={styles.nextCardLine}>
@@ -1010,9 +1011,7 @@ export function OfficerScreen() {
               {destinationLabelFor(topJob)}
             </span>
             <span className={styles.nextCardLine} data-testid="ward-officer-nextcard-facts">
-              DOB {identityFor(topJob).dob}
-              {topJob.heldBedNumber !== undefined ? ` · Bed ${topJob.heldBedNumber}` : ""}
-              {" · "}
+              {topJob.heldBedNumber !== undefined ? `Bed ${topJob.heldBedNumber} · ` : ""}
               {topJob.transport.transportLegalStatus === undefined
                 ? "Legal status not recorded"
                 : transportLegalStatusLabel(topJob.transport)}

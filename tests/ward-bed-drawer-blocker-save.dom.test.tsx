@@ -256,3 +256,39 @@ describe("the ward screen's bed drawer wires the blocker for each desk that may 
     expect(sent.role).toBe("ward");
   });
 });
+
+describe("Place someone here shows only for a desk that may place a stay (live walk 16 Nov 2026)", () => {
+  beforeEach(() => {
+    window.history.replaceState(null, "", "/");
+    route.pathname = `/ward-flow/ward/${SCREEN_UNIT}`;
+  });
+
+  async function openReadyBed() {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <WardScreen unitId={SCREEN_UNIT} />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    const everyBed = document.getElementById("bed-capacity")!;
+    const ready = within(everyBed).getAllByRole("button", { name: /^Bed \d{2}, Ready\b/ });
+    fireEvent.click(ready[0]!);
+    return screen.findByTestId("bed-telemetry-drawer");
+  }
+
+  it("the ward desk sees it", async () => {
+    const drawerEl = await openReadyBed();
+    expect(queryBedStep(/^Place someone here$/, drawerEl)).not.toBeNull();
+  });
+
+  it("a site bed manager, who can never place, does not", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "bed_manager", scope: { kind: "site", siteCode: unitById(SCREEN_UNIT)!.siteCode } });
+    });
+    const drawerEl = await openReadyBed();
+    expect(within(drawerEl).getByRole("link", { name: "Review current referrals" })).toBeInTheDocument();
+    expect(queryBedStep(/^Place someone here$/, drawerEl)).toBeNull();
+  });
+});

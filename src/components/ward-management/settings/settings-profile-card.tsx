@@ -6,7 +6,7 @@ import { SEED_UNITS, accessPlaceLabel } from "@/components/ward-management/shell
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { SettingRow } from "@/components/ward-management/settings/settings-rows";
-import { clock24 } from "@/components/ward-management/settings/settings-screen-model";
+import { settingsClock } from "@/components/ward-management/settings/settings-screen-model";
 import { currentShift } from "@/components/ward-management/ward-board-time-features";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { accessIsWholeNetwork } from "@/components/ward-management/ward-role-access";
@@ -50,7 +50,7 @@ export function SettingsProfileCard({ now }: { now: Instant }) {
         ) : null}
         <SettingRow setting="profile-shift" title="Shift now" sub="Default pattern">
           <span className={styles.readout}>
-            {shiftName}, {clock24(shift.startMinute)} to {clock24(shift.endMinute)}
+            {shiftName}, {settingsClock(shift.startMinute)} to {settingsClock(shift.endMinute)}
           </span>
         </SettingRow>
       </div>

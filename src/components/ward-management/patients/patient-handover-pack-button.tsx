@@ -7,7 +7,7 @@
  * the copy goes through `ward-clipboard`, which drops the UMRN.
  */
 
-import { useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { ClipboardList } from "lucide-react";
 import { Button, Dialog } from "@/components/wf";
 import { formatSheetMoment } from "@/components/ward-management/ward-clock";
@@ -19,9 +19,45 @@ import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-l
 /** Sections whose single row label repeats the heading; others keep it (what is outstanding, whose contact). */
 const HEADING_LABELLED_SECTIONS: ReadonlySet<string> = new Set(["risks", "clearance", "medication"]);
 
+/*
+ * Which movement's pack is open, held in this tab's memory only (D-72: nothing on the device). The
+ * patient page lays itself out again at the print width, which remounts this entry; a component's own
+ * state would close the dialog, and the patient page behind it would print instead of the pack. The
+ * carer page (patient-carer-page.tsx) keeps its open state the same way.
+ */
+let openMovementId: string | null = null;
+const listeners = new Set<() => void>();
+function setOpenMovement(id: string | null) {
+  openMovementId = id;
+  for (const listener of listeners) listener();
+}
+/** Entries on screen per movement: leaving the page (no entry left a moment later) closes it. */
+const mounted = new Map<string, number>();
+function useMountedEntry(id: string) {
+  useEffect(() => {
+    mounted.set(id, (mounted.get(id) ?? 0) + 1);
+    return () => {
+      mounted.set(id, (mounted.get(id) ?? 1) - 1);
+      window.setTimeout(() => {
+        if (!mounted.get(id) && openMovementId === id) setOpenMovement(null);
+      }, 1000);
+    };
+  }, [id]);
+}
+function subscribeOpen(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
 export function PatientHandoverPackButton({ input, dayZero }: { input: HandoverPackInput; dayZero: Date }) {
   const zone = useClockZoneLabel();
-  const [open, setOpen] = useState(false);
+  const movementId = input.movement.id;
+  const open = useSyncExternalStore(
+    subscribeOpen,
+    () => openMovementId === movementId,
+    () => false,
+  );
+  useMountedEntry(movementId);
   const [notice, setNotice] = useState<string | null>(null);
   const pack = handoverPackModel(input, dayZero);
   // A printed pack outlives its day, so it carries the full date, never a bare clock face.
@@ -50,7 +86,7 @@ export function PatientHandoverPackButton({ input, dayZero }: { input: HandoverP
         icon={ClipboardList}
         onClick={() => {
           setNotice(null);
-          setOpen(true);
+          setOpenMovement(movementId);
         }}
         data-testid="pn-handover-pack-open"
       >
@@ -58,7 +94,7 @@ export function PatientHandoverPackButton({ input, dayZero }: { input: HandoverP
       </Button>
       <Dialog
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={() => setOpenMovement(null)}
         title="Handover pack"
         description={<span role="status">{notice ?? "Print it or copy it. BedChart does not send it anywhere."}</span>}
         size="lg"
@@ -106,14 +142,18 @@ export function PatientHandoverPackButton({ input, dayZero }: { input: HandoverP
   );
 }
 
-/** Print isolation, keyed by the paper's data attribute (the referral letter's pattern). */
+/**
+ * Print isolation, keyed by the paper's data attribute (the carer page's pattern): everything off the
+ * paper's own ancestor line is taken out, and each ancestor is forced shown, so the pack prints alone
+ * and never blank, whatever the patient page's own print rules hide.
+ */
 const PRINT_CSS = `@page { size: A4 portrait; margin: 16mm; }
 @media print {
-  html, body { margin: 0 !important; padding: 0 !important; height: auto !important; min-height: 0 !important; overflow: visible !important; background: none !important; }
-  body * { visibility: hidden !important; }
-  [data-wf-print-handover], [data-wf-print-handover] * { visibility: visible !important; }
+  html, body { margin: 0 !important; padding: 0 !important; height: auto !important; min-height: 0 !important; overflow: visible !important; background: #fff !important; }
   body *:not(:has([data-wf-print-handover])):not([data-wf-print-handover]):not([data-wf-print-handover] *) { display: none !important; }
-  body *:has([data-wf-print-handover]) { position: static !important; transform: none !important; overflow: visible !important; height: auto !important; max-height: none !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; contain: none !important; background: none !important; }
-  [data-wf-print-handover] { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; color: #000 !important; background: #fff !important; }
+  body *:has([data-wf-print-handover]) { position: static !important; transform: none !important; overflow: visible !important; height: auto !important; max-height: none !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; contain: none !important; background: none !important; visibility: visible !important; display: block !important; }
+  [data-wf-print-handover], [data-wf-print-handover] * { visibility: visible !important; }
+  [data-wf-print-handover], [data-wf-print-handover] *, body *:has([data-wf-print-handover]) { opacity: 1 !important; animation: none !important; transition: none !important; }
+  [data-wf-print-handover] { display: grid !important; position: static !important; width: 100% !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; color: #000 !important; background: #fff !important; }
   [data-wf-print-handover] section { break-inside: avoid; }
 }`;

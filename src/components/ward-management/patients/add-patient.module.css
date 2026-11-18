@@ -128,12 +128,12 @@
   white-space: nowrap;
 }
 
+/* 16 Nov live walk: the hint wraps in full ("Wards need it to accept"), never "Wards need it to…". */
 .choiceHint {
-  overflow: hidden;
+  min-width: 0;
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: break-word;
 }
 
 .segmented {

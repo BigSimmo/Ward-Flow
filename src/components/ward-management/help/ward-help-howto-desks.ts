@@ -618,7 +618,7 @@ export const DESK_JOBS: readonly HowTo[] = [
     title: "Look through the audit trail",
     keywords: "governance audit review overrides refused record access trail admin",
     answer:
-      "Open Governance. Review lists events waiting for review, newest first: overrides, refused or stale actions and record access. Select one to see its facts, then press Reviewed, or Follow-up if it needs more. Audit trail lists what has been reviewed.",
+      "Open Governance. Review lists events waiting for review, newest first: overrides, steps not saved and record access. Select one to see its facts, then press Reviewed, or Follow-up if it needs more. Audit trail lists what has been reviewed.",
     desks: ["admin"],
     go: "governance",
     showMe: [
@@ -644,7 +644,7 @@ export const DESK_JOBS: readonly HowTo[] = [
         device: "desk",
         target: { sel: '[role="radiogroup"][aria-label="Show in the review list"]' },
         title: "Show in the review list",
-        body: "All, Overrides, Refused or stale, or Record access. Every row stays; the others dim.",
+        body: "All, Overrides, Steps not saved, or Record access. Every row stays; the others dim.",
       },
       {
         target: [

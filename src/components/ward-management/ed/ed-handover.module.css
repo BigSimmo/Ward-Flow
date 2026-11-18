@@ -12,12 +12,14 @@
 }
 .handoverHead {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-3);
   padding: var(--wf-s-3) var(--wf-s-4);
   border-bottom: 1px solid var(--wf-line);
 }
 .handoverTitle {
+  flex: 0 0 auto;
   min-width: 0;
   margin-right: auto;
 }
@@ -38,13 +40,23 @@
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-ink-3);
 }
+/* 16 Nov live walk: at 1280 the tools squeezed Export and Enlarge to "Expo..." and "Enlar...".
+   The kit buttons keep their size and never shrink; the row wraps instead, right-aligned. */
 .handoverTools {
   display: flex;
+  flex: 1 1 32rem;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--wf-s-2);
+  min-width: 0;
 }
-.handoverSearch {
-  width: 15rem;
+.handoverTools > * {
+  flex-shrink: 0;
+}
+.handoverTools > .handoverSearch {
+  flex: 0 1 15rem;
+  min-width: 10rem;
 }
 .handoverFilters > * {
   border-bottom: 0;
@@ -608,17 +620,26 @@
   container-type: inline-size;
 }
 @container (max-width: 1080px) {
+  /* Page scores 16 Nov 2026 (ED board, +4): In ED and Bay were cut off at laptop width ("11 h 33 min"
+     in 84px, "Not recorded" in 40px). They take a little from Patient and Presentation, whose text
+     wraps, and their own text wraps rather than being clipped. */
   .handoverTable[data-columns="handover"] col[data-col="Patient"] {
-    width: 196px;
+    width: 160px;
   }
   .handoverTable[data-columns="handover"] col[data-col="In ED"] {
-    width: 84px;
+    width: 112px;
   }
   .handoverTable[data-columns="handover"] col[data-col="Bay"] {
-    width: 40px;
+    width: 76px;
   }
   .handoverTable[data-columns="handover"] col[data-col="Presentation"] {
-    width: 120px;
+    width: 108px;
+  }
+  .handoverTable[data-columns="handover"] td[class*="a2Wait"],
+  .handoverTable[data-columns="handover"] td [class*="a2Wait"],
+  .handoverTable[data-columns="handover"] td[class*="a2Quiet"],
+  .handoverTable[data-columns="handover"] td [class*="a2Quiet"] {
+    white-space: normal;
   }
   .handoverTable[data-columns="handover"] col[data-col="Form"] {
     width: 92px;

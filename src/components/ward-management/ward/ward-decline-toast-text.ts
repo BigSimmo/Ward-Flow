@@ -8,8 +8,9 @@ import { WAITLIST_INSTEAD_OF_DECLINE_REASONS } from "@/components/ward-managemen
  * `ward-answer-feedback.tsx` pulled that file and the answer view's stylesheet map onto the Ward
  * page's first load (about 9 KB before compression).
  */
-export function declineToastText(reason: string | undefined) {
-  return reason && (WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(reason)
-    ? "Referral waitlisted for this ward."
-    : "Referral declined.";
+export function declineToastText(reason: string | undefined, who?: string) {
+  const waitlisted = Boolean(reason && (WAITLIST_INSTEAD_OF_DECLINE_REASONS as readonly string[]).includes(reason));
+  // 16 Nov walk: the toast names the person, as Accept's does ("Accepted … in principle.").
+  if (who) return waitlisted ? `Referral for ${who} waitlisted for this ward.` : `Referral declined for ${who}.`;
+  return waitlisted ? "Referral waitlisted for this ward." : "Referral declined.";
 }

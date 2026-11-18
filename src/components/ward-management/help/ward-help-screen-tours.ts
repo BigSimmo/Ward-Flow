@@ -386,19 +386,20 @@ const AROUND: readonly Around[] = [
         title: "Transport, Find a bed, Corridors",
         body: "Transport opens the transport jobs, Find a bed the bed finder, and Corridors the routes in use now.",
       }),
-      step(id("movements-stage-band"), {
-        title: "Journey stages",
+      // D-265: the hero's stage band shows on a phone; a tablet or laptop has the stage cards instead.
+      step([id("movements-stage-band"), named("Stages", "nav")], {
+        title: "Stages",
         body: "How many are at each stage, from Referred to on the way, with the longest wait in each.",
       }),
       step(id("movements-tabs"), {
-        title: "Open and resolved",
-        body: "The open movements, or Resolved today for those closed since midnight.",
+        title: "All and Resolved today",
+        body: "All shows the open movements and today's resolved ones. Resolved today shows only those closed since midnight.",
       }),
-      // M3: the timeline sits behind its switch, shown by default (Note 7); light the switch when it is hidden.
+      // D-265: the timeline shows by default; light the Graph or Table bar when Table is chosen.
       step([id("ward-movement-horizon"), id("movements-timeline-switch")], {
         device: "desk",
         title: "The timeline",
-        body: "What is coming up for each receiving ward. Its switch hides or shows it.",
+        body: "What is coming up for each receiving ward. Graph or Table above it swaps it for the people list.",
       }),
       step(named("Transport right now", "section"), {
         device: "desk",
@@ -826,16 +827,16 @@ const AROUND: readonly Around[] = [
       step(named("Governance actions", "ul"), {
         device: "desk",
         title: "Governance actions",
-        body: "PIR chronology opens the patient chronology report. Pattern highlights repeated events when there are any.",
+        body: "PIR chronology opens the patient chronology report. Repeat break glass highlights repeated openings when there are any.",
       }),
       step(id("ward-governance-tabs"), {
         title: "Views",
-        body: "Review, Form gaps, Audit trail, Registers and Reports.",
+        body: "Review, Forms to chase, Audit trail, Registers and Reports.",
       }),
       step(named("Show in the review list", '[role="radiogroup"]'), {
         device: "desk",
         title: "Show",
-        body: "All, Overrides, Refused or stale, or Record access.",
+        body: "All, Overrides, Steps not saved, or Record access.",
       }),
       step(id("wf-group-head"), {
         device: "phone",
@@ -880,10 +881,14 @@ const AROUND: readonly Around[] = [
         title: "Open a unit",
         body: "Open a unit finds any ward, ED, service or team and opens its figures.",
       }),
-      step(id("ward-statistics-export"), {
-        title: "Export the figures",
-        body: "Downloads the figures at the top of the page as a spreadsheet file.",
-      }),
+      // D-265: on a phone Export sits in the Statistics tools menu ("…").
+      step(
+        { sel: '[data-testid="ward-statistics-export"], [data-testid="ward-statistics-tools-menu"]' },
+        {
+          title: "Export the figures",
+          body: "Downloads the figures at the top of the page as a spreadsheet file. On a phone it is in the … menu.",
+        },
+      ),
       step(id("ward-statistics-view-bar"), {
         device: "desk",
         title: "Bed board, Movement or Map",

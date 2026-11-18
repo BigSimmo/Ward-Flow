@@ -1227,7 +1227,8 @@ export function ReferralMatchView({
                   data-testid="ward-referral-match-local-bed-sought"
                   onClick={handleLocalBedSought}
                 >
-                  Local bed sought, none suitable
+                  {/* 16 Nov walk: an action, so it is not read as the answer when wards fit. */}
+                  Record: no local bed suits
                 </Button>
               )}
             </div>
@@ -1380,7 +1381,9 @@ export function ReferralMatchView({
                         ? `${matchReason(pick, now)}. No recorded reason can override this.`
                         : undefined
                   }
-                  reasonDisplay="tooltip"
+                  // Live walk 16 Nov 2026: the label already says "Choose a ward first", so a phone does
+                  // not draw the same words again under the button (the tip stays for a pointer).
+                  reasonDisplay={pick === undefined && candidates.length > 0 ? "page" : "tooltip"}
                   type="button"
                   data-testid="ward-referral-match-phone-accept"
                   onClick={

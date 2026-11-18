@@ -27,7 +27,7 @@ describe("ward contact card", () => {
     const day = wardContactCard("rph-adult-secure", 10 * 60)!;
     const night = wardContactCard("rph-adult-secure", 22 * 60)!;
     const consultant = (card: typeof day) => card.rows.find((row) => row.key === "consultant")!;
-    expect(consultant(day).availability).toMatch(/^Until \d\d:\d\d$/);
+    expect(consultant(day).availability).toMatch(/^Until \d{1,2}:\d\d [ap]m$/);
     expect(consultant(day).line).toBe("Day consultant");
     expect(consultant(night).line).toBe("On-call phone");
     // Answering drives the row's status glyph: a line open now must never read as closed.

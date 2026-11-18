@@ -531,6 +531,21 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
       expect(short).toContain("1A due");
     });
 
+    it("prints legal form times on the 24-hour sheet face, and shows am/pm on screen (D-254)", () => {
+      const state = seedWardFlowState();
+      const movement: Movement = {
+        ...state.movements[0],
+        id: "WF-PRINT-FACE" as const,
+        pullExpiresAt: undefined,
+        legalForm: { code: "1A", dueAt: NOW + 120 },
+      };
+      const row = toHandoverRow(movement, state.units, state.patients, state.referrals);
+      expect(dueParts(row, NOW)?.when).toMatch(/am|pm/i);
+      expect(dueParts(row, NOW, undefined, undefined, "sheet")?.when).toMatch(/^\d{2}:\d{2}$/);
+      expect(dueShort(row, NOW, undefined, "sheet")).not.toMatch(/am|pm/i);
+      expect(dueShort(row, NOW, undefined, "sheet")).toMatch(/1A due \d{2}:\d{2}/);
+    });
+
     it("identifies collected patients as in transit even when pullExpiresAt is undefined", () => {
       const state = seedWardFlowState();
       const inTransitMovementNoPull: Movement = {

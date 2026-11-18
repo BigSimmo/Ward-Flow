@@ -91,7 +91,7 @@ describe("Governance as the access admin", () => {
       asDesk("admin");
       renderEmpty();
       const phone = screen.getByTestId("ward-governance-phone");
-      expect(phone).not.toHaveTextContent("Form gaps");
+      expect(phone).not.toHaveTextContent("Forms to chase");
       expect(screen.queryByRole("button", { name: /Registers/ })).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /Reports/ })).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /Review next/ })).not.toBeInTheDocument();
@@ -110,8 +110,8 @@ describe("Governance as the coordinator", () => {
     asDesk("coordinator");
     renderEmpty();
     fireEvent.click(screen.getByRole("radio", { name: /^Review/ }));
-    // Page tops (9 Nov 2026): the tab reads "Form gaps", its count the gaps.
-    expect(screen.getByRole("radio", { name: /^Form gaps/ })).toBeInTheDocument();
+    // Page tops (9 Nov 2026): the tab reads "Forms to chase", its count the gaps.
+    expect(screen.getByRole("radio", { name: /^Forms to chase/ })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: /^Registers/ })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /PIR chronology/ })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Open the Access log" })).not.toBeInTheDocument();

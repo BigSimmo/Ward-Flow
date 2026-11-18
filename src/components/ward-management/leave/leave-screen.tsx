@@ -148,6 +148,8 @@ export function LeaveScreen() {
         testId="ward-leave-hero"
         className={pageTopStyles.hero}
         title="People on leave"
+        // 16 Nov walk: how fresh the list is, in the hero's quiet meta line.
+        titleMeta={`Updated ${formatInstant(now)}`}
         aside={<LiveChip state="live" onHero age={formatInstant(now)} />}
       >
         <HeroTop

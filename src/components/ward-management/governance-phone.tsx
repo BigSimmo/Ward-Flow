@@ -253,7 +253,7 @@ export function GovernancePhone({
                   ...(
                     [
                       ["override", overrideCount, "overrides"],
-                      ["refused", refusedCount, "refused or stale"],
+                      ["refused", refusedCount, "steps not saved"],
                       ["access", accessCount, "record access"],
                     ] as const
                   ).map(([id, value, label]) => ({
@@ -356,7 +356,7 @@ export function GovernancePhone({
           onChange={(next) => changeTab(next)}
           items={[
             { id: "review", label: "Review", count: toReview.length },
-            ...(adminDesk ? [] : [{ id: "gaps" as const, label: "Form gaps", count: totalGaps }]),
+            ...(adminDesk ? [] : [{ id: "gaps" as const, label: "Forms to chase", count: totalGaps }]),
             { id: "audit", label: "Audit trail", ...(reviewedCount > 0 ? { count: reviewedCount } : {}) },
           ]}
         />

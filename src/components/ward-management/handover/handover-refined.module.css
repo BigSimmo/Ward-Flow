@@ -1069,6 +1069,30 @@
   .page {
     padding: 0;
   }
+
+  /* Page scores 16 Nov 2026: a plain Print fits the table to the paper instead of cutting off the
+   * right-hand columns. */
+  .split {
+    display: block;
+  }
+
+  .tableCard {
+    width: auto;
+    max-width: 100%;
+  }
+
+  .tableScroll {
+    overflow: visible;
+  }
+
+  .sheetTable {
+    min-width: 0;
+    font-size: 9pt;
+  }
+
+  .sheetTable th {
+    position: static;
+  }
 }
 
 .groupCount {

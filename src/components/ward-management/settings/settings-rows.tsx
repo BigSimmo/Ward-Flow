@@ -10,6 +10,7 @@ import { SrOnly, StatusGlyph, Stepper, cx } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "./settings-layout.module.css";
+import { minuteOfDayFromClockText } from "@/components/ward-management/ward-clock";
 
 /** One line under the band per tab: whether its changes wait for Save or apply at once. */
 export function ScopeLine({ kind }: { kind: "save" | "live" }) {
@@ -84,6 +85,50 @@ export type RuleRange = {
   readonly maxLabel: string;
 };
 
+/** "07:30", "1h 30m" and "3 Wards" read as "7:30", "1h30m" and "3wards", so a typed value matches its words. */
+function plainWords(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/\s+/gu, "")
+    .replace(/(^|\D)0+(\d)/gu, "$1$2");
+}
+
+/**
+ * Reads a typed rule value (live walk 16 Nov 2026) against the values the stepper could reach, so
+ * typing gives exactly what stepping could and nothing else. The words as shown match ("1h 30m",
+ * "07:30", "3 wards"); a bare number matches the one reachable value whose words are that number and
+ * a unit ("2" is "2h" when 2m is not reachable). Anything else, or a tie, is null.
+ */
+export function parseRuleTyped(
+  text: string,
+  bounds: { readonly min: number; readonly max: number; readonly step: number },
+  format: (value: number) => string,
+): number | null {
+  const typed = plainWords(text);
+  if (typed === "") return null;
+  const reachable: number[] = [];
+  for (let value = bounds.min; value <= bounds.max && reachable.length <= 2000; value += bounds.step) {
+    reachable.push(value);
+  }
+  const exact = reachable.find((value) => plainWords(format(value)) === typed);
+  if (exact !== undefined) return exact;
+  // A clock value reads am/pm on screen; "10:15", "10.15 am" and "22:15" each name one minute of the day.
+  if (/[:.]|[ap]\.?m/u.test(typed)) {
+    const minute = minuteOfDayFromClockText(text);
+    const clock =
+      minute === undefined ? undefined : reachable.find((value) => minuteOfDayFromClockText(format(value)) === minute);
+    if (clock !== undefined) return clock;
+  }
+  if (!/^\d+$/u.test(typed)) return null;
+  // The typed digits, then only words (no further digits or clock colon): "3" finds "3 wards", not "30".
+  // Compared as text so typed input never builds a pattern.
+  const byNumber = reachable.filter((value) => {
+    const words = plainWords(format(value));
+    return words.startsWith(typed) && /^[^\d:]*$/u.test(words.slice(typed.length));
+  });
+  return byNumber.length === 1 ? byNumber[0]! : null;
+}
+
 /**
  * One coordination rule: words and the allowed range on one line ("Per referral · 1 ward to 3 wards"), a reset to the
  * saved value when changed, one stepper, and its effect and readers on the right.
@@ -114,6 +159,7 @@ export function RuleRow({
   unavailableReason,
   defaultValue,
   defaultDisplay,
+  format,
 }: {
   setting: string;
   title: string;
@@ -142,6 +188,8 @@ export function RuleRow({
   defaultValue?: number;
   /** The default in words ("24h"). */
   defaultDisplay?: string;
+  /** Any value in words, so the value can be typed as well as stepped. */
+  format?: (value: number) => string;
 }) {
   const changed = value !== saved;
   const atDefault = defaultValue === undefined || value === defaultValue;
@@ -212,6 +260,11 @@ export function RuleRow({
             valueText={display}
             display={display}
             valueTestId={displayTestId}
+            parse={
+              format
+                ? (text) => parseRuleTyped(text, { min: range.min, max: max ?? range.max, step: range.step }, format)
+                : undefined
+            }
           />
         )}
         {changed ? (

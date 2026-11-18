@@ -485,8 +485,8 @@ export function formatClock24(instant: Instant): string {
  * "2:05 pm", "12:00 am", "12:00 pm". Lower case, a space before am/pm, no leading zero.
  *
  * The 24-hour face (`formatClock24`) stays where a 24-hour time is the record: printed sheets
- * (`formatSheetMoment`), a legal form time shown as the person entered it (D-93, D-218: "Ends
- * 15:42"), and text a time field reads back ("09:30", `minuteOfDayFromClockText`).
+ * (`formatSheetMoment`), a legal form time on a printed or exported sheet (D-254: on screen it
+ * reads am/pm, "Ends 3:42 pm"), and text a time field reads back ("09:30", `minuteOfDayFromClockText`).
  */
 export function formatInstant(instant: Instant): string {
   const wrapped = ((instant % 1440) + 1440) % 1440;
@@ -497,13 +497,23 @@ export function formatInstant(instant: Instant): string {
 }
 
 /**
- * A typed 24-hour clock time as minutes since midnight (0 to 1439), or `undefined`.
+ * A typed clock time, 24-hour or am/pm, as minutes since midnight (0 to 1439), or `undefined`.
  *
  * Takes "09:30" and "9:30", and four digits ("0930") too, because the iPhone number pad has no
  * ":" key. Digits only must be four: "143" could be 01:43 or a dropped digit from 14:30, so it is
  * refused like "14:3", "14", "24:00" and "9h30". A half-typed time never becomes a time nobody typed.
  */
 export function minuteOfDayFromClockText(text: string): number | undefined {
+  // Page scores 16 Nov 2026: screens show am/pm (D-219 item 6), so a box also reads "11:59 pm",
+  // "11:59pm", "9 am" or "9.30 a.m.". Hours 1 to 12 with am or pm; 12 am is midnight.
+  const meridiem = /^(\d{1,2})(?:[:.](\d{2}))?\s*([ap])\.?\s*m\.?$/i.exec(text.trim());
+  if (meridiem) {
+    const hour = Number(meridiem[1]);
+    const minute = Number(meridiem[2] ?? "0");
+    if (hour < 1 || hour > 12 || minute > 59) return undefined;
+    const pm = meridiem[3]?.toLowerCase() === "p";
+    return ((hour % 12) + (pm ? 12 : 0)) * 60 + minute;
+  }
   const match = /^(?:(\d{1,2}):(\d{2})|(\d{2})(\d{2}))$/.exec(text.trim());
   if (!match) return undefined;
   const hours = Number(match[1] ?? match[3]);

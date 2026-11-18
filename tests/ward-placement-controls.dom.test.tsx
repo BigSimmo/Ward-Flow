@@ -135,6 +135,9 @@ describe("canonical placement actions", () => {
     const accept = screen.getByTestId("ward-referral-match-phone-accept");
     expect(accept).toHaveTextContent("Choose a ward first");
     expect(accept).toHaveAccessibleDescription("Choose a ward first.");
+    // Live walk 16 Nov 2026: said once; no drawn touch line repeats the label under the button.
+    const touchLines = [...document.querySelectorAll("[data-touch-reason]")].map((node) => node.textContent);
+    expect(touchLines).not.toContain("Choose a ward first.");
     expect(screen.queryByText(/^Accept at /u)).toBeNull();
     // The ward choices only: the withdraw recorder is a two-way choice of radios too (#1348).
     const radios = screen.getAllByTestId(/^ward-referral-match-phone-cand-/u);

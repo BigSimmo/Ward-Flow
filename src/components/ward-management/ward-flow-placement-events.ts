@@ -580,8 +580,10 @@ export function reducePlacementEvent(
       // The numbered referral arm and movement describe the same released commitment.
       const withoutPhantom = withoutReferralBedHold(bedReleased, movement);
       // Never closes the movement, never clears `legalForm`, never touches `referredUnitIds` —
-      // the patient survives and keeps their acceptance; only the pull itself unwinds.
-      const updatedMovement: Movement = {
+      // the patient survives and keeps their acceptance; only the pull itself unwinds. D-262 is the
+      // one exception: the Undo of a one-tap pull also ends the journey that same tap started.
+      const endsJourney = event.endsStartedJourney === true && event.expectedPull !== undefined;
+      const released: Movement = {
         ...movement,
         stage: "accepted_awaiting_bed",
         referralSourceAdmissionId: undefined,
@@ -603,6 +605,19 @@ export function reducePlacementEvent(
           { at: event.now, from: movement.stage, to: "accepted_awaiting_bed", by: event.role, reason: event.reason },
         ],
       };
+      // The referral keeps its acceptance, so it is offered for Pull the bed again (RAISE_REFERRAL
+      // allows a new journey once the last one closed as "did not proceed").
+      const updatedMovement: Movement = endsJourney
+        ? {
+            ...released,
+            blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,
+            closure: {
+              at: event.now,
+              outcome: "did_not_proceed",
+              reason: "Bed pull undone; the journey did not start",
+            },
+          }
+        : released;
       const next = replaceMovement(withoutPhantom, movement.id, updatedMovement);
       // Addendum §1.3: "a referrer not told goes on believing a bed is coming."
       return appendNotices(next, [

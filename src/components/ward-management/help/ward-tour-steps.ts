@@ -676,7 +676,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Finding your way",
           "export",
-          { sel: '[data-testid="ward-statistics-export"]' },
+          { sel: '[data-testid="ward-statistics-export"], [data-testid="ward-statistics-tools-menu"]' },
           "Take the figures with you",
           "Export the figures downloads the figures at the top of the page as a spreadsheet, for a report or briefing.",
         ),
@@ -702,7 +702,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "review",
           HERO,
           "What is waiting for review",
-          "How many events wait for review. When there are some, the chips count overrides, refused or stale actions, record access, patterns and follow-ups, and the ring counts how many are reviewed.",
+          "How many events wait for review. When there are some, the chips count overrides, steps not saved, record access, repeat break glass and follow-ups, and the ring counts how many are reviewed.",
         ),
         step(
           "Your daily work",

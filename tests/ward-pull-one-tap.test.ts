@@ -8,6 +8,8 @@ import { observationAt } from "@/components/ward-management/ward-observation";
 import { acceptedAddressing } from "@/components/ward-management/ward-referrals";
 import { NOW_ANCHOR, allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { startsAcceptedJourneyAtEd } from "@/components/ward-management/referrals/accepted-awaiting-pull";
+import { bedPullUndoEvent, startedJourneyPull } from "@/components/ward-management/ward-bed-pull-undo";
+import { openEdJourneys } from "@/components/ward-management/ward-shared-figures";
 
 /**
  * WT-08 (walk-through, 26 Oct 2026; Josh approved one tap): the first Pull the bed tap started the
@@ -76,5 +78,40 @@ describe("Pull the bed is one tap (WT-08)", () => {
     expect(next.rejections).toHaveLength(state.rejections.length + 1);
     expect(next.rejections.at(-1)?.attempted).toBe("RAISE_REFERRAL");
     expect(next.rejections.at(-1)?.reason).toMatch(/no Ready bed/u);
+  });
+
+  it("Undo of a one-tap pull also ends the journey it started, so the counts are as before (D-262)", () => {
+    const state = seedWardFlowState();
+    const { event, referralId, unitId } = onePull(state);
+    const before = new Set(state.movements.filter((m) => m.referralId === referralId).map(({ id }) => id));
+    const waitingBefore = openEdJourneys(state.movements, NOW_ANCHOR).total;
+    const awaitingBefore = acceptedReferralsAwaitingPull(state.referrals, state.units, state.movements).length;
+    const pulled = wardFlowReducer(state, event);
+    const target = startedJourneyPull(pulled.movements, referralId, before, unitId);
+    expect(target?.startedJourney).toBe(true);
+    const undone = wardFlowReducer(pulled, bedPullUndoEvent("coordinator", NOW_ANCHOR + 1, target!));
+    expect(undone.rejections).toEqual(pulled.rejections);
+    const journey = undone.movements.find((m) => m.id === target!.movementId);
+    expect(journey?.closure?.outcome).toBe("did_not_proceed");
+    expect(openEdJourneys(undone.movements, NOW_ANCHOR + 1).total).toBe(waitingBefore);
+    const awaiting = acceptedReferralsAwaitingPull(undone.referrals, undone.units, undone.movements);
+    expect(awaiting).toHaveLength(awaitingBefore);
+    expect(awaiting.some((item) => item.referral.id === referralId)).toBe(true);
+    // The referral can be pulled again after the Undo.
+    const again = wardFlowReducer(undone, { ...event, now: NOW_ANCHOR + 2 } as WardFlowEvent);
+    expect(again.rejections).toEqual(undone.rejections);
+  });
+
+  it("an Undo of a pull on a journey already on the board still leaves the journey open", () => {
+    const state = seedWardFlowState();
+    const { event, referralId, unitId } = onePull(state);
+    const before = new Set<string>();
+    const pulled = wardFlowReducer(state, event);
+    const target = startedJourneyPull(pulled.movements, referralId, before, unitId)!;
+    const plain = { movementId: target.movementId, unitId: target.unitId, stageIndex: target.stageIndex };
+    const undone = wardFlowReducer(pulled, bedPullUndoEvent("coordinator", NOW_ANCHOR + 1, plain));
+    const journey = undone.movements.find((m) => m.id === target.movementId);
+    expect(journey?.closure).toBeUndefined();
+    expect(journey?.stage).toBe("accepted_awaiting_bed");
   });
 });

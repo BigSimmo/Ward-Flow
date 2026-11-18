@@ -21,7 +21,7 @@ import {
   minuteOfDay,
   MINUTES_PER_DAY,
 } from "@/components/ward-management/ward-clock";
-import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
+import { typedClock, type LegalClockFace } from "@/components/ward-management/ward-legal-time-as-typed";
 import { isStoppedTransportAwaitingRelease, transportLeg } from "@/components/ward-management/ward-derivations";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
@@ -477,13 +477,19 @@ export function destinationText(row: HandoverRow): string {
 }
 
 /** Short due text for the table: whichever comes first of a bed hold and a typed form time. */
-export function dueShort(row: HandoverRow, now: Instant, dayZero?: Date): string | null {
+export function dueShort(
+  row: HandoverRow,
+  now: Instant,
+  dayZero?: Date,
+  face: LegalClockFace = "screen",
+): string | null {
   const collected = isCollected(row);
   const hold = collected ? null : bedHold(row.pullExpiresAt, now);
   if (hold !== null && (row.formDueAt === undefined || hold.expiresAt <= row.formDueAt)) {
     return hold.state === "lapsed" ? hold.label : `Pull ends ${formatInstantWithDay(hold.expiresAt, now)}`;
   }
-  if (row.formDueAt !== undefined) return `${row.formCode ?? "Form"} due ${typedClock(row.formDueAt, now, dayZero)}`;
+  if (row.formDueAt !== undefined)
+    return `${row.formCode ?? "Form"} due ${typedClock(row.formDueAt, now, dayZero, face)}`;
   // AR-1: a delivered journey is still `moving` until the ward confirms, but is no longer in transit.
   if (collected && deliveredAwaitingWard(row.movement)) return movementStatusLabel(row.movement);
   return collected ? "In transit" : null;
@@ -498,6 +504,7 @@ export function dueParts(
   now: Instant,
   dayZero?: Date,
   thresholds?: DueSoonThresholds,
+  face: LegalClockFace = "screen",
 ): { when: string; what: string; atRisk?: boolean } | null {
   const collected = isCollected(row);
   if (
@@ -521,7 +528,7 @@ export function dueParts(
     }
   }
   if (row.formDueAt !== undefined)
-    return { when: typedClock(row.formDueAt, now, dayZero), what: `${row.formCode ?? "Form"} due` };
+    return { when: typedClock(row.formDueAt, now, dayZero, face), what: `${row.formCode ?? "Form"} due` };
   // AR-1: the delivered wording, split as movementStatusLabel reads it.
   if (collected && deliveredAwaitingWard(row.movement))
     return { when: "Arrived at ward", what: "Awaiting ward confirmation" };
@@ -529,7 +536,12 @@ export function dueParts(
 }
 
 /** Long due text for the panel: the bed hold and the typed form time, both when both are held. */
-export function dueLong(row: HandoverRow, now: Instant, dayZero?: Date): string | null {
+export function dueLong(
+  row: HandoverRow,
+  now: Instant,
+  dayZero?: Date,
+  face: LegalClockFace = "screen",
+): string | null {
   const parts: string[] = [];
   const hold = shownBedHold(row, now);
   if (hold) {
@@ -541,7 +553,7 @@ export function dueLong(row: HandoverRow, now: Instant, dayZero?: Date): string 
     parts.push(
       isTimePassed(row.formDueAt, now)
         ? `Form ${row.formCode} time passed`
-        : `Form ${row.formCode} due ${typedClock(row.formDueAt, now, dayZero)}`,
+        : `Form ${row.formCode} due ${typedClock(row.formDueAt, now, dayZero, face)}`,
     );
   }
   return parts.length ? parts.join(". ") : null;
@@ -916,7 +928,8 @@ export function summaryText(
     if (group.rows.length === 0) continue;
     lines.push("", `${group.title} (${group.rows.length})`);
     for (const row of group.rows) {
-      const due = dueLong(row, now, dayZero);
+      // D-254: the handover sheet text is a printed or exported copy, so its legal times are 24-hour.
+      const due = dueLong(row, now, dayZero, "sheet");
       lines.push(
         `- ${row.name} ${row.umrn}, T${row.tier}, ${row.edShort}, waiting ${durMinutes(now - row.openedAt)}, ${handoverStatusLabel(
           row,

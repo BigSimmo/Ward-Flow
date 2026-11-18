@@ -65,7 +65,7 @@ function renderRow(movement: Movement) {
 describe("Movements row legal line, as typed", () => {
   it("shows a near typed time with its standing word, a danger glyph first and the tag after", () => {
     const line = renderRow(withForm({ code: "3B", kind: "detention", dueAt: NOW_ANCHOR + urgentMinutes / 2 }));
-    expect(line.textContent).toMatch(/^ends \S+ · within \S+/u);
+    expect(line.textContent).toMatch(/^ends \d{1,2}:\d{2} [ap]m · within \S+/u);
     expect(line.firstElementChild).toHaveAttribute("data-wf-glyph", "danger");
     expect(line.querySelector('[data-testid="legal-limits-not-checked"]')).toBeNull(); // D-218: tag gone
     expect(line.textContent).not.toMatch(/ - |left|ago|overdue/u);
@@ -81,7 +81,7 @@ describe("Movements row legal line, as typed", () => {
 
   it("says ended, as typed, once the typed time has gone by", () => {
     const line = renderRow(withForm({ code: "3B", kind: "detention", dueAt: NOW_ANCHOR - 30 }));
-    expect(line.textContent).toMatch(/^ended \S+ · passed/u);
+    expect(line.textContent).toMatch(/^ended \d{1,2}:\d{2} [ap]m · passed/u);
     expect(line.firstElementChild).toHaveAttribute("data-wf-glyph", "danger");
     expect(line.textContent).not.toContain("30 min");
   });
@@ -113,7 +113,7 @@ describe.each([false, true])("Movement pop-up legal line, as typed (phone=%s)", 
       />,
     );
     const dialog = screen.getByRole("dialog");
-    expect(dialog).toHaveTextContent(/ends \S+ · within \S+/u);
+    expect(dialog).toHaveTextContent(/ends \d{1,2}:\d{2} [ap]m · within \S+/u);
     expect(dialog.querySelector('[data-testid="legal-limits-not-checked"]')).toBeNull(); // D-218: tag gone
     expect(dialog.querySelector('[data-wf-glyph="danger"]')).toBeInTheDocument();
   });

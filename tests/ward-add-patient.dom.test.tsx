@@ -863,6 +863,20 @@ describe("AddPatientForm safety regressions", () => {
     expectNoIndigenousAnswer();
   });
 
+  // 16 Nov live walk: the Street address box says its length limit beside it, from its own maxLength.
+  it("shows the street address length limit as the box's help line", () => {
+    renderForm();
+    const address = screen.getByLabelText("Street address");
+    expect(address).toHaveAttribute("maxLength", "4000");
+    expect(address).toHaveAccessibleDescription("Up to 4,000 characters");
+  });
+
+  // 16 Nov live walk: the Sex hint reads in full on a row of its own.
+  it("gives the sex choices a row of their own with the full hint", () => {
+    renderForm();
+    expect(screen.getByText("Wards need it to accept")).toBeInTheDocument();
+  });
+
   // RF7 (Josh, 3 Nov 2026): the folded details reach the record; blanks are left unrecorded.
   it("saves the folded details on the record and leaves blank ones out", async () => {
     renderForm();

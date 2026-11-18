@@ -219,7 +219,7 @@ describe("Ward answer current facts", () => {
 
     const capacityPanel = screen.getByRole("region", { name: "Confirm your beds" });
     expect(screen.getAllByTestId("ward-capacity-form")).toHaveLength(1);
-    expect(within(capacityPanel).getByText("Empty")).toBeInTheDocument();
+    expect(within(capacityPanel).getByText("Empty, any state")).toBeInTheDocument();
     expect(within(capacityPanel).getByText("Confirmed free")).toBeInTheDocument();
 
     const nextCapacity = HISTORY_UNIT.allocatable.value + 1;

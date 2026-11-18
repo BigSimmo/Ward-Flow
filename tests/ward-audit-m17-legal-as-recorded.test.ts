@@ -147,7 +147,7 @@ function expectAsRecorded(outputs: Outputs, movement: Movement, now: Instant, la
     typedExpiryAt: dueAt,
   });
   expect(outputs.printStatus, `${label}: printed handover`).toBe(name);
-  expect(outputs.printExpiry, `${label}: printed handover`).toBe(typedTimeLine(dueAt, now, DAY_ZERO));
+  expect(outputs.printExpiry, `${label}: printed handover`).toBe(typedTimeLine(dueAt, now, DAY_ZERO, "sheet"));
   for (const [where, text] of Object.entries({
     page: outputs.page,
     shared: outputs.shared,
@@ -205,8 +205,10 @@ describe("M17: one form, edited, replaced and lapsed, reads the same on every ou
     const outputs = outputsAt(edited, NOW + 1);
     expectAsRecorded(outputs, movement, NOW + 1, "edited");
     const oldClock = typedClock(movementOf(recorded).legalForm!.dueAt!, NOW + 1, DAY_ZERO);
-    for (const text of [outputs.page, outputs.shared, outputs.tv, outputs.printExpiry])
-      expect(text).not.toContain(oldClock);
+    for (const text of [outputs.page, outputs.shared, outputs.tv]) expect(text).not.toContain(oldClock);
+    // D-254: the printed pack keeps the 24-hour face, so its old time is the sheet face.
+    const oldSheetClock = typedClock(movementOf(recorded).legalForm!.dueAt!, NOW + 1, DAY_ZERO, "sheet");
+    expect(outputs.printExpiry).not.toContain(oldSheetClock);
   });
 
   it("shows the second form, never the first, once a second form is recorded", () => {

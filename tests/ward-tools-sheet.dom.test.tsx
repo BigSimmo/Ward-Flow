@@ -471,7 +471,7 @@ describe("Form times on the Perth clock", () => {
     fireEvent.click(screen.getByTestId("ward-form-times-form"));
     expect(screen.getByRole("menuitemradio", { name: /^Form 4A/u })).toBeTruthy();
     fireEvent.click(screen.getByRole("menuitemradio", { name: /^Form 1A/u }));
-    expect(result).toHaveTextContent("09:15");
+    expect(result).toHaveTextContent("9:15 am");
     expect(result).not.toHaveTextContent("as typed");
   });
 

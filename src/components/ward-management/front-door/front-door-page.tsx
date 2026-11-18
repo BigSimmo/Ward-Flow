@@ -115,7 +115,9 @@ function DemoCodeDoor({ next }: { next: string }) {
             <h1>Explore the demo</h1>
             <p>Enter the demo code you were given. The demo runs on made-up records across the network.</p>
           </header>
-          {problem && <DoorBanner tone="danger" icon="alert" title={problem.title} body={problem.body} />}
+          {problem && (
+            <DoorBanner id={`${uid}-problem`} tone="danger" icon="alert" title={problem.title} body={problem.body} />
+          )}
           <div className={styles.field}>
             <label htmlFor={`${uid}-code`}>Demo code</label>
             <div className={styles.inwrap}>
@@ -136,6 +138,8 @@ function DemoCodeDoor({ next }: { next: string }) {
                 maxLength={64}
                 disabled={busy}
                 aria-invalid={problem !== null || undefined}
+                // Live walk 16 Nov 2026: the wrong-code message is the field's description.
+                aria-describedby={problem !== null ? `${uid}-problem` : undefined}
               />
             </div>
           </div>

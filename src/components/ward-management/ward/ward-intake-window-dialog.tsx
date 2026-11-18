@@ -90,7 +90,7 @@ export function WardIntakeWindowDialog({
       onClose={onClose}
       size="sm"
       title="Tonight's intake hours"
-      description={`The hours tonight ${unit.name} can take an admission. For information only: it never stops a referral. It clears at 07:00.`}
+      description={`The hours tonight ${unit.name} can take an admission. For information only: it never stops a referral. It clears at 7:00 am.`}
       secondary={[
         { label: "Cancel", onAction: onClose },
         ...(hasTonight ? [{ label: "Clear", onAction: () => send(null) }] : []),

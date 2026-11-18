@@ -720,13 +720,16 @@ test.describe("@mockup Movements timeline fits its rows on a ward desktop monito
     test.setTimeout(120_000);
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto("/bedchart/movements", { waitUntil: "networkidle" });
-    // M3 (Josh, 3 Nov 2026): the worklist leads and the timeline sits behind a switch, off by default.
-    const timelineSwitch = page.getByRole("switch", { name: "Show timeline" });
-    // A click before hydration is lost, so retry until the switch reports on and the chart has drawn.
+    // D-265 (Josh, 18 Nov 2026): a Graph | Table control under "Today’s traffic" replaces the M3
+    // Shown/Hidden switch. Graph is the default, but a stored "Table" would hide the chart.
+    const graphOption = page
+      .getByRole("radiogroup", { name: "Show today’s traffic as" })
+      .getByRole("radio", { name: "Graph" });
+    // A click before hydration is lost, so retry until Graph reports chosen and the chart has drawn.
     const filter = page.getByRole("combobox", { name: "Filter movement horizon by health service" });
     await expect(async () => {
-      if ((await timelineSwitch.getAttribute("aria-checked")) !== "true") await timelineSwitch.click();
-      await expect(timelineSwitch).toHaveAttribute("aria-checked", "true", { timeout: 2_000 });
+      if ((await graphOption.getAttribute("aria-checked")) !== "true") await graphOption.click();
+      await expect(graphOption).toHaveAttribute("aria-checked", "true", { timeout: 2_000 });
       await expect(filter).toBeVisible({ timeout: 2_000 });
     }).toPass({ timeout: 30_000 });
     const options = await filter.locator("option").evaluateAll((nodes) =>

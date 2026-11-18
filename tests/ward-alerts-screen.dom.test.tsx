@@ -92,6 +92,14 @@ function checkingList() {
 }
 
 describe("the Alerts screen reports on every condition it watches, firing or not", () => {
+  // 16 Nov walk: the printed list says when it was printed at the top as well as at the foot.
+  it("heads the list with a print-only Printed by line, before the hero", () => {
+    renderScreen();
+    const stamp = screen.getByTestId("ward-alerts-print-stamp");
+    expect(stamp.textContent).toMatch(/^Printed by .+ board time/u);
+    expect(stamp.closest("main")?.firstElementChild).toBe(stamp);
+  });
+
   it("retains visible wording in acknowledged alert action names", () => {
     renderScreen();
     fireEvent.click(screen.getAllByTestId("ward-alerts-open")[0]!);
@@ -337,6 +345,8 @@ describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => 
       const broadcast = hero.getByTestId("ward-alerts-broadcast");
       expect(broadcast).toHaveTextContent("Broadcast alert");
       expect(broadcast.className).not.toBe(next.className);
+      // 16 Nov walk: the hero's quiet meta line says how fresh the list is, on the am/pm clock.
+      expect(screen.getByTestId("ward-alerts-hero")).toHaveTextContent(/Updated \d{1,2}:\d{2} [ap]m/u);
     } finally {
       vi.unstubAllGlobals();
     }

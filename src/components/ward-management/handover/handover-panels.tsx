@@ -156,7 +156,7 @@ export function HandoverFlowPanel({
       "Form time",
       row.formCode
         ? row.formDueAt !== undefined
-          ? typedClock(row.formDueAt, now, ctx.dayZero)
+          ? typedClock(row.formDueAt, now, ctx.dayZero, ctx.face)
           : "None typed"
         : noFormWords(row.legalStatus),
     ],

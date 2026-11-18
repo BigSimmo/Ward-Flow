@@ -41,6 +41,7 @@ import { WardSkipToActNow } from "@/components/ward-management/shell/ward-skip-t
 import { TvLockGuard } from "@/components/ward-management/bed-meeting/tv-lock-guard";
 import { TvLockFallbackHost } from "@/components/ward-management/bed-meeting/tv-lock-fallback-host-lazy";
 import { ReferralSheetHost } from "@/components/ward-management/referrals/referral-sheet-host";
+import { WardUndoWorldClear } from "@/components/ward-management/demo-reset/ward-undo-world-clear";
 import {
   WardWorkspaceHost,
   WardExecutiveChromeMount,
@@ -231,6 +232,8 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
               <WardRowDensity />
               <WardLiveRegion />
               <WardActNowNotifier />
+              {/* Reset demo closes any Undo toast still waiting (live walk 16 Nov 2026). Renders nothing. */}
+              <WardUndoWorldClear />
               {/* RQ9: the Referral sheet any patient panel's Referral button opens (referral-sheet-bus.ts). */}
               <ReferralSheetHost />
               <WardPwaRegistration />

@@ -1,61 +1,87 @@
 "use client";
 
 /**
- * Timeline switch (M3, approved 3 Nov 2026). The day's timeline sits behind one switch on a tablet
- * or laptop. Josh's Note 7 (8 Nov 2026): it is shown by default; hiding it is remembered on this
- * device only. The bar keeps the one fact worth seeing without the chart (active corridors).
+ * Graph or Table switch (Josh, 18 Nov 2026, D-265; replaces the M3 Shown/Hidden switch of 3 Nov and
+ * Note 7 of 8 Nov). The 48-hour timeline keeps its place under the stage cards. One switch on its bar
+ * swaps it for the people list in the same spot: "Graph" (the default) shows the timeline, "Table"
+ * puts the worklist there instead. The choice is remembered on this device only; a stored "off" from
+ * the old switch reads as "Table". The bar keeps the one fact worth seeing without the chart.
  */
 import { useSyncExternalStore, type ReactNode } from "react";
-import { ChartGantt } from "lucide-react";
 
-import { IconTile } from "@/components/wf";
-
-import { Switch } from "@/components/wf";
+import { Segmented } from "@/components/wf";
 import s from "./movements-timeline-switch.module.css";
 
 const KEY = "ward-flow-movements-timeline";
 
-function readPref(): boolean {
+export type TrafficView = "graph" | "table";
+
+function readPref(): TrafficView {
   try {
-    return window.localStorage.getItem(KEY) !== "off";
+    const stored = window.localStorage.getItem(KEY);
+    return stored === "off" || stored === "table" ? "table" : "graph";
   } catch {
-    return true;
+    return "graph";
   }
 }
 
 const listeners = new Set<() => void>();
-let memory: boolean | undefined;
+let memory: TrafficView | undefined;
 
 function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
 
-// The server render and hydration read "shown", then a stored "off" applies.
+// The server render and hydration read "graph", then a stored "table" applies.
 const snapshot = () => memory ?? readPref();
-const serverSnapshot = () => true;
+const serverSnapshot = (): TrafficView => "graph";
 
-export function MovementsTimelineSwitch({ summary, children }: { summary: string; children: ReactNode }) {
-  const on = useSyncExternalStore(subscribe, snapshot, serverSnapshot);
-  const change = (next: boolean) => {
-    memory = next;
-    try {
-      window.localStorage.setItem(KEY, next ? "on" : "off");
-    } catch {
-      // Private window or blocked storage: the switch still works for this visit.
-    }
-    listeners.forEach((listener) => listener());
-  };
+function setTrafficView(next: TrafficView) {
+  // Only a fixed word is stored, never the control's value itself (CodeQL clear-text storage: the
+  // shared segmented control also carries patient fields elsewhere, so its value reads as sensitive).
+  memory = next === "table" ? "table" : "graph";
+  try {
+    window.localStorage.setItem(KEY, memory === "table" ? "table" : "graph");
+  } catch {
+    // Private window or blocked storage: the switch still works for this visit.
+  }
+  listeners.forEach((listener) => listener());
+}
+
+/** The remembered view, for the screen to put the worklist in the timeline's place. */
+export function useTrafficView(): TrafficView {
+  return useSyncExternalStore(subscribe, snapshot, serverSnapshot);
+}
+
+export function MovementsTimelineSwitch({
+  summary,
+  tableSummary,
+  children,
+}: {
+  /** What the bar says while the graph shows (active corridors). */
+  summary: string;
+  /** What the bar says while the table shows instead. */
+  tableSummary: string;
+  children: ReactNode;
+}) {
+  const view = useTrafficView();
   return (
     <>
-      <div className={s.bar} data-open={on ? "true" : undefined} data-testid="movements-timeline-switch">
-        {/* Movements audit item 9 (9 Nov 2026): the same icon tile and title as every section. */}
-        <IconTile icon={ChartGantt} />
-        <span className={s.title}>Timeline</span>
-        <span className={s.summary}>{summary}</span>
-        <Switch checked={on} onCheckedChange={change} label="Show timeline" onText="Shown" offText="Hidden" />
+      <div className={s.bar} data-testid="movements-timeline-switch">
+        <h2 className={s.title}>Today’s traffic</h2>
+        <span className={s.summary}>{view === "graph" ? summary : tableSummary}</span>
+        <Segmented
+          label="Show today’s traffic as"
+          items={[
+            { id: "graph", label: "Graph" },
+            { id: "table", label: "Table" },
+          ]}
+          value={view}
+          onChange={setTrafficView}
+        />
       </div>
-      {on ? children : null}
+      {view === "graph" ? children : null}
     </>
   );
 }

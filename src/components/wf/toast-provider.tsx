@@ -80,6 +80,11 @@ export type ToastApi = {
   savesOnDevice?: () => boolean;
   /** Whether the toast with this id is still on screen (not closed, timed out or pushed out). */
   isShown?: (id: string) => boolean;
+  /**
+   * Closes every Undo toast still offering Undo, as its X would (live walk 16 Nov 2026), for a world
+   * change such as a demo reset that leaves nothing for those Undos to undo.
+   */
+  dismissUndo?: () => void;
 };
 
 /**
@@ -96,6 +101,7 @@ type ToastContextValue = {
   push: (toast: ToastInput) => string;
   dismiss: (id: string) => void;
   isShown: (id: string) => boolean;
+  dismissUndo: () => void;
   /** Runs Undo and closes its toast unless the caller temporarily blocks it with false. */
   undoAndDismiss: (id: string, onUndo: ToastUndo["onUndo"]) => void | false;
   savesOnDevice: () => boolean;
@@ -195,6 +201,10 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
 
   const isShown = useCallback((id: string) => toastsRef.current.some((toast) => toast.id === id), []);
 
+  const dismissUndo = useCallback(() => {
+    for (const toast of toastsRef.current.filter((current) => current.undo)) dismiss(toast.id);
+  }, [dismiss]);
+
   // Settles the toast before the caller's onUndo runs, so nothing that callback does (closing or
   // pushing out its own toast) can also expire it, and the toast still closes if the callback throws.
   // A temporary refusal keeps the same mounted toast and its remaining window.
@@ -291,8 +301,8 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
   }, [push]);
 
   const value = useMemo(
-    () => ({ toasts, push, dismiss, isShown, undoAndDismiss, savesOnDevice }),
-    [toasts, push, dismiss, isShown, undoAndDismiss, savesOnDevice],
+    () => ({ toasts, push, dismiss, isShown, dismissUndo, undoAndDismiss, savesOnDevice }),
+    [toasts, push, dismiss, isShown, dismissUndo, undoAndDismiss, savesOnDevice],
   );
 
   return (
@@ -322,9 +332,10 @@ export function useOptionalToast(): ToastApi | null {
   const dismiss = context?.dismiss;
   const savesOnDevice = context?.savesOnDevice;
   const isShown = context?.isShown;
+  const dismissUndo = context?.dismissUndo;
   return useMemo(
-    () => (push && dismiss ? { push, dismiss, savesOnDevice, isShown } : null),
-    [push, dismiss, savesOnDevice, isShown],
+    () => (push && dismiss ? { push, dismiss, savesOnDevice, isShown, dismissUndo } : null),
+    [push, dismiss, savesOnDevice, isShown, dismissUndo],
   );
 }
 

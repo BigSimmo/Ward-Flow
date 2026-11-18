@@ -133,6 +133,7 @@ export function ReferralCoordinatorTop({
         testId={isPhone ? "ward-referral-phone-hero" : undefined}
       >
         <HeroTop
+          className={top.heroTop}
           testId="ward-referral-top"
           figures={
             <HeroFigures

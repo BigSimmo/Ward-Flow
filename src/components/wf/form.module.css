@@ -494,6 +494,20 @@
   border-right: 1px solid var(--wf-line);
 }
 
+/* A stepper whose value can also be typed (live walk 16 Nov 2026): the box reads as the plain value. */
+.stpInput {
+  box-sizing: content-box;
+  align-self: stretch;
+  margin: 0;
+  padding-block: 0;
+  border-top: 0;
+  border-bottom: 0;
+  background: transparent;
+  color: inherit;
+  text-align: center;
+  border-radius: 0;
+}
+
 .unavailable .stp {
   color: var(--wf-dim);
 }

@@ -435,12 +435,19 @@ export function ReferralBoard({
           (arm?.acceptedUnitId ?? (arm?.destination.kind === "psychiatric_ward" ? arm.destination.unitId : undefined)),
       );
       const own = arm?.state === "declined" && arm.decidedBy === WARD_FLOW_ROLE_LABELS[routeRole];
+      // 16 Nov walk: a referrer withdrawal says so, not "decided elsewhere". The referrer is outside
+      // this system and never named (`withdrawalRecordedBy` is the desk that wrote it down).
+      const withdrawnAt = left?.destinations.find(
+        (addressing) => addressing.withdrawnAt !== undefined && addressing.withdrawnAt > watchedReferral.since,
+      )?.withdrawnAt;
       setLeftNotice(
-        own && clock
-          ? `${watchedReferral.name}: you declined this at ${clock}. Choose the next referral from the queue.`
-          : armUnit && clock
-            ? `${watchedReferral.name}: decided by ${armUnit.name} at ${clock}. Choose the next referral from the queue.`
-            : `${watchedReferral.name} was decided elsewhere. Choose the next referral from the queue.`,
+        withdrawnAt !== undefined
+          ? `${watchedReferral.name}: referral withdrawn by the referrer at ${formatInstantWithDay(withdrawnAt, now)}. Choose the next referral from the queue.`
+          : own && clock
+            ? `${watchedReferral.name}: you declined this at ${clock}. Choose the next referral from the queue.`
+            : armUnit && clock
+              ? `${watchedReferral.name}: decided by ${armUnit.name} at ${clock}. Choose the next referral from the queue.`
+              : `${watchedReferral.name} was decided elsewhere. Choose the next referral from the queue.`,
       );
     }
     setWatchedReferral(undefined);

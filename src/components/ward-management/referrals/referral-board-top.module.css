@@ -102,4 +102,16 @@
   .tabs {
     --wf-folder-gap: var(--wf-s-3);
   }
+
+  /* 16 Nov live walk: the phone top ran past half the screen. The same parts, closer together:
+     12px between the rows (was 16px) and 8px under the headline (was 12px). Every control keeps its
+     40px face; nothing is left out. */
+  .heroTop.heroTop {
+    gap: var(--wf-s-3);
+    margin-top: var(--wf-s-2);
+  }
+
+  .heroTop.heroTop > :first-child {
+    gap: var(--wf-s-3);
+  }
 }

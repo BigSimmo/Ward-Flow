@@ -73,6 +73,9 @@ import styles from "./transport-booking-form.module.css";
  */
 const LEGAL_STATUS_FROM_LEGAL_NOW = false;
 
+/** The top line once every answer is given but the person is not medically cleared (D-211). */
+const TRANSFER_PAUSED_LINE = "Transfer paused: not medically cleared. Booking waits for re-clearance.";
+
 /** Answers before anything is chosen. Re-applied on every open, so one patient's answers never reach the next. */
 export const BLANK_TRANSPORT_BOOKING: TransportBookingAnswers = {
   provider: undefined,
@@ -248,7 +251,7 @@ export function estimatedTimeProblem(typed: string): string | undefined {
   const text = typed.trim();
   if (text === "" || minutesFromTimeInput(text) !== undefined) return undefined;
   if (/^(?:24:?00)$/u.test(text)) return `${text} is not a clock time. Type 00:00 and choose Tomorrow.`;
-  return `${text} is not a clock time. Type it like 14:40 or 1440.`;
+  return `${text} is not a clock time. Type it like 2:40 pm or 14:40.`;
 }
 
 export function transportBookingSubmission(
@@ -409,6 +412,12 @@ export function TransportBookingForm({
             <button type="button" className={styles.leftFix} onClick={goToFirstLeft}>
               Add {leftNames[0]}
             </button>
+          </p>
+        ) : paused ? (
+          // 16 Nov walk: with every answer given but no medical clearance, say why Save waits (D-211).
+          <p className={styles.allAnswered} data-testid={tid("left")} role="status">
+            <StatusGlyph tone="warning" size={9} />
+            {TRANSFER_PAUSED_LINE}
           </p>
         ) : (
           <p className={styles.allAnswered} data-testid={tid("left")} role="status">

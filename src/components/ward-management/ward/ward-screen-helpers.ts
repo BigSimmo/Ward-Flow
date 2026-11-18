@@ -4,7 +4,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { handoverScopeValue } from "@/components/ward-management/handover/handover-scope";
 import { currentShift } from "@/components/ward-management/ward-board-time-features";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen, isArrivalLate } from "@/components/ward-management/ward-derivations";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -104,13 +104,11 @@ export function useOptionalSearchParams(): ReturnType<typeof useSearchParams> | 
   }
 }
 
-/** "Day shift 07:00 to 15:00" for the shift `now` falls in, read from the labelled default pattern. */
+/** "Day shift 7:00 am to 3:00 pm" for the shift `now` falls in, read from the labelled default pattern. */
 export function shiftLine(now: Instant): string {
   const shift = currentShift(now);
-  const clock = (value: number) =>
-    `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
   const name = shift.name.charAt(0) + shift.name.slice(1).toLowerCase();
-  return `${name} ${clock(shift.startMinute)} to ${clock(shift.endMinute)}`;
+  return `${name} ${formatInstant(shift.startMinute)} to ${formatInstant(shift.endMinute)}`;
 }
 
 export function arrivalIsLate(movement: Movement, now: Instant): boolean {
