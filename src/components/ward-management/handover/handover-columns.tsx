@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { durMinutes, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
 import { formatInstantWithDay, type DueSoonThresholds, type Instant } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
+import type { LegalClockFace } from "@/components/ward-management/ward-legal-time-as-typed";
 import {
   dueParts,
   destinationText,
@@ -29,6 +30,11 @@ export type ColumnContext = {
   dayZero?: Date;
   /** The Settings warnings, for a pull's running-out mark (audit L3, D-210 (Josh, 14 Nov 2026)). */
   thresholds?: DueSoonThresholds;
+  /**
+   * D-254: the clock face for a legal form time. "sheet" (24-hour) while the browser prints the
+   * screen, so paper never carries am/pm legal times; "screen" (am/pm) otherwise.
+   */
+  face?: LegalClockFace;
 };
 
 export type HandoverColumnId = "pt" | "st" | "wait" | "route" | "lo" | "legal" | "obs" | "due" | "next" | "dec" | "tr";
@@ -179,7 +185,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
     width: 92,
     mono: true,
     cell: (row, ctx) => {
-      const due = dueParts(row, ctx.now, ctx.dayZero, ctx.thresholds);
+      const due = dueParts(row, ctx.now, ctx.dayZero, ctx.thresholds, ctx.face);
       return due ? (
         <span className={styles.two}>
           <b className={`${styles.mono} ${styles.nowrap}`}>
@@ -197,7 +203,8 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
         off
       );
     },
-    paper: (row, ctx) => dueShort(row, ctx.now, ctx.dayZero) ?? "",
+    // The printed sheet always reads the 24-hour face (D-254).
+    paper: (row, ctx) => dueShort(row, ctx.now, ctx.dayZero, "sheet") ?? "",
   },
   {
     // U1 (site review, 12 Oct 2026): the action never truncates, so Next step takes the widest share

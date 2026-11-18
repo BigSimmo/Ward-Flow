@@ -376,8 +376,9 @@ export function HandoverPage() {
   );
   const thresholds = useDueSoonThresholds();
   const ctx: ColumnContext = useMemo(
-    () => ({ now, cutoff, readyBeds, dayZero, thresholds }),
-    [now, cutoff, readyBeds, dayZero, thresholds],
+    // D-254: while the browser prints this screen, legal form times take the 24-hour sheet face.
+    () => ({ now, cutoff, readyBeds, dayZero, thresholds, face: printing ? ("sheet" as const) : ("screen" as const) }),
+    [now, cutoff, readyBeds, dayZero, thresholds, printing],
   );
 
   /* highlight, never hide */

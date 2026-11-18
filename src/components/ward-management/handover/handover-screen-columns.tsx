@@ -51,7 +51,9 @@ export function screenColumnsFor(columns: HandoverColumn[], columnIds: readonly 
             header: "Waiting",
             width: 150,
             cell: (row, cellCtx) => {
-              const due = dueUnderWait ? dueParts(row, cellCtx.now, cellCtx.dayZero, cellCtx.thresholds) : null;
+              const due = dueUnderWait
+                ? dueParts(row, cellCtx.now, cellCtx.dayZero, cellCtx.thresholds, cellCtx.face)
+                : null;
               return (
                 <span className={styles.two}>
                   <b className={styles.mono}>{durMinutes(cellCtx.now - row.openedAt)}</b>
