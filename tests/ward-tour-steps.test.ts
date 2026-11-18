@@ -219,10 +219,10 @@ describe("beds-ready step wording (Josh, 27 Oct 2026)", () => {
 });
 
 describe("executive network wording (report correctness, 3 Nov 2026)", () => {
-  it("names the released ED figure as open ED journeys, never people waiting in ED", () => {
+  it("names the released ED figure as open ED movements, never people waiting in ED", () => {
     for (const device of DEVICES) {
       const text = JSON.stringify(tourSteps("executive", device, { readyBeds: 26, openEdJourneys: 62 }));
-      expect(text, device).toContain("62 open ED journeys");
+      expect(text, device).toContain("62 open ED movements");
       expect(text, device).not.toContain("waiting in ED");
     }
   });

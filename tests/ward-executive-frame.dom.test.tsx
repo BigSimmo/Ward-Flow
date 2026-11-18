@@ -181,9 +181,9 @@ describe("the executive chrome in the new frame", () => {
     fireEvent.click(card);
     const rows = screen.getAllByTestId("ward-rail-bed-alert-row");
     expect(rows).toHaveLength(report.services.length);
-    // The released ED figure is open ED journeys, not people physically waiting (3 Nov 2026).
+    // The released ED figure is open ED movements, not people physically waiting (3 Nov 2026).
     for (const row of rows) {
-      expect(row).toHaveTextContent(/open ED journeys/);
+      expect(row).toHaveTextContent(/open ED movements/);
       expect(row).not.toHaveTextContent(/waiting/);
     }
   });

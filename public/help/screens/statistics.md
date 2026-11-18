@@ -7,7 +7,7 @@ Counts and waits for the network, a service or a ward, worked out from the recor
 ## What is on the screen
 
 1. Choose a view. Network, Compare, Services, Wards, EDs, Teams and Weekly. Every figure is from synthetic records.
-2. Network at a glance. Beds in use, ED journeys open, discharges today and those expected to leave today.
+2. Network at a glance. Beds in use, open ED movements, discharges today and those expected to leave today.
 3. Wards at the line. How many wards are at or over the bed alert line. Show wards takes you to them.
 4. Open a unit. Open a unit finds any ward, ED, service or team and opens its figures.
 5. Export the figures. Downloads the figures at the top of the page as a spreadsheet file. On a phone it is in the … menu.

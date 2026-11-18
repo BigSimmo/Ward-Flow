@@ -486,7 +486,7 @@ function ExecutiveJourneyView({ data, onShowBoard }: { data: ExecutiveReportingF
     <JourneyPresentation
       {...{ onShowBoard, stages, hospitals, waitingSummary }}
       waitingRows={[]}
-      // D-220 item 3: under "Waiting in ED", only people still in an ED (ED journeys open is its own figure).
+      // D-220 item 3: under "Waiting in ED", only people still in an ED (open ED movements is its own figure).
       totalWaiting={data.networkDetails.physicalWaiting}
       totalReady={data.network.beds.ready}
       totalPreparing={data.network.beds.beingMadeReady}

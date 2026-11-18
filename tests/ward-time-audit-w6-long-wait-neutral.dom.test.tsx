@@ -161,7 +161,7 @@ describe("waits past 24 hours read neutral (T5)", () => {
         <StatisticsMapView />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("radio", { name: /^ED journeys open/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /^Open ED movements/ }));
     const key = screen.getByText(/^Ring: longest wait in ED/u);
     expect(key).not.toHaveTextContent(/past 24h/u);
     expect(key).toHaveTextContent("Triangle: over 48h.");

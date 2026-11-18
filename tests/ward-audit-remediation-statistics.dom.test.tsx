@@ -125,7 +125,7 @@ describe("audit remediation: live phone statistics sheets", () => {
 
   it("updates the open ED sheet when its parent's figures change", () => {
     const view = render(summary(1));
-    fireEvent.click(screen.getByRole("button", { name: /^ED journeys open/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Open ED movements/ }));
     expect(within(screen.getByRole("dialog")).getByText("1")).toBeInTheDocument();
     view.rerender(summary(2));
     expect(within(screen.getByRole("dialog")).getByText("2")).toBeInTheDocument();

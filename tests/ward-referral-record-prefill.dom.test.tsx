@@ -47,7 +47,7 @@ afterEach(() => {
   desk.edId = undefined;
 });
 
-/** A seeded person with exactly one open ED journey. */
+/** A seeded person with exactly one open ED movement. */
 function personOnOneJourney() {
   const state = seedWardFlowState();
   for (const movement of state.movements) {
@@ -60,7 +60,7 @@ function personOnOneJourney() {
     );
     if (open.length === 1) return { state, movement, patient };
   }
-  throw new Error("the seed has no person on exactly one open ED journey");
+  throw new Error("the seed has no person on exactly one open ED movement");
 }
 
 function renderWith(change: (movement: Movement) => Movement, patientId: string) {
@@ -101,7 +101,7 @@ describe("the record's facts, read without guessing", () => {
     expect(initialReferrerContact(undefined, null, profileForChromeRole("officer")).name).toBe("");
   });
 
-  it("finds the person's open ED journey and their recorded home region (H-0973, H-0976)", () => {
+  it("finds the person's open ED movement and their recorded home region (H-0973, H-0976)", () => {
     const { state, movement, patient } = personOnOneJourney();
     const found = openEdJourneyFor(patient.id, state);
     expect(found?.movementId).toBe(movement.id);

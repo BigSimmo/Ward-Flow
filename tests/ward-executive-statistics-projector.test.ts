@@ -1189,7 +1189,7 @@ describe("the executive Network aggregate boundary", () => {
   });
 
   it("counts a journey that has left the ED as an ED journey open, so no small difference appears (D-220)", () => {
-    // D-220: the report's ED figure is ED journeys open; a journey in transport is still one. The
+    // D-220: the report's ED figure is open ED movements; a journey in transport is still one. The
     // contract's own refusal of a small exact complement is pinned below.
     const result = project(validMovementSource(6, 0, 0, 1));
     expect(result.people.edJourneysOpen).toEqual({ kind: "exact", value: 6 });

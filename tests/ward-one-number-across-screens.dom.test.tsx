@@ -65,7 +65,7 @@ describe("Home and Statistics print the same figures as the bed meeting sheet (A
       </WardFlowProvider>,
     );
     expect(leadingNumber(screen.getByTestId("home-figure-beds")), "beds ready vs print").toBe(sheet.capacity.ready);
-    expect(leadingNumber(screen.getByTestId("home-figure-ed")), "open ED movements").toBe(
+    expect(leadingNumber(screen.getByTestId("home-figure-ed")), "Open ED movements").toBe(
       openEdJourneys(state.movements, NOW_ANCHOR).total,
     );
     const beds = state.units.reduce((sum, unit) => sum + unit.beds, 0);
@@ -91,7 +91,7 @@ describe("Home and Statistics print the same figures as the bed meeting sheet (A
       leadingNumber(within(chips).getByTestId("ward-statistics-discharges-today-count")),
       "discharged today vs print",
     ).toBe(sheet.discharges.dischargedToday);
-    expect(leadingNumber(figureOf(/^ED journeys open$/u)), "ED journeys open").toBe(
+    expect(leadingNumber(figureOf(/^Open ED movements$/u)), "Open ED movements").toBe(
       openEdJourneys(state.movements, NOW_ANCHOR).total,
     );
   });

@@ -149,8 +149,8 @@ describe("comparison across departments", () => {
         reader.onload = () => resolve(String(reader.result));
         reader.readAsText(exported!);
       });
-      expect(csv).toContain('"ED journeys open","not shown"');
-      expect(csv).not.toContain('"ED journeys open","10"');
+      expect(csv).toContain('"Open ED movements","not shown"');
+      expect(csv).not.toContain('"Open ED movements","10"');
       expect(csv).toContain('"Still in ED","not shown"');
       expect(csv).toContain('"In transit or recorded departure","fewer than 5"');
     } finally {
@@ -238,7 +238,7 @@ describe("comparison across departments", () => {
       </WardFlowProvider>,
     );
     const comparison = screen.getByTestId("ward-stat-ed-comparison");
-    expect(within(comparison).getByRole("columnheader", { name: /^Journeys open$/u })).toBeInTheDocument();
+    expect(within(comparison).getByRole("columnheader", { name: /^Open movements$/u })).toBeInTheDocument();
     expect(within(comparison).getByTestId(`ward-stat-ed-comparison-waiting-${department.id}`)).toHaveTextContent(
       /^2$/u,
     );

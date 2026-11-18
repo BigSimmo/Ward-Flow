@@ -636,7 +636,7 @@ function StatisticsSummaryView({
       ...(expectedToLeaveCount === undefined
         ? []
         : ([[EXPECTED_TO_LEAVE_TODAY_LABEL, expectedToLeaveCount]] as [string, number][])),
-      ["ED journeys open", small(waitingCount)],
+      ["Open ED movements", small(waitingCount)],
       ["Still open", small(stillOpenCount)],
     ],
   };
@@ -694,7 +694,7 @@ function StatisticsSummaryView({
                 id: ed.id,
                 name: ed.name,
                 code: ed.site,
-                meta: String(statisticsCountText(ed.waiting, operationalSmall)) + " ED journeys open",
+                meta: String(statisticsCountText(ed.waiting, operationalSmall)) + " open ED movements",
               })),
             service: (directory?.services ?? HEALTH_SERVICES).map((name) => {
               const count = allPressureWards.filter((ward) => siteByCode(ward.site)?.service === name).length;
@@ -1034,7 +1034,7 @@ function StatisticsSummaryView({
                       { id: "ready", value: availableNow, label: availableNow === 1 ? "bed ready" : "beds ready" },
                       ...(notShown(waitingCount)
                         ? []
-                        : [{ id: "ed", value: small(waitingCount), label: "ED journeys open" }]),
+                        : [{ id: "ed", value: small(waitingCount), label: "Open ED movements" }]),
                       ...(notShown(dischargesCount)
                         ? []
                         : [

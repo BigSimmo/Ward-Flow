@@ -14,7 +14,7 @@ const ARRIVED = 9 * 60 + 7;
 
 function edMovement(overrides: Partial<Movement> = {}): Movement {
   const seed = seedWardFlowState().movements.find((movement) => !movement.closure && movement.originEdId);
-  if (!seed) throw new Error("the seed has no open ED journey");
+  if (!seed) throw new Error("the seed has no open ED movement");
   const rest: Partial<Movement> = { ...seed };
   delete rest.medicalClearance;
   delete rest.referralId;

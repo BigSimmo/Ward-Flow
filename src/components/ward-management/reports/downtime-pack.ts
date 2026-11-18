@@ -87,7 +87,7 @@ export type DowntimePack = {
   shiftChangeAt?: Instant;
   /**
    * Open ED-origin journeys in transit or with a recorded departure. Together with the ED queue,
-   * these partition open ED journeys. Community journeys and ward transfers are excluded.
+   * these partition open ED movements. Community journeys and ward transfers are excluded.
    */
   leftEd: number;
   /**
@@ -240,10 +240,10 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
   };
 }
 
-/** The note beside the ED queue for open ED journeys that have left the department, or null. */
+/** The note beside the ED queue for open ED movements that have left the department, or null. */
 export function leftEdNote(leftEd: number): string | null {
   if (leftEd <= 0) return null;
-  return `${leftEd} more open ED ${leftEd === 1 ? "journey is" : "journeys are"} in transit or ${leftEd === 1 ? "has" : "have"} a recorded departure.`;
+  return `${leftEd} more open ED ${leftEd === 1 ? "movement is" : "movements are"} in transit or ${leftEd === 1 ? "has" : "have"} a recorded departure.`;
 }
 
 /**

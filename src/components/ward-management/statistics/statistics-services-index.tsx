@@ -287,7 +287,7 @@ function ServicesIndexView({
             <HeroStat value={totalBeds} label="Beds" />
             <HeroStat
               value={shown(totalWaiting)}
-              label={<ShortLabel short="Journeys open" full="ED journeys open" />}
+              label={<ShortLabel short="Open movements" full="Open ED movements" />}
             />
           </>
         ),
@@ -338,13 +338,13 @@ function ServicesIndexView({
                     {entry.departments === 0 ? <span className={phone.word}>No ED</span> : shown(entry.waiting)}
                   </span>
                 }
-                time={entry.departments === 0 ? undefined : "ED journeys open"}
+                time={entry.departments === 0 ? undefined : "Open ED movements"}
                 href={entry.openable === false ? undefined : serviceStatisticsHref(entry.service)}
               />
             ))}
           </PhoneList>
           <PhoneDotKey testId="ward-statistics-services-dot-key">
-            {`Amber dot: an open ED journey is past ${LONG_WAIT_HOURS} hours`}
+            {`Amber dot: an open ED movement is past ${LONG_WAIT_HOURS} hours`}
           </PhoneDotKey>
           <PhoneSheetRow
             icon={Send}
@@ -414,7 +414,7 @@ function ServicesIndexView({
                       now={<Now>{`${entry.wards} ${wardsWord(entry.wards)}`}</Now>}
                     >
                       <p className={redesign.outside}>No inpatient beds recorded</p>
-                      <Facts items={[{ value: ed, label: "ED journeys open" }]} />
+                      <Facts items={[{ value: ed, label: "Open ED movements" }]} />
                       {pastLine}
                     </Tile>
                   );
@@ -549,13 +549,13 @@ function ServicesIndexView({
             <StatCard
               id="ed-waits"
               className={index.anchorTarget}
-              title="ED journeys open, by service"
+              title="Open ED movements, by service"
               meta={`${shown(totalWaiting)} open`}
               data-testid="ward-statistics-services-ed-waits"
             >
               <div className={redesign.bars}>
                 <BarList
-                  label="ED journeys open, by originating health service"
+                  label="Open ED movements, by originating health service"
                   track
                   rows={services.map((entry) => ({
                     id: entry.service,

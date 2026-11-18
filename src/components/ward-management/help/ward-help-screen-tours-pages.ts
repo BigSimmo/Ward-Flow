@@ -949,7 +949,7 @@ export const MORE_PAGES: readonly Around[] = [
       {
         target: [STATISTICS_FIGURES, HERO],
         title: "Services at a glance",
-        body: "Each service's share of beds in use. On a phone: services, beds and open ED journeys.",
+        body: "Each service's share of beds in use. On a phone: services, beds and open ED movements.",
       },
       statisticsViews,
       {
@@ -973,14 +973,14 @@ export const MORE_PAGES: readonly Around[] = [
       {
         device: "desk",
         target: id("ward-statistics-services-ed-waits"),
-        title: "ED journeys open",
+        title: "Open ED movements",
         body: "People still in an ED or in transit, counted by service.",
       },
       {
         device: "phone",
         target: id("ward-statistics-services-phone"),
         title: "Each service",
-        body: "Beds in use, wards at the alert line and ED journeys open. Open a service for its own figures.",
+        body: "Beds in use, wards at the alert line and open ED movements. Open a service for its own figures.",
       },
       {
         device: "phone",
@@ -1066,7 +1066,7 @@ export const MORE_PAGES: readonly Around[] = [
       {
         target: [STATISTICS_FIGURES, HERO],
         title: "EDs at a glance",
-        body: "ED journeys open across the network, with the median, how many have no ward yet and how many are flagged urgent.",
+        body: "Open ED movements across the network, with the median, how many have no ward yet and how many are flagged urgent.",
       },
       statisticsViews,
       {
@@ -1094,7 +1094,7 @@ export const MORE_PAGES: readonly Around[] = [
         device: "desk",
         target: id("ward-statistics-eds-table-card"),
         title: "Every ED",
-        body: "Journeys open, no ward yet, longest and median for each ED. Sort by any column.",
+        body: "Open movements, no ward yet, longest and median for each ED. Sort by any column.",
       },
       {
         device: "desk",

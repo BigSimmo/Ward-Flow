@@ -870,7 +870,7 @@ const AROUND: readonly Around[] = [
       ),
       step([named("Network at a glance", '[role="group"]'), PHONE_FIGURES, HERO], {
         title: "Network at a glance",
-        body: "Beds in use, ED journeys open, discharges today and those expected to leave today.",
+        body: "Beds in use, open ED movements, discharges today and those expected to leave today.",
       }),
       step(id("ward-statistics-pressure-act"), {
         title: "Wards at the line",

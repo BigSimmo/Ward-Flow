@@ -4,7 +4,7 @@
  * load Statistics (phone budget); the Statistics-only median is in `ed-statistics-figures.ts`.
  *
  * D-220: Statistics' over 8 h, over 24 h and wait bands count the Waiting in ED population, as
- * Waiting does; "ED journeys open" is its own figure (people in transit included).
+ * Waiting does; "Open ED movements" is its own figure (people in transit included).
  */
 import { defineFigure } from "@/components/ward-management/figures/figure-row";
 import { inEdOver, openEdJourneys, waitingInEds } from "@/components/ward-management/ward-shared-figures";
@@ -34,7 +34,7 @@ export const WAITING_IN_ED_FIGURE = defineFigure({
 
 export const ED_JOURNEYS_OPEN_FIGURE = defineFigure({
   id: "ed-journeys-open",
-  name: "ED journeys open",
+  name: "Open ED movements",
   rule: "Every open ED-origin journey, including people already on the road to a ward.",
   window: "now",
   windowId: "now",
@@ -58,7 +58,7 @@ export const IN_TRANSIT_FIGURE = defineFigure({
   status: "built",
   compute: openEdJourneys,
   home: "`openEdJourneys(...).inTransit` (`ward-shared-figures.ts`)",
-  how: ["ED journeys open less Waiting in ED."],
+  how: ["Open ED movements less Waiting in ED."],
   basis: "D-220",
 });
 

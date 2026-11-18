@@ -627,7 +627,7 @@ function EdPresentation({
         stem: department.id,
         scope: department.name,
         figures: () => [
-          ["ED journeys open", small(onTheList)],
+          ["Open ED movements", small(onTheList)],
           ["Still in ED", stillInEdShown],
           ["In transit or recorded departure", inTransitShown],
           ["Longest wait", longestWaitMinutes !== null ? splitDuration(longestWaitMinutes) : "none"],
@@ -650,7 +650,7 @@ function EdPresentation({
           <>
             <HeroStat
               value={<span data-testid="ward-stat-ed-on-the-list">{small(onTheList)}</span>}
-              label="ED journeys open"
+              label="Open ED movements"
             />
             <HeroStat
               value={longestWaitMinutes !== null ? splitDuration(longestWaitMinutes) : "none"}
@@ -671,7 +671,7 @@ function EdPresentation({
         <>
           <HeroStat
             value={<span data-testid="ward-stat-ed-on-the-list">{small(onTheList)}</span>}
-            label="ED journeys open"
+            label="Open ED movements"
           />
           <HeroStat
             value={longestWaitMinutes !== null ? splitDuration(longestWaitMinutes) : "none"}
@@ -779,13 +779,13 @@ function EdPresentation({
               <div className={styles.tableWrap}>
                 <table className={`${tableClasses.table} ${styles.table}`}>
                   <caption className={styles.srOnly}>
-                    ED journeys open and waits in ED, every emergency department
+                    open ED movements and waits in ED, every emergency department
                   </caption>
                   <thead>
                     <tr>
                       <th scope="col">Department</th>
                       <th scope="col" className={styles.num}>
-                        Journeys open
+                        Open movements
                       </th>
                       <th scope="col" className={styles.num}>
                         Longest

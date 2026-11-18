@@ -28,7 +28,7 @@ export function alertChecks({
   const declineCandidates = openMovements.filter((movement: Movement) => movement.declines.length > 0).length;
   const untriaged = (referrals ?? []).filter((referral) => referral.triagedAt === undefined);
   // RC 3.7 (F-27, 13 Nov 2026): the people Waiting lists, still in an ED (`isWaitingInEd`), at the
-  // shared long-wait boundary (`isLongWait`). It used to count every open ED journey, people in
+  // shared long-wait boundary (`isLongWait`). It used to count every open ED movement, people in
   // transit included, so the number could differ from the Waiting list it opens.
   const prolongedEdCount = openMovements.filter(
     (movement: Movement) => isWaitingInEd(movement) && isLongWait(now - movement.openedAt),

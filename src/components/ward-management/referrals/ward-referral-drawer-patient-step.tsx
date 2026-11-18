@@ -122,7 +122,7 @@ export function ReferralPatientStep({
   // Feature 39: a carried legal status and expiry show in the summary while the form still holds them.
   const carriedNotes = carriedNotesFor(s.carry, s);
   const legalShown = withCarriedLegal(currentPatient, carriedNotes, s.legalStatus);
-  // WS-08 (H-0973): this person already has an open ED journey that starts somewhere else.
+  // WS-08 (H-0973): this person already has an open ED movement that starts somewhere else.
   const journeyElsewhere = openJourney && openJourney.siteCode !== originSiteCode ? openJourney : undefined;
   const originName = siteDirectory.find((site) => site.code === originSiteCode)?.emergencyDepartment?.name;
   const someoneChosen = !!patientRecord || unidentified !== null;

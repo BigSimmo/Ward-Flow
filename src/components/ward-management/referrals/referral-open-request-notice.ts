@@ -17,7 +17,7 @@ export function openRequestNotice(input: {
   referralNotice: { sentence: string | undefined; href: string | undefined };
   /** The one archived D-19 sentence, used for an open bed request too. */
   sameSentence: string;
-  /** The person's open ED journey (`openEdJourneyFor`), if any. */
+  /** The person's open ED movement (`openEdJourneyFor`), if any. */
   openJourney: { movementId: string; siteCode: string } | undefined;
   /** The emergency department this form sends from. */
   originSiteCode: string;

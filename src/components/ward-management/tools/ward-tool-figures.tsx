@@ -52,7 +52,7 @@ function OperationalFigures({ onNavigate }: { onNavigate: () => void }) {
       value: String(totalReadyBedsNow(units, admissions, bedReleases, [...movements, ...referrals])),
     },
     { label: "Occupancy", value: occupied.beds ? `${occupancyPercent(occupied)}%` : "—" },
-    { label: "ED journeys open", value: String(ed.total) },
+    { label: "Open ED movements", value: String(ed.total) },
     { label: "Waiting in ED", value: String(ed.stillInEd) },
   ];
   return <FiguresView figures={figures} now={now} scope="Whole network" onNavigate={onNavigate} />;
@@ -66,7 +66,7 @@ function ExecutiveFigures({ onNavigate }: { onNavigate: () => void }) {
     { label: "Beds ready", value: String(beds.ready) },
     { label: "Occupancy", value: beds.total ? `${occupancyPercent({ beds: beds.total, inUse: beds.inUse })}%` : "—" },
     { label: "Open movements", value: String(releasedCountText(report.network.people.stillOpen)) },
-    { label: "ED journeys open", value: String(releasedCountText(report.network.people.edJourneysOpen)) },
+    { label: "Open ED movements", value: String(releasedCountText(report.network.people.edJourneysOpen)) },
   ];
   return (
     <FiguresView
