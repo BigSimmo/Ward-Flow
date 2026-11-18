@@ -120,9 +120,12 @@ export function parseRuleTyped(
     if (clock !== undefined) return clock;
   }
   if (!/^\d+$/u.test(typed)) return null;
-  const byNumber = reachable.filter((value) =>
-    new RegExp(String.raw`^${typed}[^\d:]*$`, "u").test(plainWords(format(value))),
-  );
+  // The typed digits, then only words (no further digits or clock colon): "3" finds "3 wards", not "30".
+  // Compared as text so typed input never builds a pattern.
+  const byNumber = reachable.filter((value) => {
+    const words = plainWords(format(value));
+    return words.startsWith(typed) && /^[^\d:]*$/u.test(words.slice(typed.length));
+  });
   return byNumber.length === 1 ? byNumber[0]! : null;
 }
 
