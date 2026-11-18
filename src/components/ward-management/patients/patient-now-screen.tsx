@@ -100,7 +100,23 @@ const CarerCallbackCard = dynamic(
 const PatientJourneyHours = dynamic(
   withLoadRetry(() => import("./patient-journey-extras").then((m) => m.PatientJourneyHours)),
 );
+// 18 Nov 2026 (main over its phone script budget on the movement page): the archive panel draws
+// only at the foot of the lazy Details tab, and the medical clearance dialog only once opened, so
+// neither is on the first load. Both are fetched once the page is idle, like the tabs above.
+const loadArchivePanel = () => import("./patient-archive-panel");
+const loadClearanceDialog = () => import("./patient-clearance-dialog");
+const PatientArchivePanel = dynamic(withLoadRetry(() => loadArchivePanel().then((m) => m.PatientArchivePanel)));
+// It stays mounted while closed, so a failed fetch's Try again shows only while it is open.
+const PatientClearanceDialog = dynamic(
+  withLoadRetry(
+    () => loadClearanceDialog().then((m) => m.PatientClearanceDialog),
+    undefined,
+    (props) => !props.open,
+  ),
+);
 preloadWhenIdle(
+  loadArchivePanel,
+  loadClearanceDialog,
   loadTransitOperations,
   loadUploadForms,
   loadHistoryTab,
@@ -153,7 +169,6 @@ import { type ContactRow } from "./patient-now-cards";
 import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
 import { type PatientNowRecord, STAGES, clock, fillTemplate, clockOn } from "./patient-now-records";
 import styles from "./patient-now.module.css";
-import { PatientArchivePanel } from "./patient-archive-panel";
 import { PatientGlance, patientStateTag } from "./patient-glance";
 import { bookedPlannedAdmissionFor, openReferralFor, openReferralSentTo, waitlistedStayFor } from "./patient-open-work";
 import { referralSafetyFacts } from "./patient-referral-safety";
@@ -163,7 +178,7 @@ import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meet
 import { useCanOpenHref, useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { Dialog, PhoneSheet, cx, folderTabClasses, requestConfirm, useIsPhone } from "@/components/wf";
-import { PatientClearanceDialog, type ClearanceDraft } from "./patient-clearance-dialog";
+import type { ClearanceDraft } from "./patient-clearance-dialog";
 import { isOnOrder } from "../ward-stay-legal";
 import { TIER_NOT_RECORDED } from "../ward-priority";
 import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
