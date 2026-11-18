@@ -766,10 +766,10 @@
   [data-census-print-heading],
   [data-census-print-continued] > th {
     box-sizing: border-box;
-    block-size: var(--census-print-line) !important;
+    block-size: var(--census-print-line, 7mm) !important;
     padding: 0 2mm !important;
     border: 0 !important;
-    font: 600 9pt / var(--census-print-line) var(--wf-font, sans-serif) !important;
+    font: 600 9pt / var(--census-print-line, 7mm) var(--wf-font, sans-serif) !important;
     color: var(--wf-print-ink) !important;
     letter-spacing: normal !important;
     text-transform: none !important;
@@ -781,14 +781,122 @@
   [data-census-print-heading] {
     position: relative;
     z-index: 1;
-    margin: 0 0 calc(-1 * var(--census-print-line)) !important;
-    background: #fff !important;
+    margin: 0 0 calc(-1 * var(--census-print-line, 7mm)) !important;
+    background: var(--wf-print-paper) !important;
     break-after: avoid;
   }
 
   [data-census-print-continued] > th {
-    background: #fff !important;
+    background: var(--wf-print-paper) !important;
     font-weight: 400 !important;
     font-style: italic;
+  }
+}
+
+/* ----- Patients short sheet: ED and placement only (option A, approved 18 Nov 2026) -----
+   The Print menu's "ED and placement only" sets data-print-scope on the root and draws
+   census-print.tsx's sheet, which `data-wf-print-doc` prints alone. The same six columns and group
+   tables as the whole list, one compact line per person, the time on one line, the title and print
+   time at the top and the one prototype line at the end. Page numbers come from the default @page. */
+@media print {
+  [data-print-scope="ed-placement"] [data-wf-print-doc="ed-placement"] {
+    --wf-row: auto;
+    font-weight: 400;
+  }
+
+  /* An ancestor's own ::after (the shell's 12px end spacer) spilled a blank last page when the sheet
+     ended near a page foot. */
+  [data-print-scope="ed-placement"] :has([data-wf-print-doc="ed-placement"])::before,
+  [data-print-scope="ed-placement"] :has([data-wf-print-doc="ed-placement"])::after {
+    content: none !important;
+  }
+
+  /* The screen's fixed 68px Tier and 100px Time columns, set for A4's 190mm instead. */
+  [data-print-scope="ed-placement"] [data-census-print-group] col:nth-child(1) {
+    width: 9mm;
+  }
+
+  [data-print-scope="ed-placement"] [data-census-print-group] col:nth-child(2) {
+    width: 45mm;
+  }
+
+  [data-print-scope="ed-placement"] [data-census-print-group] col:nth-child(3) {
+    width: 40mm;
+  }
+
+  [data-print-scope="ed-placement"] [data-census-print-group] col:nth-child(4) {
+    width: 38mm;
+  }
+
+  [data-print-scope="ed-placement"] [data-census-print-group] col:nth-child(5) {
+    width: 41mm;
+  }
+
+  [data-print-scope="ed-placement"] [data-census-print-group] col:nth-child(6) {
+    width: 17mm;
+  }
+
+  [data-print-scope="ed-placement"] [data-census-short-head] {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 4mm;
+    margin: 0 0 3mm;
+    padding-block-end: 2mm;
+    border-block-end: 1px solid var(--wf-print-line);
+  }
+
+  [data-print-scope="ed-placement"] [data-census-short-head] h2 {
+    margin: 0;
+    font: 600 14pt / 1.2 var(--wf-font, sans-serif);
+    color: var(--wf-print-ink);
+  }
+
+  [data-print-scope="ed-placement"] [data-census-short-head] p {
+    margin: 0;
+    font-size: 8pt;
+    color: var(--wf-print-muted);
+  }
+
+  [data-print-scope="ed-placement"] [data-census-short-row] > td {
+    height: auto !important;
+    block-size: auto !important;
+    padding: 0.35mm 1.5mm !important;
+    font-size: 7.5pt !important;
+    line-height: 1.3 !important;
+    vertical-align: top !important;
+  }
+
+  /* The column heads keep one short line. At the screen's height a repeated head near the end left
+     Chromium a blank trailing page. */
+  [data-print-scope="ed-placement"] [data-census-print-group] thead tr:last-child th {
+    height: auto !important;
+    padding-block: 1mm !important;
+  }
+
+  [data-print-scope="ed-placement"] [data-census-short-row] {
+    break-inside: avoid;
+  }
+
+  /* The screen's 20px tier pill set the row height; on the short sheet it fits one text line. */
+  [data-print-scope="ed-placement"] [data-census-short-row] > td:first-child > span {
+    height: auto !important;
+    padding: 0 1.2mm !important;
+    font-size: 7pt !important;
+    line-height: 1.3 !important;
+  }
+
+  [data-print-scope="ed-placement"] [data-census-short-row] [class*="restricted"] {
+    margin-inline-start: 1.5mm;
+  }
+
+  [data-print-scope="ed-placement"] [data-census-short-time] {
+    white-space: nowrap;
+  }
+
+  [data-print-scope="ed-placement"] [data-census-short-foot] {
+    margin: 4mm 0 0;
+    font-size: 7pt;
+    color: var(--wf-print-muted);
   }
 }

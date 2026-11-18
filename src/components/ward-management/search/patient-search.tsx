@@ -114,6 +114,7 @@ import {
   CensusHistory,
   CensusTable,
   type CensusScrollPosition,
+  countPeople,
   PhoneCensus,
   DobField,
   DobToggle,
@@ -124,7 +125,16 @@ import styles from "./search.module.css";
 import cs from "./census.module.css";
 import ct from "./census-top.module.css";
 import { isCommunityReferral } from "./community-referral";
-import { countPatientStates, PATIENT_STATES, patientStateOf, type PatientStateFilter } from "./patient-states";
+import {
+  censusSections,
+  countPatientStates,
+  PATIENT_STATES,
+  patientStateOf,
+  type PatientStateFilter,
+} from "./patient-states";
+import { EdPlacementPrintSheet } from "./census-print";
+import { usePrinting, usePrintScope } from "@/components/ward-management/use-printing";
+import { ListPrintButton, type ListPrintChoice } from "@/components/ward-management/ward-list-print-button";
 import {
   LONG_WAIT_HOURS,
   SHORT_WAIT_HOURS,
@@ -230,6 +240,8 @@ interface UnifiedCaseloadPatient {
 
 export function PatientSearchPage() {
   const zone = useClockZoneLabel();
+  const printing = usePrinting();
+  const printScope = usePrintScope();
   const thresholds = useDueSoonThresholds();
   const {
     movements,
@@ -927,6 +939,20 @@ export function PatientSearchPage() {
     );
   };
 
+  // Print (option A, approved 18 Nov 2026): the whole list as the tab shows it, as Ctrl+P does, or a
+  // short sheet of everyone in ED and in placement, from any tab. Ward, team and not active are left out.
+  const shortRows = refusal ? [] : visibleRows.filter((row) => ["ed", "placement"].includes(patientStateOf(row)));
+  const peopleText = (count: number) => `${count} ${count === 1 ? "person" : "people"}`;
+  const printChoices: ListPrintChoice[] = [
+    { id: "whole", label: "Whole list", meta: peopleText(countPeople(refusal ? [] : stateRows)) },
+    {
+      id: "ed-placement",
+      label: "ED and placement only",
+      meta: peopleText(countPeople(shortRows)),
+      scope: "ed-placement",
+    },
+  ];
+
   // Export (feature 44): the rows on screen, never names; the builder loads on the click.
   const exportList = async () => {
     const narrowed =
@@ -1143,6 +1169,11 @@ export function PatientSearchPage() {
                         icon: <ClipboardList size={16} strokeWidth={1.75} aria-hidden="true" />,
                         onClick: copyList,
                         testId: "ward-patient-search-copy-list",
+                      },
+                      {
+                        id: "print",
+                        label: "Print",
+                        node: <ListPrintButton look="chip" choices={printChoices} testId="ward-patient-search-print" />,
                       },
                     ]}
                   />
@@ -1463,6 +1494,7 @@ export function PatientSearchPage() {
               history={history}
               onCopyList={copyList}
               onExportList={exportList}
+              printChoices={printChoices}
               copyNote={drawerOpen ? null : copyNote}
               empty={refusal ? null : empty}
               notice={refusalNotice}
@@ -1480,6 +1512,13 @@ export function PatientSearchPage() {
           copyNote={copyNote}
           testId="ward-patient-search-details"
         />
+
+        {printing && printScope === "ed-placement" ? (
+          <EdPlacementPrintSheet
+            sections={censusSections(shortRows).filter((section) => section.rows.length > 0)}
+            printedAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })}
+          />
+        ) : null}
 
         <WardPrototypeFooter
           testId="ward-patient-search-governance"

@@ -276,6 +276,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-263](#d-263-mark-absent-asks-first-close-this-bed-asks-a-reason-and-figures-say-expected-not-forecast-18-november-2026)                              | Mark absent asks first, Close this bed asks a reason, and figures say expected, not forecast                  | Active                                           |
 | [D-264](#d-264-a-same-site-move-keeps-its-order-check-the-triage-see-by-times-stay-and-the-old-closure-toast-helpers-go-18-november-2026)               | A same-site move keeps its order check, the triage see-by times stay, and the old closure toast helpers go    | Active                                           |
 | [D-266](#d-266-the-printed-patients-list-numbers-its-pages-and-carries-group-names-and-the-capacity-hero-fits-narrow-phones-18-november-2026)           | The printed Patients list numbers its pages and carries group names, and the Capacity hero fits narrow phones | Active                                           |
+| [D-267](#d-267-patients-print-opens-a-menu-with-a-short-ed-and-placement-sheet-18-november-2026)                                                        | Patients Print opens a menu with a short ED and placement sheet                                               | Active                                           |
 
 ---
 
@@ -3027,4 +3028,11 @@ D-253 is reserved by other threads (PR #1700, PR #1702 and the handover). D-254 
 - **Why:** the 16 November live walk scored the printed Patients list 73 for 28 pages with no page numbers and no group name after a page break, and Capacity lost points for the cut In use tile.
 - **Boundary:** print layout and one narrow-phone layout rule only. No clinical value, rule, count, saved record or permission changes. Synthetic data only.
 
-The next free number is D-267.
+## D-267. Patients Print opens a menu with a short ED and placement sheet (18 November 2026)
+
+- **Date:** 18 November 2026, 9:46 PM AWST (13:46 UTC). **Decided by:** Josh, on the decision card "How should Patients offer the short ED and placement print?": chose "A: Print menu" from the mock-up (https://claude.ai/artifact/BuAunsJVR5Px1s7Hi8WuEx). This settles item (4) of D-266.
+- **Decision:** on Patients, Print (desktop button and phone chip) opens a menu headed "Print" with two choices, each with its people count: "Whole list" and "ED and placement only". The short sheet lists only people waiting in ED or in placement (no ward asked yet, ward asked, waiting list or referral, accepted, moving), one compact line each, with the same columns, "(continued)" headings and page numbers. Movements, Leave and Legal forms keep their plain Print button.
+- **Why:** the whole list prints about 33 pages; the bed meeting mostly needs the ED and placement groups, which fit on about 2 A4 pages in the demo data. A menu keeps one Print control instead of two.
+- **Boundary:** print layout and one menu only. No clinical value, rule, count, saved record or permission changes. Synthetic data only.
+
+The next free number is D-268.

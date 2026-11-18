@@ -17,6 +17,7 @@ import {
 import { CalendarDays, ChevronDown, ChevronLeft, Clock, Copy, Search, SearchX, UserPlus, X } from "lucide-react";
 
 import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
+import { ListPrintButton, type ListPrintChoice } from "@/components/ward-management/ward-list-print-button";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { usePrinting } from "@/components/ward-management/use-printing";
 import {
@@ -63,6 +64,7 @@ import {
 } from "./patient-census";
 
 import { censusSections } from "./patient-states";
+import { CENSUS_COLS, CensusColumns, CensusHeadRow, CensusPrintGroups, TierPill } from "./census-print";
 import styles from "./census.module.css";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
@@ -79,23 +81,6 @@ const TONE: Record<Exclude<CensusGlyph, "off">, WfTone> = {
 function CensusGlyphMark({ glyph, size = 10 }: { glyph: CensusGlyph; size?: number }) {
   if (glyph === "off") return <span className={styles.offGlyph} aria-hidden="true" />;
   return <StatusGlyph tone={TONE[glyph]} size={size} />;
-}
-
-function TierPill({ tier }: { tier: CensusRow["tier"] }) {
-  if (tier === null) {
-    return (
-      <span className={styles.noTier}>
-        <span className="sr-only">No tier</span>
-        <span aria-hidden="true">–</span>
-      </span>
-    );
-  }
-  return (
-    <span className={cx(styles.tier, tier === 1 && styles.tier1)} title={`Tier ${tier}`}>
-      <span className="sr-only">Tier {tier}</span>
-      <span aria-hidden="true">T{tier}</span>
-    </span>
-  );
 }
 
 function ageSex(row: CensusRow): string {
@@ -218,12 +203,15 @@ export type CensusTableProps = {
   onCopyList: () => void;
   /** Export (feature 44): the rows on screen as a spreadsheet. */
   onExportList?: () => Promise<void>;
+  /** The Print menu's choices: the whole list, or the short ED and placement sheet. */
+  printChoices?: readonly ListPrintChoice[];
   copyNote: string | null;
   empty: ReactNode;
   notice?: ReactNode;
 };
 
-const countPeople = (rows: readonly CensusRow[]) => new Set(rows.map((row) => row.patientRecordId ?? row.key)).size;
+export const countPeople = (rows: readonly CensusRow[]) =>
+  new Set(rows.map((row) => row.patientRecordId ?? row.key)).size;
 
 const WARD_CAP = 40;
 /** Waiting, Bed found and Moving fold after this many rows on the desktop table, like phone. */
@@ -249,7 +237,7 @@ export function CensusTable(props: CensusTableProps) {
   const [shownAll, setShownAll] = useState<ReadonlySet<CensusGroup>>(() => new Set());
   // Table polish (Josh, 9 Nov 2026): Where and Heading to are one column, "ARM ED → Maali", so no
   // group repeats "No ward yet" down a column of its own and tablets see where a person is heading.
-  const cols = 6;
+  const cols = CENSUS_COLS;
   const scrollRef = useRef<HTMLDivElement>(null);
   const { readScrollPosition, recordScrollPosition } = props;
   useLayoutEffect(() => {
@@ -280,33 +268,6 @@ export function CensusTable(props: CensusTableProps) {
         });
     };
   }, [readScrollPosition, recordScrollPosition, props.scrollIdentity, rows.length, tab]);
-
-  const censusColumns = (
-    <colgroup>
-      <col className={styles.colTier} />
-      <col className={styles.colWho} />
-      <col className={styles.colWhere} />
-      <col className={styles.colNext} />
-      <col className={styles.colLegal} />
-      <col className={styles.colTime} />
-    </colgroup>
-  );
-  const censusHeadRow = (
-    <tr>
-      <th scope="col">Tier</th>
-      <th scope="col">Patient</th>
-      {/* Redesign: one word, so the header stays on one line like the others. Table polish
-          (9 Nov 2026): the cell also says where the person is heading. */}
-      <th scope="col" aria-label="Where now">
-        Where
-      </th>
-      <th scope="col">Next step</th>
-      <th scope="col">Legal</th>
-      <th scope="col" className={styles.num}>
-        Time
-      </th>
-    </tr>
-  );
 
   return (
     <section
@@ -361,6 +322,9 @@ export function CensusTable(props: CensusTableProps) {
                 testId="ward-census-export"
               />
             ) : null}
+            {props.printChoices ? (
+              <ListPrintButton variant="ghost" choices={props.printChoices} testId="ward-census-print" />
+            ) : null}
           </>
         ) : null}
       </div>
@@ -406,46 +370,28 @@ export function CensusTable(props: CensusTableProps) {
             });
           }}
         >
-          {printing
-            ? // Printed census (18 Nov 2026): one table per group, with the group name in its head, so
-              // a group that runs onto the next page carries its name there as "(continued)" above the
-              // repeated column heads. The heading before each table covers that line on its first page.
-              groups.map(({ key: sectionKey, label: sectionLabel, rows: groupRows }) =>
-                groupRows.length === 0 && (searching || props.narrowed) ? null : (
-                  <div key={sectionKey} data-census-print-group={sectionKey}>
-                    <p data-census-print-heading>
-                      {sectionLabel} · {groupRows.length}
-                    </p>
-                    <table className={cx(tableClasses.table, styles.censusTable)} aria-label={sectionLabel}>
-                      {censusColumns}
-                      <thead>
-                        <tr data-census-print-continued aria-hidden="true">
-                          <th colSpan={cols}>{sectionLabel} (continued)</th>
-                        </tr>
-                        {censusHeadRow}
-                      </thead>
-                      <tbody>
-                        {groupRows.map((row) => (
-                          <CensusTableRow
-                            key={row.key}
-                            row={row}
-                            needle={effectiveNeedle}
-                            selected={row.key === props.selectedKey}
-                            lifted={lifting && lifted(row)}
-                            flash={false}
-                            onSelect={props.onSelect}
-                          />
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ),
-              )
-            : null}
+          {printing ? (
+            <CensusPrintGroups
+              sections={groups.filter((entry) => entry.rows.length > 0 || !(searching || props.narrowed))}
+              renderRow={(row) => (
+                <CensusTableRow
+                  key={row.key}
+                  row={row}
+                  needle={effectiveNeedle}
+                  selected={row.key === props.selectedKey}
+                  lifted={lifting && lifted(row)}
+                  flash={false}
+                  onSelect={props.onSelect}
+                />
+              )}
+            />
+          ) : null}
           {printing ? null : (
             <table className={cx(tableClasses.table, styles.censusTable)} aria-label="Patients by where they are now">
-              {censusColumns}
-              <thead>{censusHeadRow}</thead>
+              <CensusColumns />
+              <thead>
+                <CensusHeadRow />
+              </thead>
               {groups.map(({ key: sectionKey, group, label: sectionLabel, rows: groupRows }) => {
                 if ((searching || props.narrowed) && groupRows.length === 0) return null;
                 const litCount = lifting ? groupRows.filter(lifted).length : 0;

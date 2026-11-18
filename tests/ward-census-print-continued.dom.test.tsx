@@ -2,12 +2,10 @@
 // onto the next page lost its name there. On paper the census prints one table per group whose head
 // holds "<group> (continued)" above the column heads, so the browser repeats both on every page the
 // group runs onto; the heading before each table covers that line on the group's first page. The
-// default page gets a margin so "Page x of y" has room even in a zero-margin PDF export.
+// default page's margin, which gives "Page x of y" room, is checked in ward-audit-m103-print-fidelity.
 // Synthetic seed data only.
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, configure, render, screen } from "@testing-library/react";
-import { readFileSync } from "node:fs";
-import postcss from "postcss";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { CensusTable } from "@/components/ward-management/search/patient-census-view";
@@ -99,23 +97,5 @@ describe("printed Patients list", () => {
 
     act(() => window.dispatchEvent(new Event("afterprint")));
     expect(screen.getByRole("table", { name: "Patients by where they are now" })).toBeInTheDocument();
-  });
-
-  it("gives the page number room and lays the first-page heading exactly over the continued line", () => {
-    const css = readFileSync("src/app/ward-flow-print.css", "utf8");
-    let defaultPage = "";
-    postcss.parse(css).walkAtRules("page", (rule) => {
-      if (!rule.params) defaultPage = rule.toString();
-    });
-    expect(defaultPage).toMatch(/margin:\s*\d+mm/);
-    expect(defaultPage).toMatch(/"Page "\s*counter\(page\)\s*" of "\s*counter\(pages\)/);
-
-    expect(css).toMatch(
-      /\[data-census-print-heading\],\s*\[data-census-print-continued\] > th\s*\{[^}]*block-size:\s*var\(--census-print-line\)/,
-    );
-    expect(css).toMatch(
-      /\[data-census-print-heading\]\s*\{[^}]*z-index:\s*1;[^}]*margin:\s*0 0 calc\(-1 \* var\(--census-print-line\)\)/,
-    );
-    expect(css).toMatch(/\[data-census-print-group\] table\s*\{\s*min-inline-size:\s*0/);
   });
 });
