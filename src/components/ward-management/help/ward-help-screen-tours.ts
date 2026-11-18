@@ -881,10 +881,14 @@ const AROUND: readonly Around[] = [
         title: "Open a unit",
         body: "Open a unit finds any ward, ED, service or team and opens its figures.",
       }),
-      step(id("ward-statistics-export"), {
-        title: "Export the figures",
-        body: "Downloads the figures at the top of the page as a spreadsheet file.",
-      }),
+      // D-265: on a phone Export sits in the Statistics tools menu ("…").
+      step(
+        { sel: '[data-testid="ward-statistics-export"], [data-testid="ward-statistics-tools-menu"]' },
+        {
+          title: "Export the figures",
+          body: "Downloads the figures at the top of the page as a spreadsheet file. On a phone it is in the … menu.",
+        },
+      ),
       step(id("ward-statistics-view-bar"), {
         device: "desk",
         title: "Bed board, Movement or Map",
