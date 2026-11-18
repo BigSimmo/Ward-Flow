@@ -281,6 +281,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-265](#d-265-movements-keeps-its-timeline-in-place-behind-a-graph-or-table-switch-with-compact-stage-cards-statistics-phone-takes-option-a-18-november-2026) | Movements timeline stays behind a Graph or Table switch; compact stages; Statistics phone A                   | Active                                           |
 | [D-266](#d-266-the-printed-patients-list-numbers-its-pages-and-carries-group-names-and-the-capacity-hero-fits-narrow-phones-18-november-2026)                  | The printed Patients list numbers its pages and carries group names, and the Capacity hero fits narrow phones | Active                                           |
 | [D-267](#d-267-patients-print-opens-a-menu-with-a-short-ed-and-placement-sheet-18-november-2026)                                                               | Patients Print opens a menu with a short ED and placement sheet                                               | Active                                           |
+| [D-268](#d-268-ed-journeys-open-is-renamed-open-ed-movements-18-november-2026)                                                                                 | "ED journeys open" is renamed "Open ED movements"                                                             | Active                                           |
 
 ---
 
@@ -3071,4 +3072,12 @@ D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
 - **Why:** the whole list prints about 33 pages; the bed meeting mostly needs the ED and placement groups, which fit on about 2 A4 pages in the demo data. A menu keeps one Print control instead of two.
 - **Boundary:** print layout and one menu only. No clinical value, rule, count, saved record or permission changes. Synthetic data only.
 
-The next free number is D-268.
+## D-268. "ED journeys open" is renamed "Open ED movements" (18 November 2026)
+
+- **Date:** approved 16 November 2026 in the thread "Read the Ward Flow handover pack" ("Go ahead with all recommendations"); confirmed 18 November 2026 at 16:31 UTC (12:31 AM AWST, 19 November). **Decided by:** Josh, answering "Should 'ED journeys open' be renamed to 'Open ED movements' in its own small PR? I recommend yes": "Sure".
+- **Decision:** the D-220 figure "ED journeys open" is called "Open ED movements" on every screen, help page, tour, copied message, CSV and print. Short labels and table columns read "Open movements". Mid-sentence it reads "open ED movements".
+- **Why:** the app calls these records movements everywhere else (Movements page, "ED movements" groups), so the figure's name now matches.
+- **Settles:** the pending rename noted in D-262 and D-265. The figure itself (`openEdJourneys`, people in transit included) is unchanged.
+- **Boundary:** wording only. No figure, count, clinical rule, saved record or permission changes. Code names stay. Synthetic data only.
+
+The next free number is D-269.

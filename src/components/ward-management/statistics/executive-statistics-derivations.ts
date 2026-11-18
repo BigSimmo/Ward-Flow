@@ -258,7 +258,7 @@ export function executiveEdSummary(
   input: ExecutivePrivateInput,
   release: ExecutiveCountRelease,
 ) {
-  // D-220 item 3: `onTheList` is ED journeys open (transit included); the bands, the long waits, the
+  // D-220 item 3: `onTheList` is open ED movements (transit included); the bands, the long waits, the
   // median and the longest wait count the people still waiting in ED.
   const figures = edStatisticsFigures(input.movements, ed.id, input.now);
   const c = (suffix: string, value: number) => release.count(`ed:${ed.id}:${suffix}`, value);

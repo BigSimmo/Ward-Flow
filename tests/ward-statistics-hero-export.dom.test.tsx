@@ -77,13 +77,13 @@ describe("Statistics hero: Export the figures", () => {
       inProvider(<StatisticsScreen movements={movements} />);
       const hero = screen.getByRole("heading", { level: 1 }).closest("section")!;
       // Page-top redesign (9 Nov 2026): a figure; the phone shows a short label and keeps the full words.
-      const label = within(hero).getByText("ED journeys open", { exact: true });
+      const label = within(hero).getByText("Open ED movements", { exact: true });
       const figure = label.closest<HTMLElement>("[data-wf-hero-figure]");
       expect(figure?.querySelector("b")?.textContent).toBe("3");
-      expect(figure?.textContent).toMatch(phone ? /^3 journeys openED journeys open$/ : /^3 ED journeys open$/);
+      expect(figure?.textContent).toMatch(phone ? /^3 Open movementsOpen ED movements$/ : /^3 Open ED movements$/);
       if (!phone) {
         const { csv } = await exportedCsv(screen.getByTestId("ward-statistics-export"));
-        expect(csv).toContain('"ED journeys open","3"');
+        expect(csv).toContain('"Open ED movements","3"');
       }
     },
   );

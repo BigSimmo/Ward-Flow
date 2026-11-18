@@ -1,5 +1,5 @@
 // The Statistics summary's small helpers: wait formats, the sortable column head and the site-code
-// key, shared by the summary screen and its Open ED journeys card.
+// key, shared by the summary screen and its Open ED movements card.
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { Icon, durMinutes } from "@/components/wf";

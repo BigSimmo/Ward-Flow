@@ -100,7 +100,7 @@ describe("count labels say what they count", () => {
   });
 
   // Audit 6 (Josh, 20 Oct 2026): the figures the audit found still counting for themselves.
-  it("Statistics names open ED journeys and retains them through transit", () => {
+  it("Statistics names open ED movements and retains them through transit", () => {
     const expected = state.movements.filter(
       (movement) => isOpen(movement) && movement.sourceAdmissionId === undefined && movement.originEdId !== undefined,
     ).length;
@@ -108,10 +108,10 @@ describe("count labels say what they count", () => {
     const chips = screen.getByRole("group", { name: "Network at a glance" });
     // Page tops (9 Nov 2026): the count is a hero figure, a number then its label.
     const journeys = within(chips)
-      .getByText("ED journeys open", { exact: true })
+      .getByText("Open ED movements", { exact: true })
       .closest<HTMLElement>("[data-wf-hero-figure]")!;
     expect(openEdJourneys(state.movements, NOW_ANCHOR).total).toBe(expected);
-    expect(journeys.textContent).toBe(`${expected} ED journeys open`);
+    expect(journeys.textContent).toBe(`${expected} Open ED movements`);
   });
 
   it("Handover's Act now is Alerts' act-now list, with flagged urgent on its own line", () => {

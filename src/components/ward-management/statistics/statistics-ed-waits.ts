@@ -101,7 +101,7 @@ export function edJourneyWaitFigures(movements: readonly Movement[], edId: strin
 /**
  * WHAT STATISTICS SHOWS FOR ONE ED (D-220 item 3, Josh 14 Nov 2026): two populations, each named.
  *
- * - "ED journeys open" (`onTheList`, with `urgent`, `unplaced`, `departmentMovements` and
+ * - "Open ED movements" (`onTheList`, with `urgent`, `unplaced`, `departmentMovements` and
  *   `allDepartmentMovements`): every open ED-origin journey, people in transit included, as
  *   `edJourneyWaitFigures` counts.
  * - Waiting in ED (`waitingInEd`, `waitingMovements`, `over8h`, `over24h`, `over48h`,

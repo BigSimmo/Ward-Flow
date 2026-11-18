@@ -124,7 +124,7 @@ describe("journey semantics across summaries", () => {
 describe("downtime left-ED note", () => {
   it("agrees in number with the count and is absent at zero", () => {
     expect(leftEdNote(0)).toBeNull();
-    expect(leftEdNote(1)).toBe("1 more open ED journey is in transit or has a recorded departure.");
-    expect(leftEdNote(3)).toBe("3 more open ED journeys are in transit or have a recorded departure.");
+    expect(leftEdNote(1)).toBe("1 more open ED movement is in transit or has a recorded departure.");
+    expect(leftEdNote(3)).toBe("3 more open ED movements are in transit or have a recorded departure.");
   });
 });

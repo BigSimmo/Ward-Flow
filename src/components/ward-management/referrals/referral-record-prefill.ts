@@ -56,7 +56,7 @@ function openJourneysFor(patientId: string, state: RecordState): Movement[] {
 }
 
 /**
- * WS-08 (H-0973): the person's open ED journey, if one is already running. The form shows it
+ * WS-08 (H-0973): the person's open ED movement, if one is already running. The form shows it
  * before Send, so a second ED does not start a second journey without knowing.
  */
 export function openEdJourneyFor(

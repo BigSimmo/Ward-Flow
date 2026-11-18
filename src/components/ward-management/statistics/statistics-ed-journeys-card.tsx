@@ -1,6 +1,6 @@
 "use client";
 
-// The summary's Emergency departments card (D-220: ED journeys open, and the waits of people still in ED): every ED as a sortable table, or, for a site bed manager with
+// The summary's Emergency departments card (D-220: open ED movements, and the waits of people still in ED): every ED as a sortable table, or, for a site bed manager with
 // one ED, that ED's five figures as one row of tiles.
 
 import { Badge, CardBody, StatusGlyph, cx, durMinutes, tableClasses } from "@/components/wf";
@@ -66,7 +66,7 @@ export function StatisticsEdJourneysCard({
         <StatusGlyph tone="warning" size={9} />
       ) : null;
     const figures = [
-      { id: "waiting", label: "ED journeys open", value: small(only.waiting), mark: null },
+      { id: "waiting", label: "Open ED movements", value: small(only.waiting), mark: null },
       { id: "longest", label: "Longest", value: waitText(only.longest), mark },
       { id: "median", label: "Median", value: waitText(only.median), mark: null },
       { id: "over8", label: "8h+", value: small(only.over8), mark: null },
@@ -103,7 +103,7 @@ export function StatisticsEdJourneysCard({
     <StatCardR
       id="eds"
       title="Emergency departments"
-      meta={`${small(totalEdWaiting)} ED journeys open`}
+      meta={`${small(totalEdWaiting)} open ED movements`}
       data-testid="ward-statistics-emergency-departments"
       aside={
         longestEd && longestEd.longest !== null ? (
@@ -144,7 +144,7 @@ export function StatisticsEdJourneysCard({
               <SortTh id="name" label="ED" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} />
               <SortTh
                 id="waiting"
-                label="Journeys open"
+                label="Open movements"
                 sort={edSortCol}
                 asc={edSortAsc}
                 onSort={handleEdSort}

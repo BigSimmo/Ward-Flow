@@ -360,7 +360,7 @@
   color: var(--wf-ink-3);
   font-weight: 400;
 }
-/* Q245: Open ED journeys keeps all six columns (Median included) inside a half-width card at
+/* Q245: Open ED movements keeps all six columns (Median included) inside a half-width card at
  * 1280: tighter inner gaps and a narrower ED name, which wraps. The card's 16px edges stay. */
 .tableFit th,
 .tableFit td {

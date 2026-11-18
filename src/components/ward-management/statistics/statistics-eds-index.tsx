@@ -89,7 +89,7 @@ function bandName(position: number): string {
  *
  * The roomy wait field across the full card width (Josh, 9 Oct 2026: the old field of dots was
  * messy), then every department in a table, each the way into its own page. Every figure is
- * `edStatisticsFigures` over the live movements (D-220): "ED journeys open" is every open ED
+ * `edStatisticsFigures` over the live movements (D-220): "Open ED movements" is every open ED
  * movement, people in transit included; the waits, the long-wait counts and the bands count the
  * people still waiting in ED. "No ward yet" is the open movements no ward has accepted. The long-wait
  * counts OVERLAP (anyone past the second line is past the first), so they are shown side by side and
@@ -376,8 +376,8 @@ function EdsIndexView({
         // Live audit, 8 Nov 2026: a withheld count read "not shown open ED movements".
         title:
           shown(waiting) === SMALL_NUMBER_NOT_SHOWN
-            ? "ED journeys open not shown"
-            : `${shown(waiting)} ED journeys open`,
+            ? "Open ED movements not shown"
+            : `${shown(waiting)} open ED movements`,
         sub: `Longest ${waitText(longestRow?.longest ?? null)} · median ${waitText(networkMedian)}`,
         stats: (
           <>
@@ -393,7 +393,7 @@ function EdsIndexView({
       }}
       stats={
         <>
-          <HeroStat value={shown(waiting)} label="ED journeys open" />
+          <HeroStat value={shown(waiting)} label="Open ED movements" />
           <HeroStat
             value={waitText(longestRow?.longest ?? null)}
             label={longestRow ? `Longest, ${longestRow.code}` : "Longest"}
@@ -530,13 +530,13 @@ function EdsIndexView({
               >
                 <table className={cx(tableClasses.table, redesign.table)} data-testid="ward-statistics-eds-table">
                   <caption className={styles.srOnly}>
-                    Every emergency department: ED journeys open, including transit, those with no ward yet, and the
+                    Every emergency department: open ED movements, including transit, those with no ward yet, and the
                     long waits, longest and median wait of people still in ED
                   </caption>
                   <thead>
                     <tr>
                       <SortTh id="name" label="ED" sort={sort} asc={asc} onSort={onSort} />
-                      <SortTh id="waiting" label="Journeys open" sort={sort} asc={asc} onSort={onSort} numeric />
+                      <SortTh id="waiting" label="Open movements" sort={sort} asc={asc} onSort={onSort} numeric />
                       <SortTh id="unplaced" label="No ward yet" sort={sort} asc={asc} onSort={onSort} numeric />
                       <SortTh id="over24" label={`Over ${LONG_HOURS}h`} sort={sort} asc={asc} onSort={onSort} numeric />
                       <SortTh

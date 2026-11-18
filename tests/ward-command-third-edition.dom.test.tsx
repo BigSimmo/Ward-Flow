@@ -96,7 +96,7 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     // Wave 4 (D-191): count label nouns, as Capacity says them; no window word under "right now".
     expect(screen.getByTestId("home-figure-ed")).toHaveTextContent(/^\d+ Open movements$/u);
     expect(screen.getByTestId("home-figure-beds")).toHaveTextContent(/^\d+ Ready$/u);
-    // Open ED journeys retain accountability through transit; the queue can also contain ward/community origins.
+    // Open ED movements retain accountability through transit; the queue can also contain ward/community origins.
     // Home and Activity (Josh, 31 Oct 2026): "in transit" as the phone says it, and the demo
     // coverage disclosure lives in the app bar and the footer, so the hero keeps only its facts.
     expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(/^\d+ Waiting · \d+ In transit$/u);

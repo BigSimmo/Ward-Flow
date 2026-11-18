@@ -397,7 +397,7 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
                   </span>
                   <span className={rail.alertBeds}>
                     {service.beds.ready} of {service.beds.total} ready · {releasedCountText(service.waiting)} open ED
-                    journeys
+                    movements
                   </span>
                 </span>
               </div>
@@ -754,7 +754,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                   </button>
                   {isPhone && (
                     <span className={bar.scopeLive}>
-                      {releasedCountText(displayedWaiting)} open ED journeys · {displayedScope}
+                      {releasedCountText(displayedWaiting)} open ED movements · {displayedScope}
                     </span>
                   )}
                 </div>
@@ -1033,7 +1033,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
             }}
           >
             <span className={bar.serviceDot} data-service="statewide" aria-hidden="true" />
-            All services · {releasedCountText(report.network.people.edJourneysOpen)} open ED journeys
+            All services · {releasedCountText(report.network.people.edJourneysOpen)} open ED movements
           </button>
         )}
         {services.map((service) => (
@@ -1048,7 +1048,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
             }}
           >
             <span className={bar.serviceDot} data-service={SERVICE_SWATCH_KEY[service.service]} aria-hidden="true" />
-            {service.service}: {service.beds.ready} beds ready · {releasedCountText(service.waiting)} open ED journeys
+            {service.service}: {service.beds.ready} beds ready · {releasedCountText(service.waiting)} open ED movements
           </button>
         ))}
       </Sheet>

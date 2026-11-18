@@ -13,7 +13,7 @@ import { latestReferralForPerson } from "./referrals/referral-sheet-latest";
  * - what a ward asked for on this person's latest referral, while it waits for that ward's answer ("asked for" quick questions,
  *   `REQUEST_REFERRAL_INFORMATION`) and has not been ticked off. Fixed list labels only, never a
  *   ward's name, a count or typed text (D-18, archived D-19);
- * - the medical clearance timing on the open ED journey (D-110): not recorded since arrival, or
+ * - the medical clearance timing on the open ED movement (D-110): not recorded since arrival, or
  *   recorded as still to come. The amber flag reuses the tracker's signed six hours.
  *
  * A prompt only. It never blocks or delays Send, and it never says a patient is cleared: a clearance
@@ -30,7 +30,7 @@ export type StillOpenItem = {
 export type StillOpenInput = {
   readonly personId: string | undefined;
   readonly referrals: readonly Referral[];
-  /** The person's open ED journey, when the referral starts from one. */
+  /** The person's open ED movement, when the referral starts from one. */
   readonly edMovement: Movement | undefined;
   /** True when the form already answers medical clearance as done; that line then goes. */
   readonly formSaysDone: boolean;

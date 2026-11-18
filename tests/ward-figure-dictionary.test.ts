@@ -123,11 +123,11 @@ describe("the bed-demand rules (D-220: Need a bed is the Capacity rule; No ward 
   });
 });
 
-describe("the ED figures: Waiting in ED and ED journeys open are two populations (D-220)", () => {
+describe("the ED figures: Waiting in ED and open ED movements are two populations (D-220)", () => {
   const state = seedWardFlowState();
   const now = NOW_ANCHOR;
 
-  it("ED journeys open is the people still in the department plus the people in transit", () => {
+  it("Open ED movements is the people still in the department plus the people in transit", () => {
     const journeys = openEdJourneys(state.movements, now);
     expect(journeys.inTransit, "the seed has people in transit").toBeGreaterThan(0);
     expect(journeys.total).toBe(journeys.stillInEd + journeys.inTransit);

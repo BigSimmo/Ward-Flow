@@ -170,7 +170,7 @@ export function projectExecutiveNetworkStatistics(
   const movementIds = new Set(scoped.movements.map((movement) => movement.id));
   const movements = state.movements.filter((movement) => movementIds.has(movement.id));
   const refused = refusedAndNothingPending(movements, units, now);
-  // D-220: the report's ED figure is "ED journeys open" on every path (`openEdJourneys`), the
+  // D-220: the report's ED figure is "Open ED movements" on every path (`openEdJourneys`), the
   // population Statistics and the executive chrome label it with; Waiting in ED stays the ED tables'.
   const waiting = openEdJourneys(movements, now).total;
   const movementFigures = releaseFamily(

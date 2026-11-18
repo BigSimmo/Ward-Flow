@@ -175,7 +175,7 @@ function operationalMessage(id: Exclude<MessageId, "summary">, input: BedSummary
   const zone = input.zone ?? clockZoneLabel(false);
   const readyLine = `Ready beds: ${f.readyTotal} of ${f.beds}${f.pending > 0 ? `, ${f.pending} pending preparation` : ""}.`;
   const readyByServiceLine = `Ready by service: ${f.readyByService || "none"}.`;
-  const waitingLine = `ED journeys open: ${f.waiting.total}${f.waitingByService ? ` (${f.waitingByService})` : ""}.`;
+  const waitingLine = `Open ED movements: ${f.waiting.total}${f.waitingByService ? ` (${f.waitingByService})` : ""}.`;
   const stillLine = `Still in ED: ${f.waiting.stillInEd}. In transit or recorded departure: ${f.waiting.inTransit}.`;
   const longestLine = `Longest wait: ${f.longest ?? "none open"}.`;
   if (id === "escalation") {
@@ -257,10 +257,10 @@ function executiveMessage(id: MessageId, report: ExecutiveReport, zone: ClockZon
   const pending = report.capacity.pendingPreparation;
   const readyLine = `Ready beds: ${network.beds.ready} of ${network.beds.total}${pending > 0 ? `, ${pending} pending preparation` : ""}.`;
   // No typed hour window here: a wait threshold needs a named source (invented-figures guard).
-  const waitingLines = [`ED journeys open: ${releasedCountText(network.people.edJourneysOpen)}.`];
+  const waitingLines = [`Open ED movements: ${releasedCountText(network.people.edJourneysOpen)}.`];
   const byService = services.map(
     (service) =>
-      `${service.service}: ${service.beds.ready} ready, ${releasedCountText(service.waiting)} ED journeys open.`,
+      `${service.service}: ${service.beds.ready} ready, ${releasedCountText(service.waiting)} open ED movements.`,
   );
   if (id === "escalation") {
     const occupancy = occupancyPercent({ beds: network.beds.total, inUse: network.beds.inUse });

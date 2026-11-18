@@ -339,7 +339,7 @@ const lensAria = (site: PresentedSiteFigures, lens: MapLens): string => {
       exactStatisticsCount(site.edOver24) !== 0
         ? `, ${statisticsCountText(site.edOver24)} past ${LONG_WAIT_HOURS} hours`
         : "";
-    return `${site.name} ED: ${statisticsCountText(site.edWaiting)} ED journeys open${longest}${over}`;
+    return `${site.name} ED: ${statisticsCountText(site.edWaiting)} open ED movements${longest}${over}`;
   }
   if (lens === "dis")
     return `${site.name}: ${statisticsCountText(site.dischargedToday)} left today, ${statisticsCountText(site.dueToday)} expected to leave today${exactStatisticsCount(site.blocked) !== 0 ? `, ${statisticsCountText(site.blocked)} blocked` : ""}`;
@@ -355,9 +355,9 @@ const LENSES: ReadonlyArray<{ id: MapLens; label: string; listTitle: string; key
   },
   {
     id: "ed",
-    label: "ED journeys open",
-    listTitle: "ED journeys open by ED",
-    key: `Ring: longest wait in ED, to ${VERY_LONG_WAIT_HOURS}h. Centre: ED journeys open. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
+    label: "Open ED movements",
+    listTitle: "Open ED movements by ED",
+    key: `Ring: longest wait in ED, to ${VERY_LONG_WAIT_HOURS}h. Centre: Open ED movements. Triangle: over ${VERY_LONG_WAIT_HOURS}h.`,
   },
   {
     id: "dis",
@@ -551,7 +551,7 @@ function MapPresentation({
   const lensInfo = LENSES.find((item) => item.id === lens) ?? LENSES[0]!;
   const lensItems: ChoiceItem<MapLens>[] = [
     { id: "beds", label: "Beds", count: network.ready },
-    { id: "ed", label: "ED journeys open", count: statisticsCountText(network.edWaiting) },
+    { id: "ed", label: "Open ED movements", count: statisticsCountText(network.edWaiting) },
     {
       id: "dis",
       label: "Discharge",
@@ -578,9 +578,9 @@ function MapPresentation({
         ? [
             {
               value: String(statisticsCountText(network.edWaiting)),
-              label: "ED journeys open",
+              label: "Open ED movements",
               // R-FIGS-15: what it counts and who, so it is not read against the rail's Waiting figure.
-              tip: "Every ED journey still open, including people placed and waiting to leave. Waiting counts only people still in the ED.",
+              tip: "Every ED movement still open, including people placed and waiting to leave. Waiting counts only people still in the ED.",
             },
             {
               // WF-17: keep longest beside an exact open-ED count only.
@@ -783,7 +783,7 @@ function SiteCard({ site, lens, onClose }: { site: PresentedSiteFigures; lens: M
   const edLinked = site.ed !== undefined && site.ed.openable !== false && canOpen(edStatisticsHref(site.ed.id));
   const edContent = (
     <>
-      <span className={styles.siteName}>{statisticsCountText(site.edWaiting)} ED journeys open</span>
+      <span className={styles.siteName}>{statisticsCountText(site.edWaiting)} open ED movements</span>
       <span className={styles.siteFig}>
         {(exactStatisticsCount(site.edOver48) ?? 0) > 0 ? <StatusGlyph tone="danger" size={9} /> : null}
         {exactStatisticsCount(site.edWaiting) === null
