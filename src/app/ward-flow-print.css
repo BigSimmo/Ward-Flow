@@ -557,6 +557,11 @@
  * so recorded facts stand out, and tighter title blocks.
  * ========================================================================= */
 @page {
+  /* A set margin gives the counter room even where the print engine's own margin is zero (a PDF
+     export with no margins printed every census page without its number, 18 Nov 2026). 10mm is
+     Chrome's default; a sheet's own `@page` margin still wins. */
+  margin: 10mm;
+
   @bottom-right {
     content: "Page " counter(page) " of " counter(pages);
     font: 7pt / 1 sans-serif;
@@ -734,5 +739,56 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--wf-print-ink);
+  }
+}
+
+/* ----- Printed Patients list: each group's name carries onto the next page (18 Nov 2026) -----
+   The census prints one table per group (patient-census-view.tsx). Its head holds a
+   "Name (continued)" line above the column heads, and the browser repeats the head on each page the
+   group runs onto. On the group's first page the heading before the table sits over that line. Both
+   are one fixed-height line so the cover fits exactly. */
+@media print {
+  [data-census-print-group] {
+    --census-print-line: 7mm;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* The screen's 720px floor is just wider than A4 inside the page margin; on paper it fits the page. */
+  [data-census-print-group] table {
+    min-inline-size: 0 !important;
+  }
+
+  [data-census-print-group] + [data-census-print-group] {
+    margin-block-start: 3mm;
+  }
+
+  [data-census-print-heading],
+  [data-census-print-continued] > th {
+    box-sizing: border-box;
+    block-size: var(--census-print-line) !important;
+    padding: 0 2mm !important;
+    border: 0 !important;
+    font: 600 9pt / var(--census-print-line) var(--wf-font, sans-serif) !important;
+    color: var(--wf-print-ink) !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    text-align: start;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  [data-census-print-heading] {
+    position: relative;
+    z-index: 1;
+    margin: 0 0 calc(-1 * var(--census-print-line)) !important;
+    background: #fff !important;
+    break-after: avoid;
+  }
+
+  [data-census-print-continued] > th {
+    background: #fff !important;
+    font-weight: 400 !important;
+    font-style: italic;
   }
 }

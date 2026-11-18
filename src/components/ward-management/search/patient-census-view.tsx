@@ -281,6 +281,33 @@ export function CensusTable(props: CensusTableProps) {
     };
   }, [readScrollPosition, recordScrollPosition, props.scrollIdentity, rows.length, tab]);
 
+  const censusColumns = (
+    <colgroup>
+      <col className={styles.colTier} />
+      <col className={styles.colWho} />
+      <col className={styles.colWhere} />
+      <col className={styles.colNext} />
+      <col className={styles.colLegal} />
+      <col className={styles.colTime} />
+    </colgroup>
+  );
+  const censusHeadRow = (
+    <tr>
+      <th scope="col">Tier</th>
+      <th scope="col">Patient</th>
+      {/* Redesign: one word, so the header stays on one line like the others. Table polish
+          (9 Nov 2026): the cell also says where the person is heading. */}
+      <th scope="col" aria-label="Where now">
+        Where
+      </th>
+      <th scope="col">Next step</th>
+      <th scope="col">Legal</th>
+      <th scope="col" className={styles.num}>
+        Time
+      </th>
+    </tr>
+  );
+
   return (
     <section
       className={styles.tableCard}
@@ -379,105 +406,121 @@ export function CensusTable(props: CensusTableProps) {
             });
           }}
         >
-          <table className={cx(tableClasses.table, styles.censusTable)} aria-label="Patients by where they are now">
-            <colgroup>
-              <col className={styles.colTier} />
-              <col className={styles.colWho} />
-              <col className={styles.colWhere} />
-              <col className={styles.colNext} />
-              <col className={styles.colLegal} />
-              <col className={styles.colTime} />
-            </colgroup>
-            <thead>
-              <tr>
-                <th scope="col">Tier</th>
-                <th scope="col">Patient</th>
-                {/* Redesign: one word, so the header stays on one line like the others. Table polish
-                    (9 Nov 2026): the cell also says where the person is heading. */}
-                <th scope="col" aria-label="Where now">
-                  Where
-                </th>
-                <th scope="col">Next step</th>
-                <th scope="col">Legal</th>
-                <th scope="col" className={styles.num}>
-                  Time
-                </th>
-              </tr>
-            </thead>
-            {groups.map(({ key: sectionKey, group, label: sectionLabel, rows: groupRows }) => {
-              if ((searching || props.narrowed) && groupRows.length === 0) return null;
-              const litCount = lifting ? groupRows.filter(lifted).length : 0;
-              const open = printing || searching || props.narrowed || openGroups[group.id] || litCount > 0;
-              const cap =
-                printing || searching || lifting
-                  ? groupRows.length
-                  : group.id === "ward"
-                    ? props.showAllWard
-                      ? groupRows.length
-                      : WARD_CAP
-                    : group.id === "off" || shownAll.has(group.id)
-                      ? groupRows.length
-                      : GROUP_CAP;
-              return (
-                <tbody key={sectionKey} id={`ward-patient-search-group-${sectionKey}`} className={styles.group}>
-                  <tr className={cx(styles.groupRow, group.id === "off" && styles.groupQuiet)}>
-                    <th colSpan={cols} scope="rowgroup">
-                      <button
-                        type="button"
-                        className={styles.groupButton}
-                        aria-expanded={open}
-                        onClick={() => props.onToggleGroup(group.id, !open)}
-                      >
-                        <ChevronDown className={styles.chev} size={14} aria-hidden="true" />
-                        <CensusGlyphMark glyph={group.glyph} />
-                        <span className={styles.groupLabel}>{sectionLabel}</span>
-                        <span className={styles.groupCount}>{groupRows.length}</span>
-                        {litCount > 0 ? <span className={styles.groupHint}>{litCount} highlighted</span> : null}
-                        <span className={styles.spacer} />
-                        {!open ? (
-                          <span className={styles.groupHint}>Show {groupRows.length}</span>
-                        ) : sectionKey === "off" && !searching ? (
-                          <span className={styles.groupHint}>Records with nothing open</span>
-                        ) : sectionKey === "team" && !searching ? (
-                          <span className={styles.groupHint}>Nothing open, followed by a team</span>
-                        ) : null}
-                      </button>
-                    </th>
-                  </tr>
-                  {open
-                    ? groupRows
-                        .slice(0, cap)
-                        .map((row) => (
+          {printing
+            ? // Printed census (18 Nov 2026): one table per group, with the group name in its head, so
+              // a group that runs onto the next page carries its name there as "(continued)" above the
+              // repeated column heads. The heading before each table covers that line on its first page.
+              groups.map(({ key: sectionKey, label: sectionLabel, rows: groupRows }) =>
+                groupRows.length === 0 && (searching || props.narrowed) ? null : (
+                  <div key={sectionKey} data-census-print-group={sectionKey}>
+                    <p data-census-print-heading>
+                      {sectionLabel} · {groupRows.length}
+                    </p>
+                    <table className={cx(tableClasses.table, styles.censusTable)} aria-label={sectionLabel}>
+                      {censusColumns}
+                      <thead>
+                        <tr data-census-print-continued aria-hidden="true">
+                          <th colSpan={cols}>{sectionLabel} (continued)</th>
+                        </tr>
+                        {censusHeadRow}
+                      </thead>
+                      <tbody>
+                        {groupRows.map((row) => (
                           <CensusTableRow
                             key={row.key}
                             row={row}
                             needle={effectiveNeedle}
                             selected={row.key === props.selectedKey}
                             lifted={lifting && lifted(row)}
-                            flash={row.key === props.flashKey}
+                            flash={false}
                             onSelect={props.onSelect}
                           />
-                        ))
-                    : null}
-                  {open && cap < groupRows.length ? (
-                    <tr className={styles.moreRow}>
-                      <td colSpan={cols}>
-                        <ShowMoreRow
-                          onClick={
-                            group.id === "ward"
-                              ? props.onShowAllWard
-                              : () => setShownAll((current) => new Set(current).add(group.id))
-                          }
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ),
+              )
+            : null}
+          {printing ? null : (
+            <table className={cx(tableClasses.table, styles.censusTable)} aria-label="Patients by where they are now">
+              {censusColumns}
+              <thead>{censusHeadRow}</thead>
+              {groups.map(({ key: sectionKey, group, label: sectionLabel, rows: groupRows }) => {
+                if ((searching || props.narrowed) && groupRows.length === 0) return null;
+                const litCount = lifting ? groupRows.filter(lifted).length : 0;
+                const open = printing || searching || props.narrowed || openGroups[group.id] || litCount > 0;
+                const cap =
+                  printing || searching || lifting
+                    ? groupRows.length
+                    : group.id === "ward"
+                      ? props.showAllWard
+                        ? groupRows.length
+                        : WARD_CAP
+                      : group.id === "off" || shownAll.has(group.id)
+                        ? groupRows.length
+                        : GROUP_CAP;
+                return (
+                  <tbody key={sectionKey} id={`ward-patient-search-group-${sectionKey}`} className={styles.group}>
+                    <tr className={cx(styles.groupRow, group.id === "off" && styles.groupQuiet)}>
+                      <th colSpan={cols} scope="rowgroup">
+                        <button
+                          type="button"
+                          className={styles.groupButton}
+                          aria-expanded={open}
+                          onClick={() => props.onToggleGroup(group.id, !open)}
                         >
-                          Show all {groupRows.length}
-                        </ShowMoreRow>
-                      </td>
+                          <ChevronDown className={styles.chev} size={14} aria-hidden="true" />
+                          <CensusGlyphMark glyph={group.glyph} />
+                          <span className={styles.groupLabel}>{sectionLabel}</span>
+                          <span className={styles.groupCount}>{groupRows.length}</span>
+                          {litCount > 0 ? <span className={styles.groupHint}>{litCount} highlighted</span> : null}
+                          <span className={styles.spacer} />
+                          {!open ? (
+                            <span className={styles.groupHint}>Show {groupRows.length}</span>
+                          ) : sectionKey === "off" && !searching ? (
+                            <span className={styles.groupHint}>Records with nothing open</span>
+                          ) : sectionKey === "team" && !searching ? (
+                            <span className={styles.groupHint}>Nothing open, followed by a team</span>
+                          ) : null}
+                        </button>
+                      </th>
                     </tr>
-                  ) : null}
-                </tbody>
-              );
-            })}
-          </table>
+                    {open
+                      ? groupRows
+                          .slice(0, cap)
+                          .map((row) => (
+                            <CensusTableRow
+                              key={row.key}
+                              row={row}
+                              needle={effectiveNeedle}
+                              selected={row.key === props.selectedKey}
+                              lifted={lifting && lifted(row)}
+                              flash={row.key === props.flashKey}
+                              onSelect={props.onSelect}
+                            />
+                          ))
+                      : null}
+                    {open && cap < groupRows.length ? (
+                      <tr className={styles.moreRow}>
+                        <td colSpan={cols}>
+                          <ShowMoreRow
+                            onClick={
+                              group.id === "ward"
+                                ? props.onShowAllWard
+                                : () => setShownAll((current) => new Set(current).add(group.id))
+                            }
+                          >
+                            Show all {groupRows.length}
+                          </ShowMoreRow>
+                        </td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                );
+              })}
+            </table>
+          )}
         </div>
       )}
       <div className={styles.foot}>
