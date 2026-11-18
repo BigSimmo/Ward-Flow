@@ -184,6 +184,10 @@ Every person, ward and figure named anywhere in it is invented.
 
 </details>
 
+## Movement page script trim — 18 Nov 2026 (`fix/red-main-budget-engine`)
+
+The source digest for `patients/patient-now-screen.tsx` was re-reviewed. The edit loads the archive panel and the medical clearance dialog lazily (as the page's tabs already are) to bring the movement page back under its phone script budget. No dispatch, payload or role changed. Cited lines moved down 15 lines with the added loaders.
+
 ## Six demo fixes — 18 Nov 2026 (`claude/project-thread-is87vo`, D-263)
 
 The source digests for `ed/ed-screen.tsx`, `alerts/alerts-screen.tsx`, `patients/patient-now-screen.tsx` and `ward/ward-screen-overlays.tsx` were re-reviewed. The edits are a toast's words (no transport needed Undo), on-screen wording (Forecast to Expected), a confirm before the uncited `RECORD_ABSENT_WITHOUT_LEAVE` dispatch, and the bed close reason passed into the uncited `SET_BED_CLOSED` dispatch with the toast's reason choices removed. Every cited dispatch, its payload and role is unchanged. Cited lines moved with the added code: in `patient-now-screen.tsx` by 6 or 17 lines, in `ward-screen-overlays.tsx` by 14 or 15 lines.
