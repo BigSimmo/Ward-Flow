@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 vi.mock("next/navigation", () => ({
   usePathname: () => "/bedchart/people/PT-001",
@@ -54,6 +54,16 @@ function LeaveProbe({ stay = occupied }: { stay?: typeof occupied }) {
   );
 }
 
+/** A12-02 (D-263): Mark absent asks first. With no styled host mounted the kit falls back to the browser box. */
+async function pressMarkAbsent(button: HTMLElement) {
+  const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+  await act(async () => {
+    fireEvent.click(button);
+  });
+  expect(confirm).toHaveBeenCalledWith("This starts the missing person steps. You can undo it straight after.");
+  confirm.mockRestore();
+}
+
 function renderPatient(patientId: string, stay = occupied) {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -65,7 +75,7 @@ function renderPatient(patientId: string, stay = occupied) {
 }
 
 describe("leave, absent without leave and CTO modes (D-38)", () => {
-  it("shows On leave from the stay's leave bed, then starts the missing person steps from it", () => {
+  it("shows On leave from the stay's leave bed, then starts the missing person steps from it", async () => {
     const root = renderPatient(inBedPatientId);
     expect(root).toHaveAttribute("data-patient-mode", "ward");
     fireEvent.click(screen.getByRole("button", { name: "Start synthetic leave" }));
@@ -76,7 +86,9 @@ describe("leave, absent without leave and CTO modes (D-38)", () => {
     ).toBeVisible();
     expect(screen.getByRole("heading", { name: /^If not back by \d{1,2}:\d{2} [ap]m$/ })).toBeVisible();
 
-    fireEvent.click(within(screen.getByTestId("ward-patient-leave-card")).getByRole("button", { name: "Mark absent" }));
+    await pressMarkAbsent(
+      within(screen.getByTestId("ward-patient-leave-card")).getByRole("button", { name: "Mark absent" }),
+    );
     expect(root).toHaveAttribute("data-patient-mode", "awol");
     expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Absent without leave");
     expect(screen.getByRole("img", { name: "0 of 6 steps done" })).toBeInTheDocument();
@@ -101,13 +113,13 @@ describe("leave, absent without leave and CTO modes (D-38)", () => {
     expect(root).toHaveAttribute("data-patient-mode", "ward");
   });
 
-  it("reads Not back from leave for a voluntary patient, with the same missing person steps (A3-13)", () => {
+  it("reads Not back from leave for a voluntary patient, with the same missing person steps (A3-13)", async () => {
     const root = renderPatient(voluntaryStay.patientId!, voluntaryStay);
     fireEvent.click(screen.getByRole("button", { name: "Start synthetic leave" }));
     const leaveCard = screen.getByTestId("ward-patient-leave-card");
     expect(leaveCard).toHaveTextContent("Treat as not back from leave");
     expect(leaveCard).not.toHaveTextContent("absent without leave");
-    fireEvent.click(within(leaveCard).getByRole("button", { name: "Mark absent" }));
+    await pressMarkAbsent(within(leaveCard).getByRole("button", { name: "Mark absent" }));
     expect(root).toHaveAttribute("data-patient-mode", "awol");
     expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Not back from leave");
     expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent("Not back from leave");
@@ -116,19 +128,19 @@ describe("leave, absent without leave and CTO modes (D-38)", () => {
     expect(screen.getByTestId("ward-patient-last-seen")).not.toHaveTextContent("Return order");
   });
 
-  it("prompts the return order question for an involuntary patient (S-5)", () => {
+  it("prompts the return order question for an involuntary patient (S-5)", async () => {
     renderPatient(inBedPatientId);
     // Josh's approved list (3 Nov 2026): Mark absent sits in the On ward card's one action row.
-    fireEvent.click(
+    await pressMarkAbsent(
       within(screen.getByTestId("ward-patient-change-card")).getByRole("button", { name: "Mark absent" }),
     );
     expect(screen.getByTestId("ward-patient-last-seen")).toHaveTextContent("Return order");
   });
 
-  it("marks absent straight from the ward, holding the bed", () => {
+  it("marks absent straight from the ward, holding the bed", async () => {
     const root = renderPatient(inBedPatientId);
     // Josh's approved list (3 Nov 2026): Mark absent sits in the On ward card's one action row.
-    fireEvent.click(
+    await pressMarkAbsent(
       within(screen.getByTestId("ward-patient-change-card")).getByRole("button", { name: "Mark absent" }),
     );
     expect(root).toHaveAttribute("data-patient-mode", "awol");

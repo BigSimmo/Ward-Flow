@@ -5,6 +5,7 @@ import { edActingPlaceId } from "@/components/ward-management/ward-role-access";
 import { useWardFormSave } from "../use-ward-form-save";
 import { resolveSubjectPatient } from "../ward-patient-resolver";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { requestConfirm } from "@/components/wf/confirm-dialog";
 import { patientChronologyHref } from "@/components/ward-management/reports/report-routes";
 import {
   Suspense,
@@ -706,7 +707,17 @@ export function PatientNowScreen({
     // D-187 item 16 (Q38): the Undo message names what it restores. Marked absent from leave, the
     // person goes back on leave; marked absent from the ward, they go back on the ward.
     const fromLeave = stayLeaveBed !== undefined && stayLeaveBed.absentWithoutLeave === undefined;
-    if (stay && gate("RECORD_ABSENT_WITHOUT_LEAVE").allowed)
+    if (!stay || !gate("RECORD_ABSENT_WITHOUT_LEAVE").allowed) return;
+    // A12-02 (Josh, 18 Nov 2026, D-263): one short question first, so a stray press does not start
+    // the missing person steps. Cancel (or Escape) changes nothing; Undo still follows the record.
+    void requestConfirm({
+      title: "Mark absent without leave?",
+      message: "This starts the missing person steps. You can undo it straight after.",
+      confirmLabel: "Confirm",
+      cancelLabel: "Cancel",
+      confirmTone: "default",
+    }).then((confirmed) => {
+      if (!confirmed) return;
       runStep(
         {
           type: "RECORD_ABSENT_WITHOUT_LEAVE",
@@ -727,6 +738,7 @@ export function PatientNowScreen({
           undone: fromLeave ? "Undone. Back on leave." : "Undone. Back on the ward.",
         },
       );
+    });
   }
   const wardForm: WardChangeForm = wardFormFor.admissionId === resolved?.liveAdmission?.id ? wardFormFor.form : "none";
   function showWardForm(form: WardChangeForm) {
