@@ -876,6 +876,12 @@ describe("engine safety under random event sequences", () => {
     `keeps beds whole across ${SEQUENCES} seeded sequences of ${STEPS} events`,
     () => {
       let completed = false;
+      // The pinned 17 Nov window calls runSeed before this test, and earlier replay checks can
+      // add undo types. Start from a clean slate so the coverage checks and profile describe only
+      // this window (SEQUENCES * STEPS events from FIRST_SEED), not those earlier runs.
+      FUZZED_EVENT_TYPES.clear();
+      UNDONE_STEP_TYPES.clear();
+      fuzzProfile.reset();
       try {
         let refused = 0;
         for (let seed = FIRST_SEED; seed < FIRST_SEED + SEQUENCES; seed += 1) {

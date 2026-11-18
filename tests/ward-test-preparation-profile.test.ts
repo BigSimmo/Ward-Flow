@@ -13,6 +13,24 @@ describe("optional test preparation profiles", () => {
     expect(profile.write()).toBeNull();
   });
 
+  it("clears counters and timings on reset so a later snapshot is empty", () => {
+    const directory = mkdtempSync(path.join(tmpdir(), "ward-preparation-"));
+    try {
+      const profile = createPreparationProfile("fixture", directory);
+      profile.count("events", 4);
+      profile.measure("work", () => 1);
+      const before = profile.snapshot();
+      expect(before.counters).toEqual({ events: 4 });
+      expect(Object.keys(before.milliseconds)).toEqual(["work"]);
+      profile.reset();
+      const after = profile.snapshot();
+      expect(after.counters).toEqual({});
+      expect(after.milliseconds).toEqual({});
+    } finally {
+      rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
+  });
+
   it("retains counters, throwing-operation time and distinct worker reports", () => {
     const directory = mkdtempSync(path.join(tmpdir(), "ward-preparation-"));
     try {
