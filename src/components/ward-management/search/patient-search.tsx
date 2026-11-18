@@ -134,7 +134,7 @@ import {
 } from "./patient-states";
 import { EdPlacementPrintSheet } from "./census-print";
 import { usePrinting, usePrintScope } from "@/components/ward-management/use-printing";
-import { ListPrintButton, type ListPrintChoice } from "@/components/ward-management/ward-list-print-button";
+import { ListPrintMenu, type ListPrintChoice } from "@/components/ward-management/ward-list-print-menu";
 import {
   LONG_WAIT_HOURS,
   SHORT_WAIT_HOURS,
@@ -1173,7 +1173,7 @@ export function PatientSearchPage() {
                       {
                         id: "print",
                         label: "Print",
-                        node: <ListPrintButton look="chip" choices={printChoices} testId="ward-patient-search-print" />,
+                        node: <ListPrintMenu look="chip" choices={printChoices} testId="ward-patient-search-print" />,
                       },
                     ]}
                   />

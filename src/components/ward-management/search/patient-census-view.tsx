@@ -17,7 +17,7 @@ import {
 import { CalendarDays, ChevronDown, ChevronLeft, Clock, Copy, Search, SearchX, UserPlus, X } from "lucide-react";
 
 import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
-import { ListPrintButton, type ListPrintChoice } from "@/components/ward-management/ward-list-print-button";
+import { ListPrintMenu, type ListPrintChoice } from "@/components/ward-management/ward-list-print-menu";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { usePrinting } from "@/components/ward-management/use-printing";
 import {
@@ -323,7 +323,7 @@ export function CensusTable(props: CensusTableProps) {
               />
             ) : null}
             {props.printChoices ? (
-              <ListPrintButton variant="ghost" choices={props.printChoices} testId="ward-census-print" />
+              <ListPrintMenu variant="ghost" choices={props.printChoices} testId="ward-census-print" />
             ) : null}
           </>
         ) : null}
