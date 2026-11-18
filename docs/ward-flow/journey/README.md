@@ -186,7 +186,7 @@ Every person, ward and figure named anywhere in it is invented.
 
 ## Six demo fixes — 18 Nov 2026 (`claude/project-thread-is87vo`, D-263)
 
-The source digests for `ed/ed-screen.tsx`, `alerts/alerts-screen.tsx`, `patients/patient-now-screen.tsx` and `ward/ward-screen-overlays.tsx` were re-reviewed. The edits are a toast's words (no transport needed Undo), on-screen wording (Forecast to Expected), a confirm before the uncited `RECORD_ABSENT_WITHOUT_LEAVE` dispatch, and the bed close reason passed into the uncited `SET_BED_CLOSED` dispatch with the toast's reason choices removed. Every cited dispatch, its payload and role is unchanged. Cited lines moved with the added code: in `patient-now-screen.tsx` by 7 or 18 lines, in `ward-screen-overlays.tsx` by 14 or 15 lines.
+The source digests for `ed/ed-screen.tsx`, `alerts/alerts-screen.tsx`, `patients/patient-now-screen.tsx` and `ward/ward-screen-overlays.tsx` were re-reviewed. The edits are a toast's words (no transport needed Undo), on-screen wording (Forecast to Expected), a confirm before the uncited `RECORD_ABSENT_WITHOUT_LEAVE` dispatch, and the bed close reason passed into the uncited `SET_BED_CLOSED` dispatch with the toast's reason choices removed. Every cited dispatch, its payload and role is unchanged. Cited lines moved with the added code: in `patient-now-screen.tsx` by 6 or 17 lines, in `ward-screen-overlays.tsx` by 14 or 15 lines.
 
 ## BedChart rename — 16 Nov 2026 (`claude/project-thread-wrpgfx`)
 

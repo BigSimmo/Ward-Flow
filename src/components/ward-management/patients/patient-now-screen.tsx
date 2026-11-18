@@ -5,7 +5,6 @@ import { edActingPlaceId } from "@/components/ward-management/ward-role-access";
 import { useWardFormSave } from "../use-ward-form-save";
 import { resolveSubjectPatient } from "../ward-patient-resolver";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { requestConfirm } from "@/components/wf/confirm-dialog";
 import { patientChronologyHref } from "@/components/ward-management/reports/report-routes";
 import {
   Suspense,
@@ -163,7 +162,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
 import { useCanOpenHref, useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { Dialog, PhoneSheet, cx, folderTabClasses, useIsPhone } from "@/components/wf";
+import { Dialog, PhoneSheet, cx, folderTabClasses, requestConfirm, useIsPhone } from "@/components/wf";
 import { PatientClearanceDialog, type ClearanceDraft } from "./patient-clearance-dialog";
 import { isOnOrder } from "../ward-stay-legal";
 import { TIER_NOT_RECORDED } from "../ward-priority";
