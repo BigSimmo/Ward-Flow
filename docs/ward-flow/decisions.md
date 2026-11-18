@@ -275,7 +275,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-261](#d-261-build-the-bedchart-folded-b-logo-into-the-site-now-16-november-2026)                                                                     | Build the BedChart Folded B logo into the site now                                                            | Active                                           |
 | [D-263](#d-263-mark-absent-asks-first-close-this-bed-asks-a-reason-and-figures-say-expected-not-forecast-18-november-2026)                              | Mark absent asks first, Close this bed asks a reason, and figures say expected, not forecast                  | Active                                           |
 | [D-264](#d-264-a-same-site-move-keeps-its-order-check-the-triage-see-by-times-stay-and-the-old-closure-toast-helpers-go-18-november-2026)               | A same-site move keeps its order check, the triage see-by times stay, and the old closure toast helpers go    | Active                                           |
-| [D-265](#d-265-the-printed-patients-list-numbers-its-pages-and-carries-group-names-and-the-capacity-hero-fits-narrow-phones-18-november-2026)           | The printed Patients list numbers its pages and carries group names, and the Capacity hero fits narrow phones | Active                                           |
+| [D-266](#d-266-the-printed-patients-list-numbers-its-pages-and-carries-group-names-and-the-capacity-hero-fits-narrow-phones-18-november-2026)           | The printed Patients list numbers its pages and carries group names, and the Capacity hero fits narrow phones | Active                                           |
 
 ---
 
@@ -3020,11 +3020,11 @@ D-253 is reserved by other threads (PR #1700, PR #1702 and the handover). D-254 
 - **Why:** the order check and the see-by times are signed clinical behaviour, and nothing in the demo audit showed a need to change them. The helpers had no callers after Close this bed moved its reason before the close.
 - **Boundary:** no code, clinical rule, signed value, event or permission changes.
 
-## D-265. The printed Patients list numbers its pages and carries group names, and the Capacity hero fits narrow phones (18 November 2026)
+## D-266. The printed Patients list numbers its pages and carries group names, and the Capacity hero fits narrow phones (18 November 2026)
 
 - **Date:** 18 November 2026, 9:08 PM AWST (13:08 UTC). **Decided by:** Josh, in the thread "Plan next steps before demo freeze": "Yes go ahead", answering "Should I build the three small leftovers as one PR before 22 Nov? I recommend yes".
 - **Decision:** (1) Every printed page carries "Page N of M": the default `@page` gets a 10mm margin (Chrome's own default), so the counter has room even when a PDF export sets no margin. A sheet's own `@page` margin still wins. (2) The printed Patients list prints one table per group; a group that runs onto a new page repeats its name as "(continued)" above the repeated column heads. (3) Below 360 px the Capacity hero's four figures share the row and their labels may wrap, so In use and its bands are no longer clipped. (4) The short "ED and placement only" print waits for Josh's pick between the two mock-up options (https://claude.ai/artifact/BuAunsJVR5Px1s7Hi8WuEx); it is not built by this entry.
 - **Why:** the 16 November live walk scored the printed Patients list 73 for 28 pages with no page numbers and no group name after a page break, and Capacity lost points for the cut In use tile.
 - **Boundary:** print layout and one narrow-phone layout rule only. No clinical value, rule, count, saved record or permission changes. Synthetic data only.
 
-The next free number is D-266.
+The next free number is D-267.

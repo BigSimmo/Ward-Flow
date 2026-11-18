@@ -423,7 +423,7 @@ safe global key across 30 files.
 | `D-261` | `decisions.md`:3000 | D-261. Build the BedChart Folded B logo into the site now (16 November 2026) |
 | `D-263` | `decisions.md`:3008 | D-263. Mark absent asks first, Close this bed asks a reason, and figures say expected, not forecast (18 November 2026) |
 | `D-264` | `decisions.md`:3016 | D-264. A same-site move keeps its order check, the triage see-by times stay, and the old closure toast helpers go (18 November 2026) |
-| `D-265` | `decisions.md`:3023 | D-265. The printed Patients list numbers its pages and carries group names, and the Capacity hero fits narrow phones (18 November 2026) |
+| `D-266` | `decisions.md`:3023 | D-266. The printed Patients list numbers its pages and carries group names, and the Capacity hero fits narrow phones (18 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -986,7 +986,7 @@ safe global key across 30 files.
 - `D-261` — line 3000, heading: "D-261. Build the BedChart Folded B logo into the site now (16 November 2026)"
 - `D-263` — line 3008, heading: "D-263. Mark absent asks first, Close this bed asks a reason, and figures say expected, not forecast (18 November 2026)"
 - `D-264` — line 3016, heading: "D-264. A same-site move keeps its order check, the triage see-by times stay, and the old closure toast helpers go (18 November 2026)"
-- `D-265` — line 3023, heading: "D-265. The printed Patients list numbers its pages and carries group names, and the Capacity hero fits narrow phones (18 November 2026)"
+- `D-266` — line 3023, heading: "D-266. The printed Patients list numbers its pages and carries group names, and the Capacity hero fits narrow phones (18 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
