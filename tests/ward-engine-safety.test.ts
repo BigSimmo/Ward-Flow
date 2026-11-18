@@ -180,15 +180,9 @@ function bedInvariantViolation(state: WardFlowState): Violation | null {
           movement.referralId === referral.id && movement.stage === "arrived" && movement.acceptedUnitId === unitId,
       );
       if (!unitId || arrived) continue;
-      // The journey raised from this referral to the same ward is the same person, and the engine
-      // writes the bed on both (`RAISE_REFERRAL` copies an acceptance's bed; `PLACE_IN_BED` moves a
-      // pulled stay's bed on both, D-210 one-tap pull, seed 332344): one holder, not two.
-      const journey = state.movements.find(
-        (movement) => !movement.closure && movement.referralId === referral.id && movement.acceptedUnitId === unitId,
-      );
       const broken = hold(
         `${unitId} bed ${arm.heldBedNumber}`,
-        journey?.heldBedNumber === arm.heldBedNumber ? journey.id : referral.id,
+        referral.id,
         (admissionId) => admissionById.get(admissionId)?.referralId === referral.id,
       );
       if (broken) return broken;
@@ -876,45 +870,6 @@ describe("engine safety under random event sequences", () => {
 
   it("keeps beds whole across the 17 Nov nightly window (seeds 332385-332400)", () => {
     for (let seed = 332385; seed <= 332400; seed += 1) expect(runSeed(seed).failure, `seed ${seed}`).toBeNull();
-  });
-
-  // Seed 332344 with the one-tap pull route: a ward moves the pulled stay to another of its beds, and
-  // the engine writes that bed on the journey and on its own referral. One person, one bed.
-  it("treats a pulled journey and its own referral holding the same bed as one hold", () => {
-    const events = [
-      {
-        now: 642,
-        type: "RAISE_REFERRAL",
-        role: "coordinator",
-        edId: "jhc-ed",
-        referralId: "RF-019",
-        acceptedUnitId: "scgh-adult-open",
-        pullBed: true,
-        draft: {
-          cohort: "Adult",
-          security: "Open",
-          sex: "Female",
-          gender: "Female",
-          highAcuity: false,
-          observation: { level: "general", intervalMinutes: null, reviewAt: null },
-          legalStatus: "Voluntary",
-          legalFormCode: null,
-          urgency: 1,
-        },
-      },
-      {
-        now: 1145,
-        type: "PLACE_IN_BED",
-        admissionId: "AD-ARR-01",
-        actingUnitId: "scgh-adult-open",
-        bedNumber: 13,
-        role: "ward",
-      },
-    ] as unknown as WardFlowEvent[];
-    const after = events.reduce(wardFlowReducer, seedWardFlowState("standard"));
-    expect(after.rejections).toEqual([]);
-    expect(after.admissions.find((stay) => stay.id === "AD-ARR-01")?.bedNumber).toBe(13);
-    expect(replay("standard", events)).toBeNull();
   });
 
   it(
