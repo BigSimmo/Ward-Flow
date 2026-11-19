@@ -282,6 +282,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-266](#d-266-the-printed-patients-list-numbers-its-pages-and-carries-group-names-and-the-capacity-hero-fits-narrow-phones-18-november-2026)                  | The printed Patients list numbers its pages and carries group names, and the Capacity hero fits narrow phones | Active                                           |
 | [D-267](#d-267-patients-print-opens-a-menu-with-a-short-ed-and-placement-sheet-18-november-2026)                                                               | Patients Print opens a menu with a short ED and placement sheet                                               | Active                                           |
 | [D-268](#d-268-ed-journeys-open-is-renamed-open-ed-movements-18-november-2026)                                                                                 | "ED journeys open" is renamed "Open ED movements"                                                             | Active                                           |
+| [D-269](#d-269-the-19-november-pre-demo-audit-fixes-go-ahead-as-recommended-19-november-2026)                                                                  | The 19 November pre-demo audit fixes go ahead as recommended                                                  | Active                                           |
 
 ---
 
