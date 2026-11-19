@@ -217,7 +217,7 @@ export function WardObservationControl({
                 <input
                   className={styles.select}
                   data-testid="ward-observation-review-time"
-                  inputMode="numeric"
+                  inputMode="text"
                   disabled={recording.pending}
                   placeholder="For example 14:30"
                   value={reviewTime}

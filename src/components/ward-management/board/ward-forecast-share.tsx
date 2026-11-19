@@ -84,10 +84,14 @@ function plural(count: number, word: string): string {
 function countedSentence(confirmed: number, expected: number, heldUp: number, overdue: number): string {
   const counted =
     confirmed + expected === 0
-      ? "Tomorrow's expected beds count none of this ward's discharges yet."
-      : `Tomorrow's expected beds count ${plural(confirmed + expected, "discharge")} from this ward: ${confirmed} confirmed, ${expected} expected.`;
+      ? "No discharges on this ward count towards tomorrow's expected beds yet."
+      : `${plural(confirmed + expected, "discharge")} on this ward ${confirmed + expected === 1 ? "counts" : "count"} towards tomorrow's expected beds: ${confirmed} confirmed, ${expected} expected.`;
+  // Held up and overdue discharges sit outside the expected figure: the forecast adds them only to
+  // the top of its range (`beds-forecast.ts`), which is what "best case only" says here.
   const notLikely = [heldUp > 0 ? `${heldUp} held up` : null, overdue > 0 ? `${overdue} overdue` : null].filter(
     (part): part is string => part !== null,
   );
-  return notLikely.length === 0 ? counted : `${counted} Best case only: ${notLikely.join(", ")}.`;
+  return notLikely.length === 0
+    ? counted
+    : `${counted} ${notLikely.join(" and ")} ${heldUp + overdue === 1 ? "discharge counts" : "discharges count"} in the best case only.`;
 }

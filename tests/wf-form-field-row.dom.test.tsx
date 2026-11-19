@@ -14,7 +14,7 @@ import { Field, TextInput } from "@/components/wf";
 describe("kit Field lines under the box", () => {
   it("keeps the error and help with the box in the row layout's answer column", () => {
     render(
-      <Field label="Depart" layout="row" error="Type a 24-hour time, HH:MM" help="Leave blank if not booked">
+      <Field label="Depart" layout="row" error="Type a time, like 2:30 pm or 14:30" help="Leave blank if not booked">
         <TextInput data-testid="depart" />
       </Field>,
     );
@@ -33,7 +33,9 @@ describe("kit Field lines under the box", () => {
     expect(answer).toContainElement(help);
     expect(box.compareDocumentPosition(error) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(error.compareDocumentPosition(help) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByRole("textbox", { name: "Depart" })).toHaveAccessibleDescription(/Type a 24-hour time, HH:MM/u);
+    expect(screen.getByRole("textbox", { name: "Depart" })).toHaveAccessibleDescription(
+      /Type a time, like 2:30 pm or 14:30/u,
+    );
   });
 
   it("keeps the stack layout's structure: label row, box, then lines", () => {
@@ -57,7 +59,7 @@ describe("kit Field lines under the box", () => {
     const before = field.children.length;
     expect(field.lastElementChild).toHaveAttribute("aria-hidden", "true");
     rerender(
-      <Field label="Depart" reserveLine error="Type a 24-hour time, HH:MM">
+      <Field label="Depart" reserveLine error="Type a time, like 2:30 pm or 14:30">
         <TextInput />
       </Field>,
     );

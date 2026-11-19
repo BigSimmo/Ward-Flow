@@ -546,6 +546,23 @@ describe("Group A Defect Remediation — Clinical, Legal & Operational Fixes", (
       expect(dueShort(row, NOW, undefined, "sheet")).toMatch(/1A due \d{2}:\d{2}/);
     });
 
+    it("prints a bed pull's end on the 24-hour sheet face too, so one printed column has one clock style", () => {
+      const state = seedWardFlowState();
+      const movement: Movement = {
+        ...state.movements[0],
+        id: "WF-PRINT-PULL" as const,
+        pullExpiresAt: NOW + 90,
+        legalForm: undefined,
+      };
+      const row = toHandoverRow(movement, state.units, state.patients, state.referrals);
+      expect(dueShort(row, NOW)).toMatch(/^Pull ends \d{1,2}:\d{2} (am|pm)/);
+      expect(dueShort(row, NOW, undefined, "sheet")).toMatch(/^Pull ends \d{2}:\d{2}/);
+      expect(dueShort(row, NOW, undefined, "sheet")).not.toMatch(/am|pm/i);
+      expect(dueParts(row, NOW)?.when).toMatch(/am|pm/i);
+      expect(dueParts(row, NOW, undefined, undefined, "sheet")?.when).toMatch(/^\d{2}:\d{2}/);
+      expect(dueParts(row, NOW, undefined, undefined, "sheet")?.when).not.toMatch(/am|pm/i);
+    });
+
     it("identifies collected patients as in transit even when pullExpiresAt is undefined", () => {
       const state = seedWardFlowState();
       const inTransitMovementNoPull: Movement = {

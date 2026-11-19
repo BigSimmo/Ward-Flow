@@ -10,6 +10,9 @@ name: Ward Flow daily release
 # then move `live` back to the previous `live-*` tag with Josh's yes. If live ever points at a commit
 # with no release record (for example a rollback to a commit that was never released), a manual run
 # with "accept_unrecorded_live" ticked releases from there instead of failing.
+# When a 6 am run does not finish (a failure, a refusal or an acceptance veto), the notify job opens
+# one `release-blocked` issue that @mentions the owner, or adds a comment to the open one, so live
+# cannot sit behind main unnoticed (17 and 18 Nov 2026). A day with nothing new raises nothing.
 on:
   # 22:00 UTC is 6 am in Perth. (Paused on 31 Oct 2026 while the redesign merged, and restored after
   # that night's "release now".)
@@ -36,8 +39,11 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: write
+    outputs:
+      reason: ${{ steps.release.outputs.reason }}
     steps:
       - name: Release
+        id: release
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
@@ -46,6 +52,18 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
+          # Keep a copy of what this step says on its error stream, so a 6 am run that does not
+          # release can quote the reason in its notice (the notify job below). Reporting only: no
+          # release decision reads it, and the step's exit code is left as it was.
+          exec 2> >(tee release-errors.txt >&2)
+          errors_pid=$!
+          keep_reason() {
+            exec 2>&- || true
+            wait "$errors_pid" 2>/dev/null || true
+            { echo "reason<<WARD_RELEASE_REASON"; tail -n 12 release-errors.txt; echo; echo "WARD_RELEASE_REASON"; } \
+              >> "${GITHUB_OUTPUT:-/dev/null}" 2>/dev/null || true
+          }
+          trap keep_reason EXIT
           [ "$REPOSITORY" = "BigSimmo/Ward-Flow" ] || { echo "Unexpected release repository" >&2; exit 1; }
 
           # CB-2 (front-end audit, 5 Nov 2026): the release pause switch, checked before any API call.
@@ -254,3 +272,44 @@ jobs:
           gh api -X PATCH "repos/$REPOSITORY/git/refs/heads/live" -f sha="$target" -F force=false >/dev/null
           finish_release "$record" "$target"
           echo "Released $target with its preserved release record."
+
+  # Nobody was told when the 6 am run refused to move live on 17 and 18 Nov 2026. This job runs only
+  # after a scheduled run whose release job did not succeed: any failing exit above, a timeout or a
+  # cancelled run. It never runs for a manual "release now" (the person watching sees that fail), for
+  # a paused release (the owner's own switch) or for a day with nothing new, which all end green or
+  # by hand. It writes only the one issue and its label, and holds no permission over code or live.
+  notify:
+    name: Tell the owner the 6 am release did not happen
+    needs: release
+    if: ${{ always() && github.event_name == 'schedule' && needs.release.result != 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update the release-blocked issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          LABEL: release-blocked
+          OWNER: BigSimmo
+          RESULT: ${{ needs.release.result }}
+          REASON: ${{ needs.release.outputs.reason }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          [ "$GH_REPO" = "BigSimmo/Ward-Flow" ] || { echo "Unexpected release repository" >&2; exit 1; }
+          # The clock only names the day in the notice; it decides nothing.
+          day="$(TZ=Australia/Perth date +%Y-%m-%d)"
+          # The reason is quoted as plain text: long lines are cut and code fences cannot close early.
+          reason="$(printf '%s' "${REASON:-}" | cut -c1-300 | sed "s/\`/'/g")"
+          [ -n "$reason" ] || reason="The release step left no message. Open the run for its log."
+          body="$(printf '@%s The 6 am daily release did not move the live site on %s (Perth). The release job ended as: %s. Run: %s\n\nWhat the release step said:\n\n```\n%s\n```\n\nLive stays where it was, so it may now be behind `main`. The next 6 am run tries again; an acceptance veto clears once the newest acceptance run on that commit is green. Close this issue once a release has gone out.\n' \
+            "$OWNER" "$day" "$RESULT" "$RUN_URL" "$reason")"
+          gh label create "$LABEL" --color D93F0B --description "The 6 am daily release did not move live" --force
+          open="$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number // empty')"
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body "$body"
+          else
+            gh issue create --label "$LABEL" --title "Daily release did not run: $day" --body "$body"
+          fi

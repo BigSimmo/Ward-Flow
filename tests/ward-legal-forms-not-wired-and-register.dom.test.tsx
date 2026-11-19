@@ -78,7 +78,7 @@ describe("Legal forms — wired confirm controls (F2.1)", () => {
     expect(timeBlockedConfirm).toHaveAttribute("aria-disabled", "true");
     expect(timeBlockedConfirm).toHaveAttribute(
       "title",
-      "Enter the time written on the form as HH:MM, no later than now.",
+      "Enter the time written on the form, like 2:30 pm or 14:30, no later than now.",
     );
     // "0930" now reads as 09:30 (the iPhone number pad has no colon); three digits are still refused.
     for (const bad of ["25:00", "093", "23:59"]) {

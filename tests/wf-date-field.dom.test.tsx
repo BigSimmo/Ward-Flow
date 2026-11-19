@@ -15,6 +15,7 @@ import {
   isoDateAsTyped,
   parseTypedDate,
   parseTypedTime,
+  timeTextWrong,
   type DateFieldProps,
 } from "@/components/wf";
 
@@ -125,10 +126,35 @@ describe("kit typed date and time (DD/MM/YYYY plus HH:MM)", () => {
     expect(parseTypedTime("1430")).toBe("14:30");
     // PR #1474 review: with no separator it takes exactly four digits, never "143" as 01:43.
     expect(parseTypedTime("143")).toBeNull();
-    expect(parseTypedTime("2:30 pm")).toBeNull();
     expect(parseTypedTime("24:00")).toBeNull();
     expect(parseTypedTime("12:60")).toBeNull();
-    expect(parseTypedTime("2pm")).toBeNull();
+  });
+
+  it("reads an am/pm time as the same 24-hour text (D-254), and refuses rubbish", () => {
+    expect(parseTypedTime("2:30 pm")).toBe("14:30");
+    expect(parseTypedTime("2pm")).toBe("14:00");
+    expect(parseTypedTime("9:30 PM")).toBe("21:30");
+    expect(parseTypedTime("9.30 a.m.")).toBe("09:30");
+    expect(parseTypedTime("11:45pm")).toBe("23:45");
+    // Noon and midnight: 12 pm is noon, 12 am is midnight.
+    expect(parseTypedTime("12 pm")).toBe("12:00");
+    expect(parseTypedTime("12:15 pm")).toBe("12:15");
+    expect(parseTypedTime("12 am")).toBe("00:00");
+    expect(parseTypedTime("12:05am")).toBe("00:05");
+    expect(parseTypedTime("00:00")).toBe("00:00");
+    expect(parseTypedTime("12:00")).toBe("12:00");
+    for (const text of ["0 am", "13 pm", "13:00 pm", "9:60 am", "9 m", "pm", "9h30", "half past two", "", "9:30 p"]) {
+      expect(parseTypedTime(text), text).toBeNull();
+    }
+  });
+
+  it("flags a finished am/pm time that is not real, and not one still being typed", () => {
+    for (const text of ["13:00 pm", "0 am", "9:60 am", "9h30", "pm", "25:00", "noon"]) {
+      expect(timeTextWrong(text), text).toBe(true);
+    }
+    for (const text of ["", "9", "9:3", "9:30 p", "9:30 a.", "2:30 pm", "14:30", "143"]) {
+      expect(timeTextWrong(text), text).toBe(false);
+    }
   });
 
   it("joins both boxes as YYYY-MM-DDTHH:MM only once each is real, and carries it in a named form", () => {
@@ -140,7 +166,7 @@ describe("kit typed date and time (DD/MM/YYYY plus HH:MM)", () => {
       </form>,
     );
     const date = screen.getByLabelText("When");
-    const time = screen.getByRole("textbox", { name: "When time, HH:MM 24-hour" });
+    const time = screen.getByRole("textbox", { name: "When time, for example 2:30 pm or 14:30" });
     const hidden = container.querySelector<HTMLInputElement>('input[type="hidden"][name="when"]');
     expect(date).toHaveAttribute("placeholder", "DD/MM/YYYY");
     expect(time).toHaveAttribute("placeholder", "HH:MM");
@@ -170,7 +196,7 @@ describe("kit typed date and time (DD/MM/YYYY plus HH:MM)", () => {
     }
     render(<Host />);
     const date = screen.getByLabelText("Written");
-    const time = screen.getByRole("textbox", { name: "Written time, HH:MM 24-hour" });
+    const time = screen.getByRole("textbox", { name: "Written time, for example 2:30 pm or 14:30" });
     expect(date).toHaveValue("");
     expect(time).toHaveValue("");
     fireEvent.click(screen.getByRole("button", { name: "Load" }));
@@ -263,7 +289,7 @@ describe("default error words under the kit date and time boxes", () => {
     }
     const { unmount } = render(<Bare />);
     const box = screen.getByRole("textbox", { name: "Bare time" });
-    fireEvent.change(box, { target: { value: "2:30 pm" } });
+    fireEvent.change(box, { target: { value: "13:30 pm" } });
     expect(box.getAttribute("aria-describedby")).toBe(screen.getByText(TIME_FIELD_ERROR).id);
     unmount();
 

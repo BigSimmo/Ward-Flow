@@ -925,7 +925,7 @@ export function PlannedAdmissionsPanel({
                   ))}
                 </Select>
               </Field>
-              <Field label="Arrival time" hint="HH:MM">
+              <Field label="Arrival time" hint="HH:MM or am/pm">
                 <TimeField
                   value={draft.time}
                   onValueChange={(time) => {

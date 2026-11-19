@@ -11,6 +11,7 @@ import { CalendarDays, MapPin, Phone, Stethoscope } from "lucide-react";
 import { Button, Card, CardHead, Segmented, SrOnly } from "@/components/wf";
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
 import { foldPatientSearchHaystack, foldPatientSearchText } from "@/components/ward-management/ward-patients";
+import { formatInstant } from "@/components/ward-management/ward-clock";
 import { TODAY, type DemoStaff } from "./midland-demo";
 import { useMidlandDay, useMidlandDemo } from "./use-midland-demo";
 import { Tag } from "./parts";
@@ -18,6 +19,9 @@ import wt from "@/components/ward-management/ward-table/ward-table.module.css";
 import t from "./team-2026.module.css";
 
 type StaffFilter = "all" | "in" | "field" | "away";
+
+/** A sample clock time on the screen's am/pm face ("9:40 am"), from 24-hour hours and minutes. */
+const clock = (hours: number, minutes = 0) => formatInstant(hours * 60 + minutes);
 
 function shows(filter: StaffFilter, today: string): boolean {
   if (filter === "all") return true;
@@ -101,10 +105,10 @@ export function TeamClinicians({ find = "" }: { find?: string }) {
           <CardHead icon={CalendarDays} title="This week" />
           <ul className={t.week}>
             {[
-              ["Mon", "Allocation meeting 13:30"],
-              ["Tue", "Clozapine clinic 09:00"],
-              ["Wed", "Team review 14:00"],
-              ["Thu", "Depot clinic 09:00"],
+              ["Mon", `Allocation meeting ${clock(13, 30)}`],
+              ["Tue", `Clozapine clinic ${clock(9)}`],
+              ["Wed", `Team review ${clock(14)}`],
+              ["Thu", `Depot clinic ${clock(9)}`],
               ["Fri", "CTO reviews, Dr Hartwell"],
             ].map(([day, what]) => (
               <li key={day}>
@@ -123,11 +127,11 @@ export function TeamClinicians({ find = "" }: { find?: string }) {
             </div>
             <div>
               <dt>Cars</dt>
-              <dd>1 of 3 at base · next back 12:30</dd>
+              <dd>1 of 3 at base · next back {clock(12, 30)}</dd>
             </div>
             <div>
               <dt>Depot fridge</dt>
-              <dd>Checked 08:40 · Doyle, Marcus</dd>
+              <dd>Checked {clock(8, 40)} · Doyle, Marcus</dd>
             </div>
           </dl>
         </Card>

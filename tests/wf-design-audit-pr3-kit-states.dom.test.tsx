@@ -222,8 +222,8 @@ describe("W14: the kit typed time box", () => {
 
   it.each([
     ["three digits", "143"],
-    ["a pasted am/pm time", "2:30 pm"],
-    ["a pasted am/pm time with no space", "11:45pm"],
+    ["an am/pm time that is not real", "13:30 pm"],
+    ["an am/pm time still being typed", "11:45p"],
     ["past the end of the day", "24:00"],
     ["a single digit", "9"],
   ])("never sends %s (%s) as a time", (_case, typed) => {
@@ -238,14 +238,14 @@ describe("W14: the kit typed time box", () => {
     expect(box).toHaveValue(typed);
   });
 
-  it("marks letters and an unreal finished time wrong at once, but not a time still being typed", () => {
+  it("marks stray letters and an unreal finished time wrong at once, but not a time still being typed", () => {
     render(<Harness />);
     const box = screen.getByRole("textbox", { name: "Arrival time" });
-    for (const typed of ["2:30 pm", "11:45pm", "24:00"]) {
+    for (const typed of ["9h30", "13:30 pm", "24:00"]) {
       fireEvent.change(box, { target: { value: typed } });
       expect(box).toHaveAttribute("aria-invalid", "true");
     }
-    for (const typed of ["9", "143"]) {
+    for (const typed of ["9", "143", "2:30 p", "2:30 pm", "11:45pm"]) {
       fireEvent.change(box, { target: { value: typed } });
       expect(box).not.toHaveAttribute("aria-invalid", "true");
     }
@@ -256,6 +256,11 @@ describe("W14: the kit typed time box", () => {
     ["1430", "14:30"],
     ["9:05", "09:05"],
     ["14.30", "14:30"],
+    // D-254: every time box takes am/pm too; the value stays 24-hour.
+    ["2:30 pm", "14:30"],
+    ["11:45pm", "23:45"],
+    ["12 am", "00:00"],
+    ["12 pm", "12:00"],
   ])("takes %s as %s and shows the stored time on leaving the box", (typed, stored) => {
     render(<Harness />);
     const box = screen.getByRole("textbox", { name: "Arrival time" });

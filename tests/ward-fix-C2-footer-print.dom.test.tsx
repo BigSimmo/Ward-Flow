@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useLayoutEffect, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
@@ -85,12 +85,17 @@ describe("3.3 a pack print is recorded only when the person says it printed", ()
   it("records nothing on Not yet, so a cancelled print keeps the warning", async () => {
     vi.spyOn(window, "print").mockImplementation(() => undefined);
     renderScreen();
-    fireEvent.click(await screen.findByTestId("ward-downtime-print"));
+    // 19 Nov 2026 (item 6): the demo starts with most wards' packs printed earlier today.
+    const print = await screen.findByTestId("ward-downtime-print");
+    const seeded = seen.prints;
+    const lastPrinted = screen.queryByTestId("ward-downtime-last-printed")?.textContent;
+    expect(seeded).toBeGreaterThan(0);
+    fireEvent.click(print);
     expect(await screen.findByText("Did it print?")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Not yet" }));
     await act(async () => undefined);
-    expect(seen.prints).toBe(0);
-    expect(screen.queryByTestId("ward-downtime-last-printed")).toBeNull();
+    expect(seen.prints).toBe(seeded);
+    expect(screen.queryByTestId("ward-downtime-last-printed")?.textContent).toBe(lastPrinted);
     expect(screen.getByTestId("ward-downtime-old-packs")).toHaveTextContent("never printed");
   });
 
@@ -99,11 +104,13 @@ describe("3.3 a pack print is recorded only when the person says it printed", ()
       window.dispatchEvent(new Event("afterprint"));
     });
     renderScreen();
-    fireEvent.click(await screen.findByTestId("ward-downtime-print"));
+    const print = await screen.findByTestId("ward-downtime-print");
+    const seeded = seen.prints ?? 0;
+    fireEvent.click(print);
     expect(await screen.findAllByText("Did it print?")).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Yes" }));
     expect(await screen.findByTestId("ward-downtime-last-printed")).toBeInTheDocument();
-    expect(seen.prints).toBeGreaterThan(0);
+    await waitFor(() => expect(seen.prints).toBeGreaterThan(seeded));
   });
 });
 

@@ -307,7 +307,7 @@ export function RecordFormSheet({
                 : parsedWrittenAt === null
                   ? dayZero && dateOnForm !== ""
                     ? "Enter the date and time written on the form, no later than now."
-                    : "Enter the time written on the form as HH:MM, no later than now."
+                    : "Enter the time written on the form, like 2:30 pm or 14:30, no later than now."
                   : undefined);
   const typeId = `${baseId}-legal-forms-new-instrument`;
   const movementId = `${baseId}-legal-forms-new-movement`;
@@ -335,7 +335,7 @@ export function RecordFormSheet({
                   text:
                     dayZero && dateOnForm !== ""
                       ? "Enter the date and time written on the form, no later than now"
-                      : "Enter the time written on the form as HH:MM, no later than now",
+                      : "Enter the time written on the form, like 2:30 pm or 14:30, no later than now",
                 },
               ]
             : []),
@@ -514,10 +514,10 @@ export function RecordFormSheet({
         ) : null}
         <div className={styles.fieldPair}>
           <Field label="Time on form" id={timeId} error={problemFor(timeId)}>
-            {/* The HH:MM placeholder says it is a typed 24-hour time, so no clock icon. */}
+            {/* The HH:MM placeholder says it is a typed time (24-hour or am/pm, D-254), so no clock icon. */}
             <TextInput
               placeholder="HH:MM"
-              inputMode="numeric"
+              inputMode="text"
               autoComplete="off"
               aria-required="true"
               disabled={saving}
@@ -725,7 +725,7 @@ function ExtendSheetContent({
                 data-testid="ward-legal-forms-renew-expiry"
                 icon={Clock}
                 placeholder="HH:MM"
-                inputMode="numeric"
+                inputMode="text"
                 autoComplete="off"
                 aria-required="true"
                 disabled={saving}

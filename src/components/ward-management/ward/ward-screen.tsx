@@ -40,6 +40,7 @@ import {
   wardIntakeConstraintLabels,
 } from "@/components/ward-management/ward-change-reasons";
 import { dayOf, formatInstant, formatInstantWithDay, minuteOfDay } from "@/components/ward-management/ward-clock";
+import { ageText } from "@/components/ward-management/ward-confirmation-age";
 import { CLINICAL_VALUES, isBedCountStale } from "@/components/ward-management/ward-clinical-values";
 import {
   BED_RELEASE_BLOCKED_FIGURE_LABEL,
@@ -2026,7 +2027,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     <span>
       {/* Walk-through WT-18: "Capacity", so it does not read as the morning bed numbers being confirmed. */}
       {unit.allocatable.source === "ward" ? "Capacity confirmed" : "Last capacity figure"}{" "}
-      {formatInstant(unit.allocatable.confirmedAt)} · {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} ago
+      {formatInstant(unit.allocatable.confirmedAt)} · {ageText(unit.allocatable.confirmedAt, now)}
     </span>
   );
 

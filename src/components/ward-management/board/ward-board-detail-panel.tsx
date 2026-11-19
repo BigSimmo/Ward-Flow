@@ -453,7 +453,7 @@ export function WardBoardDetailPanel({
                       </Field>
                       <Field
                         label="Expected discharge time"
-                        hint="HH:MM"
+                        hint="HH:MM or am/pm"
                         error={dateTimeWrong ? TIME_FIELD_ERROR : undefined}
                       >
                         <TimeField

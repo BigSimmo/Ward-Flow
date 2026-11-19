@@ -128,9 +128,10 @@ export function PrivacyTrackerScreen() {
               </p>
             ) : (
               <p className={styles.lead}>
-                BedChart meets {MET} of {TOTAL} checks today and has started {PARTLY} more. The biggest gaps: no privacy
-                officer or signed privacy impact assessment, hosting partly offshore, multi-factor sign-in not required,
-                no penetration test, no database backups, and a public code repository.
+                BedChart meets {MET} of {TOTAL} checks today and has started {PARTLY} more. Not yet done: naming a
+                privacy officer, signing the privacy impact assessment, moving all hosting to Australia, requiring
+                multi-factor sign-in, an independent security test, database backups, and making the code repository
+                private.
               </p>
             )}
           </Card>

@@ -1183,7 +1183,12 @@ describe("M3: the worklist leads and check in lives on Transport (3 Nov 2026)", 
     expect(table).toHaveAttribute("aria-checked", "true");
     expect(graph).toHaveAttribute("aria-checked", "false");
     expect(within(panel).queryByRole("heading", { name: /hour timeline$/u })).toBeNull();
-    expect(panel).toHaveTextContent(/Table: \d+ open, longest wait first/u);
+    expect(panel).toHaveTextContent(/Table: (?:all \d+, )?\d+ open, grouped by stage/u);
+    // The Table line follows the tab the table shows (audit, 17 Nov 2026).
+    fireEvent.click(screen.getByRole("tab", { name: /Resolved today/u }));
+    expect(panel).toHaveTextContent(/Table: \d+ resolved today, most recent first/u);
+    fireEvent.click(screen.getByRole("tab", { name: /^All\b/u }));
+    expect(panel).toHaveTextContent(/Table: (?:all \d+, )?\d+ open, grouped by stage/u);
     expect(window.localStorage.getItem("ward-flow-movements-timeline")).toBe("table");
 
     fireEvent.click(graph);

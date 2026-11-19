@@ -56,7 +56,7 @@ function referAndAccept(): number {
   expect(screen.getByTestId("live-stage")).toHaveTextContent("destination_review");
   fireEvent.click(screen.getByRole("button", { name: /^Accept bed at / }));
   expect(screen.getByTestId("live-stage")).toHaveTextContent("accepted_awaiting_bed");
-  expect(screen.getByRole("heading", { name: "Placement & dispatch deck" })).toHaveFocus();
+  expect(screen.getByRole("heading", { name: "Receiving ward and transport" })).toHaveFocus();
   return Number(screen.getByTestId("live-bed-count").textContent);
 }
 describe("unified Patient Now clinical flight deck", () => {

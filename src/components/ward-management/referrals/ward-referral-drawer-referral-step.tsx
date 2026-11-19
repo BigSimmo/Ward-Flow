@@ -642,7 +642,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
               <Field
                 label={`Expected arrival, ${zone}`}
                 htmlFor={`${sectionId}-ed-arrival`}
-                hint="HH:MM"
+                hint="HH:MM or am/pm"
                 error={attempted.referral && edArrivalWrong ? TIME_FIELD_ERROR : null}
               >
                 <TimeField

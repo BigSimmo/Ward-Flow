@@ -159,6 +159,7 @@ export {
   parseTypedDate,
   parseTypedTime,
   TIME_FIELD_ERROR,
+  timeTextWrong,
   TimeField,
   type DateFieldProps,
 } from "./date-field";

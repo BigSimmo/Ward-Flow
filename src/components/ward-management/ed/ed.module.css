@@ -4833,11 +4833,17 @@
 .a2Table col[data-col="T"] {
   width: 44px;
 }
+/* Audit 19 Nov 2026 (item 1): "13 h 25 min" (mono, with its dot) needs 124px and "Not recorded"
+ * wraps to two lines in 80px; at 96px and 68px both were cut off. The patient column gives the room. */
 .a2Table col[data-col="In ED"] {
-  width: 96px;
+  width: 124px;
 }
 .a2Table col[data-col="Bay"] {
-  width: 68px;
+  width: 80px;
+}
+.a2Table td.a2Wait,
+.a2Table td.a2Quiet {
+  white-space: normal;
 }
 .a2Table col[data-col="Form"] {
   width: 144px;

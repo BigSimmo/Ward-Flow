@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { parseDob } from "@/components/ward-management/search/patient-census";
-import { minuteOfDayFromClockText } from "@/components/ward-management/ward-clock";
+import { typedTimeToInstant } from "@/components/ward-management/patients/patient-ward-change-card";
+import { MINUTES_PER_DAY, minuteOfDayFromClockText } from "@/components/ward-management/ward-clock";
 
 /**
  * F-01: the iPhone number pad (inputMode="numeric") has only the digits 0 to 9, so a date of birth
@@ -28,6 +29,20 @@ describe("typed clock time", () => {
     expect(minuteOfDayFromClockText("12:15 pm")).toBe(735);
     for (const text of ["0 am", "13 pm", "13:00 pm", "9:60 am", "9 m", "pm"]) {
       expect(minuteOfDayFromClockText(text)).toBeUndefined();
+    }
+  });
+
+  it("the leave and discharge time box reads am/pm and 24-hour alike (D-254)", () => {
+    const now = 3 * MINUTES_PER_DAY + 600;
+    const day = 3 * MINUTES_PER_DAY;
+    expect(typedTimeToInstant("21:30", 0, now)).toBe(day + 1290);
+    expect(typedTimeToInstant("9:30 pm", 0, now)).toBe(day + 1290);
+    expect(typedTimeToInstant("9:30pm", 1, now)).toBe(day + MINUTES_PER_DAY + 1290);
+    expect(typedTimeToInstant("12 pm", 0, now)).toBe(day + 720);
+    expect(typedTimeToInstant("12 am", 0, now)).toBe(day);
+    expect(typedTimeToInstant("0930", 0, now)).toBe(day + 570);
+    for (const text of ["", "13:00 pm", "25:00", "9h30", "soon"]) {
+      expect(typedTimeToInstant(text, 0, now), text).toBeUndefined();
     }
   });
 

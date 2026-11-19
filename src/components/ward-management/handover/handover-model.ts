@@ -14,6 +14,7 @@ import { bedHold, bedHoldLapsed, PULL_NO_LIMIT_RECORDED } from "@/components/war
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
   type DueSoonThresholds,
+  formatClock24WithDay,
   formatInstantWithDay,
   type ClockZoneLabel,
   type Instant,
@@ -476,6 +477,11 @@ export function destinationText(row: HandoverRow): string {
   return "No ward asked yet";
 }
 
+/** A bed hold's end on the reader's clock face: am/pm on screen, 24-hour on a printed sheet (D-254). */
+function holdClock(at: Instant, now: Instant, face: LegalClockFace): string {
+  return face === "sheet" ? formatClock24WithDay(at, now) : formatInstantWithDay(at, now);
+}
+
 /** Short due text for the table: whichever comes first of a bed hold and a typed form time. */
 export function dueShort(
   row: HandoverRow,
@@ -486,7 +492,7 @@ export function dueShort(
   const collected = isCollected(row);
   const hold = collected ? null : bedHold(row.pullExpiresAt, now);
   if (hold !== null && (row.formDueAt === undefined || hold.expiresAt <= row.formDueAt)) {
-    return hold.state === "lapsed" ? hold.label : `Pull ends ${formatInstantWithDay(hold.expiresAt, now)}`;
+    return hold.state === "lapsed" ? hold.label : `Pull ends ${holdClock(hold.expiresAt, now, face)}`;
   }
   if (row.formDueAt !== undefined)
     return `${row.formCode ?? "Form"} due ${typedClock(row.formDueAt, now, dayZero, face)}`;
@@ -521,7 +527,7 @@ export function dueParts(
         return { when: durMinutes(hold.minutes), what: "Pull expired" };
       }
       return {
-        when: formatInstantWithDay(hold.expiresAt, now),
+        when: holdClock(hold.expiresAt, now, face),
         what: "Pull ends",
         ...(hold.state === "at-risk" ? { atRisk: true } : {}),
       };
@@ -546,7 +552,7 @@ export function dueLong(
   const hold = shownBedHold(row, now);
   if (hold) {
     parts.push(
-      hold.state === "lapsed" ? hold.label : `Pull ends ${formatInstantWithDay(hold.expiresAt, now)}, ${hold.short}`,
+      hold.state === "lapsed" ? hold.label : `Pull ends ${holdClock(hold.expiresAt, now, face)}, ${hold.short}`,
     );
   }
   if (row.formDueAt !== undefined) {

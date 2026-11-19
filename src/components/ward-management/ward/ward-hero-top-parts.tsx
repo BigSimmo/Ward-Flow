@@ -2,6 +2,7 @@ import { HeroAct, HeroBand, HeroFigures, SrOnly, WindowWord, durMinutes } from "
 import type { Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
 import { formatInstant } from "@/components/ward-management/ward-clock";
+import { ageText } from "@/components/ward-management/ward-confirmation-age";
 import { BED_RELEASE_BLOCKED_FIGURE_LABEL } from "@/components/ward-management/ward-derivations";
 import { SAMPLE_OBSERVATION_MIX_LABEL } from "@/components/ward-management/ward-sample-choices";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
@@ -132,7 +133,8 @@ export function wardHeroTopParts({
               : "Last capacity figure"}{" "}
           <b>{formatInstant(unit.allocatable.confirmedAt)}</b>
           {" · "}
-          {durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} ago
+          {/* Whole minutes: a capacity figure's age never reads to the second (audit, 17 Nov 2026). */}
+          {ageText(unit.allocatable.confirmedAt, now)}
           {/* Batch 4 item 24 (D-142): the outage pack's time, after the capacity time; a line of its own on a phone. */}
           {isPhone ? null : <WardPackPrintedLine unitId={unit.id} now={now} lead=" · " />}
         </>

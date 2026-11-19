@@ -172,7 +172,7 @@ const GETTING_STARTED: readonly Checklist[] = [
   gettingStarted("getting-started-admin", "admin", [
     TAKE_THE_TOUR,
     {
-      text: "In Settings, Access, give a demo account a role. Every role has an end date.",
+      text: "In Settings, Staff access, give a demo account a role. Every role has an end date.",
       go: "settings#access",
       showMe: "give-access",
     },

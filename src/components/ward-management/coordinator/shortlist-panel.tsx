@@ -1027,7 +1027,7 @@ export function ShortlistPanel({
       : legalFormDraft.time.trim() === ""
         ? `Form ${legalFormDraft.code} is recorded only with the time it was made.`
         : legalFormMinute === undefined
-          ? "Enter the time made as HH:MM, or the form is not recorded."
+          ? "Enter the time made, like 2:30 pm or 14:30, or the form is not recorded."
           : legalFormLater
             ? "The time made cannot be later than now, so the form is not recorded."
             : null;
@@ -2525,7 +2525,7 @@ export function ShortlistPanel({
                   <input
                     id="ward-change-legal-status-form-time"
                     type="text"
-                    inputMode="numeric"
+                    inputMode="text"
                     autoComplete="off"
                     placeholder="HH:MM"
                     className={styles.shortlistOverrideSelect}

@@ -64,7 +64,14 @@ import {
 } from "./patient-census";
 
 import { censusSections } from "./patient-states";
-import { CENSUS_COLS, CensusColumns, CensusHeadRow, CensusPrintGroups, TierPill } from "./census-print";
+import {
+  CENSUS_COLS,
+  CensusColumns,
+  CensusHeadRow,
+  CensusPrintGroups,
+  CensusPrintTitle,
+  TierPill,
+} from "./census-print";
 import styles from "./census.module.css";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
@@ -205,6 +212,8 @@ export type CensusTableProps = {
   onExportList?: () => Promise<void>;
   /** The Print menu's choices: the whole list, or the short ED and placement sheet. */
   printChoices?: readonly ListPrintChoice[];
+  /** The print time under the printed list's title, on the 24-hour sheet face. */
+  printedAt?: string;
   copyNote: string | null;
   empty: ReactNode;
   notice?: ReactNode;
@@ -275,9 +284,14 @@ export function CensusTable(props: CensusTableProps) {
       aria-labelledby="ward-patient-search-results-console-title"
       data-testid="ward-patient-search-results-console"
     >
-      <h2 id="ward-patient-search-results-console-title" className="sr-only">
-        Patients
-      </h2>
+      {/* On paper the list carries its own title and print time; the screen keeps the hidden one. */}
+      {printing ? (
+        <CensusPrintTitle id="ward-patient-search-results-console-title" title="Patients" printedAt={props.printedAt} />
+      ) : (
+        <h2 id="ward-patient-search-results-console-title" className="sr-only">
+          Patients
+        </h2>
+      )}
       <div className={styles.toolbar}>
         {/* PS1 (3 Nov 2026): the state switch on the band picks who is listed, so the table says how
             many it lists instead of a second Now or History switch. History opens from the hero's

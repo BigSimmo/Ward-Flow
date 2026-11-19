@@ -134,7 +134,7 @@ import {
 } from "./patient-states";
 import { EdPlacementPrintSheet } from "./census-print";
 import { usePrinting, usePrintScope } from "@/components/ward-management/use-printing";
-import { ListPrintMenu, type ListPrintChoice } from "@/components/ward-management/ward-list-print-menu";
+import { ListPrintMenu, patientPrintChoices } from "@/components/ward-management/ward-list-print-menu";
 import {
   LONG_WAIT_HOURS,
   SHORT_WAIT_HOURS,
@@ -411,8 +411,20 @@ export function PatientSearchPage() {
 
   const census = useMemo(
     () =>
-      buildCensus({ movements, referrals, units, patients, admissions, plannedAdmissions, now, thresholds, dayZero }),
-    [movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero, thresholds],
+      buildCensus({
+        movements,
+        referrals,
+        units,
+        patients,
+        admissions,
+        plannedAdmissions,
+        now,
+        thresholds,
+        dayZero,
+        // D-254: while the browser prints this screen, clock times take the 24-hour sheet face.
+        face: printing ? "sheet" : "screen",
+      }),
+    [movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero, thresholds, printing],
   );
 
   const baseResults = useMemo(() => {
@@ -942,16 +954,12 @@ export function PatientSearchPage() {
   // Print (option A, approved 18 Nov 2026): the whole list as the tab shows it, as Ctrl+P does, or a
   // short sheet of everyone in ED and in placement, from any tab. Ward, team and not active are left out.
   const shortRows = refusal ? [] : visibleRows.filter((row) => ["ed", "placement"].includes(patientStateOf(row)));
-  const peopleText = (count: number) => `${count} ${count === 1 ? "person" : "people"}`;
-  const printChoices: ListPrintChoice[] = [
-    { id: "whole", label: "Whole list", meta: peopleText(countPeople(refusal ? [] : stateRows)) },
-    {
-      id: "ed-placement",
-      label: "ED and placement only",
-      meta: peopleText(countPeople(shortRows)),
-      scope: "ed-placement",
-    },
-  ];
+  // A choice with nobody in it is not offered to print; a phone is offered the short sheet only.
+  const printChoices = patientPrintChoices({
+    wholePeople: countPeople(refusal ? [] : stateRows),
+    shortPeople: countPeople(shortRows),
+    phone: isPhone,
+  });
 
   // Export (feature 44): the rows on screen, never names; the builder loads on the click.
   const exportList = async () => {
@@ -1495,6 +1503,7 @@ export function PatientSearchPage() {
               onCopyList={copyList}
               onExportList={exportList}
               printChoices={printChoices}
+              printedAt={printing ? formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone }) : undefined}
               copyNote={drawerOpen ? null : copyNote}
               empty={refusal ? null : empty}
               notice={refusalNotice}

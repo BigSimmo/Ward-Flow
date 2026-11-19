@@ -55,7 +55,7 @@ demo code out for up to 10 minutes, and a shared venue network counts as one add
    page and Dabakarn's page, a **Tip** card appears at the lower right. Press **Turn off tips**
    during the rehearsal so none appear in the real run.
 4. As the audience sits down (not earlier), open **Tools** (the spanner at the top right) and press **Board time** at
-   its foot. Tools then shows **Scenario and clock**, with **Demo clock** and **Reset demo** at the top of the panel and
+   its foot. Tools then shows **Demo**, with **Demo clock** and **Reset demo** at the top of the panel and
    **Scenario** below them. Check the scenario is **Standard day**, and pick it first if it is not:
    Reset demo reloads whichever scenario is loaded. Check **Worked examples** shows the button **Hide
    worked examples** (the demo needs them on; a fresh browser starts with them off). If it says **Show worked examples**, press it, then

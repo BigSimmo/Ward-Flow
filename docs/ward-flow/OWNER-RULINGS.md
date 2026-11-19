@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/his
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**821 rulings/items extracted, across 43 of 44 files.**
+**822 rulings/items extracted, across 43 of 44 files.**
 **0 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 **1 file(s) recorded as holding no ruling of their own**, each with its reason. See below.
 
@@ -32,7 +32,7 @@ line, in the order discovered — confirm which instance you mean before citing 
 
 ---
 
-## ID index — 571 distinct IDs
+## ID index — 572 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -430,6 +430,7 @@ safe global key across 30 files.
 | `D-266` | `decisions.md`:3061 | D-266. The printed Patients list numbers its pages and carries group names, and the Capacity hero fits narrow phones (18 November 2026) |
 | `D-267` | `decisions.md`:3068 | D-267. Patients Print opens a menu with a short ED and placement sheet (18 November 2026) |
 | `D-268` | `decisions.md`:3075 | D-268. "ED journeys open" is renamed "Open ED movements" (18 November 2026) |
+| `D-269` | `decisions.md`:3083 | D-269. The 19 November pre-demo audit fixes go ahead as recommended (19 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -738,7 +739,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-259 item(s):
+260 item(s):
 
 - `D-1` — line 288, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 298, heading: "D-2. Railway is disconnected"
@@ -999,6 +1000,7 @@ safe global key across 30 files.
 - `D-266` — line 3061, heading: "D-266. The printed Patients list numbers its pages and carries group names, and the Capacity hero fits narrow phones (18 November 2026)"
 - `D-267` — line 3068, heading: "D-267. Patients Print opens a menu with a short ED and placement sheet (18 November 2026)"
 - `D-268` — line 3075, heading: "D-268. "ED journeys open" is renamed "Open ED movements" (18 November 2026)"
+- `D-269` — line 3083, heading: "D-269. The 19 November pre-demo audit fixes go ahead as recommended (19 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 

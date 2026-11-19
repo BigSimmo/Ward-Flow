@@ -16,7 +16,7 @@ import { currentShiftStartInstant } from "@/components/ward-management/ward-boar
 import { SinceYouLooked, StatusGlyph, type WfTone } from "@/components/wf";
 import { ratifiedSameServiceNames } from "@/components/ward-management/community/community-ratified-aliases";
 import { referralWaitLine } from "@/components/ward-management/referrals/referral-wait";
-import { daysBetween, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { daysBetween, formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import {
@@ -66,6 +66,9 @@ const ROSTER_TONE: Record<(typeof SAMPLE_ROSTER)[number]["status"], WfTone> = {
   "In field": "info",
   "At base": "neutral",
 };
+
+/** A sample clock time on the screen's am/pm face ("9:40 am"), from 24-hour hours and minutes. */
+const clock = (hours: number, minutes = 0) => formatInstant(hours * 60 + minutes);
 
 /** The sample roster's head count, for the hero's "N of M working today" link. Every sample member is working. */
 export function communityRosterCounts(): { working: number; total: number } {
@@ -390,14 +393,18 @@ export function communityOnDutyPanel(view: CommunityScreenView) {
             <div className={styles.clinicRoomItem}>
               <div className={styles.clinicRoomTop}>
                 <span className={styles.clinicRoomTitle}>Room 1 · consultant clinic</span>
-                <span className={`${styles.statusPillBadge} ${styles.good}`}>09:00 – 13:00</span>
+                <span className={`${styles.statusPillBadge} ${styles.good}`}>
+                  {clock(9)} to {clock(13)}
+                </span>
               </div>
               <span className={styles.roomDetail}>Dr K. Rao · urgent intakes &amp; medication reviews</span>
             </div>
             <div className={styles.clinicRoomItem}>
               <div className={styles.clinicRoomTop}>
                 <span className={styles.clinicRoomTitle}>Room 2 · Depot &amp; Physical Health</span>
-                <span className={`${styles.statusPillBadge} ${styles.good}`}>09:00 – 16:30</span>
+                <span className={`${styles.statusPillBadge} ${styles.good}`}>
+                  {clock(9)} to {clock(16, 30)}
+                </span>
               </div>
               <span className={styles.roomDetail}>RN C. Davis · Long-acting injections, ECG, metabolic monitoring</span>
             </div>
@@ -438,7 +445,7 @@ export function communityOnDutyPanel(view: CommunityScreenView) {
             <div className={styles.clinicRoomItem}>
               <div className={styles.clinicRoomTop}>
                 <span className={styles.clinicRoomTitle}>Morning MDT huddle log</span>
-                <span className={`${styles.statusPillBadge} ${styles.neutral}`}>10:00 completed</span>
+                <span className={`${styles.statusPillBadge} ${styles.neutral}`}>{clock(10)} completed</span>
               </div>
               <span className={styles.roomDetail}>14 catchment cases reviewed · 2 inpatient transfers coordinated</span>
             </div>

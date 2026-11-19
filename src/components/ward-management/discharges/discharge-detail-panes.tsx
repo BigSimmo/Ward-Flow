@@ -336,7 +336,7 @@ export function DischargeRecordDetail({
               >
                 <Field
                   label="New expected discharge time"
-                  hint="HH:MM"
+                  hint="HH:MM or am/pm"
                   id="ward-discharge-new-time-input"
                   error={dateTimeWrong ? TIME_FIELD_ERROR : undefined}
                 >

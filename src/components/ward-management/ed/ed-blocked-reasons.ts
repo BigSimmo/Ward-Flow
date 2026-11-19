@@ -128,7 +128,7 @@ export function referralDraftBlockedReason(draft: ReferralDraftAnswers): string 
     return "Enter both the date and the time written on the form, or leave both blank.";
   }
   if (legalFormDueAtTimeUnreadable(draft)) {
-    return "Type the time written on the form as HH:MM, for example 14:30.";
+    return "Type the time written on the form, for example 2:30 pm or 14:30.";
   }
   if (observationReviewTimeUnreadable(draft)) {
     return "Type the observation review time as a clock time, for example 14:30, or leave it blank.";

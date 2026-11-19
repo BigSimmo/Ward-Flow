@@ -516,7 +516,8 @@ function StatisticsSummaryPhoneView({
                   {...props}
                   type="button"
                   className={styles.toolsTrigger}
-                  aria-label="Statistics tools: Open a unit, Export, Example history"
+                  // Names only the choices this desk is offered (an Executive desk has no unit or Export).
+                  aria-label={`Statistics tools: ${[onOpenUnit ? "Open a unit" : null, exportFigures ? "Export" : null, "Example history"].filter(Boolean).join(", ")}`}
                   data-testid="ward-statistics-tools-menu"
                 >
                   <Ellipsis size={20} strokeWidth={1.75} aria-hidden="true" />

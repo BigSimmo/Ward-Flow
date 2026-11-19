@@ -675,6 +675,26 @@ export function MovementsScreen() {
           : order === "cause"
             ? "Grouped by cause, longest wait first"
             : "Longest wait first";
+  // The traffic bar's Table line names the tab the table below is showing, with that tab's own count
+  // and order (audit, 17 Nov 2026: it said "53 open, longest wait first" beside an "All 60" tab, and
+  // over Resolved today too). The All tab also lists closed movements, so it gives both figures.
+  const worklistOpenCount = worklistMovements.filter(isOpen).length;
+  const trafficTableSummary =
+    boardTab === "resolved"
+      ? `Table: ${worklistClosedToday.length} resolved today, most recent first`
+      : `Table: ${
+          worklistOpenCount === worklistMovements.length
+            ? `${worklistOpenCount} open`
+            : `all ${worklistMovements.length}, ${worklistOpenCount} open`
+        }, ${
+          order === "stands"
+            ? "grouped by stage"
+            : order === "transport"
+              ? "grouped by transport"
+              : order === "cause"
+                ? "grouped by cause"
+                : "longest wait first"
+        }`;
   const renderRow = (movement: Movement) => (
     <StageRow
       key={movement.id}
@@ -1107,7 +1127,7 @@ export function MovementsScreen() {
           >
             <MovementsTimelineSwitch
               summary={`${activeCorridorCount} active ${activeCorridorCount === 1 ? "corridor" : "corridors"}`}
-              tableSummary={`Table: ${openMovements.length} open, longest wait first`}
+              tableSummary={trafficTableSummary}
             >
               <MovementHorizonGantt
                 lanes={horizonLanes}

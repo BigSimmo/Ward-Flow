@@ -1,5 +1,7 @@
 /**
- * Privacy and data tracker content (D-260, 16 Nov 2026). Generated from the privacy research in the
+ * Privacy and data tracker content (D-260, 16 Nov 2026). Screen audit 19 Nov 2026 (item 5): the
+ * evidence lines are in plain words, with no file paths and no decision, migration or gate codes;
+ * every status is as it was. Generated from the privacy research in the
  * project files (patient-data-requirements-checklist.md and current-state-tracker.md); edit both
  * together. Statuses were checked against main 928fa1a8 and the governance papers on 16 Nov 2026.
  * These are intended requirements only: nothing here is enforced, and this is not legal advice.
@@ -31,7 +33,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       },
       {
         lead: "Applies to",
-        text: "everyone who uses, runs or supports BedChart, including [Health service] staff, contractors and the vendor.",
+        text: "everyone who uses, runs or supports BedChart, including health service staff, contractors and the vendor.",
       },
       {
         lead: "Covers",
@@ -43,7 +45,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       },
       {
         lead: "Operator",
-        text: "[Health service], a WA public health service. The vendor is a contracted service provider bound by the same privacy obligations.",
+        text: "The health service, a WA public health service. The vendor is a contracted service provider bound by the same privacy obligations.",
       },
       {
         lead: "Laws followed",
@@ -62,12 +64,12 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       {
         name: "Scope, purpose and laws confirmed by legal advice",
         status: "notyet",
-        evidence: "No legal advice sought. Laws listed in docs/ward-flow/governance/PRIVACY-IMPACT-ASSESSMENT.md §2.",
+        evidence: "Not yet done: legal advice. The laws are listed in the draft privacy impact assessment.",
       },
       {
         name: "Intended purpose statement signed",
         status: "notyet",
-        evidence: "Go/no-go G9.",
+        evidence: "Not yet done: a signed statement of what BedChart is for.",
       },
     ],
     source: "Legal advice; all sources below",
@@ -89,7 +91,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         text: "A privacy impact assessment was signed before go-live, and is updated before any high privacy impact change.",
       },
       {
-        text: "[Health service] has a named privacy officer and information sharing officer.",
+        text: "The health service has a named privacy officer and information sharing officer.",
       },
       {
         text: "Privacy complaints go to the privacy officer, and patients may take them to the WA Information Commissioner.",
@@ -102,27 +104,28 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       {
         name: "Privacy impact assessment signed",
         status: "partly",
-        evidence: "Draft only, unsigned: docs/ward-flow/governance/PRIVACY-IMPACT-ASSESSMENT.md (go/no-go G4).",
+        evidence: "A draft is written. It is not signed.",
       },
       {
         name: "Privacy officer and information sharing officer named",
         status: "notyet",
-        evidence: "Not named (go/no-go G3, P1).",
+        evidence: "Not yet named.",
       },
       {
         name: "Personal information register kept",
         status: "partly",
-        evidence: "Field list drafted: docs/ward-flow/governance/DATA-MINIMISATION-FIELD-LIST.md. Not approved.",
+        evidence: "The list of fields is drafted. It is not approved.",
       },
       {
         name: "Real-data pilot sponsor named",
         status: "notyet",
-        evidence: "Go/no-go G1.",
+        evidence: "Not yet named.",
       },
       {
         name: "Legal risk review covers the privacy tort",
         status: "notyet",
-        evidence: "Privacy Act Sch 2 tort in force since 10 Jun 2025; no review on file.",
+        evidence:
+          "Not yet done: a legal risk review. People have been able to sue for a serious invasion of privacy since 10 June 2025.",
       },
     ],
     source: "PRIS Act 2024 (WA) · Privacy Act 1988 (Cth) Sch 2",
@@ -148,7 +151,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       {
         name: "Confidentiality statement accepted by every user",
         status: "notyet",
-        evidence: "Sign-in shows a synthetic-data warning only. No statement to accept.",
+        evidence: "Sign-in shows a note that the data is made up. Not yet built: a statement to accept.",
       },
     ],
     source: "Health Services Act 2016 (WA) confidentiality offences · Mental Health Act (WA) confidentiality offence",
@@ -167,25 +170,25 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         text: "Patient names and typed text never appear in web addresses, alerts, logs, error reports or downloads.",
       },
       {
-        text: "[Health service] gives patients a collection notice explaining why and how information is used.",
+        text: "The health service gives patients a collection notice explaining why and how information is used.",
       },
     ],
     checks: [
       {
         name: "Field list approved by the privacy officer",
         status: "partly",
-        evidence: "Drafted, not approved (go/no-go P3).",
+        evidence: "Drafted, not approved.",
       },
       {
         name: "Collection notice in use",
         status: "notyet",
-        evidence: "None written.",
+        evidence: "Not yet written.",
       },
       {
         name: "No patient detail kept in browser storage outside prototype",
         status: "partly",
         evidence:
-          "Drafts gated by build setting only, not workspace mode (go/no-go C1). Demo store not blocked in live (C2).",
+          "Unsaved drafts stay off the device only by a build setting. The demo's on-device store is not yet blocked for real data.",
       },
     ],
     source: "WA IPPs · MP 0015/16",
@@ -223,44 +226,42 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       {
         name: "Multi-factor sign-in on every account",
         status: "partly",
-        evidence:
-          "Authenticator-app second step is supported (ward-supabase-auth.ts) but not required: requireSecondStep defaults to false in backend shared-http.mjs.",
+        evidence: "A second sign-in step with an authenticator app is built. It is not yet required for every account.",
       },
       {
         name: "Quarterly access review completed",
         status: "notyet",
-        evidence: "Review procedure drafted (docs/ward-flow/governance/ACCESS-REVIEW.md); no review done (P5).",
+        evidence: "The review steps are drafted. Not yet done: a first review.",
       },
       {
         name: "Break-glass reviews up to date",
         status: "partly",
-        evidence: "Break glass is logged and append-only (migration 011). No review schedule or reviewer (P5).",
+        evidence: "Each break-glass use is logged and cannot be edited. Not yet set: a review schedule and a reviewer.",
       },
       {
         name: "Unique account for each person",
         status: "met",
-        evidence: "Supabase accounts, invite-only sign-up since 14 Nov (D-173).",
+        evidence: "Each person has their own account. Sign-up is by invitation only, since 14 Nov.",
       },
       {
         name: "Access set by role and ward",
         status: "partly",
-        evidence:
-          "Role and place access in backend (migration 008). Database rules alone do not yet block other wards (G12).",
+        evidence: "The server sets access by role and ward. The database alone does not yet block other wards.",
       },
       {
         name: "Screen locks after 15 minutes",
         status: "met",
-        evidence: "Idle lock in the app (ward-clinical-values idleLock).",
+        evidence: "The app locks itself when left unused.",
       },
       {
         name: "Sign-out ends a session at once",
         status: "met",
-        evidence: "Server-side sign-outs (migration 011).",
+        evidence: "Signing out ends the session on the server.",
       },
       {
         name: "Front door sign-in required",
         status: "partly",
-        evidence: "On for the demo (D-130). Must stay required for real data.",
+        evidence: "On for the demo. It must stay required for real data.",
       },
     ],
     source: "MP 0067/17 Information Security · MP 0015/16",
@@ -296,12 +297,12 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         name: "Tamper-proof audit log set up",
         status: "partly",
         evidence:
-          "Audit, record access and break glass tables are append-only (migrations 001, 011). The 26 Oct hosted restore drill lost those locks (RETENTION-AND-BACKUP.md).",
+          "The audit, record access and break-glass logs cannot be edited or deleted. A restore practice run on 26 Oct lost those locks, so they need to be put back after any restore.",
       },
       {
         name: "Weekly log review on file",
         status: "notyet",
-        evidence: "No review schedule and no unusual-access alerts.",
+        evidence: "Not yet set: a review schedule and alerts for unusual access.",
       },
     ],
     source: "MP 0067/17 · MP 0144/20",
@@ -334,27 +335,27 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         name: "Australian hosting confirmed for every provider",
         status: "notyet",
         evidence:
-          "Supabase is Sydney. Railway app and backend are Singapore (D-84). Sentry is US. Push services are global.",
+          "The database is in Sydney. The app servers are in Singapore. Error reports go to the United States. Phone alert services are global.",
       },
       {
         name: "HSS cloud risk assessment approved",
         status: "notyet",
-        evidence: "No health service IT approval (go/no-go G6, S1).",
+        evidence: "Not yet done: approval from the health service's IT security team.",
       },
       {
         name: "Supabase organisation AI options turned off",
         status: "notyet",
-        evidence: "On at 3 Nov (Q391); the owner to switch off.",
+        evidence: "Still on when checked on 3 Nov. The project owner is to switch them off.",
       },
       {
         name: "No overseas disclosure without APP 8 safeguards",
         status: "notyet",
-        evidence: "Sentry error reports go to the US; Railway servers in Singapore (D-84).",
+        evidence: "Error reports go to the United States and the app servers are in Singapore.",
       },
       {
         name: "Cloud providers' IRAP or ISO 27001 evidence on file",
         status: "notyet",
-        evidence: "No provider certificates or assessments held.",
+        evidence: "Not yet held: provider certificates or assessments.",
       },
     ],
     source:
@@ -402,47 +403,48 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       {
         name: "Penetration test passed",
         status: "notyet",
-        evidence: "Brief written (docs/ward-flow/governance/PENETRATION-TEST-BRIEF.md); no test run (G16).",
+        evidence: "The brief for the test is written. Not yet done: an independent security test.",
       },
       {
         name: "Essential Eight assessment on file",
         status: "notyet",
-        evidence: "Not assessed.",
+        evidence: "Not yet assessed.",
       },
       {
         name: "Encryption in transit and at rest",
         status: "partly",
-        evidence: "HTTPS and provider encryption by default; not verified in writing.",
+        evidence:
+          "Connections are encrypted and the providers encrypt stored data by default. Not yet confirmed in writing.",
       },
       {
         name: "Strict content security policy",
         status: "met",
-        evidence: "Per-request CSP nonce (src/proxy.ts).",
+        evidence: "Each page allows only its own scripts to run.",
       },
       {
         name: "Sign-in token out of reach of page scripts",
         status: "notyet",
-        evidence: "Token in sessionStorage (go/no-go C5, C14, H-0044).",
+        evidence: "The sign-in token is still kept where page scripts can read it.",
       },
       {
         name: "Web push library reviewed",
         status: "notyet",
-        evidence: "web-push package not reviewed (C9).",
+        evidence: "Not yet done: a review of the phone alert library.",
       },
       {
         name: "Repository private, history checked",
         status: "notyet",
-        evidence: "Repository is public (G7).",
+        evidence: "The code repository is still public.",
       },
       {
         name: "Ransom payment reporting step in the incident plan",
         status: "notyet",
-        evidence: "No incident plan in repo. Cyber Security Act 2024 sets a 3-day reporting time.",
+        evidence: "Not yet written: an incident plan. The Cyber Security Act 2024 sets a 3-day reporting time.",
       },
       {
         name: "Critical infrastructure (SOCI) status checked with each hospital",
         status: "notyet",
-        evidence: "Not asked yet.",
+        evidence: "Not yet asked.",
       },
     ],
     source:
@@ -475,22 +477,22 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       {
         name: "Sharing agreements and Aboriginal information assessments on file",
         status: "notyet",
-        evidence: "No sharing with other bodies yet. Cultural safety review not held (G10).",
+        evidence: "Nothing is shared with other bodies yet. Not yet held: a cultural safety review.",
       },
       {
         name: "No names in downloads",
         status: "met",
-        evidence: "Exports carry no names (D-102).",
+        evidence: "Downloads carry no names.",
       },
       {
         name: "TV board privacy review",
         status: "notyet",
-        evidence: "TV shows full names; no review (C15, P6).",
+        evidence: "The TV board shows full names. Not yet done: a privacy review of it.",
       },
       {
         name: "De-identification method approved before any reuse",
         status: "partly",
-        evidence: "Prototype uses synthetic data only (hard rule 1); no method for real data.",
+        evidence: "The prototype holds made-up data only. Not yet set: a method for real data.",
       },
     ],
     source:
@@ -518,17 +520,17 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
         name: "Retention periods set by the records manager",
         status: "partly",
         evidence:
-          "Retention plan drafted (docs/ward-flow/RETENTION-AND-BACKUP.md). No records manager; open questions (P4).",
+          "A plan for how long records are kept is drafted. Not yet named: a records manager. Some questions are still open.",
       },
       {
         name: "Disposal register kept",
         status: "notyet",
-        evidence: "None.",
+        evidence: "Not yet started.",
       },
       {
         name: "Paid backups and a passed restore drill",
         status: "notyet",
-        evidence: "Supabase free plan has no backups (G8). Hosted drill failed on audit locks.",
+        evidence: "Not yet set up: database backups. A restore practice run did not keep the audit log locks.",
       },
     ],
     source: "State Records Act 2000 (WA) · MP 0144/20",
@@ -560,7 +562,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       {
         name: "Incident response plan tested this year",
         status: "partly",
-        evidence: "Plan drafted in the pilot papers. No drill (G15, B4).",
+        evidence: "A plan is drafted. Not yet done: a practice run.",
       },
     ],
     source: "MP 0135/20 · PRIS Act 2024 (WA) · OAIC NDB scheme",
@@ -586,12 +588,12 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       {
         name: "Access and correction process tested",
         status: "partly",
-        evidence: "Correction process drafted (RETENTION-AND-BACKUP.md). Not tested; no one-person export.",
+        evidence: "The correction steps are drafted. Not yet tested. Not yet built: an export of one person's records.",
       },
       {
         name: "Access and correction meet APP 12 and 13 where they apply",
         status: "partly",
-        evidence: "Corrections are audited (migration 001); no single-person export yet.",
+        evidence: "Each correction is kept in the audit log. Not yet built: an export of one person's records.",
       },
     ],
     source: "WA IPPs · FOI Act 1992 (WA) · APP 12 and 13",
@@ -620,29 +622,27 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       {
         name: "TGA exclusion confirmed",
         status: "partly",
-        evidence:
-          "Drafter's reasoning only (docs/ward-flow/governance/REGULATORY-CLASSIFICATION.md). No adviser view (G14).",
+        evidence: "The reasoning is drafted. Not yet done: a view from a regulatory adviser.",
       },
       {
         name: "Clinical safety case signed",
         status: "partly",
-        evidence:
-          "Safety case and hazard log drafted (docs/ward-flow/governance/CLINICAL-SAFETY-CASE.md). No owner, not signed (G2, G11).",
+        evidence: "The safety case and hazard log are drafted. Not yet named: an owner. Not signed.",
       },
       {
         name: "Records carry a sample or real marker",
         status: "notyet",
-        evidence: "Go/no-go C10.",
+        evidence: "Not yet done.",
       },
       {
         name: "Aboriginal cultural safety review held",
         status: "notyet",
-        evidence: "Go/no-go G10, hazard H-24.",
+        evidence: "Not yet held.",
       },
       {
         name: "Records checked against NSQHS Actions 1.16 to 1.18",
         status: "notyet",
-        evidence: "No healthcare records review held.",
+        evidence: "Not yet held: a healthcare records review.",
       },
     ],
     source: "TGA item 14G exclusion · TGA CDSS guidance · MP 0122/19 · NSQHS Standards Actions 1.16 to 1.18",
@@ -668,8 +668,7 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       {
         name: "No automated decisions or AI use confirmed",
         status: "met",
-        evidence:
-          "People make every decision; agents never get real data (AGENTS.md hard rule 1). Recheck before release.",
+        evidence: "People make every decision, and no real data goes to AI tools. Check again before release.",
       },
     ],
     source: "APP 1.7–1.9 · Healthcare Identifiers Act 2010",
@@ -698,12 +697,12 @@ export const PRIVACY_SECTIONS: readonly PrivacySection[] = [
       {
         name: "Contracts, checks and processing agreements on file",
         status: "notyet",
-        evidence: "No data processing terms with Supabase, Railway or Sentry.",
+        evidence: "Not yet in place: data processing terms with the hosting, database and error report providers.",
       },
       {
         name: "Staff training and competency check",
         status: "partly",
-        evidence: "Competency check drafted (docs/ward-flow/pilot/competency-check.md).",
+        evidence: "A competency check is drafted.",
       },
     ],
     source: "MP 0067/17 · MP 0140/20",
@@ -715,22 +714,22 @@ export const PRIVACY_SIGN_OFFS: readonly PrivacyCheck[] = [
   {
     name: "Privacy officer approval",
     status: "notyet",
-    evidence: "No privacy officer.",
+    evidence: "Not yet named: a privacy officer.",
   },
   {
     name: "Clinical safety owner approval",
     status: "notyet",
-    evidence: "No clinical safety owner.",
+    evidence: "Not yet named: a clinical safety owner.",
   },
   {
     name: "Legal review",
     status: "notyet",
-    evidence: "Not done.",
+    evidence: "Not yet done.",
   },
   {
     name: "System owner approval",
     status: "notyet",
-    evidence: "The project owner is system owner; not signed.",
+    evidence: "The project owner is the system owner. Not yet signed.",
   },
 ];
 

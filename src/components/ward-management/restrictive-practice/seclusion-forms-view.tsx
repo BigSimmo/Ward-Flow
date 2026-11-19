@@ -87,7 +87,7 @@ function useTypedTime(now: Instant, after?: Instant) {
     text.trim() === ""
       ? "Type the time first."
       : at === undefined
-        ? "Type the time as HH:MM."
+        ? "Type the time, like 2:30 pm or 14:30."
         : aheadOfNow
           ? "The time cannot be later than now"
           : typedTimeRefusal(at, now, after);
@@ -111,7 +111,7 @@ function TimeBox({
         <TextInput
           value={time.text}
           onChange={(event) => time.setText(event.target.value)}
-          inputMode="numeric"
+          inputMode="text"
           autoComplete="off"
           placeholder="HH:MM"
           className={styles.timeInput}

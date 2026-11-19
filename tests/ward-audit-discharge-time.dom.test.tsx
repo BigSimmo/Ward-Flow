@@ -62,10 +62,10 @@ it("populates the existing clock time when editing tomorrow's departure", () => 
 it("refuses a bad time with words through the field, and keeps the form open (PR #1474 review)", () => {
   openTomorrowDepartureEditor();
   const input = screen.getByTestId("ward-discharge-new-time-input");
-  fireEvent.change(input, { target: { value: "11:45pm" } });
-  expect(input).toHaveValue("11:45pm");
+  fireEvent.change(input, { target: { value: "13:45pm" } });
+  expect(input).toHaveValue("13:45pm");
   fireEvent.click(screen.getByTestId("ward-discharge-save-time-btn"));
-  expect(screen.getByText("Type a 24-hour time, HH:MM")).toBeInTheDocument();
+  expect(screen.getByText("Type a time, like 2:30 pm or 14:30")).toBeInTheDocument();
   expect(input).toHaveAttribute("aria-invalid", "true");
   expect(screen.getByTestId("ward-discharge-new-time-input")).toBeInTheDocument();
   expect(screen.queryByText("Expected discharge updated.")).not.toBeInTheDocument();

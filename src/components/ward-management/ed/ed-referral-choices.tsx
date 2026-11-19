@@ -8,6 +8,7 @@ import { useState, type ReactNode } from "react";
 import {
   ListPicker,
   parseTypedTime,
+  timeTextWrong,
   Segmented,
   TextInput,
   type ChoiceItem,
@@ -116,9 +117,9 @@ export function EdPickerField({
 }
 
 /**
- * The kit's typed 24-hour time box (as in `DateTimeField`), in place of the browser's time picker,
- * which showed AM and PM on many phones. It sends "HH:MM" once the typing is a real time, and the
- * typing itself otherwise, so a half-typed time is never read as no time at all.
+ * The kit's typed time box (as in `DateTimeField`), in place of the browser's time picker. It takes
+ * a 24-hour or an am/pm time (D-254) and sends 24-hour "HH:MM" once the typing is a real time, and
+ * the typing itself otherwise, so a half-typed time is never read as no time at all.
  */
 export function EdTimeBox({
   label,
@@ -139,17 +140,17 @@ export function EdTimeBox({
     setLastValue(value);
     setText(value);
   }
-  const wrong = text.trim().length >= 4 && parseTypedTime(text) === null;
+  const wrong = timeTextWrong(text);
   return (
     <TextInput
       type="text"
-      inputMode="numeric"
+      inputMode="text"
+      autoCapitalize="none"
       autoComplete="off"
-      maxLength={5}
       placeholder="HH:MM"
       value={text}
       invalid={invalid || wrong}
-      aria-label={`${label}, HH:MM, for example 14:30`}
+      aria-label={`${label}, for example 2:30 pm or 14:30`}
       data-testid={testId}
       onChange={({ target: { value: typed } }) => {
         setText(typed);

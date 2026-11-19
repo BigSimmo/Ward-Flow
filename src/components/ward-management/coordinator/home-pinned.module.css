@@ -127,13 +127,15 @@
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+/* Audit 19 Nov 2026 (item 7): the counts wrap to a second line rather than being cut off
+   ("2 escalatio… 21 referra…") on a laptop or at 125% zoom. Each count stays whole on its line. */
 .bannerLine {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--wf-s-3);
+  gap: 0 var(--wf-s-3);
   min-width: 0;
   white-space: nowrap;
-  overflow: hidden;
 }
 
 .bannerLead {
@@ -142,25 +144,16 @@
   font-weight: 600;
 }
 
-/* A count gives way before the lead or "+N more" does: a long label ("discharge dates moved") or a
-   long lead ("Since 15:02 yesterday") ellipsises the last named count's words, never its figure, so
-   the figure and the overflow total stay visible. */
+/* A count moves to the next line whole. Only one wider than the whole line (a very narrow card)
+   ellipsises its words, never its figure. */
 .bannerPart {
   display: flex;
   flex: 0 1 auto;
   gap: 0.3em;
+  max-width: 100%;
   /* Room for a figure of up to three digits, so a squeezed count keeps its number. */
   min-width: 3.5ch;
   overflow: hidden;
-}
-
-/* The furthest count gives way first. */
-.bannerPart[data-rank="2"] {
-  flex-shrink: 10;
-}
-
-.bannerPart[data-rank="3"] {
-  flex-shrink: 100;
 }
 
 .bannerLabel {

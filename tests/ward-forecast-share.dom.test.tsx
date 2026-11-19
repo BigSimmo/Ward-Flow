@@ -68,7 +68,9 @@ describe("each ward's part in tomorrow's forecast (forecast integration, 27 Oct 
 
     const panel = getByTestId("ward-board-forecast-share");
     expect(within(panel).getByRole("heading", { name: "Your part in tomorrow's expected beds" })).toBeTruthy();
-    expect(getByTestId("ward-board-forecast-share-counted").textContent).toMatch(/^Tomorrow's expected beds count/);
+    expect(getByTestId("ward-board-forecast-share-counted").textContent).toMatch(
+      / on this ward counts? towards tomorrow's expected beds: /,
+    );
   });
 
   it("links Home straight to the forecast panel on Capacity", () => {

@@ -125,8 +125,8 @@ describe("community demonstration queue totals", () => {
     expect(list()).toHaveLength(4);
   });
 
-  it("preserves the depot room's recorded 16:30 closing time", () => {
+  it("preserves the depot room's recorded 4:30 pm closing time", () => {
     renderTeam();
-    expect(screen.getByText("Room 2 · Depot & Physical Health").parentElement).toHaveTextContent("09:00 – 16:30");
+    expect(screen.getByText("Room 2 · Depot & Physical Health").parentElement).toHaveTextContent("9:00 am to 4:30 pm");
   });
 });

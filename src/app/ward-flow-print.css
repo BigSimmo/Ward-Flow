@@ -729,9 +729,9 @@
     margin-inline: 0 !important;
   }
 
-  /* One short label on page 1. */
-  [data-testid="ward-alerts-page"]::before,
-  [data-testid="ward-patient-search-results-console"]::before {
+  /* One short label on page 1. The Patients list carries its own title instead (19 Nov 2026 audit:
+     "Downtime" read as a stray word above the list). */
+  [data-testid="ward-alerts-page"]::before {
     content: "Downtime";
     display: block;
     margin-block-end: 4pt;
@@ -836,7 +836,7 @@
     width: 17mm;
   }
 
-  [data-print-scope="ed-placement"] [data-census-short-head] {
+  [data-census-print-title] {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -846,13 +846,13 @@
     border-block-end: 1px solid var(--wf-print-line);
   }
 
-  [data-print-scope="ed-placement"] [data-census-short-head] h2 {
+  [data-census-print-title] h2 {
     margin: 0;
     font: 600 14pt / 1.2 var(--wf-font, sans-serif);
     color: var(--wf-print-ink);
   }
 
-  [data-print-scope="ed-placement"] [data-census-short-head] p {
+  [data-census-print-title] p {
     margin: 0;
     font-size: 8pt;
     color: var(--wf-print-muted);
@@ -898,5 +898,86 @@
     margin: 4mm 0 0;
     font-size: 7pt;
     color: var(--wf-print-muted);
+  }
+}
+
+/* ----- Printed Patients whole list: fits A4 (19 Nov 2026 audit) -----
+   The whole list printed 52 pages: the Legal column was the only one with no width, so on A4 it got
+   what was left (about 17mm) and broke "Voluntary" over three lines, which set every row's height.
+   On paper the six columns share the sheet by fixed shares, the screen's 44px row floor and cell
+   padding are let go, and the type is set for paper. Nobody and no column is left out. The title and
+   print time come from census-print.tsx's shared head; the page's own prototype footer closes it. */
+@media print {
+  [data-testid="ward-patient-search-results-console"]:has([data-census-print-group]) {
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  [data-testid="ward-patient-search-results-console"] [data-census-print-group] col:nth-child(1) {
+    width: 6%;
+  }
+
+  [data-testid="ward-patient-search-results-console"] [data-census-print-group] col:nth-child(2) {
+    width: 22%;
+  }
+
+  [data-testid="ward-patient-search-results-console"] [data-census-print-group] col:nth-child(3) {
+    width: 23%;
+  }
+
+  [data-testid="ward-patient-search-results-console"] [data-census-print-group] col:nth-child(4) {
+    width: 18%;
+  }
+
+  [data-testid="ward-patient-search-results-console"] [data-census-print-group] col:nth-child(5) {
+    width: 16%;
+  }
+
+  [data-testid="ward-patient-search-results-console"] [data-census-print-group] col:nth-child(6) {
+    width: 15%;
+  }
+
+  [data-testid="ward-patient-search-results-console"] [data-census-print-group] thead tr:last-child th {
+    height: auto !important;
+    min-width: 0 !important;
+    padding: 1mm 1.5mm !important;
+  }
+
+  [data-testid="ward-patient-search-results-console"] [data-census-print-group] tbody td {
+    height: auto !important;
+    block-size: auto !important;
+    min-width: 0 !important;
+    padding: 0.8mm 1.5mm !important;
+    font-size: 8.5pt !important;
+    line-height: 1.25 !important;
+    vertical-align: top !important;
+    /* Whole words only: a long word moves to the next line before it is ever split. */
+    overflow-wrap: break-word !important;
+    word-break: normal !important;
+  }
+
+  /* The second line of a cell (UMRN and age, area, who acts next, the form's due time). */
+  [data-testid="ward-patient-search-results-console"] [data-census-print-group] tbody td span {
+    font-size: 7.5pt !important;
+    line-height: 1.25 !important;
+  }
+
+  [data-testid="ward-patient-search-results-console"] [data-census-print-group] tbody td b,
+  [data-testid="ward-patient-search-results-console"] [data-census-print-group] tbody td b span,
+  [data-testid="ward-patient-search-results-console"] [data-census-print-group] tbody td [class*="timeValue"] {
+    font-size: 8.5pt !important;
+  }
+
+  /* The screen's 20px tier pill fits one text line on paper. */
+  [data-testid="ward-patient-search-results-console"] [data-census-print-group] tbody td:first-child > span {
+    height: auto !important;
+    padding: 0 1.2mm !important;
+    font-size: 7pt !important;
+    line-height: 1.3 !important;
+  }
+
+  /* A person is never split over two pages. */
+  [data-testid="ward-patient-search-results-console"] [data-census-print-group] tbody tr {
+    break-inside: avoid;
   }
 }

@@ -21,6 +21,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
+import { patientPrintChoices } from "@/components/ward-management/ward-list-print-menu";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -107,6 +108,9 @@ describe("Patients Print menu", () => {
     expect(sheet.textContent).not.toMatch(/\d+y · [FM]\b/u);
     expect(rows[0]!.textContent).toMatch(/UM\d+/u);
     expect(sheet.querySelector("[data-census-short-time]")?.textContent).not.toMatch(/waiting/u);
+    // 24-hour on every print (D-254): the sheet is stamped "10:42", so no row says "5:22 pm".
+    expect(sheet.textContent).toMatch(/Due (\w{3} \d{1,2} \w{3} )?\d{2}:\d{2}/u);
+    expect(sheet.textContent).not.toMatch(/\d{1,2}:\d{2} ?(am|pm)/iu);
 
     act(() => window.dispatchEvent(new Event("afterprint")));
     expect(document.documentElement.dataset.printScope).toBeUndefined();
@@ -128,12 +132,21 @@ describe("Patients Print menu", () => {
       (group) => group.dataset.censusPrintGroup,
     );
     expect(groups).toEqual(expect.arrayContaining(["ask", "found", "ward", "off"]));
+    // The printed list has its own title and print time (19 Nov 2026 audit: it had none), and every
+    // clock time on it takes the 24-hour face.
+    expect(within(console).getByRole("heading", { name: "Patients" })).not.toHaveClass("sr-only");
+    expect(console.querySelector("[data-census-print-title]")).toHaveTextContent(
+      /Printed \w{3} \d{1,2} \w{3} \d{4}, \d{2}:\d{2}/u,
+    );
+    expect(console.textContent).toMatch(/Due (\w{3} \d{1,2} \w{3} )?\d{2}:\d{2}/u);
+    expect(console.textContent).not.toMatch(/\d{1,2}:\d{2} ?(am|pm)/iu);
 
     act(() => window.dispatchEvent(new Event("afterprint")));
     expect(console.querySelector("[data-census-print-group]")).toBeNull();
+    expect(console.querySelector("[data-census-print-title]")).toBeNull();
   });
 
-  it("puts the same menu on the phone header after Copy list", () => {
+  it("puts the menu on the phone header after Copy list, offering the short sheet only", () => {
     Object.defineProperty(window, "matchMedia", {
       writable: true,
       configurable: true,
@@ -159,6 +172,47 @@ describe("Patients Print menu", () => {
       within(menu)
         .getAllByRole("menuitem")
         .map((item) => item.firstChild?.textContent),
-    ).toEqual(["Whole list", "ED and placement only"]);
+    ).toEqual(["ED and placement only"]);
+  });
+
+  it("does not offer a print with nobody in it", () => {
+    const print = vi.spyOn(window, "print").mockImplementation(() => {});
+    renderPage();
+    // A search that matches nobody empties both choices.
+    fireEvent.change(screen.getByTestId("ward-patient-typeahead-input"), { target: { value: "UM999999" } });
+    const menu = openPrintMenu(screen.getByTestId("ward-census-print"));
+    const items = within(menu).getAllByRole("menuitem");
+    expect(items.map((item) => item.textContent)).toEqual([
+      "Whole listNo one to print",
+      "ED and placement onlyNo one to print",
+    ]);
+    for (const item of items) expect(item).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(items[0]!);
+    fireEvent.click(items[1]!);
+    expect(print).not.toHaveBeenCalled();
+    expect(document.documentElement.dataset.printScope).toBeUndefined();
+  });
+});
+
+describe("patientPrintChoices", () => {
+  it("offers both choices on a desktop, with their people counts", () => {
+    expect(patientPrintChoices({ wholePeople: 411, shortPeople: 1, phone: false })).toEqual([
+      { id: "whole", label: "Whole list", meta: "411 people", scope: undefined, disabled: false },
+      { id: "ed-placement", label: "ED and placement only", meta: "1 person", scope: "ed-placement", disabled: false },
+    ]);
+  });
+
+  it("offers only the short sheet at phone width", () => {
+    expect(patientPrintChoices({ wholePeople: 411, shortPeople: 29, phone: true }).map((choice) => choice.id)).toEqual([
+      "ed-placement",
+    ]);
+  });
+
+  it('disables a choice with nobody in it and says why, never "0 people"', () => {
+    const [whole, short] = patientPrintChoices({ wholePeople: 0, shortPeople: 0, phone: false });
+    expect(whole).toMatchObject({ disabled: true, meta: "No one to print" });
+    expect(short).toMatchObject({ disabled: true, meta: "No one to print" });
+    const [onlyShortEmpty] = patientPrintChoices({ wholePeople: 12, shortPeople: 0, phone: true });
+    expect(onlyShortEmpty).toMatchObject({ id: "ed-placement", disabled: true, meta: "No one to print" });
   });
 });

@@ -91,6 +91,20 @@ export function CensusPrintGroups({
   ));
 }
 
+/**
+ * The title line of a printed Patients sheet: its name on the left, the print time on the right
+ * (ward-flow-print.css). A div, not a header: the print styles drop every header element as page
+ * chrome. The whole list and the short sheet share it (19 Nov 2026 audit: the whole list had none).
+ */
+export function CensusPrintTitle({ id, title, printedAt }: { id: string; title: string; printedAt?: string }) {
+  return (
+    <div data-census-print-title>
+      <h2 id={id}>{title}</h2>
+      {printedAt ? <p>Printed {printedAt}</p> : null}
+    </div>
+  );
+}
+
 /** The facts of one cell on one line, a dot between them. */
 const joined = (...parts: Array<string | null | undefined>) => parts.filter(Boolean).join(" · ");
 
@@ -149,11 +163,7 @@ export function EdPlacementPrintSheet({
       data-testid="ward-patient-search-ed-placement-print"
       aria-labelledby="ward-ed-placement-print-title"
     >
-      {/* A div, not a header: the print styles drop every header element as page chrome. */}
-      <div data-census-short-head>
-        <h2 id="ward-ed-placement-print-title">ED and placement</h2>
-        <p>Printed {printedAt}</p>
-      </div>
+      <CensusPrintTitle id="ward-ed-placement-print-title" title="ED and placement" printedAt={printedAt} />
       <CensusPrintGroups sections={sections} renderRow={(row) => <ShortPrintRow key={row.key} row={row} />} />
       <p data-census-short-foot>BedChart prototype · Synthetic data only</p>
     </section>

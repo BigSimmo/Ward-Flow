@@ -130,7 +130,7 @@ export function WardUnder18Notice({
         >
           <Field
             label={notice.notifiedAt === undefined ? CHIEF_PSYCHIATRIST_NOTIFIED_LABEL : "Change the notified time"}
-            hint="Optional · HH:MM · today unless you pick a day"
+            hint="Optional · HH:MM or am/pm · today unless you pick a day"
             error={error ?? undefined}
           >
             <TimeField

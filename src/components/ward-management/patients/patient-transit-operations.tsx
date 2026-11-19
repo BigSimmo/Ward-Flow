@@ -75,6 +75,7 @@ import { ExtendHoldControl } from "@/components/ward-management/ward-extend-hold
 import { useDeskActingWard } from "@/components/ward-management/ward-desk-acting-ward";
 import { calendarDateOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
+import { historyLineWording } from "@/components/ward-management/ward-history-lines";
 import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
 import {
   INTERMITTENT_INTERVAL_MINUTES,
@@ -92,6 +93,23 @@ import {
  * `showMetrics={false}` on the Patient page, where the gate board status card above already states
  * the destination, bed, legal authority and transport. The strip stays for any other host.
  */
+/**
+ * Audit 19 Nov 2026 (item 11): the recorded hold-up in plain words. The stored "nothing is blocking"
+ * values ("None — in transit") read as jargon under the receiving ward; a typed hold-up shows as typed.
+ */
+const NO_HOLD_UP_WORDS: Record<string, string> = {
+  "": "No hold-up recorded",
+  "No blocker": "No hold-up recorded",
+  "None — in transit": "No hold-up, in transit",
+  "None — handover complete": "No hold-up, handover complete",
+  "None — the movement did not proceed": "No hold-up, the movement did not proceed",
+  "None — cleared": "Hold-up cleared",
+};
+function holdUpWords(blocker: string | undefined): string {
+  const recorded = (blocker ?? "").trim();
+  return NO_HOLD_UP_WORDS[recorded] ?? recorded;
+}
+
 export function PatientTransitOperations({
   movement,
   showMetrics = true,
@@ -644,7 +662,7 @@ export function PatientTransitOperations({
           <div>
             <span className={styles.eyebrow}>NEXT ACTION</span>
             <h3 id={`${baseId}-dispatch-title`} tabIndex={-1} ref={nextActionRef}>
-              Placement &amp; dispatch deck
+              Receiving ward and transport
             </h3>
           </div>
           <Ambulance size={21} aria-hidden="true" />
@@ -653,7 +671,7 @@ export function PatientTransitOperations({
           <div className={styles.destination}>
             <span>Receiving ward</span>
             <strong>{destination?.name ?? "No destination recorded"}</strong>
-            <p>{movement.blocker || "No hold-up recorded"}</p>
+            <p>{holdUpWords(movement.blocker)}</p>
           </div>
           {destination && (
             <details>
@@ -1354,7 +1372,11 @@ export function PatientTransitOperations({
         {errors.length > 0 ? (
           <p role="alert">{errors.map((e) => e.reason).join(" · ")}</p>
         ) : latestAudit ? (
-          <p>{latestAudit.outcome === "accepted" ? "Recorded." : "Check the audit record."}</p>
+          <p>
+            {latestAudit.outcome === "accepted"
+              ? `Recorded: ${historyLineWording(latestAudit.action as Parameters<typeof historyLineWording>[0])}.`
+              : "Check the audit record."}
+          </p>
         ) : null}
       </div>
       {showMetrics ? (

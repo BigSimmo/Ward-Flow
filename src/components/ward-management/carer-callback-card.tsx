@@ -158,7 +158,7 @@ export function CarerCallbackCard({
           >
             <Field
               label="Best after"
-              hint={bestAfter !== undefined ? `Due ${formatInstantWithDay(bestAfter, now)}` : "HH:MM"}
+              hint={bestAfter !== undefined ? `Due ${formatInstantWithDay(bestAfter, now)}` : "HH:MM or am/pm"}
               error={showError ? TIME_FIELD_ERROR : undefined}
             >
               <TimeField value={time} onValueChange={setTime} data-testid="ward-carer-callback-time" />

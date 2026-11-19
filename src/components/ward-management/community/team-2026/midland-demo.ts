@@ -550,7 +550,7 @@ export const REFERRALS = [
     over: "1h overdue",
     pct: 100,
     from: "GP",
-    fromD: "Midvale Family Practice",
+    fromD: "Bellmoss Family Practice",
     via: "e-referral from GP",
     received: "Fri 30 Oct 09:41",
     dueAt: "Mon 2 Nov 09:41",
@@ -583,7 +583,7 @@ export const REFERRALS = [
       ["Midland discharge summary", "3 pages · Mar 2020 · this team"],
     ],
     contacts: [
-      ["Referrer", "Castell, Dr Mira", "GP · Midvale Family Practice", "08 5550 0544"],
+      ["Referrer", "Castell, Dr Mira", "GP · Bellmoss Family Practice", "08 5550 0544"],
       ["Carer", "Sallowfield, Ellen", "Daughter · visits twice a week", "0491 570 158"],
     ],
     checks: [
@@ -779,7 +779,7 @@ export const EXTRA: Record<string, ReferralExtra> = {
       ["Medicine", "Sertraline 100 mg", "Each morning · 18 months"],
       ["Allergies", "None known", ""],
       ["Physical health", "Bloods normal", "Fri 30 Oct"],
-      ["GP", "Castell, Dr Mira", "Midvale Family Practice"],
+      ["GP", "Castell, Dr Mira", "Bellmoss Family Practice"],
     ],
     hist: {
       years: "2019–2020",
@@ -808,7 +808,7 @@ export const EXTRA: Record<string, ReferralExtra> = {
       ["Medicine", "None regular", ""],
       ["Allergies", "None known", ""],
       ["Physical health", "Medically cleared", "Paracetamol level safe · Sun 1 Nov"],
-      ["GP", "Farouk, Dr Amina", "Midvale Medical Centre"],
+      ["GP", "Farouk, Dr Amina", "Mossgate Medical Centre"],
     ],
     hist: null,
     pickLabel: "Case manager",
@@ -820,7 +820,7 @@ export const EXTRA: Record<string, ReferralExtra> = {
     later: "Allocate later",
     people: [
       ["Client", "Quillon, Hattie", "Mobile · Dari speaker", "0491 570 156"],
-      ["GP", "Farouk, Dr Amina", "Midvale Medical Centre", "08 5550 0512"],
+      ["GP", "Farouk, Dr Amina", "Mossgate Medical Centre", "08 5550 0512"],
     ],
   },
   r3: {
@@ -835,7 +835,7 @@ export const EXTRA: Record<string, ReferralExtra> = {
       ["Medicine", "Paliperidone depot 150 mg", "Monthly · next due Thu 19 Nov"],
       ["Allergies", "Penicillin", "Rash"],
       ["Physical health", "Metabolic bloods done", "Mon 26 Oct · weight up 3 kg"],
-      ["GP", "Whitcombe, Dr Jon", "Swan View Medical"],
+      ["GP", "Whitcombe, Dr Jon", "Cindergate Medical"],
     ],
     hist: {
       years: "2015–2023",
@@ -852,7 +852,7 @@ export const EXTRA: Record<string, ReferralExtra> = {
     later: "Allocate later",
     people: [
       ["Client", "Rendlesham, Otto", "On Moodjar until Thu 5 Nov", "08 5550 0570"],
-      ["GP", "Whitcombe, Dr Jon", "Swan View Medical", "08 5550 0588"],
+      ["GP", "Whitcombe, Dr Jon", "Cindergate Medical", "08 5550 0588"],
     ],
   },
 };

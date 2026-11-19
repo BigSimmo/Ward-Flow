@@ -141,6 +141,15 @@ else if (route.startsWith('git/ref/tags/')) {
 } else fail('Unexpected mock API route: ' + method + ' ' + route);
 `;
 
+// The shell of one named step: its `run: |` block up to the next line that is not part of it.
+function runBlock(workflow: string, step: string) {
+  const after = workflow.split(`      - name: ${step}\n`)[1]?.split("        run: |\n")[1];
+  if (!after) throw new Error(`${step} run block not found`);
+  const lines = after.split("\n");
+  const end = lines.findIndex((line) => line.trim() !== "" && !line.startsWith(" ".repeat(10)));
+  return (end === -1 ? lines : lines.slice(0, end)).map((line) => line.slice(10)).join("\n");
+}
+
 function harness(overrides: Partial<State> = {}) {
   const directory = mkdtempSync(join(tmpdir(), "ward-release-retry-"));
   directories.push(directory);
@@ -166,15 +175,7 @@ function harness(overrides: Partial<State> = {}) {
   writeFileSync(statePath, JSON.stringify(initial));
   writeFileSync(join(directory, "gh"), github, { mode: 0o700 });
   const workflow = readFileSync(".github/workflows/daily-release.yml", "utf8");
-  const script = workflow.split("        run: |\n")[1];
-  if (!script) throw new Error("Release run block not found");
-  writeFileSync(
-    join(directory, "release.sh"),
-    script
-      .split("\n")
-      .map((line) => line.slice(10))
-      .join("\n"),
-  );
+  writeFileSync(join(directory, "release.sh"), runBlock(workflow, "Release"));
   writeFileSync(join(directory, "summary.md"), "");
   const read = (): State => JSON.parse(readFileSync(statePath, "utf8"));
   return {
@@ -570,5 +571,108 @@ describe("daily release record and live-ref recovery", () => {
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain("::warning::Could not read the commits since live");
     expect(h.read().current).toBe(target);
+  });
+
+  it("leaves the reason for a refusal where the notice can quote it, and keeps the exit code", () => {
+    const refused = harness({ acceptance: "failure" });
+    const output = join(refused.directory, "output.txt");
+    const failed = refused.run(undefined, { EVENT_NAME: "schedule", GITHUB_OUTPUT: output });
+    expect(failed.status).toBe(1);
+    expect(failed.stderr).toContain("release vetoed");
+    expect(readFileSync(output, "utf8")).toMatch(
+      /^reason<<WARD_RELEASE_REASON\n[\s\S]*is failure; release vetoed\.\n[\s\S]*WARD_RELEASE_REASON\n$/u,
+    );
+    expect(refused.read().current).toBe(previous);
+
+    const released = harness();
+    const done = released.run(undefined, { EVENT_NAME: "schedule", GITHUB_OUTPUT: join(released.directory, "out") });
+    expect(done.status).toBe(0);
+    expect(released.read().current).toBe(target);
+  });
+});
+
+// The notice step, run with a stand-in `gh` that only records its calls: no provider is reached.
+describe("daily release notice when the 6 am run does not release", () => {
+  const workflow = readFileSync(".github/workflows/daily-release.yml", "utf8");
+  function notice(openIssue: string, extra: Record<string, string> = {}) {
+    const directory = mkdtempSync(join(tmpdir(), "ward-release-notice-"));
+    directories.push(directory);
+    const log = join(directory, "gh.log");
+    writeFileSync(log, "");
+    writeFileSync(
+      join(directory, "gh"),
+      `#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "$GH_LOG"
+if [ -n "\${GH_FAIL:-}" ] && [[ "$*" == "$GH_FAIL"* ]]; then echo "synthetic gh failure" >&2; exit 1; fi
+if [ "$1 $2" = "issue list" ]; then printf '%s' "$OPEN_ISSUE"; fi
+`,
+      { mode: 0o700 },
+    );
+    writeFileSync(join(directory, "notice.sh"), runBlock(workflow, "Open or update the release-blocked issue"));
+    const result = spawnSync("bash", [join(directory, "notice.sh")], {
+      cwd: directory,
+      encoding: "utf8",
+      timeout: 10_000,
+      env: {
+        ...process.env,
+        PATH: `${directory}:${process.env.PATH}`,
+        GH_TOKEN: "synthetic-offline-only",
+        GH_REPO: "BigSimmo/Ward-Flow",
+        GH_LOG: log,
+        LABEL: "release-blocked",
+        OWNER: "BigSimmo",
+        RESULT: "failure",
+        REASON: "Latest completed acceptance on bbbb is failure; release vetoed.",
+        RUN_URL: "https://github.com/BigSimmo/Ward-Flow/actions/runs/1",
+        OPEN_ISSUE: openIssue,
+        ...extra,
+      },
+    });
+    return { ...result, gh: readFileSync(log, "utf8") };
+  }
+
+  it("runs only after a scheduled run whose release job did not succeed, with issue access alone", () => {
+    const job = workflow.split("\n  notify:\n")[1];
+    expect(job).toContain(
+      "    if: ${{ always() && github.event_name == 'schedule' && needs.release.result != 'success' }}\n",
+    );
+    expect(job).toContain("    needs: release\n");
+    expect(job).toMatch(/^ {4}permissions:\n {6}issues: write\n {4}steps:$/mu);
+    // The release job itself gains no new scope.
+    expect(workflow.split("\n  notify:\n")[0]).toMatch(/^ {4}permissions:\n {6}contents: write\n {4}outputs:$/mu);
+  });
+
+  it("opens one issue that @mentions the owner, with the reason and the run", () => {
+    const result = notice("");
+    expect(result.status).toBe(0);
+    expect(result.gh.match(/^issue create/gmu)).toHaveLength(1);
+    expect(result.gh).toMatch(/--title Daily release did not run: \d{4}-\d{2}-\d{2} /u);
+    expect(result.gh).toContain("@BigSimmo The 6 am daily release did not move the live site");
+    expect(result.gh).toContain("is failure; release vetoed.");
+    expect(result.gh).toContain("https://github.com/BigSimmo/Ward-Flow/actions/runs/1");
+  });
+
+  it("adds a comment to the open issue on a later day instead of opening a second", () => {
+    const result = notice("31");
+    expect(result.status).toBe(0);
+    expect(result.gh).toMatch(/^issue comment 31 /mu);
+    expect(result.gh).not.toMatch(/issue create/u);
+  });
+
+  it("still raises a notice when the release job left no message, such as a timeout", () => {
+    const result = notice("", { REASON: "", RESULT: "cancelled" });
+    expect(result.status).toBe(0);
+    expect(result.gh).toMatch(/^issue create/mu);
+    expect(result.gh).toContain("ended as: cancelled");
+    expect(result.gh).toContain("The release step left no message.");
+  });
+
+  it("fails visibly when the notice cannot be raised, and refuses another repository", () => {
+    const failed = notice("", { GH_FAIL: "issue create" });
+    expect(failed.status).not.toBe(0);
+    expect(failed.stderr).toContain("synthetic gh failure");
+    const other = notice("", { GH_REPO: "BigSimmo/Database" });
+    expect(other.status).toBe(1);
+    expect(other.gh).toBe("");
   });
 });
