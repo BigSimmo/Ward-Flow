@@ -183,8 +183,8 @@ describe("Patients Print menu", () => {
     const menu = openPrintMenu(screen.getByTestId("ward-census-print"));
     const items = within(menu).getAllByRole("menuitem");
     expect(items.map((item) => item.textContent)).toEqual([
-      "Whole listNo one to print",
-      "ED and placement onlyNo one to print",
+      "Whole listNobody to print",
+      "ED and placement onlyNobody to print",
     ]);
     for (const item of items) expect(item).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(items[0]!);
@@ -210,9 +210,9 @@ describe("patientPrintChoices", () => {
 
   it('disables a choice with nobody in it and says why, never "0 people"', () => {
     const [whole, short] = patientPrintChoices({ wholePeople: 0, shortPeople: 0, phone: false });
-    expect(whole).toMatchObject({ disabled: true, meta: "No one to print" });
-    expect(short).toMatchObject({ disabled: true, meta: "No one to print" });
+    expect(whole).toMatchObject({ disabled: true, meta: "Nobody to print" });
+    expect(short).toMatchObject({ disabled: true, meta: "Nobody to print" });
     const [onlyShortEmpty] = patientPrintChoices({ wholePeople: 12, shortPeople: 0, phone: true });
-    expect(onlyShortEmpty).toMatchObject({ id: "ed-placement", disabled: true, meta: "No one to print" });
+    expect(onlyShortEmpty).toMatchObject({ id: "ed-placement", disabled: true, meta: "Nobody to print" });
   });
 });

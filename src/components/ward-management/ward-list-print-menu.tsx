@@ -19,7 +19,7 @@ export type ListPrintChoice = {
 
 /**
  * Patients' two print choices with their people counts (D-267). A choice with nobody in it is not
- * printable and says "No one to print" instead of "0 people". At phone width only the short sheet
+ * printable and says "Nobody to print" instead of "0 people". At phone width only the short sheet
  * is offered: the phone list folds each group to its first rows, so a whole-list print from a phone
  * would leave people out (19 Nov 2026 audit).
  */
@@ -35,7 +35,7 @@ export function patientPrintChoices({
   const choice = (id: string, label: string, people: number, scope?: PrintScope): ListPrintChoice => ({
     id,
     label,
-    meta: people === 0 ? "No one to print" : `${people} ${people === 1 ? "person" : "people"}`,
+    meta: people === 0 ? "Nobody to print" : `${people} ${people === 1 ? "person" : "people"}`,
     scope,
     disabled: people === 0,
   });
