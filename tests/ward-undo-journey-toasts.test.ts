@@ -152,12 +152,12 @@ describe("a late Undo's refusal is said in plain words (item 4b)", () => {
     );
     const reason = refused.rejections.at(-1)!.reason;
     expect(reason).toContain("closed movement");
-    expect(plainUndoRefusal(reason)).toBe("Can't undo: this person has already arrived.");
+    expect(plainUndoRefusal(reason)).toBe("Can't undo: this person has already arrived. Check the record.");
   });
 
   it("covers the other refusals a late Undo meets, and leaves any other reason alone", () => {
     expect(plainUndoRefusal("cannot release a pull for a closed movement (Referral withdrawn)")).toBe(
-      "Can't undo: this journey has already closed.",
+      "Can't undo: this journey has already closed. Check the record.",
     );
     expect(
       plainUndoRefusal("movement X has a transport job booked; cancel it (CANCEL_TRANSPORT) before releasing"),
@@ -166,7 +166,7 @@ describe("a late Undo's refusal is said in plain words (item 4b)", () => {
       "Can't undo: this has changed since. Check the record.",
     );
     expect(plainUndoRefusal("Undo is only possible within 15 minutes of the decision")).toBe(
-      "Can't undo: the time to undo has passed.",
+      "Can't undo: the time to undo has passed. Check the record.",
     );
     expect(plainUndoRefusal("Only the ward that made this decision, or the coordinator, can undo it")).toBeUndefined();
   });

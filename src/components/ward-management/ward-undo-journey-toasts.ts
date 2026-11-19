@@ -96,16 +96,18 @@ const ARRIVED = /closed movement \(Patient arrived\b/u;
  * itself is the engine's and is unchanged.
  */
 export function plainUndoRefusal(reason: string): string | undefined {
-  if (ARRIVED.test(reason)) return "Can't undo: this person has already arrived.";
-  if (/for a closed movement/u.test(reason)) return "Can't undo: this journey has already closed.";
-  if (/has already been collected/u.test(reason)) return "Can't undo: this person has already been collected.";
+  if (ARRIVED.test(reason)) return "Can't undo: this person has already arrived. Check the record.";
+  if (/for a closed movement/u.test(reason)) return "Can't undo: this journey has already closed. Check the record.";
+  if (/has already been collected/u.test(reason))
+    return "Can't undo: this person has already been collected. Check the record.";
   if (/has a transport job booked/u.test(reason)) return "Can't undo: transport is booked. Cancel the transport first.";
   if (/has since been released or replaced/u.test(reason))
-    return "Can't undo: this bed pull has since been released or replaced.";
+    return "Can't undo: this bed pull has since been released or replaced. Check the record.";
   if (/cannot release a pull at the movement's current stage/u.test(reason))
-    return "Can't undo: this journey has moved on to its next step.";
+    return "Can't undo: this journey has moved on to its next step. Check the record.";
   if (/^This has changed since, so it cannot be undone/u.test(reason))
     return "Can't undo: this has changed since. Check the record.";
-  if (/^Undo is only possible within/u.test(reason)) return "Can't undo: the time to undo has passed.";
+  if (/^Undo is only possible within/u.test(reason))
+    return "Can't undo: the time to undo has passed. Check the record.";
   return undefined;
 }
