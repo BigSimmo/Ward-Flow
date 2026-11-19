@@ -2684,7 +2684,7 @@ Source-contract SHA256: c033a3f20893589d9204b527ff8762062222469e60cd81205a3c7338
   effects: Typed-text event: a session that sends it stops saving to browser storage
   tests: tests/ward-patient-care-plans.test.ts
   tests: tests/ward-event-permissions.test.ts
-  Reviewed source: src/components/ward-management/ward-patient-care-plan-reducer.ts:44; SHA256 ebd947f4ec177d0acb998b35f3ebd66d0ac58b777c9a874e20ed3e67203caa1d
+  Reviewed source: src/components/ward-management/ward-patient-care-plan-reducer.ts:44; SHA256 81b2b9c9bbb7a889db92d77884d605c9de1b2e9a2fa92089e527fb96c22c4386
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:698; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
   Reviewed source: src/components/ward-management/ward-patient-care-plans.ts:98; SHA256 e4c3e8bfa683b5155d38e018f3f5078ef74c0f1841d195b6d6858df5855baf3a
 - RECORD_TRIBUNAL_HEARING — modelled; event roles: ward, community, coordinator
@@ -2701,7 +2701,7 @@ Source-contract SHA256: c033a3f20893589d9204b527ff8762062222469e60cd81205a3c7338
   effects: Shown as typed, never a countdown (D-93); a worded flag once the date has passed with no outcome
   tests: tests/ward-patient-care-plans.test.ts
   tests: tests/ward-event-permissions.test.ts
-  Reviewed source: src/components/ward-management/ward-patient-care-plan-reducer.ts:81; SHA256 ebd947f4ec177d0acb998b35f3ebd66d0ac58b777c9a874e20ed3e67203caa1d
+  Reviewed source: src/components/ward-management/ward-patient-care-plan-reducer.ts:81; SHA256 81b2b9c9bbb7a889db92d77884d605c9de1b2e9a2fa92089e527fb96c22c4386
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:699; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
   Reviewed source: src/components/ward-management/ward-patient-care-plans.ts:149; SHA256 e4c3e8bfa683b5155d38e018f3f5078ef74c0f1841d195b6d6858df5855baf3a
 - RECORD_TRIBUNAL_OUTCOME — modelled; event roles: ward, community, coordinator
@@ -2718,7 +2718,7 @@ Source-contract SHA256: c033a3f20893589d9204b527ff8762062222469e60cd81205a3c7338
   effects: Clears the hearing-date-passed flag
   tests: tests/ward-patient-care-plans.test.ts
   tests: tests/ward-event-permissions.test.ts
-  Reviewed source: src/components/ward-management/ward-patient-care-plan-reducer.ts:95; SHA256 ebd947f4ec177d0acb998b35f3ebd66d0ac58b777c9a874e20ed3e67203caa1d
+  Reviewed source: src/components/ward-management/ward-patient-care-plan-reducer.ts:95; SHA256 81b2b9c9bbb7a889db92d77884d605c9de1b2e9a2fa92089e527fb96c22c4386
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:700; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
 - SET_CULTURAL_SUPPORT_REQUEST — modelled; event roles: ward, ed, community, coordinator
   Source-reviewed command model: cultural support the person or family asked for, set or taken off.
@@ -2734,7 +2734,7 @@ Source-contract SHA256: c033a3f20893589d9204b527ff8762062222469e60cd81205a3c7338
   effects: Never derived from the Aboriginal status field; set only by this event
   tests: tests/ward-patient-care-plans.test.ts
   tests: tests/ward-event-permissions.test.ts
-  Reviewed source: src/components/ward-management/ward-patient-care-plan-reducer.ts:107; SHA256 ebd947f4ec177d0acb998b35f3ebd66d0ac58b777c9a874e20ed3e67203caa1d
+  Reviewed source: src/components/ward-management/ward-patient-care-plan-reducer.ts:107; SHA256 81b2b9c9bbb7a889db92d77884d605c9de1b2e9a2fa92089e527fb96c22c4386
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:701; SHA256 f305e4436a9f754ff704a5fb04ede91c3bd1ea989ce540b23b1d02e5141e23d5
   Reviewed source: src/components/ward-management/ward-patient-care-plans.ts:168; SHA256 e4c3e8bfa683b5155d38e018f3f5078ef74c0f1841d195b6d6858df5855baf3a
 

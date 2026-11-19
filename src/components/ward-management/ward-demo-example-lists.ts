@@ -306,7 +306,7 @@ const WARDS_LEFT_UNPRINTED = 2;
  * (`mayCarryAdverseExample`, A15-27) keep no print, so "never printed" still shows and never sits
  * under a real ward's own name. Synthetic times only; the rule that reads them is unchanged.
  */
-export function seededPackPrints(units: readonly Unit[], anchor: Instant): DowntimePackPrintRecord[] {
+function seededPackPrints(units: readonly Unit[], anchor: Instant): DowntimePackPrintRecord[] {
   const unprinted = new Set(
     units
       .filter(mayCarryAdverseExample)
