@@ -1247,7 +1247,7 @@ export const MORE_JOBS: readonly HowTo[] = [
         { sel: '[data-testid="ward-legal-record"] input[placeholder="HH:MM"]' },
         {
           title: "Time on form",
-          body: "Type the time written on the form, as HH:MM. Leave Date on form blank when it was written today.",
+          body: "Type the time written on the form, like 2:40 pm or 14:40. Leave Date on form blank when it was written today.",
         },
       ),
       step(
@@ -1409,7 +1409,7 @@ export const MORE_JOBS: readonly HowTo[] = [
       }),
       step(id("seclusion-start-time"), {
         title: "Started at",
-        body: "Type the time it started as HH:MM, or press Now beside it.",
+        body: "Type the time it started, like 2:40 pm or 14:40, or press Now beside it.",
       }),
       step(
         { sel: '[data-testid="seclusion-start-dialog"] button', text: "Record start" },
@@ -1429,7 +1429,7 @@ export const MORE_JOBS: readonly HowTo[] = [
       }),
       step(id("seclusion-incident-time"), {
         title: "Happened at",
-        body: "Type the time as HH:MM or press Now, then Record incident. It shows under Ward incidents.",
+        body: "Type the time, like 2:40 pm or 14:40, or press Now, then Record incident. It shows under Ward incidents.",
       }),
     ],
   },

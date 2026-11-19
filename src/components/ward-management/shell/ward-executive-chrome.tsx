@@ -25,6 +25,7 @@ import {
 import { Dot, Sheet, useIsPhone, useMediaQuery, useWfBandActive } from "@/components/wf";
 import { formatInstantWithDay } from "../ward-clock";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
+import { plural } from "../ward-plural";
 import { releasedCountText, ExecutiveStatisticsUnavailable } from "../statistics/statistics-small-numbers";
 import { WardHelpHost } from "../help/ward-help-host";
 import { WARD_CAPACITY_HREF, WARD_REFERRAL_INTAKE_HREF } from "../ward-nav";
@@ -378,7 +379,8 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
               <p className={rail.alertsDropdownSub}>{services.length} health services</p>
             </div>
             <span className={rail.alertsTotalBadge} data-testid="ward-rail-bed-alerts-free">
-              <span className={rail.alertsTotalValue}>{report.network.beds.ready}</span> beds ready
+              <span className={rail.alertsTotalValue}>{report.network.beds.ready}</span>{" "}
+              {report.network.beds.ready === 1 ? "bed" : "beds"} ready
             </span>
           </div>
           <div className={rail.alertsList}>
@@ -1033,7 +1035,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
             }}
           >
             <span className={bar.serviceDot} data-service="statewide" aria-hidden="true" />
-            All services · {releasedCountText(report.network.people.edJourneysOpen)} open ED movements
+            Statewide · {releasedCountText(report.network.people.edJourneysOpen)} open ED movements
           </button>
         )}
         {services.map((service) => (
@@ -1048,7 +1050,8 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
             }}
           >
             <span className={bar.serviceDot} data-service={SERVICE_SWATCH_KEY[service.service]} aria-hidden="true" />
-            {service.service}: {service.beds.ready} beds ready · {releasedCountText(service.waiting)} open ED movements
+            {service.service}: {plural(service.beds.ready, "bed", "beds")} ready · {releasedCountText(service.waiting)}{" "}
+            open ED movements
           </button>
         ))}
       </Sheet>

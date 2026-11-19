@@ -282,6 +282,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-266](#d-266-the-printed-patients-list-numbers-its-pages-and-carries-group-names-and-the-capacity-hero-fits-narrow-phones-18-november-2026)                  | The printed Patients list numbers its pages and carries group names, and the Capacity hero fits narrow phones | Active                                           |
 | [D-267](#d-267-patients-print-opens-a-menu-with-a-short-ed-and-placement-sheet-18-november-2026)                                                               | Patients Print opens a menu with a short ED and placement sheet                                               | Active                                           |
 | [D-268](#d-268-ed-journeys-open-is-renamed-open-ed-movements-18-november-2026)                                                                                 | "ED journeys open" is renamed "Open ED movements"                                                             | Active                                           |
+| [D-269](#d-269-the-19-november-pre-demo-audit-fixes-go-ahead-as-recommended-19-november-2026)                                                                  | The 19 November pre-demo audit fixes go ahead as recommended                                                  | Active                                           |
 
 ---
 
@@ -3080,4 +3081,13 @@ D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
 - **Settles:** the pending rename noted in D-262 and D-265. The figure itself (`openEdJourneys`, people in transit included) is unchanged.
 - **Boundary:** wording only. No figure, count, clinical rule, saved record or permission changes. Code names stay. Synthetic data only.
 
-The next free number is D-269.
+## D-269. The 19 November pre-demo audit fixes go ahead as recommended (19 November 2026)
+
+- **Date:** 19 November 2026, 5:51 PM AWST (09:51 UTC). **Decided by:** Josh, on the audit report "BedChart pre-demo audit, 19 Nov 2026" and its five questions: "Go ahead and resolve all these issues for me."
+- **Decision:** the audit's recommendations are built before the 22 November freeze. (1) Every typed time box accepts am/pm and 24-hour time, completing D-254; printed sheets use 24-hour time throughout. (2) The Patients whole-list print gets fixed column widths and a title; on a phone the Print menu offers only the short ED and placement sheet, and a choice with nobody in it is shown as "Nobody to print". This narrows D-267's two-choice menu on phones until the phone list expands for print. (3) A journey's earlier Undo messages close once the journey moves on, and a late Undo is refused in plain words. (4) The Privacy and data page keeps every status and gap from D-260 but states them without file paths, decision codes or placeholders. (5) The demo seed shows most outage packs as printed, leaving two wards as the example. (6) ED board columns, the Home "Since" strip and the Destination and placement panel are tidied so nothing is cut off and the words are plain. (7) A scheduled daily release that fails or is refused opens a `release-blocked` issue; the workflow gains `issues: write` for that job only. (8) The public install screenshots are retaken from the current design.
+- **Why:** each item is something a health service audience could see or ask about at the demonstration.
+- **Screen changes approved:** 19 November 2026, 7:09 PM AWST (11:09 UTC). Josh, on the before and after page (https://claude.ai/artifact/MUnH6ovmY3W8KhLd8j69px): "Approve all screen changes". This keeps the built wording "Receiving ward and transport" and "No hold-up, in transit" on the Destination and placement panel.
+- **Left for after the demonstration (Josh's answer to question 5):** expanding the phone list for a whole-list print, the phone drawer tap check, and the accessibility leftovers.
+- **Boundary:** no clinical rule, signed value, permission or saved record changes. The outage pack warning rule is unchanged; only synthetic seed data moved. The release and veto logic is unchanged. Synthetic data only.
+
+The next free number is D-270.

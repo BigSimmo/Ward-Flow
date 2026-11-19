@@ -36,6 +36,7 @@ import { formatInstant } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useWardFlowSelect, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { wardsWithOldPack } from "@/components/ward-management/ward-downtime-pack-prints";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardPackPrintedLine } from "@/components/ward-management/ward/ward-pack-printed-line";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
@@ -43,10 +44,20 @@ import { ToastProvider } from "@/components/wf";
 
 const seed = seedWardFlowState();
 const ward = seed.units[0]!;
-const others = seed.units.slice(1);
 const DAY = 24 * 60;
+// 19 Nov 2026 (item 6): the demo starts with most wards' packs printed earlier today and two wards
+// left never printed. `never` is the first of those two; `printedWards` is every other ward.
+const neverIds = wardsWithOldPack(
+  seed.downtimePackPrints,
+  seed.units.map((unit) => unit.id),
+  NOW_ANCHOR,
+).map((row) => row.unitId);
+const never = seed.units.find((unit) => unit.id === neverIds[0])!;
+const printedWards = seed.units.filter((unit) => unit.id !== never.id);
 // Ends after every seeded ward's last confirmation (10:32 at the latest), so no ward starts caught up.
 const OUTAGE = { from: NOW_ANCHOR - 120, to: NOW_ANCHOR - 5 };
+// A ward's own print during the outage, later than any seeded print (19 Nov 2026, item 6).
+const PACK_AT = NOW_ANCHOR - 20;
 
 /** Holds the provider's dispatch, so a test can record what another desk did. */
 const handle: { dispatch: ((event: WardFlowEvent) => unknown) | null } = { dispatch: null };
@@ -90,43 +101,48 @@ afterEach(() => {
 describe("item 24: outage packs older than 24 hours", () => {
   it("lists each old ward with its last print, and never-printed wards as Never printed", () => {
     renderIn(<DowntimeOldPacksBand now={NOW_ANCHOR} />);
-    // Every ward but one printed just now; the first printed more than 24 hours ago.
+    // Every ward but one printed just now; that one has never printed.
     printed(
-      others.map((unit) => unit.id),
+      printedWards.map((unit) => unit.id),
       NOW_ANCHOR,
     );
     const band = screen.getByTestId("ward-downtime-old-packs");
     // Root-cause fix 3.3: "never printed" is worded apart from "over 24h old".
     expect(band).toHaveTextContent("Outage packs never printed");
     expect(band).toHaveTextContent(`1 outage pack never printed · all ${seed.units.length} wards`);
-    expect(within(band).getByTestId(`ward-downtime-old-pack-${ward.id}`)).toHaveTextContent(
-      `${ward.name} ${NEVER_PRINTED}`,
+    expect(within(band).getByTestId(`ward-downtime-old-pack-${never.id}`)).toHaveTextContent(
+      `${never.name} ${NEVER_PRINTED}`,
     );
-    printed([ward.id], NOW_ANCHOR - DAY - 30);
+    printed([never.id], NOW_ANCHOR - DAY - 30);
     expect(band).toHaveTextContent("Outage packs over 24h old");
     expect(band).toHaveTextContent(`1 outage pack over 24h old · all ${seed.units.length} wards`);
-    expect(screen.getByTestId(`ward-downtime-old-pack-${ward.id}`)).toHaveTextContent(
-      `${ward.name} ${formatInstant(NOW_ANCHOR - DAY - 30)} yesterday`,
+    expect(screen.getByTestId(`ward-downtime-old-pack-${never.id}`)).toHaveTextContent(
+      `${never.name} ${formatInstant(NOW_ANCHOR - DAY - 30)} yesterday`,
     );
     // Printed within the last 24 hours: no ward is old, so no band. (A second ward keeps this print
     // apart from the first one's, which the repeat-tap guard would answer instead.)
-    printed([ward.id, others[0]!.id], NOW_ANCHOR);
+    printed([never.id, printedWards[0]!.id], NOW_ANCHOR);
     expect(screen.queryByTestId("ward-downtime-old-packs")).toBeNull();
   });
 
-  it("folds a long list of never-printed wards behind Show more", () => {
-    renderIn(<DowntimeOldPacksBand now={NOW_ANCHOR} />);
+  it("folds a long list of never-printed and old wards behind Show more", () => {
+    // Two days on, every seeded print is old, so every ward is listed: never printed first.
+    renderIn(<DowntimeOldPacksBand now={NOW_ANCHOR + 2 * DAY} />);
     const band = screen.getByTestId("ward-downtime-old-packs");
-    expect(band).toHaveTextContent(`${seed.units.length} outage packs never printed · all ${seed.units.length} wards`);
-    expect(within(band).getAllByText(NEVER_PRINTED)).toHaveLength(6);
+    expect(band).toHaveTextContent(
+      `${neverIds.length} outage packs never printed, ${seed.units.length - neverIds.length} over 24h old · all ${seed.units.length} wards`,
+    );
+    const rows = () => band.querySelectorAll('[data-testid^="ward-downtime-old-pack-"]');
+    expect(rows()).toHaveLength(6);
+    expect(within(band).getAllByText(NEVER_PRINTED)).toHaveLength(neverIds.length);
     fireEvent.click(screen.getByTestId("ward-downtime-old-packs-more"));
-    expect(within(band).getAllByText(NEVER_PRINTED)).toHaveLength(seed.units.length);
+    expect(rows()).toHaveLength(seed.units.length);
   });
 
   it("My ward's Checking line says when its outage pack was last printed", () => {
-    renderIn(<WardPackPrintedLine unitId={ward.id} now={NOW_ANCHOR} />);
+    renderIn(<WardPackPrintedLine unitId={never.id} now={NOW_ANCHOR} />);
     expect(screen.getByTestId("ward-hero-pack-printed")).toHaveTextContent("Outage pack never printed");
-    printed([ward.id], NOW_ANCHOR - 30);
+    printed([never.id], NOW_ANCHOR - 30);
     expect(screen.getByTestId("ward-hero-pack-printed")).toHaveTextContent(
       `Outage pack last printed ${formatInstant(NOW_ANCHOR - 30)}`,
     );
@@ -236,12 +252,12 @@ describe("item 25: catch up after the outage", () => {
     expect(screen.queryByTestId("ward-outage-catch-up")).toBeNull();
     expect(screen.queryAllByText("Not confirmed since the outage")).toHaveLength(0);
 
-    printed([ward.id], OUTAGE.from - 30);
+    printed([ward.id], PACK_AT);
     outage();
     // The card loads on its own chunk (phone budget), so it arrives a moment later.
     const card = await screen.findByTestId("ward-outage-catch-up");
     expect(card).toHaveTextContent(
-      `Since your pack at ${formatInstant(OUTAGE.from - 30)}, enter admissions, discharges, moves and bed changes done on paper.`,
+      `Since your pack at ${formatInstant(PACK_AT)}, enter admissions, discharges, moves and bed changes done on paper.`,
     );
     for (const action of ["Open arrivals", "Open discharges", "Open bed board", "Open bed list", "Beds still correct"])
       expect(within(card).getByRole("button", { name: action })).toBeInTheDocument();
@@ -259,13 +275,16 @@ describe("item 25: catch up after the outage", () => {
   it("Home counts the wards caught up and lists the rest with their last pack time", () => {
     renderIn(<HomeOutageCatchUp now={NOW_ANCHOR} />);
     expect(screen.queryByTestId("home-outage-catch-up")).toBeNull();
-    printed([ward.id], OUTAGE.from - 30);
+    printed([ward.id], PACK_AT);
     outage();
     expect(screen.getByTestId("home-catch-up-summary")).toHaveTextContent(`0 of ${seed.units.length} wards caught up`);
     expect(screen.getByTestId(`home-catch-up-ward-${ward.id}`)).toHaveTextContent(
-      `${ward.name}Beds not confirmed since the outagePack ${formatInstant(OUTAGE.from - 30)}`,
+      `${ward.name}Beds not confirmed since the outagePack ${formatInstant(PACK_AT)}`,
     );
-    expect(screen.getByTestId(`home-catch-up-ward-${others[0]!.id}`)).toHaveTextContent("No pack printed");
+    // The never-printed example ward sits late in the list, behind Show more.
+    fireEvent.click(screen.getByRole("button", { name: /^Show \d+ more$/ }));
+    expect(screen.getByTestId(`home-catch-up-ward-${never.id}`)).toHaveTextContent("No pack printed");
+    fireEvent.click(screen.getByRole("button", { name: "Show fewer" }));
     expect(screen.getByRole("link", { name: "Change times" })).toHaveAttribute("href", "/bedchart/reports/downtime");
 
     // Only the ward's own confirmation counts: the coordinator's does not.

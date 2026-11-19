@@ -401,7 +401,7 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     expect(time).not.toHaveAttribute("aria-invalid", "true");
     fireEvent.blur(time);
     expect(time).toHaveAttribute("aria-invalid", "true");
-    expect(time).toHaveAccessibleDescription(/Enter the time written on the form as HH:MM/);
+    expect(time).toHaveAccessibleDescription(/Enter the time written on the form, like 2:30 pm or 14:30/);
     fireEvent.change(time, { target: { value: "" } });
     expect(time).not.toHaveAttribute("aria-invalid", "true");
   });

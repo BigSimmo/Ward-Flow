@@ -218,8 +218,7 @@ export function PatientCarePlansCard({
 
   function saveHearing() {
     if (!hearingDate) return setProblem("Enter the hearing date.");
-    if (hearingTimeText.trim() && !hearingTime)
-      return setProblem("Enter the hearing time as hours and minutes, HH:MM.");
+    if (hearingTimeText.trim() && !hearingTime) return setProblem("Enter the hearing time, like 2:30 pm or 14:30.");
     setProblem(null);
     setForm("none");
     run(
@@ -493,7 +492,7 @@ export function PatientCarePlansCard({
                   <Field label="Hearing date" hint="DD/MM/YYYY">
                     <DateField value={hearingDate} onValueChange={setHearingDate} />
                   </Field>
-                  <Field label="Time" hint="HH:MM, optional">
+                  <Field label="Time" hint="HH:MM or am/pm, optional">
                     <TimeField value={hearingTime} onValueChange={setHearingTime} onTextChange={setHearingTimeText} />
                   </Field>
                   <Button size="sm" variant="pri" onClick={saveHearing}>

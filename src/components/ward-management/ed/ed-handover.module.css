@@ -82,17 +82,19 @@
 .handoverTable[data-columns="handover"] col[data-col="Patient"] {
   width: auto;
 }
+/* Audit 19 Nov 2026 (item 1): In ED and Bay were cut off at 1440px ("13 h 25 m", "Not recc") in 96px
+   and 68px. They take the room from Presentation and Form (which had spare) and a little from Patient. */
 .handoverTable[data-columns="handover"] col[data-col="In ED"] {
-  width: 96px;
-}
-.handoverTable[data-columns="handover"] col[data-col="Bay"] {
-  width: 68px;
-}
-.handoverTable[data-columns="handover"] col[data-col="Presentation"] {
   width: 124px;
 }
+.handoverTable[data-columns="handover"] col[data-col="Bay"] {
+  width: 80px;
+}
+.handoverTable[data-columns="handover"] col[data-col="Presentation"] {
+  width: 112px;
+}
 .handoverTable[data-columns="handover"] col[data-col="Form"] {
-  width: 156px;
+  width: 140px;
 }
 .handoverTable[data-columns="handover"] col[data-col="Checks"] {
   width: 136px;
@@ -627,7 +629,7 @@
     width: 160px;
   }
   .handoverTable[data-columns="handover"] col[data-col="In ED"] {
-    width: 112px;
+    width: 120px;
   }
   .handoverTable[data-columns="handover"] col[data-col="Bay"] {
     width: 76px;

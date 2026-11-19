@@ -139,11 +139,23 @@ export function DateField({
 }
 
 /**
- * "14:30" (or 1430, 14.30, 9:05) as "14:30"; null when not a real 24-hour time. With no separator it
- * takes exactly four digits, so "143" is never read as 01:43 (design audit, PR #1474 review).
+ * "14:30" (or 1430, 14.30, 9:05) as "14:30", and an am/pm time ("2:30 pm", "2.30pm", "9 am",
+ * "12 a.m.") as the same 24-hour text ("14:30", "09:00", "00:00"); null when not a real time. Every
+ * time box takes both faces (D-254). With no separator and no am/pm it takes exactly four digits, so
+ * "143" is never read as 01:43 (design audit, PR #1474 review). The am/pm rule is the same one
+ * `minuteOfDayFromClockText` keeps in ward-clock.ts; the kit cannot import it (ward-flow-seam).
  */
 export function parseTypedTime(text: string): string | null {
   const trimmed = text.trim();
+  // Hours 1 to 12 with am or pm; 12 am is midnight and 12 pm is noon.
+  const meridiem = /^(\d{1,2})(?:[:.](\d{2}))?\s*([ap])\.?\s*m\.?$/iu.exec(trimmed);
+  if (meridiem) {
+    const hour = Number(meridiem[1]);
+    const minute = Number(meridiem[2] ?? "0");
+    if (hour < 1 || hour > 12 || minute > 59) return null;
+    const hours24 = (hour % 12) + (meridiem[3].toLowerCase() === "p" ? 12 : 0);
+    return `${String(hours24).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  }
   const match = /^(\d{1,2})[:.\s](\d{2})$/u.exec(trimmed) ?? /^(\d{2})(\d{2})$/u.exec(trimmed);
   if (!match) return null;
   const hours = Number(match[1]);
@@ -153,22 +165,32 @@ export function parseTypedTime(text: string): string | null {
 }
 
 /**
- * Typed time text that cannot become a 24-hour time: four or more digits that do not parse (25:00),
- * or any letter or other character ("2:30 pm"). An am/pm time is marked wrong, never converted, and
- * there is no length cap, so a pasted "11:45pm" is never cut short to a different time.
+ * Typed time text that cannot become a time: four or more digits that do not parse (25:00), a
+ * finished am/pm time that is not real ("13:00 pm", "0 am"), or any character a time never holds
+ * ("9h30"). Typing on the way to an am/pm time ("9:30 p") is not flagged. There is no length cap, so
+ * a pasted "11:45pm" is never cut short to a different time.
  */
-function timeTextWrong(text: string): boolean {
-  if (/[^\d:.\s]/u.test(text)) return true;
-  return (text.match(/\d/gu)?.length ?? 0) >= 4 && parseTypedTime(text) === null;
+export function timeTextWrong(text: string): boolean {
+  if (parseTypedTime(text) !== null) return false;
+  const trimmed = text.trim();
+  // Only digits, separators and the letters of am/pm (with optional dots) belong in a time.
+  if (/[^\d:.\sapm]/iu.test(trimmed)) return true;
+  const letters = trimmed.replace(/[^a-z]/giu, "").toLowerCase();
+  if (letters !== "") {
+    // Letters must be a, p, am or pm, after the digits; once the "m" is there the time is finished.
+    if (!/^\d[\d:.\s]*[ap]\.?\s*m?\.?$/iu.test(trimmed)) return true;
+    return letters.endsWith("m");
+  }
+  return (trimmed.match(/\d/gu)?.length ?? 0) >= 4;
 }
 
 /** The Field error a caller shows when its submit finds a TimeField unfinished or not a real time. */
-export const TIME_FIELD_ERROR = "Type a 24-hour time, HH:MM";
+export const TIME_FIELD_ERROR = "Type a time, like 2:30 pm or 14:30";
 
 export type TimeFieldProps = Omit<TextInputProps, "value" | "defaultValue" | "onChange" | "type"> & {
   /** "HH:MM" (24-hour), or "" for none. */
   value: string;
-  /** Called with "HH:MM" when the typed text is a real 24-hour time, otherwise with "". */
+  /** Called with "HH:MM" (24-hour) when the typed text is a real time, am/pm or 24-hour, otherwise with "". */
   onValueChange: (time: string) => void;
   /** Called with the text as typed, so a caller can tell an empty box from an unfinished or wrong one. */
   onTextChange?: (text: string) => void;
@@ -177,13 +199,13 @@ export type TimeFieldProps = Omit<TextInputProps, "value" | "defaultValue" | "on
 };
 
 /**
- * THE KIT'S TYPED TIME BOX (W14, design audit 5 Nov 2026): one HH:MM (24-hour) text box in place of
- * the browser's `<input type="time">`, whose picker showed am/pm in en-AU Chrome. The person types
- * "14:30", "1430", "14.30" or "9:05"; the caller's value stays "HH:MM" (or "" while unfinished or not
- * a real time), the shape `type="time"` gave, so reducers and checks are unchanged. Nothing is filled
- * in for the person (D5, D-70). A finished entry that is not a real time (25:00), or any letters (an
- * am/pm time), is marked invalid and says `TIME_FIELD_ERROR` under the box (spec item 13); on leaving
- * the box it shows the stored HH:MM. A caller whose submit finds the value "" shows `TIME_FIELD_ERROR`
+ * THE KIT'S TYPED TIME BOX (W14, design audit 5 Nov 2026): one typed time box in place of
+ * the browser's `<input type="time">`. The person types a 24-hour time ("14:30", "1430", "14.30",
+ * "9:05") or an am/pm time ("2:30 pm", "2.30pm", "9 am"), as D-254 rules for every time box; the
+ * caller's value stays 24-hour "HH:MM" (or "" while unfinished or not a real time), the shape
+ * `type="time"` gave, so reducers and checks are unchanged. Nothing is filled in for the person (D5,
+ * D-70). A finished entry that is not a real time (25:00, "13:00 pm") is marked invalid and says
+ * `TIME_FIELD_ERROR` under the box (spec item 13); on leaving the box it shows the stored HH:MM. A caller whose submit finds the value "" shows `TIME_FIELD_ERROR`
  * through its Field and does not save.
  *
  *     <Field label="Arrival time" hint="HH:MM">
@@ -216,7 +238,9 @@ export function TimeField({
       <TextInput
         {...inputProps}
         type="text"
-        inputMode="numeric"
+        // No numeric keypad: an am/pm time needs letters (D-254).
+        inputMode="text"
+        autoCapitalize="none"
         autoComplete="off"
         placeholder={placeholder}
         value={typed}
@@ -263,7 +287,7 @@ export type DateTimeFieldProps = {
   invalid?: boolean;
   disabled?: boolean;
   /**
-   * What the time box is for, spoken as "<label> time, HH:MM 24-hour" so two pairs on one form can be
+   * What the time box is for, spoken as "<label> time, for example 2:30 pm or 14:30" so two pairs on one form can be
    * told apart. The date box takes its name from the caller's own `<label>`.
    */
   label: string;
@@ -271,8 +295,8 @@ export type DateTimeFieldProps = {
 };
 
 /**
- * THE KIT'S TYPED DATE AND TIME (phone audit, 1 Nov 2026): a DD/MM/YYYY box and an HH:MM (24-hour)
- * box in place of `<input type="datetime-local">`, whose picker showed mm/dd/yyyy and AM/PM on many
+ * THE KIT'S TYPED DATE AND TIME (phone audit, 1 Nov 2026): a DD/MM/YYYY box and a typed time
+ * box (24-hour or am/pm, D-254) in place of `<input type="datetime-local">`, whose picker showed mm/dd/yyyy and AM/PM on many
  * phones. The value stays "YYYY-MM-DDTHH:MM", so readers such as `perthDateTimeLocal` are unchanged.
  * Nothing is filled in for the person, and nothing is worked out from what they type (D5, D-70).
  *
@@ -341,7 +365,8 @@ export function DateTimeField({
       />
       <TextInput
         type="text"
-        inputMode="numeric"
+        inputMode="text"
+        autoCapitalize="none"
         autoComplete="off"
         placeholder="HH:MM"
         value={timeText}
@@ -349,7 +374,7 @@ export function DateTimeField({
         disabled={disabled}
         invalid={invalid || timeWrong}
         aria-describedby={errorId}
-        aria-label={`${label} time, HH:MM 24-hour`}
+        aria-label={`${label} time, for example 2:30 pm or 14:30`}
         data-testid={testId ? `${testId}-time` : undefined}
         onChange={(event) => {
           setTimeText(event.target.value);

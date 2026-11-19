@@ -1757,7 +1757,7 @@
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-sheets.tsx",
         "line": 355,
-        "sha256": "f8351ef47789695725dc94988572ee7abbfa89d57283bf021ec8374028b5cbbf"
+        "sha256": "a04ac7f440b6fbf8a1125d4a1344fafa4d609398b949029d93522f51ba6beb2a"
       },
       {
         "path": "src/components/ward-management/patients/add-patient.tsx",

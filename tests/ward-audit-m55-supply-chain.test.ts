@@ -77,7 +77,8 @@ const REVIEWED_WRITE_SCOPES: Record<string, string[]> = {
   "backend-uptime.yml": ["issues"],
   // CodeQL uploads its results (added on main).
   "codeql.yml": ["security-events"],
-  "daily-release.yml": ["contents"],
+  // `issues` is held by the notify job alone: one issue when the 6 am release does not happen.
+  "daily-release.yml": ["contents", "issues"],
   "docs-freshness.yml": ["issues"],
   "release-tag.yml": ["contents"],
   "ward-flow-budget-heal.yml": ["issues"],

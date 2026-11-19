@@ -4,14 +4,13 @@
 // Referrals, History and the row. It sits in Act now with its own Pull the bed, on Home and, since
 // the Alerts redesign (Q111, Josh 1 Nov 2026), on Alerts too, so the two pages agree.
 
-import { minutesText } from "@/components/ward-management/alerts/alerts-model";
 import alertStyles from "@/components/ward-management/alerts/alerts.module.css";
 import type { AcceptedAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { acceptedDecisionAt, type PulledBed } from "@/components/ward-management/pull-bed-facts";
 import { usePullBedStep } from "@/components/ward-management/pull-bed-step";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
-import type { Instant } from "@/components/ward-management/ward-clock";
+import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { Button } from "@/components/wf";
 
@@ -66,7 +65,7 @@ export function AcceptedPullRows({
         const who = patientOf(referral);
         const name = nameFor(who.formalName, who.umrn);
         const decidedAt = acceptedDecisionAt(entry);
-        const age = decidedAt === undefined ? undefined : minutesText(Math.max(0, now - decidedAt));
+        const age = decidedAt === undefined ? undefined : splitDuration(Math.max(0, now - decidedAt));
         const shared = {
           data: { "data-referral-id": referral.id, "data-pull-unit-id": entry.unitId },
           tone: "danger" as const,

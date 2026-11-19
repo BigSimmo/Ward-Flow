@@ -20,6 +20,7 @@ import {
   type UndoStepType,
 } from "@/components/ward-management/ward-undo";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
+import { noteJourneyUndoToast, plainUndoRefusal } from "./ward-undo-journey-toasts";
 
 /** The part of a toast API this hook needs: a page passes its own, or the layout's is used. */
 export type UndoToastApi = { push: (toast: ToastInput) => string };
@@ -123,6 +124,14 @@ export type UndoableStep = {
   undoToastMs?: number;
 };
 
+/**
+ * Screen audit 19 Nov 2026 (item 4b): a toast's own Undo that the engine refused says why in plain
+ * words ("Can't undo: this person has already arrived."). Undefined for any other step or reason.
+ */
+function undoRefusalWords(pending: Pending, reason: string | undefined): string | undefined {
+  return pending.sayAfterLeaving && pending.undo === undefined && reason ? plainUndoRefusal(reason) : undefined;
+}
+
 /** The refusal's words, led by the person's name when the words do not already name them. */
 function namedRefusal(who: string | undefined, reason: string): string {
   return who && !reason.includes(who) ? `${who}: ${reason}` : reason;
@@ -208,7 +217,8 @@ export function useUndoableStep({
           continue;
         const said =
           pending.outcome.status === "refused"
-            ? `Not recorded: ${namedRefusal(pending.who, sayRefusal ? sayRefusal(pending.outcome.message ?? "The action was refused.") : (pending.outcome.message ?? "The action was refused."))}`
+            ? (undoRefusalWords(pending, pending.outcome.message) ??
+              `Not recorded: ${namedRefusal(pending.who, sayRefusal ? sayRefusal(pending.outcome.message ?? "The action was refused.") : (pending.outcome.message ?? "The action was refused."))}`)
             : (pending.outcome.message ?? SAVE_NOT_CONFIRMED);
         if (sink) sink.push({ tone: "warning", title: said });
         else onMessage?.(said, "warning");
@@ -216,7 +226,9 @@ export function useUndoableStep({
       }
       if (refused) {
         if (pending.refusalShownInline) continue;
-        const said = `Not recorded: ${namedRefusal(pending.who, sayRefusal ? sayRefusal(refused.reason) : refused.reason)}. Nothing was changed.`;
+        const said =
+          undoRefusalWords(pending, refused.reason) ??
+          `Not recorded: ${namedRefusal(pending.who, sayRefusal ? sayRefusal(refused.reason) : refused.reason)}. Nothing was changed.`;
         if (sink) sink.push({ tone: "warning", title: said });
         else onMessage?.(said, "warning");
         continue;
@@ -259,7 +271,7 @@ export function useUndoableStep({
         setTimeout(() => watchersRef.current.delete(watch), pending.undoToastMs ?? UNDO_WINDOW_TOAST_MS);
       }
       const limit = roleLimitReason(routeRole, undoType);
-      sink.push({
+      const toastId = sink.push({
         tone: "success",
         ...(limit
           ? { title: pending.success, body: `Undo: ${limit}` }
@@ -276,6 +288,22 @@ export function useUndoableStep({
               ...(pending.choices ? { choices: toastChoices(pending, pending.choices, build, watch) } : {}),
             }),
       });
+      // Item 4 (19 Nov 2026): this Undo closes itself once its journey records a later step.
+      if (!limit)
+        noteJourneyUndoToast(
+          toastId,
+          offered,
+          // Only the record of this very step: an older step's record on the journey says nothing here.
+          watch.seq !== undefined && UNDO_STEP_TYPES.includes(undoType as UndoStepType)
+            ? [
+                stepUndoFor(
+                  pending.outcome ? pending.outcome.undoRecords : undoRecords,
+                  undoType as UndoStepType,
+                  watch.subjectId,
+                ),
+              ].find((record) => record?.seq === watch.seq)
+            : undefined,
+        );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- The token drives this; `sink`, `routeRole` and the callbacks are read as they are now.
   }, [token, rejections]);
@@ -425,7 +453,7 @@ export function useUndoableStep({
       tone: "warning",
       title:
         outcome.status === "refused"
-          ? `Not recorded: ${sayRefusal ? sayRefusal(reason) : reason}`
+          ? (undoRefusalWords(pending, reason) ?? `Not recorded: ${sayRefusal ? sayRefusal(reason) : reason}`)
           : (outcome.message ?? SAVE_NOT_CONFIRMED),
     });
     return true;

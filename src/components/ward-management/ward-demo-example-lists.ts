@@ -25,7 +25,8 @@ import { GENERAL_OBSERVATION } from "./ward-observation";
 import { createPatientResolver } from "./ward-patient-resolver";
 import type { Patient, PatientId } from "./ward-patients";
 import { completeSyntheticReferralIntake } from "./ward-referral-intake-seed";
-import { mayCarryInventedIncident, staffRequestExampleWard } from "./ward-demo-adverse-wards";
+import { mayCarryAdverseExample, mayCarryInventedIncident, staffRequestExampleWard } from "./ward-demo-adverse-wards";
+import type { DowntimePackPrintRecord } from "./ward-downtime-pack-prints";
 import { wardReferralInboxEntries } from "./referrals/referral-inbox";
 import { currentShiftStartInstant } from "./ward-board-time-features";
 import type { StaffRequestRecord } from "./staffing/staff-requests";
@@ -288,7 +289,33 @@ export function applyExampleListsOverlay(state: WardFlowState, anchor: Instant):
   // Batch 3 items 21 and 23: a carer call back owed, and one handed on and not accepted yet.
   // The staff request is built here at the anchor, keeping its place in the state, and built again
   // from the board's own now once a reseed has moved the clock (time audit G1).
-  return { ...withSeededStaffRequest({ ...state, ...draft }, anchor), ...seededHandoverWork(draft, anchor) };
+  return {
+    ...withSeededStaffRequest({ ...state, ...draft }, anchor),
+    ...seededHandoverWork(draft, anchor),
+    downtimePackPrints: seededPackPrints(state.units, anchor),
+  };
+}
+
+/** How many wards the demo leaves with no outage pack printed, as the "never printed" example. */
+const WARDS_LEFT_UNPRINTED = 2;
+
+/**
+ * Screen audit 19 Nov 2026 (item 6): a fresh demo said every ward's outage pack was never printed,
+ * which read as a failing. Most wards now start with a pack printed earlier today, a few hours
+ * apart, well inside the "old" limit. The last two wards the adverse-example rule allows
+ * (`mayCarryAdverseExample`, A15-27) keep no print, so "never printed" still shows and never sits
+ * under a real ward's own name. Synthetic times only; the rule that reads them is unchanged.
+ */
+function seededPackPrints(units: readonly Unit[], anchor: Instant): DowntimePackPrintRecord[] {
+  const unprinted = new Set(
+    units
+      .filter(mayCarryAdverseExample)
+      .slice(-WARDS_LEFT_UNPRINTED)
+      .map((unit) => unit.id),
+  );
+  return units
+    .filter((unit) => !unprinted.has(unit.id))
+    .map((unit, index) => ({ unitId: unit.id, at: anchor - (95 + ((index * 47) % 420)), by: "ward" as const }));
 }
 
 /**

@@ -487,6 +487,8 @@ describe("M80: every scheduled job is safe late, doubled or overlapping", () => 
     const dates = release.match(/^.*\bdate\b.*$/gmu) ?? [];
     expect(dates.filter((line) => !line.trim().startsWith("#"))).toEqual([
       '            stamp="$(TZ=Australia/Perth date +%Y-%m-%d-%H%M)"',
+      // The notice for a 6 am run that did not release names its day; that job decides nothing.
+      '          day="$(TZ=Australia/Perth date +%Y-%m-%d)"',
     ]);
   });
 });

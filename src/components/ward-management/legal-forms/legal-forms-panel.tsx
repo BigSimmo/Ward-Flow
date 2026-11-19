@@ -55,7 +55,7 @@ function asTimeline(items: ReturnType<typeof formEvents>, now: Instant): Timelin
 export function typedReceipt(text: string, now: Instant): { at: Instant | null; problem?: string } {
   if (text.trim() === "") return { at: null };
   const at = parseWrittenInstant(text, now);
-  return at === null ? { at, problem: "Type the time received as HH:MM, not later than now" } : { at };
+  return at === null ? { at, problem: "Type the time received, like 2:30 pm or 14:30, not later than now" } : { at };
 }
 
 export function FocusPanel({
@@ -201,11 +201,11 @@ export function FocusPanel({
                   />
                 </Field>
                 <Field label="Time" id={`legal-forms-written-time-${movement.id}`}>
-                  {/* Bug list row 24: typed 24-hour HH:MM, as Record a form does, never the browser's
-                      12-hour picker. The same parser reads it (HH:MM or HHMM). */}
+                  {/* Bug list row 24: a typed time, as Record a form does, never the browser's
+                      picker. The same parser reads it (HH:MM, HHMM or am/pm, D-254). */}
                   <TextInput
                     placeholder="HH:MM"
-                    inputMode="numeric"
+                    inputMode="text"
                     autoComplete="off"
                     icon={Clock}
                     value={draft.time}
@@ -331,7 +331,7 @@ export function FocusPanel({
                         <TextInput
                           aria-label="Time received, as on the form. Leave blank for now"
                           placeholder="Now"
-                          inputMode="numeric"
+                          inputMode="text"
                           autoComplete="off"
                           className={p.receivedTime}
                           data-testid={`ward-legal-forms-received-time-${movement.id}`}

@@ -796,7 +796,7 @@ export const DESK_JOBS: readonly HowTo[] = [
       {
         target: { sel: '[data-testid="ward-planned-day"]' },
         title: "Day and arrival time",
-        body: "Choose the day, then type the arrival time as HH:MM.",
+        body: "Choose the day, then type the arrival time, like 2:40 pm or 14:40.",
       },
       {
         target: { sel: '[data-testid="ward-planned-stay"]' },

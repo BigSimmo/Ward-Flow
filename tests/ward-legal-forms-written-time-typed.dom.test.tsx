@@ -63,7 +63,8 @@ describe("Record the time written takes a typed 24-hour time", () => {
     const time = within(form).getByLabelText("Time");
     expect(time).not.toHaveAttribute("type", "time");
     expect(time).toHaveAttribute("placeholder", "HH:MM");
-    expect(time).toHaveAttribute("inputmode", "numeric");
+    // Letters are needed for an am/pm time, so no numeric keypad (D-254).
+    expect(time).toHaveAttribute("inputmode", "text");
     // Nothing is filled in for the person (no pre-selection).
     expect(time).toHaveValue("");
 

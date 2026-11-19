@@ -106,7 +106,12 @@ export function WardIntakeWindowDialog({
       data-testid="ward-intake-window-dialog"
     >
       <div className={styles.fields}>
-        <Field label="From" id={`${id}-from`} hint="HH:MM" error={fromLeft && fromWrong ? TIME_FIELD_ERROR : undefined}>
+        <Field
+          label="From"
+          id={`${id}-from`}
+          hint="HH:MM or am/pm"
+          error={fromLeft && fromWrong ? TIME_FIELD_ERROR : undefined}
+        >
           <TimeField
             value={fromText}
             onValueChange={(time) => {
@@ -118,7 +123,12 @@ export function WardIntakeWindowDialog({
             data-testid="ward-intake-window-from"
           />
         </Field>
-        <Field label="To" id={`${id}-to`} hint="HH:MM" error={toLeft && toWrong ? TIME_FIELD_ERROR : undefined}>
+        <Field
+          label="To"
+          id={`${id}-to`}
+          hint="HH:MM or am/pm"
+          error={toLeft && toWrong ? TIME_FIELD_ERROR : undefined}
+        >
           <TimeField
             value={toText}
             onValueChange={(time) => {

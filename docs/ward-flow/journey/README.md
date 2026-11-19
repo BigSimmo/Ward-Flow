@@ -184,6 +184,10 @@ Every person, ward and figure named anywhere in it is invented.
 
 </details>
 
+## Pre-demo audit fixes — 19 Nov 2026 (`claude/project-thread-wnvwn2`, D-269)
+
+The source digests for `board/ward-board-detail-panel.tsx`, `coordinator/shortlist-panel.tsx`, `discharges/discharge-detail-panes.tsx`, `patients/patient-transit-operations.tsx`, `referrals/arrival-time-modal.tsx`, `settings/settings-screen.tsx`, `ward-patient-care-plan-reducer.ts` and `ward/ward-screen.tsx` were re-reviewed. The edits are typed-time hints, error words and phone keyboards (every time box now takes am/pm, D-254); the Destination and placement panel's heading, hold-up words and confirmation line; the Settings search no longer offering Cover where its card does not show; and the ward header's capacity age without seconds. No event dispatch, role, guard or effect changed. The care plan reducer still checks the same 24-hour clock text; only its refusal sentence changed. Cited lines were moved down where lines were added above them (one in `ward-screen.tsx`, up to 22 in `patient-transit-operations.tsx`, three in `settings-screen.tsx`, two in `arrival-time-modal.tsx`).
+
 ## Movement page script trim — 18 Nov 2026 (`fix/red-main-budget-engine`)
 
 The source digest for `patients/patient-now-screen.tsx` was re-reviewed. The edit loads the archive panel and the medical clearance dialog lazily (as the page's tabs already are) to bring the movement page back under its phone script budget. No dispatch, payload or role changed. Cited lines moved down 15 lines with the added loaders.

@@ -435,7 +435,7 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
             <input
               data-testid="ward-ed-referral-observation-review-time"
               type="text"
-              inputMode="numeric"
+              inputMode="text"
               placeholder="For example 14:30"
               aria-invalid={isMissing("observationReviewTime") || undefined}
               value={draft.observationReviewTime}

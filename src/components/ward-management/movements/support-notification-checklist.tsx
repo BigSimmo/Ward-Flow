@@ -168,7 +168,7 @@ export function SupportNotificationChecklist({
     if (!subject || outcome === "" || saveMissing) return;
     const contactedAt = clockTextOnDay(time, Number(day), now);
     if (outcome === "told" && contactedAt === null) {
-      setTimeError("Enter the time as HH:MM, for example 14:05 or 1405");
+      setTimeError("Enter the time, for example 2:05 pm or 14:05");
       return;
     }
     if (outcome === "told" && contactedAt !== null && contactedAt > now) {
@@ -293,12 +293,11 @@ export function SupportNotificationChecklist({
                           setDay(value);
                         }}
                       />
-                      <Field label="Time told" hint="24h" error={timeError ?? undefined}>
+                      <Field label="Time told" hint="HH:MM or am/pm" error={timeError ?? undefined}>
                         <TextInput
                           value={time}
-                          inputMode="numeric"
+                          inputMode="text"
                           placeholder="HH:MM"
-                          maxLength={5}
                           onChange={(event) => {
                             editingRevisionRef.current += 1;
                             setTime(event.target.value);

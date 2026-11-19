@@ -26,6 +26,14 @@ const WARD_DIR = "src/components/ward-management";
  */
 const MAY_ASSERT_TODAY = new Map([
   [
+    "hours * 60 + minutes",
+    "Community team sample times (D-269, 19 Nov 2026): team-home, team-clinicians and community-screen-panels format fixed clock times of day (clinic hours, a sample call time) through the shared clock, so they read am/pm. The value is a minute of the day, never an instant on another day.",
+  ],
+  [
+    "minuteOfDayFromClockText(preset.time",
+    "Leave return preset chips (D-269, 19 Nov 2026): the chip formats a fixed clock time of day for its label, and a preset for the next day says Tomorrow in the same label.",
+  ],
+  [
     "position.typedEndAt",
     "Patient page legal document row (D-254, 16 Nov 2026): the bare face is used only when no board clock is known (now is 0), so no day can be said; with a clock it names the day.",
   ],

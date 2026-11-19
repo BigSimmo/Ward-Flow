@@ -156,8 +156,8 @@ const ACCESS_STEPS: readonly TourStep[] = [
     "give-role",
     { sel: '[data-testid="ward-access-grant"]' },
     "Give a role",
-    "In Settings, the Access tab has Give a role. Choose the person, the role, the place and how many days. Every role has an end date, and nobody gives themselves a role.",
-    "Open Settings, then Access.",
+    "In Settings, the Staff access tab has Give a role. Choose the person, the role, the place and how many days. Every role has an end date, and nobody gives themselves a role.",
+    "Open Settings, then Staff access.",
   ),
   step(
     "Your daily work",

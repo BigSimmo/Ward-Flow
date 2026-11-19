@@ -154,7 +154,8 @@ describe("item 20: switch a feature off at one site", () => {
 });
 
 describe("item 24: downtime pack up to date", () => {
-  const seed = seedWardFlowState();
+  // The demo now seeds pack prints (19 Nov 2026, item 6); these rules start from a world with none.
+  const seed: WardFlowState = { ...seedWardFlowState(), downtimePackPrints: undefined };
   const print = (state: WardFlowState, unitIds: unknown, now = NOW_ANCHOR, role = "coordinator") =>
     send(state, { type: "RECORD_DOWNTIME_PACK_PRINTED", role, now, unitIds });
 
@@ -205,7 +206,8 @@ describe("item 24: downtime pack up to date", () => {
 });
 
 describe("item 25: catch-up after an outage", () => {
-  const seed = seedWardFlowState();
+  // The demo now seeds pack prints (19 Nov 2026, item 6); these rules start from a world with none.
+  const seed: WardFlowState = { ...seedWardFlowState(), downtimePackPrints: undefined };
   // Every seeded ward confirmed its beds before NOW_ANCHOR - 5, so this outage ends after all of them.
   const FROM = NOW_ANCHOR - 120;
   const TO = NOW_ANCHOR - 5;

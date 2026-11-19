@@ -254,19 +254,19 @@ describe("an ED referral's expected arrival time (PR #1474 review)", () => {
   const arrival = () => screen.getByLabelText("Expected arrival, demo time");
   const nextFromReferral = () => fireEvent.click(screen.getAllByRole("button", { name: /^Next, /u }).at(-1)!);
 
-  it("holds the referral while a typed arrival is not a real 24-hour time, and lets an empty one through", () => {
+  it("holds the referral while a typed arrival is not a real time, and lets an empty one through", () => {
     setup();
     fireEvent.click(within(screen.getByRole("group", { name: "Refer to" })).getByRole("button", { name: "ED" }));
     confirmCatchment();
     tab("Referral");
-    fireEvent.change(arrival(), { target: { value: "11:45pm" } });
+    fireEvent.change(arrival(), { target: { value: "13:45pm" } });
     nextFromReferral();
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Type a 24-hour time, HH:MM, for the expected arrival, or clear it.",
+      "Type a time, like 2:30 pm or 14:30, for the expected arrival, or clear it.",
     );
     expect(arrival()).toBeVisible();
     expect(arrival()).toHaveAttribute("aria-invalid", "true");
-    expect(arrival()).toHaveAccessibleDescription(/Type a 24-hour time, HH:MM/u);
+    expect(arrival()).toHaveAccessibleDescription(/Type a time, like 2:30 pm or 14:30/u);
 
     // Cleared, the time is optional again and the step moves on.
     fireEvent.change(arrival(), { target: { value: "" } });

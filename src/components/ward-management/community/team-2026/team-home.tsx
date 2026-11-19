@@ -12,7 +12,7 @@ import { Button, Card, CardHead, Count, Segmented, SrOnly, StatusGlyph, type WfT
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
 import { DEMO_FIGURES, SENT, staffName } from "./midland-demo";
 import { useMidlandDay, useMidlandDemo } from "./use-midland-demo";
-import { perthClockTime } from "@/components/ward-management/ward-clock";
+import { formatInstant, perthClockTime } from "@/components/ward-management/ward-clock";
 import { openReferrals, recordMidlandContact, todaysMidlandContacts, useMidlandDecisions } from "./midland-decisions";
 // The team desk's rail badge reads the same figure (R-STRUCT-24, D-220).
 import { teamReferralsToAnswer } from "./team-referral-count";
@@ -85,13 +85,16 @@ function ListGroup(props: {
   );
 }
 
+/** A sample clock time on the screen's am/pm face ("9:40 am"), from 24-hour hours and minutes. */
+const clock = (hours: number, minutes = 0) => formatInstant(hours * 60 + minutes);
+
 const TODAY_LOG = [
-  ["10:31", "Contact recorded", "Calderbrook, Jonah · clozapine bloods taken · Doyle, Marcus"],
-  ["10:05", "Referral received", "Rendlesham, Otto · from Moodjar ward"],
-  ["09:40", "Follow-up booked", "Yarrowdale, Ben · Tue 3 Nov 10:00 · Nair, Priya"],
-  ["09:12", "Admitted", "Brackwater, Meredith · RGH Adult Secure"],
-  ["08:55", "Referral accepted", "Pembury, Ada · case manager Kuroki, Hana"],
-  ["08:40", "Depot fridge checked", "Doyle, Marcus"],
+  [clock(10, 31), "Contact recorded", "Calderbrook, Jonah · clozapine bloods taken · Doyle, Marcus"],
+  [clock(10, 5), "Referral received", "Rendlesham, Otto · from Moodjar ward"],
+  [clock(9, 40), "Follow-up booked", `Yarrowdale, Ben · Tue 3 Nov ${clock(10)} · Nair, Priya`],
+  [clock(9, 12), "Admitted", "Brackwater, Meredith · RGH Adult Secure"],
+  [clock(8, 55), "Referral accepted", "Pembury, Ada · case manager Kuroki, Hana"],
+  [clock(8, 40), "Depot fridge checked", "Doyle, Marcus"],
 ] as const;
 
 function FlowRow(props: { title: string; detail: string; when: string; tone: WfTone; action: string; go: () => void }) {

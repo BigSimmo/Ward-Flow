@@ -6,7 +6,9 @@ import { Button, Card, CardHead, Sheet, StatusGlyph, useIsPhone } from "@/compon
 import {
   MINUTES_PER_DAY,
   perthDayLabel,
+  formatInstant,
   formatInstantWithDay,
+  minuteOfDayFromClockText,
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
@@ -30,22 +32,28 @@ export function dayOptionLabel(day: number, now: Instant, dayZero: Date): string
 
 /** v10 phone: the leave sheet offers four return times as chips (a past one is not offered). */
 const LEAVE_PRESETS = [
-  { id: "13", label: "13:00", time: "13:00", day: 0 },
-  { id: "16", label: "16:00", time: "16:00", day: 0 },
-  { id: "18", label: "18:00", time: "18:00", day: 0 },
-  { id: "t10", label: "Tomorrow 10:00", time: "10:00", day: 1 },
+  { id: "13", time: "13:00", day: 0 },
+  { id: "16", time: "16:00", day: 0 },
+  { id: "18", time: "18:00", day: 0 },
+  { id: "t10", time: "10:00", day: 1 },
 ] as const;
+
+/** A preset chip's words on the screen's am/pm face: "1:00 pm", "Tomorrow 10:00 am". */
+function leavePresetLabel(preset: (typeof LEAVE_PRESETS)[number]): string {
+  const clock = formatInstant(minuteOfDayFromClockText(preset.time) ?? 0);
+  return preset.day === 0 ? clock : `Tomorrow ${clock}`;
+}
 
 const KIND_LABELS: Record<LeaveKind, string> = { off_ward: "Off-ward leave", medical_trip: "Medical trip" };
 
-/** A typed "HH:MM" on a chosen day, as an instant. Undefined when the time is not a real clock time. */
+/**
+ * A typed time on a chosen day, as an instant: 24-hour ("14:30", "1430") or am/pm ("2:30 pm"), by the
+ * one clock-text rule (D-254). Undefined when the time is not a real clock time.
+ */
 export function typedTimeToInstant(time: string, dayOffset: number, now: Instant): Instant | undefined {
-  const match = /^(\d{1,2}):(\d{2})$/u.exec(time.trim());
-  if (!match) return undefined;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  if (hours > 23 || minutes > 59) return undefined;
-  return Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY + dayOffset * MINUTES_PER_DAY + hours * 60 + minutes;
+  const minute = minuteOfDayFromClockText(time);
+  if (minute === undefined) return undefined;
+  return Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY + dayOffset * MINUTES_PER_DAY + minute;
 }
 
 /**
@@ -285,7 +293,7 @@ export function PatientWardChangeCard({
                     if (!pending) setPresetId(option.id);
                   }}
                 >
-                  {option.label}
+                  {leavePresetLabel(option)}
                 </button>
               ))}
             </div>
@@ -326,13 +334,13 @@ export function PatientWardChangeCard({
           </label>
           <label className={styles.changeField}>
             <span>{form === "leave" ? "Expected back time" : "Expected discharge time"}</span>
-            {/* Typed as HH:MM in a plain box, never the browser's time picker (Josh, 3 Nov 2026). */}
+            {/* Typed in a plain box, 24-hour or am/pm (D-254), never the browser's time picker (Josh, 3 Nov 2026). */}
             <input
               type="text"
-              inputMode="numeric"
+              inputMode="text"
+              autoCapitalize="none"
               autoComplete="off"
               placeholder="HH:MM"
-              maxLength={5}
               value={time}
               disabled={pending}
               onChange={(event) => {
@@ -342,7 +350,7 @@ export function PatientWardChangeCard({
           </label>
           <p className={styles.changeHint} aria-live="polite">
             {parsed === undefined
-              ? "Type the time"
+              ? "Type the time, like 2:30 pm or 14:30"
               : future
                 ? formatInstantWithDay(parsed, now)
                 : form === "discharge"

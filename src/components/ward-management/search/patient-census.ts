@@ -31,11 +31,12 @@ import {
 import {
   dayOf,
   type DueSoonThresholds,
+  formatClock24WithDay,
   formatInstantWithDay,
   type Instant,
   MINUTES_PER_DAY,
 } from "@/components/ward-management/ward-clock";
-import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
+import { typedClock, type LegalClockFace } from "@/components/ward-management/ward-legal-time-as-typed";
 import { acceptedReferralAwaitingMovement, isOpen } from "@/components/ward-management/ward-derivations";
 import type { LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import {
@@ -236,8 +237,11 @@ export function buildCensus(state: {
   now: Instant;
   thresholds: DueSoonThresholds;
   dayZero: Date;
+  /** "sheet" while the page prints: every clock time in a row takes the 24-hour face (D-254). */
+  face?: LegalClockFace;
 }): Census {
   const { movements, referrals, units, patients, admissions, plannedAdmissions = [], now, dayZero } = state;
+  const face = state.face ?? "screen";
   const leaveByAdmission = new Map((state.leaveBeds ?? []).map((bed) => [bed.admissionId, bed]));
   const resolve = createPatientResolver({ patients, referrals, movements, plannedAdmissions });
   const unitOf = new Map(units.map((unit) => [unit.id, unit]));
@@ -370,7 +374,7 @@ export function buildCensus(state: {
       legalSub: legalPosition.ended
         ? FORM_RECORDED_ENDED
         : legalPosition.dueAt !== undefined
-          ? `Due ${typedClock(legalPosition.dueAt, now, dayZero)}`
+          ? `Due ${typedClock(legalPosition.dueAt, now, dayZero, face)}`
           : form
             ? "No due time"
             : "No form",
@@ -561,7 +565,7 @@ export function buildCensus(state: {
         edd === null
           ? "No date set"
           : dayOf(edd) === dayOf(now)
-            ? `Expected today ${formatInstantWithDay(edd, now)}`
+            ? `Expected today ${face === "sheet" ? formatClock24WithDay(edd, now) : formatInstantWithDay(edd, now)}`
             : edd < now
               ? `Expected ${daysText(now - edd)} ago`
               : `Expected in ${daysText(edd - now)}`,

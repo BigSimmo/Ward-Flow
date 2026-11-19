@@ -743,6 +743,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     (entry) =>
       (entry.id !== "go-to-desk" || switchLogin !== undefined) &&
       (entry.tab !== "access" || accessOn) &&
+      // Cover is offered only where its card shows: Your desk or Staff access, never the access
+      // admin's or an Executive desk's Settings, nor any desk while Role access is off.
+      (entry.id !== "cover" || (accessOn && role !== "admin")) &&
       // A phone's Display sheet leaves out the keyboard shortcuts row.
       !(isPhone && entry.id === "character-shortcuts"),
   );
@@ -1196,7 +1199,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
           />
           {refusedLine}
           {accessInline ? (
-            <section className={styles.phoneSection} aria-label="Access">
+            <section className={styles.phoneSection} aria-label={SECTION_LABELS.access}>
               {accessContent}
             </section>
           ) : null}

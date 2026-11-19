@@ -179,7 +179,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role: sentRole }: 
       return;
     }
     if (etaTypedBadly) {
-      setSaveError("Enter the arrival time as HH:MM, for example 14:40 or 1440.");
+      setSaveError("Enter the arrival time, for example 2:40 pm or 14:40.");
       return;
     }
     if (etaMinutes === undefined) {
@@ -348,7 +348,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role: sentRole }: 
                 id={`${baseId}-eta-time-input`}
                 disabled={saving}
                 type="text"
-                inputMode="numeric"
+                inputMode="text"
                 autoComplete="off"
                 placeholder="HH:MM"
                 value={etaText}
@@ -363,7 +363,9 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role: sentRole }: 
                 onPick={pickEta}
                 className={styles.presets}
               />
-              {etaTypedBadly ? <small id={`${baseId}-eta-time-problem`}>Type the time as 14:40 or 1440.</small> : null}
+              {etaTypedBadly ? (
+                <small id={`${baseId}-eta-time-problem`}>Type the time, like 2:40 pm or 14:40.</small>
+              ) : null}
               <label htmlFor={`${baseId}-eta-day-select`} className={styles.label}>
                 Day of the typed ETA
               </label>

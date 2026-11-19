@@ -87,7 +87,7 @@ describe("seclusion, restraint and incidents view", () => {
     fireEvent.change(screen.getByTestId("seclusion-start-practice"), { target: { value: "seclusion" } });
     fireEvent.change(screen.getByTestId("seclusion-start-time"), { target: { value: "99:99" } });
     expect(start).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByText("Type the time as HH:MM.")).toBeInTheDocument();
+    expect(screen.getByText("Type the time, like 2:30 pm or 14:30.")).toBeInTheDocument();
     fireEvent.change(screen.getByTestId("seclusion-start-time"), { target: { value: clock(20) } });
     expect(start).not.toHaveAttribute("aria-disabled");
     fireEvent.click(start);

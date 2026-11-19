@@ -96,10 +96,10 @@ describe("expected departure clock input keeps its separately recorded day", () 
 
   it("refuses a bad or unfinished time with words, and saves nothing (PR #1474 review)", () => {
     const probe = openFutureDepartureEditor();
-    for (const typed of ["2:30 pm", "143"]) {
+    for (const typed of ["13:30 pm", "143"]) {
       fireEvent.change(screen.getByLabelText("Expected discharge time"), { target: { value: typed } });
       fireEvent.click(screen.getByRole("button", { name: "Save departure date" }));
-      expect(screen.getByRole("alert")).toHaveTextContent("Type a 24-hour time, HH:MM");
+      expect(screen.getByRole("alert")).toHaveTextContent("Type a time, like 2:30 pm or 14:30");
       expect(probe).toHaveAttribute("data-date", String(RECORDED_DEPARTURE));
       expect(screen.getByRole("button", { name: "Save departure date" })).toBeInTheDocument();
     }

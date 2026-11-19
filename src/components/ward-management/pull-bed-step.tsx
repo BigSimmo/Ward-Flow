@@ -28,6 +28,7 @@ import {
   pullUndoTransportBookedLine,
 } from "./pull-bed-facts";
 import { STARTED_JOURNEY_UNDONE } from "./ward-bed-pull-undo";
+import { noteJourneyUndoToast, plainUndoRefusal } from "./ward-undo-journey-toasts";
 
 // WS-03: the one-step pull loads only when someone opens it.
 const PullAcceptedReferral = dynamic(
@@ -163,7 +164,9 @@ export function usePullBedStep(): PullBedStep {
           const failure =
             outcome?.status === "refused" && /transport job booked/u.test(outcome.message ?? "")
               ? pullUndoTransportBookedLine(pulled)
-              : wardCommandFailure(outcome);
+              : // Item 4b (19 Nov 2026): a late Undo's refusal in plain words.
+                ((outcome?.status === "refused" ? plainUndoRefusal(outcome.message ?? "") : undefined) ??
+                wardCommandFailure(outcome));
           if (failure) {
             toast?.push({ tone: "warning", title: failure });
             return;
@@ -208,6 +211,15 @@ export function usePullBedStep(): PullBedStep {
         undo: { durationMs: BED_PULL_UNDO_TOAST_MS, until, onUndo: () => undo(pulled) },
       });
       if (toastId !== undefined) pullToasts.current.set(pulled.entry.referral.id, toastId);
+      // Item 4 (19 Nov 2026): the toast closes itself once this journey records a later step.
+      const movement = pulledMovement(latest.current.movements, pulled);
+      const stageIndex = movement ? pullStageIndex(movement, pulled) : undefined;
+      if (movement && stageIndex !== undefined)
+        noteJourneyUndoToast(toastId, {
+          type: "RELEASE_PULL",
+          movementId: movement.id,
+          expectedPull: { unitId: pulled.entry.unitId, stageIndex },
+        });
     },
     [toast, undo],
   );

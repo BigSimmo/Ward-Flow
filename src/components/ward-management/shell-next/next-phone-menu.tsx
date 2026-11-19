@@ -1048,7 +1048,7 @@ export function NextPhoneMenu({
               close();
               closeCreate();
               setBarOpen(true);
-              announceToWardShell("Edit bar opened.");
+              announceToWardShell("Edit bottom bar opened.");
             },
             onClose: () => setBarOpen(false),
             options: barOptions,

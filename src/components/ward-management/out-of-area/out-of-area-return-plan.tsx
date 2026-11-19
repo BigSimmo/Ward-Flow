@@ -260,7 +260,9 @@ export function ReturnPlan({
   const cadProblem = draft.cadNumber.trim() ? cadNumberProblem(draft.cadNumber) : undefined;
   const cadError = cadProblem ? `${cadProblem.charAt(0).toUpperCase()}${cadProblem.slice(1)}.` : undefined;
   // A typed depart time that cannot be read blocks and is named beside the field; blank only warns.
-  const departError = departTimeUnreadable(draft) ? "Enter the depart time as HH:MM, or leave it blank." : undefined;
+  const departError = departTimeUnreadable(draft)
+    ? "Enter the depart time, like 2:30 pm or 14:30, or leave it blank."
+    : undefined;
   const move = whoseMove(draft, record);
   const returnMovement = useOptionalWardFlowSelect("movements")?.movements.find(
     (movement) => movement.id === returnMovementId,
@@ -558,7 +560,7 @@ export function ReturnPlan({
               <Field label="Depart" layout="row" className={styles.fieldRow} error={departError}>
                 <TextInput
                   icon={Clock}
-                  inputMode="numeric"
+                  inputMode="text"
                   placeholder="HH:MM"
                   className={styles.mono}
                   data-testid="ward-out-of-area-repat-estimated-time"

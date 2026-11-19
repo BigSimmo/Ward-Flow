@@ -60,7 +60,7 @@ export const BOOKING_FORM: readonly ShowMeStep[] = [
   {
     target: opened("label", "Estimated time", 2),
     title: "Estimated time",
-    body: "The time the provider quoted, as HH:MM, or press a quick time. Then answer Today or tomorrow?",
+    body: "The time the provider quoted, like 2:40 pm or 14:40, or press a quick time. Then answer Today or tomorrow?",
   },
   {
     target: opened("fieldset", "Escort needed?"),

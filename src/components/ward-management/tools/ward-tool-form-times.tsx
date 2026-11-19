@@ -128,7 +128,7 @@ function FormTimesView({ dayZero, now, onNavigate }: { dayZero: Date; now: Insta
         <Field label="Date on form">
           <DateField value={date} onValueChange={setDate} />
         </Field>
-        <Field label="Time on form" hint="HH:MM">
+        <Field label="Time on form" hint="HH:MM or am/pm">
           <TimeField value={time} onValueChange={setTime} />
         </Field>
       </div>

@@ -498,7 +498,7 @@ export function TransportBookingForm({
             <TextInput
               data-testid={tid("time")}
               className={styles.mono}
-              inputMode="numeric"
+              inputMode="text"
               placeholder="HH:MM"
               autoComplete="off"
               aria-invalid={timeProblem ? true : undefined}
