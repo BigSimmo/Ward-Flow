@@ -1000,7 +1000,11 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       <main id="main-content" className={styles.main}>
         {copyNotice ? <p role="status">{copyNotice}</p> : null}
         <h1 className={styles.srOnly}>{shownView === "seclusion" ? "Seclusion and restraint" : "Legal forms"}</h1>
-        <p className={styles.srOnly}>Recorded forms and deadlines for open movements.</p>
+        <p className={styles.srOnly}>
+          {shownView === "seclusion"
+            ? "Seclusion rooms, seclusion and restraint in use, and incidents, ward by ward."
+            : "Recorded forms and deadlines for open movements."}
+        </p>
         <span className={`${styles.prototypeBadge} ${styles.srOnly}`} data-ward-type-floor="badge">
           Synthetic prototype
         </span>

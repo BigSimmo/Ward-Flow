@@ -1,6 +1,6 @@
 # BedChart demonstration script
 
-<!-- last-checked: 2026-11-13 -->
+<!-- last-checked: 2026-11-20 -->
 
 **What this is:** an 11-minute walk-through of one synthetic patient journey, from the morning bed
 meeting to arrival on the ward, then a short look at what is new.  
@@ -15,7 +15,8 @@ _Updated 13 November 2026 from the pre-demo audit, which ran the script three ti
 production build and once on the public demo (Chromium, 1440 px wide), then again the same day from
 Audits 12 and 14, which added the recovery card near the end, and walked again on the PR C build at
 1366 x 768, and walked twice on the clinical PR #1656 build at 1366 x 768 (headless Chromium,
-scripted). Rehearse once before any audience.
+scripted). Acts 2, 3, 6B and the Close were reworded on 20 November 2026 to match the screen after a
+demo re-walk at 1440 x 900. Rehearse once before any audience.
 Previous rewrites: 10 November, 24 October and 20 October 2026 (PR #510). Documentation owns._
 
 ## Read this first
@@ -177,10 +178,10 @@ filters **Under a form** and **No bed yet**.
 > under which legal form. The ED's list stays in the order the ED keeps it. BedChart does not
 > re-sort it or score anyone."
 
-**Do:** scroll down to **Under 8 hours** and click **Pellingworth, Keira**. A panel opens. Point to **Where the referral is** (Referral
-sent, Dabakarn accepted, Bed pulled for this patient: No bed yet, Transport: Not booked yet), then
-scroll down inside the panel to its **Legal form** card: Form 3B is still shown as recorded, with the next form to
-record. Press **Esc** to close the panel. Then point to **Flint, Oona**'s form column on the same
+**Do:** scroll down to **Under 8 hours** and click **Pellingworth, Keira**. A panel opens. Point to its **Legal form** card
+first: Form 3B is still shown as recorded, with the next form to record. Then point to **Where the referral is**, just
+below it (Referral sent, Dabakarn accepted, Bed pulled for this patient: No bed yet, Transport: Not booked yet). Press
+**Esc** to close the panel. Then point to **Flint, Oona**'s form column on the same
 board (the row just below Keira's):
 "Form 1A", "Time not entered".
 
@@ -224,10 +225,11 @@ to travel** and **Transport** ("Needs the bed pulled").
 **Do:** in the **Queue** list, open **Coldharbour, Cyril**, the last row (not the rows above him,
 such as Vallowen, Orla, whose referral names one ward). His referral opens on the **Place** tab.
 Scroll down inside the panel and point to the three groups: **Fits, bed ready**, **Fits, no bed
-now** and **Needs a recorded reason**. Each ward reads "Travel time not recorded": the prototype holds no
+now** and **Needs a recorded reason**. One line above the list reads "Travel time not recorded": the prototype holds no
 travel times, so do not quote any. Choose a ward under **Fits, bed ready** to show that **Accept at
 …** only appears after a person chooses (until then the button reads "Choose a ward first"); a ward
-in the other two groups shows **Clinical override for …** instead. Do not press Accept. Press
+under **Fits, no bed now** shows **Cannot accept at …**, and a ward under **Needs a recorded reason** shows
+**Clinical override for …**. Do not press Accept. Press
 **Esc** to close. Ward counts go out of date within the hour, so press **Reset demo** less than an
 hour before this act, or the first group can be empty.
 
@@ -366,8 +368,9 @@ ward not checked". Close it with **Esc**. Do not accept or decline.
 > Those are shown as recorded. The app never passes or fails a patient on them."
 
 **B. Seclusion and restraint, operational only.** In the left-hand menu press **More**, then
-**Legal forms**, then the **Seclusion** tab. Point to the note at the top, the **in use now**
-figure and the **Seclusion rooms** list.
+**Legal forms**, then the **Seclusion** tab. Point to the figures at the top (**in use now**, **rooms
+available** and **incidents, last day**), the **None recorded as in use** line beside them, and the
+**Seclusion rooms** list.
 
 > "This shows what is in use now and whether each seclusion room is available. Times are shown as
 > they were typed. It works out no order length, no review time and no legal limit. The legal
@@ -395,7 +398,8 @@ clock** with **+15 min** and **+1 hour**, and the **Scenario** list. Close with 
 > through clinical safety, privacy or legal review, and it is not for clinical use. What we'd value
 > most from you is whether this matches how the work really happens, and what it gets wrong."
 
-**Do:** on any computer that is not yours, press **Leave the demo** before you walk away.
+**Do:** on the public site, on any computer that is not yours, press **Leave the demo** before you walk away. It
+shows on the public site only; a local run does not offer it.
 
 ---
 
