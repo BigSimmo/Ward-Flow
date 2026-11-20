@@ -3093,7 +3093,7 @@ D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
 
 ## D-271. The 20 November demo re-walk fixes go ahead before the freeze (20 November 2026)
 
-- **Date:** 20 November 2026, 9:04 PM AWST (13:04 UTC). **Decided by:** Josh, in the thread "Plan next steps before demo freeze": "Yes to all recommendations", answering "Should I fix faults 1 and 3 to 6 and the script wording before the 22 Nov freeze? I recommend yes."
+- **Date:** 20 November 2026, 9:04 PM AWST (13:04 UTC). D-270 is claimed by open PR #1721, so this is D-271. **Decided by:** Josh, in the thread "Plan next steps before demo freeze": "Yes to all recommendations", answering "Should I fix faults 1 and 3 to 6 and the script wording before the 22 Nov freeze? I recommend yes."
 - **Decision:** (1) An Undo message closes once the board clock passes its Undo window, and Reset also closes Undo refusal messages. (3) The Seclusion tab has its own subtitle. (4) The Handover pack's Accepted row names the accepting ward, and says when the time was not recorded. (5) The ED board's Next cell shows the journey's stage, such as "Accepted, awaiting bed", instead of "Waiting on a ward" for every person in the bed search. (6) The printed handover sheet's "Move by" uses the 24-hour sheet face, like "Pull ends" (D-254). The demo script's Act 2, Act 3, Act 6B and Close steps now match the screen.
 - **Left for after the demonstration:** (2) an Undo for ward Decline, and the reason list saying which reasons waitlist; (7) the "saved on this device" note covering content at the bottom centre.
 - **Why:** the 20 November re-walk of live b4adc2c1 found these as the small faults a demo audience could notice.
