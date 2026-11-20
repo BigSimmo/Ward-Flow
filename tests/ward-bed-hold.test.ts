@@ -100,6 +100,15 @@ describe("Handover (A4-3, A4-4)", () => {
     expect(nextStep(row(NOW - 10), NOW, NOW + 300, () => 0).text).toBe("Pull expired 10 min ago. Move or release");
   });
 
+  it("prints Move by on the sheet's 24-hour face, as Pull ends is, and keeps am/pm on screen (D-254)", () => {
+    const held = row(NOW + 90);
+    expect(nextStep(held, NOW, NOW + 300, () => 0).text).toMatch(/^Move by \d{1,2}:\d{2} (am|pm)/u);
+    const printed = nextStep(held, NOW, NOW + 300, () => 0, "sheet").text;
+    expect(printed).toMatch(/^Move by \d{2}:\d{2}, /u);
+    expect(printed).not.toMatch(/am|pm/iu);
+    expect(dueParts(held, NOW, undefined, undefined, "sheet")?.when).toBe(printed.match(/\d{2}:\d{2}/u)?.[0]);
+  });
+
   it("marks a hold ending within the hour at risk without promoting it to Act now", () => {
     expect(isActNow(row(NOW + 20), NOW)).toBe(false);
     expect(dueParts(row(NOW + 20), NOW)).toMatchObject({ what: "Pull ends", atRisk: true });

@@ -131,6 +131,16 @@ describe("the Forms screen", () => {
     ).not.toMatch(/ordered by|in order of|by (?:how much )?time (?:left|remaining)|most urgent|least urgent/i);
   });
 
+  it("gives the Seclusion tab its own subtitle, never the Legal forms one (re-walk 20 Nov 2026)", () => {
+    renderScreen();
+    fireEvent.click(screen.getByRole("radio", { name: "Seclusion" }));
+    expect(screen.getByRole("heading", { level: 1, name: "Seclusion and restraint" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Seclusion rooms, seclusion and restraint in use, and incidents, ward by ward."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Recorded forms and deadlines for open movements.")).not.toBeInTheDocument();
+  });
+
   /**
    * 🔴 REPLACED BY RULING — Ward Lead, 2026-09-12. This asserted ONE ordered list.
    *
