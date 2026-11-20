@@ -7,6 +7,7 @@
 import { memo } from "react";
 import { Star } from "lucide-react";
 import { SrOnly, StatusGlyph, cx, durMinutes } from "@/components/wf";
+import { agoMinutes } from "@/components/ward-management/ward-ago-text";
 import { type HubEntry } from "@/components/ward-management/hub/hub-derivations";
 import { toggleHubPin } from "@/components/ward-management/hub/hub-browser-memory";
 import { SECURITY_WORD } from "@/components/ward-management/hub/hub-screen-helpers";
@@ -66,7 +67,7 @@ export const HubPlaceRow = memo(function HubPlaceRow({
             </>
           ) : (
             <>
-              {durMinutes(now - entry.confirmedAt)} <span className={styles.resultAgo}>ago</span>
+              {agoMinutes(now - entry.confirmedAt)} <span className={styles.resultAgo}>ago</span>
             </>
           )}
         </span>

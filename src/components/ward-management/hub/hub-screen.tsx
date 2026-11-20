@@ -46,6 +46,7 @@ import {
   useIsPhone,
   durMinutes,
 } from "@/components/wf";
+import { agoMinutes } from "@/components/ward-management/ward-ago-text";
 import { useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import {
   groupedResults,
@@ -699,7 +700,7 @@ export function HubScreen() {
                   <dd>
                     <span className={styles.metaTimestamp}>{formatInstantWithDay(selected.confirmedAt, now)}</span>{" "}
                     <span className={styles.factMuted}>
-                      {durMinutes(now - selected.confirmedAt)} ago
+                      {agoMinutes(now - selected.confirmedAt)} ago
                       {selected.stale === true ? ", stale, check with the ward before relying on it" : ""}
                     </span>
                   </dd>

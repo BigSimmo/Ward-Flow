@@ -297,7 +297,11 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                   : "since opened",
               tone: overTarget ? "warning" : undefined,
             },
-            { id: "clear", value: clear.value, label: clear.label },
+            // UX review 20 Nov 2026: a next step in the figure's place reads as a sentence
+            // ("Bed agreed"), in the text face; a ward ETA stays a mono clock time.
+            clear.value === clear.next
+              ? { id: "clear", value: sentenceCase(clear.value), label: clear.label, word: true }
+              : { id: "clear", value: clear.value, label: clear.label },
             ...(movementTimeLeft && !glance
               ? [
                   {
@@ -735,4 +739,9 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
       ) : null}
     </section>
   );
+}
+
+/** "bed agreed" as "Bed agreed". */
+function sentenceCase(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }

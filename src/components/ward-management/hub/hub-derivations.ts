@@ -220,7 +220,14 @@ export function hubEntries(input: {
   // service, never home area, and the reference pack refuses to route on contested catchments by
   // name (Lynwood, Butler/Wanneroo). A team's health service is a real fact, but it is not this
   // one, and inventing it here would put a guess in a searchable field.
-  const communityEntries: HubEntry[] = COMMUNITY_TEAM_PAGES.map((team) => ({
+  //
+  // UX review 20 Nov 2026 (Josh "yes"): Midland is the one team page with a demo caseload
+  // (`MIDLAND_DEMO_TEAM`), so it leads the Teams list; the rest keep their order. A to Z still
+  // sorts every row by name.
+  const communityEntries: HubEntry[] = [
+    ...COMMUNITY_TEAM_PAGES.filter((team) => team.id === "midland"),
+    ...COMMUNITY_TEAM_PAGES.filter((team) => team.id !== "midland"),
+  ].map((team) => ({
     id: team.id,
     kind: "community",
     name: team.name,

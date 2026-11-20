@@ -67,6 +67,7 @@ import {
 import { MissingValue } from "@/components/wf/missing-value";
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
+import { agoMinutes } from "@/components/ward-management/ward-ago-text";
 import styles from "./ward-answer-view.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
@@ -1518,7 +1519,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
             {phoneFold(
               "capacity",
               "Confirm your beds",
-              `Confirmed free ${unit.allocatable.value} · ${durMinutes(Math.max(0, now - unit.allocatable.confirmedAt))} since confirmed`,
+              `Confirmed free ${unit.allocatable.value} · ${agoMinutes(now - unit.allocatable.confirmedAt)} since confirmed`,
               unit.allocatable.value,
               <section className={styles.panel} data-answer-panel="capacity" aria-label="Confirm your beds">
                 <div className={styles.panelHeader}>
@@ -1577,8 +1578,9 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                       <button
                         type="submit"
                         data-testid="ward-capacity-submit"
-                        // R-BEDS-16: the panel's one filled button, named for what it does.
-                        className={styles.btnPrimary}
+                        // R-BEDS-16: the panel's one filled button, named for what it does. UX review
+                        // 20 Nov 2026 (broken item 5): the kit's primary button, not bare filled text.
+                        className={`${buttonClass({ variant: "pri", size: "md" })} ${styles.capacitySubmit}`}
                       >
                         Confirm {Number(capacityValue) || 0} free
                       </button>

@@ -47,6 +47,7 @@ import {
   useModalFocus,
   type HeroChipItem,
 } from "@/components/wf";
+import { agoMinutes } from "@/components/ward-management/ward-ago-text";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
 import { transportDelay } from "@/components/ward-management/transport/transport-delay";
 import { OfficerStageCell } from "./officer-stage-cell";
@@ -1227,7 +1228,7 @@ export function OfficerScreen() {
                                     movementId={movement.id}
                                     leg={leg}
                                     stepStatusText={stepStatusText}
-                                    stageTime={since !== undefined ? durMinutes(Math.max(0, now - since)) : undefined}
+                                    stageTime={since !== undefined ? agoMinutes(now - since) : undefined}
                                     bookedAt={transport.bookedAt}
                                     now={now}
                                     delay={transportDelay(movement, now)}

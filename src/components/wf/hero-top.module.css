@@ -57,6 +57,12 @@
   white-space: nowrap;
 }
 
+/* A word in the figure's place ("Bed agreed") keeps the figure's size in the text face. */
+.figValue[data-word] {
+  font-family: var(--wf-font);
+  letter-spacing: 0;
+}
+
 .figUnit {
   margin-left: 2px;
   font: 500 var(--wf-fs-12) / 1 var(--wf-mono);

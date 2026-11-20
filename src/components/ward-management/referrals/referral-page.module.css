@@ -207,6 +207,11 @@
   .offersTable.offersTable .offerChip.offerChip {
     white-space: normal;
   }
+  /* The ward's name wraps; its "Overdue 2 h 20 min" timer stays on one line. */
+  .offersTable .offerChip > span {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
   .offersTable .offerWards {
     grid-area: wards;
     color: var(--wf-ink-2);
@@ -393,10 +398,14 @@
 }
 
 @media (max-width: 46.4375rem) {
+  /* UX review 20 Nov 2026: beside the actions the ward chips had half the row, so ward names and
+     "Overdue 4 h 40 min" broke one word per line. The chips take the full width and the actions
+     sit on their own line at the end. */
   .offersTable tr {
     grid-template-areas:
       "name wait"
-      "wards actions";
+      "wards wards"
+      "actions actions";
     row-gap: var(--wf-s-1);
   }
   .offersTable .offerActions {

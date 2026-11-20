@@ -258,6 +258,9 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
     (/^\/bedchart\/reports\/downtime\/?$/u.test(pathname) ? "Downtime pack" : undefined) ??
     // Feature plan item 29: the coordinator's overnight page names itself, not "Ward Flow".
     (/^\/bedchart\/night\/?$/u.test(pathname) ? "Night view" : undefined) ??
+    // UX review 20 Nov 2026 (pattern A, Josh "yes"): these two fell through to "BedChart".
+    (/^\/bedchart\/review\/?$/u.test(pathname) ? "Today's review" : undefined) ??
+    (/^\/bedchart\/leave\/?$/u.test(pathname) ? "Leave" : undefined) ??
     // F-77 (Audit 15, A15-25): About this demo names itself.
     (/^\/bedchart\/about\/?$/u.test(pathname) ? "About this demo" : undefined) ??
     (/^\/bedchart\/reports\/chronology\/?$/u.test(pathname) ? "Patient chronology" : undefined) ??
@@ -270,20 +273,13 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
     (/^\/bedchart\/board\//u.test(pathname) ? (place?.name ?? "Bed board") : undefined) ??
     place?.name ??
     [...WARD_VIEWS, ...WARD_NAV].find((entry) => entry.href === pathname)?.label ??
-    (pathname === STATISTICS_OVERVIEW_HREF
-      ? "Statistics overview"
-      : pathname === STATISTICS_COMPARE_HREF
-        ? "Statistics compare"
-        : undefined) ??
+    // UX review 20 Nov 2026 (pattern A, Josh "yes"): the bar carries the short page name, so every
+    // statistics tab says "Statistics" ("Statistics wards" read like an address); the tab row
+    // already names the tab.
+    (pathname === STATISTICS_OVERVIEW_HREF || pathname === STATISTICS_COMPARE_HREF ? "Statistics" : undefined) ??
     // A14 / R3-24 (device sweep, 24 Oct 2026): the statistics tabs and the bed meeting agenda named
-    // no page, so the bar fell back to "Ward Flow". Each now takes its tab's word, as compare does.
-    ((tab) =>
-      tab &&
-      (tab[1] === "weekly"
-        ? "Weekly operations"
-        : tab[1]
-          ? `Statistics ${tab[1] === "eds" ? "EDs" : tab[1]}`
-          : "Bed meeting agenda"))(
+    // no page, so the bar fell back to "Ward Flow".
+    ((tab) => tab && (tab[1] === "weekly" ? "Weekly operations" : tab[1] ? "Statistics" : "Bed meeting agenda"))(
       /^\/bedchart\/(?:statistics\/(eds|services|teams|wards|weekly)|bed-meeting\/agenda)\/?$/u.exec(pathname),
     ) ??
     "BedChart";

@@ -34,10 +34,10 @@ import {
   StatusGlyph,
   buttonClass,
   cx,
-  durMinutes,
   folderTabClasses,
   type WfTone,
 } from "@/components/wf";
+import { agoMinutes } from "@/components/ward-management/ward-ago-text";
 import { GovernanceRestrictiveRegister } from "./governance-restrictive-register";
 import thirdEdition from "./governance-third-edition.module.css";
 import pageTop from "./page-top-title.module.css";
@@ -218,7 +218,7 @@ export function GovernancePhone({
           </>
         }
         value={event.at === null ? "–" : formatInstantWithDay(event.at, now)}
-        time={event.at === null ? undefined : `${durMinutes(Math.max(0, now - event.at))} ago`}
+        time={event.at === null ? undefined : `${agoMinutes(now - event.at)} ago`}
         onSelect={() => openPhoneEvent(event)}
       />
     );
