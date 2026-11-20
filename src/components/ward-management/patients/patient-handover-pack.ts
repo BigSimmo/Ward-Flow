@@ -131,6 +131,23 @@ function letterRow(rows: readonly ReferralLetterRow[], label: string): ReferralL
   return rows.find((row) => row.label === label) ?? { label, value: NOT_RECORDED, missing: true };
 }
 
+/**
+ * Re-walk 20 Nov 2026: the pack is offered only once a ward has accepted, so the acceptance itself is
+ * on the record even when its time is not. It names the ward, as the patient page's "Dabakarn
+ * accepted" does, and says only the time was not recorded rather than the whole acceptance.
+ */
+function acceptedRow(wardName: string | undefined, acceptedAt: Instant | undefined, now: Instant): ReferralLetterRow {
+  const when = acceptedAt === undefined ? "time not recorded" : formatInstantWithDay(acceptedAt, now);
+  if (wardName === undefined) {
+    return {
+      label: "Accepted",
+      value: acceptedAt === undefined ? NOT_RECORDED : when,
+      missing: acceptedAt === undefined,
+    };
+  }
+  return { label: "Accepted", value: `${wardName}, ${when}` };
+}
+
 /** `dayZero` dates a typed paper expiry on another day (D1, D-93); left out, it never shows an age. */
 export function handoverPackModel(input: HandoverPackInput, dayZero?: Date): HandoverPack {
   const letter = referralLetterModel(letterInput(input));
@@ -172,11 +189,7 @@ export function handoverPackModel(input: HandoverPackInput, dayZero?: Date): Han
           value: bed === undefined ? NOT_RECORDED : `Bed ${bed}`,
           missing: bed === undefined,
         },
-        {
-          label: "Accepted",
-          value: movement.acceptedAt === undefined ? NOT_RECORDED : formatInstantWithDay(movement.acceptedAt, now),
-          missing: movement.acceptedAt === undefined,
-        },
+        acceptedRow(input.wardName, movement.acceptedAt, now),
       ],
     },
     {

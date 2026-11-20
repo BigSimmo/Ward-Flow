@@ -571,6 +571,7 @@ export function nextStep(
   now: Instant,
   cutoff: Instant,
   readyBeds: (unitId: string) => number,
+  face: LegalClockFace = "screen",
 ): { text: string; tone: HandoverTone } {
   const tone: HandoverTone = isActOrUrgent(row, now) ? "act" : isDueBy(row, now, cutoff) ? "due" : "calm";
   let text: string;
@@ -584,7 +585,7 @@ export function nextStep(
       hold?.state === "lapsed"
         ? `${hold.label}. ${hold.nextStep}`
         : hold
-          ? `Move by ${formatInstantWithDay(hold.expiresAt, now)}, ${hold.short}`
+          ? `Move by ${holdClock(hold.expiresAt, now, face)}, ${hold.short}`
           : "Move to the pulled bed";
   } else if (row.stage === "moving") {
     text =

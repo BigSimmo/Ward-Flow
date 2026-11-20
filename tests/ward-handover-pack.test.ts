@@ -76,6 +76,18 @@ describe("handover pack model", () => {
     ]);
   });
 
+  it("names the accepting ward, and says only its time is not recorded when no time was (re-walk 20 Nov 2026)", () => {
+    const timed = handoverPackModel(input());
+    expect(value(timed, "patient", "Accepted")).toMatch(/^Synthetic Ward, \S/u);
+    expect(value(timed, "patient", "Accepted")).not.toMatch(/not recorded/iu);
+
+    const base = input();
+    const untimed = handoverPackModel(input({ movement: { ...base.movement, acceptedAt: undefined } }));
+    const row = section(untimed, "patient").rows.find((item) => item.label === "Accepted");
+    expect(row?.value).toBe("Synthetic Ward, time not recorded");
+    expect(row?.missing).toBeFalsy();
+  });
+
   it("shows the paper expiry only as typed, never as a count", () => {
     const pack = handoverPackModel(input());
     const expiry = value(pack, "legal", "Paper expiry");

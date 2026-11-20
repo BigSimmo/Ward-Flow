@@ -65,6 +65,15 @@ describe("3.1 the ED board hides the prompt and the call only behind a recorded 
     expect(screen.queryByTestId("ward-escalation-who-WF-003")).toBeNull();
   });
 
+  it("never says Waiting on a ward in an accepted person's row (re-walk 20 Nov 2026, fault 5)", () => {
+    const keira = seedWardFlowState().movements.find((movement) => movement.id === "WF-003")!;
+    renderEd(keira.originEdId!);
+    const row = screen.getByTestId("ward-ed-patient-WF-003");
+    expect(row).not.toHaveTextContent("Waiting on a ward");
+    // The wait step and the row's last column both say the journey's own words.
+    expect(within(row).getAllByText("Accepted, awaiting bed").length).toBeGreaterThan(0);
+  });
+
   it("on every ED board, a row shows either the journey's words or the next step with its call, never both", () => {
     const eds = [...new Set(seedWardFlowState().movements.flatMap((movement) => movement.originEdId ?? []))];
     let done = 0;

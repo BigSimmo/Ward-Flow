@@ -10,7 +10,7 @@ import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-clie
 import { confirmedWardCommand } from "./ward-command-completion";
 import type { Rejection } from "@/components/ward-management/ward-model";
 import { UNDO_WINDOW_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
-import { undoWindowUntil, untilToastTitle } from "./ward-undo-until";
+import { undoWindowEnds, undoWindowUntil, untilToastTitle } from "./ward-undo-until";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
 import {
@@ -20,7 +20,12 @@ import {
   type UndoStepType,
 } from "@/components/ward-management/ward-undo";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
-import { noteJourneyUndoToast, plainUndoRefusal } from "./ward-undo-journey-toasts";
+import {
+  noteJourneyUndoToast,
+  noteUndoRefusalToast,
+  noteUndoToastEnds,
+  plainUndoRefusal,
+} from "./ward-undo-journey-toasts";
 
 /** The part of a toast API this hook needs: a page passes its own, or the layout's is used. */
 export type UndoToastApi = { push: (toast: ToastInput) => string };
@@ -132,6 +137,14 @@ function undoRefusalWords(pending: Pending, reason: string | undefined): string 
   return pending.sayAfterLeaving && pending.undo === undefined && reason ? plainUndoRefusal(reason) : undefined;
 }
 
+/**
+ * Re-walk 20 Nov 2026 (fault 1): a warning about a toast's own Undo is noted, so a demo reset closes
+ * it with the record it was about. Other warnings are left as they are.
+ */
+function noteUndoRefusal(pending: Pending, toastId: string | undefined): void {
+  if (pending.sayAfterLeaving && pending.undo === undefined) noteUndoRefusalToast(toastId);
+}
+
 /** The refusal's words, led by the person's name when the words do not already name them. */
 function namedRefusal(who: string | undefined, reason: string): string {
   return who && !reason.includes(who) ? `${who}: ${reason}` : reason;
@@ -220,7 +233,7 @@ export function useUndoableStep({
             ? (undoRefusalWords(pending, pending.outcome.message) ??
               `Not recorded: ${namedRefusal(pending.who, sayRefusal ? sayRefusal(pending.outcome.message ?? "The action was refused.") : (pending.outcome.message ?? "The action was refused."))}`)
             : (pending.outcome.message ?? SAVE_NOT_CONFIRMED);
-        if (sink) sink.push({ tone: "warning", title: said });
+        if (sink) noteUndoRefusal(pending, sink.push({ tone: "warning", title: said }));
         else onMessage?.(said, "warning");
         continue;
       }
@@ -229,7 +242,7 @@ export function useUndoableStep({
         const said =
           undoRefusalWords(pending, refused.reason) ??
           `Not recorded: ${namedRefusal(pending.who, sayRefusal ? sayRefusal(refused.reason) : refused.reason)}. Nothing was changed.`;
-        if (sink) sink.push({ tone: "warning", title: said });
+        if (sink) noteUndoRefusal(pending, sink.push({ tone: "warning", title: said }));
         else onMessage?.(said, "warning");
         continue;
       }
@@ -288,6 +301,8 @@ export function useUndoableStep({
               ...(pending.choices ? { choices: toastChoices(pending, pending.choices, build, watch) } : {}),
             }),
       });
+      // Re-walk 20 Nov 2026 (fault 1): and once the board clock passes the time it names.
+      if (!limit) noteUndoToastEnds(toastId, undoWindowEnds(nowRef.current));
       // Item 4 (19 Nov 2026): this Undo closes itself once its journey records a later step.
       if (!limit)
         noteJourneyUndoToast(
@@ -449,13 +464,16 @@ export function useUndoableStep({
       return true;
     }
     const reason = outcome.message ?? "The action was refused.";
-    out.push({
-      tone: "warning",
-      title:
-        outcome.status === "refused"
-          ? (undoRefusalWords(pending, reason) ?? `Not recorded: ${sayRefusal ? sayRefusal(reason) : reason}`)
-          : (outcome.message ?? SAVE_NOT_CONFIRMED),
-    });
+    noteUndoRefusal(
+      pending,
+      out.push({
+        tone: "warning",
+        title:
+          outcome.status === "refused"
+            ? (undoRefusalWords(pending, reason) ?? `Not recorded: ${sayRefusal ? sayRefusal(reason) : reason}`)
+            : (outcome.message ?? SAVE_NOT_CONFIRMED),
+      }),
+    );
     return true;
   }
 

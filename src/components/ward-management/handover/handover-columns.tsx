@@ -213,7 +213,7 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
     header: "Next step",
     width: 270,
     cell: (row, ctx) => {
-      const step = nextStep(row, ctx.now, ctx.cutoff, ctx.readyBeds);
+      const step = nextStep(row, ctx.now, ctx.cutoff, ctx.readyBeds, ctx.face);
       return (
         <span className={`${styles.next} ${styles[`next_${step.tone}`]}`} title={step.text}>
           {step.tone === "act" || step.tone === "due" ? (
@@ -225,7 +225,8 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
         </span>
       );
     },
-    paper: (row, ctx) => nextStep(row, ctx.now, ctx.cutoff, ctx.readyBeds).text,
+    // Re-walk 20 Nov 2026: "Move by" reads the sheet's 24-hour face beside "Pull ends" (D-254).
+    paper: (row, ctx) => nextStep(row, ctx.now, ctx.cutoff, ctx.readyBeds, "sheet").text,
   },
   {
     id: "dec",

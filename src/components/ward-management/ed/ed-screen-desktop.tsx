@@ -203,7 +203,9 @@ export function renderEdBoardTableRow(
               : movement.closure
                 ? "Withdrawn"
                 : bedSearch === "underway"
-                  ? "Waiting on a ward"
+                  ? // Re-walk 20 Nov 2026 (fault 5): an accepted, pulled or booked person reads as such,
+                    // in the journey's own words ("Accepted, awaiting bed"), not "Waiting on a ward".
+                    (journeyWords ?? "Waiting on a ward")
                   : "Nothing due"}
           </span>
         )}
