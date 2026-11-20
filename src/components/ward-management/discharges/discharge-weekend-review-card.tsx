@@ -118,7 +118,7 @@ export function DischargeWeekendReview({
                           })
                         }
                       >
-                        Reviewed
+                        Mark reviewed
                       </Button>
                     ) : (
                       <span className={styles.pending}>Not reviewed</span>

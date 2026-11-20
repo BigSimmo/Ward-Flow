@@ -422,8 +422,10 @@ table.censusTable {
   width: 21%;
 }
 
+/* UX review 20 Nov 2026 (broken item 3): 100px wrapped "15 h 52 min" over three lines; the
+   print sheet's 132px fits the longest wait on one line with its mark. */
 .colTime {
-  width: 100px;
+  width: 132px;
 }
 
 /* Device audit 11 Oct 2026: Next step is the column a nurse reads, so it takes the spare width
@@ -651,6 +653,7 @@ tr:has(+ .moreRow) > td {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  white-space: nowrap;
   font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
 }
 

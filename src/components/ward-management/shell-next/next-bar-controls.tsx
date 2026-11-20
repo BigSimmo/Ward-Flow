@@ -560,13 +560,15 @@ export function WardBarPrimaryAction({
             // Josh, 30 Oct 2026: even padding and its neighbours' height (`preview-bar.module.css`).
             className={`${styles.primary} ${styles.referralPrimary} ${polish.primaryEven}`}
             data-testid="ward-bar-primary-action"
+            // UX review 20 Nov 2026 (pattern C, Josh "yes"): "New", the word every other desk's bar
+            // shows; the button still names the referral it opens.
+            aria-label="New referral"
             onClick={() => {
               openReferral({ category: roleCategory }, primaryTriggerRef.current);
             }}
           >
             <Plus className={styles.primaryIcon} aria-hidden="true" strokeWidth={1.75} />
-            <span className={styles.primaryPrefix}>New </span>
-            <span className={styles.primaryMain}>referral</span>
+            <span className={styles.primaryMain}>New</span>
           </button>
         </div>
       ) : primaryAction && primaryAction.kind !== "none" ? (

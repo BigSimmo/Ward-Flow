@@ -41,6 +41,8 @@ export type HeroFigureItem = Press & {
   value: ReactNode;
   /** Small unit after the value ("%", "h"). */
   unit?: ReactNode;
+  /** The value is a word ("Bed agreed"), set in the text face rather than the figures' mono. */
+  word?: boolean;
   label: ReactNode;
   /** Red only when the figure names something to act on now. */
   tone?: "danger" | "warning" | "ok";
@@ -87,7 +89,7 @@ function HeroFigure({ item }: { item: HeroFigureItem }) {
   const named = { id: labelId, "aria-labelledby": `${valueId} ${labelId}` };
   return (
     <div className={styles.fig} data-tone={item.tone} data-testid={item.testId} data-wf-hero-figure="">
-      <b className={styles.figValue} id={valueId}>
+      <b className={styles.figValue} id={valueId} data-word={item.word ? "" : undefined}>
         {item.value}
         {item.unit ? <small className={styles.figUnit}>{item.unit}</small> : null}
       </b>{" "}

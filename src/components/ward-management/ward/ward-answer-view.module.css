@@ -68,7 +68,7 @@
 }
 
 /* Phone sheet: the ward's own Confirm is a full pill beside the stepper, as in the v10 sheet. */
-.phoneSheetScope .capacityForm .btnPrimary {
+.phoneSheetScope .capacityForm .capacitySubmit {
   flex: 1 1 auto;
   min-height: var(--wf-touch);
   border-radius: var(--wf-r-ctl);

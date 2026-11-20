@@ -3,9 +3,10 @@
 /**
  * Graph or Table switch (Josh, 18 Nov 2026, D-265; replaces the M3 Shown/Hidden switch of 3 Nov and
  * Note 7 of 8 Nov). The 48-hour timeline keeps its place under the stage cards. One switch on its bar
- * swaps it for the people list in the same spot: "Graph" (the default) shows the timeline, "Table"
- * puts the worklist there instead. The choice is remembered on this device only; a stored "off" from
- * the old switch reads as "Table". The bar keeps the one fact worth seeing without the chart.
+ * swaps it for the people list in the same spot: "Graph" shows the timeline, "Table" puts the
+ * worklist there instead. Table is the default (UX review, Josh "yes", 20 Nov 2026; D-270). The
+ * choice is remembered on this device only; a stored "off" from the old switch reads as "Table".
+ * The bar keeps the one fact worth seeing without the chart.
  */
 import { useSyncExternalStore, type ReactNode } from "react";
 
@@ -19,9 +20,9 @@ export type TrafficView = "graph" | "table";
 function readPref(): TrafficView {
   try {
     const stored = window.localStorage.getItem(KEY);
-    return stored === "off" || stored === "table" ? "table" : "graph";
+    return stored === "graph" ? "graph" : "table";
   } catch {
-    return "graph";
+    return "table";
   }
 }
 
@@ -33,9 +34,9 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-// The server render and hydration read "graph", then a stored "table" applies.
+// The server render and hydration read "table", then a stored "graph" applies.
 const snapshot = () => memory ?? readPref();
-const serverSnapshot = (): TrafficView => "graph";
+const serverSnapshot = (): TrafficView => "table";
 
 function setTrafficView(next: TrafficView) {
   // Only a fixed word is stored, never the control's value itself (CodeQL clear-text storage: the

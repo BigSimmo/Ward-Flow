@@ -46,7 +46,7 @@
 .row {
   position: relative;
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-columns: 72px minmax(0, 1fr);
   column-gap: var(--wf-s-3);
   align-items: start;
   padding: 6px var(--wf-s-4);
@@ -127,7 +127,7 @@
 
 .empty {
   margin: 0;
-  padding: var(--wf-s-1) var(--wf-s-4) var(--wf-s-3) calc(var(--wf-s-4) + 44px + var(--wf-s-3));
+  padding: var(--wf-s-1) var(--wf-s-4) var(--wf-s-3) calc(var(--wf-s-4) + 72px + var(--wf-s-3));
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   color: var(--wf-ink-3);
 }

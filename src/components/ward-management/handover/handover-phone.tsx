@@ -36,6 +36,7 @@ import {
   type WfTone,
   FormalName,
 } from "@/components/wf";
+import { agoMinutes } from "@/components/ward-management/ward-ago-text";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { ColumnContext } from "./handover-columns";
 import {
@@ -136,7 +137,7 @@ const GROUP_TONE: Record<string, WfTone> = {
 const CARD_GROUPS = new Set(["act", "urg", "due", "out"]);
 
 function relative(at: Instant, now: Instant): string {
-  return at <= now ? `Passed ${durMinutes(now - at)} ago` : `In ${durMinutes(at - now)}`;
+  return at <= now ? `Passed ${agoMinutes(now - at)} ago` : `In ${durMinutes(at - now)}`;
 }
 
 /* ------------------------------------------------------------------ shift sheet */
@@ -371,7 +372,7 @@ function WardRow({ ward, incoming, now }: { ward: HandoverWard; incoming: number
           {stale ? (
             <span className={styles.stale}>
               <StatusGlyph tone="warning" size={8} />
-              {durMinutes(now - ward.confirmedAt)} ago
+              {agoMinutes(now - ward.confirmedAt)} ago
               <SrOnly>, feed past its time limit</SrOnly>
             </span>
           ) : null}

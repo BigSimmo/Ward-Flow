@@ -24,6 +24,7 @@ import {
   buttonClass,
   durMinutes,
 } from "@/components/wf";
+import { agoMinutes } from "@/components/ward-management/ward-ago-text";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { typedClock } from "@/components/ward-management/ward-legal-time-as-typed";
 import type { MovementStage } from "@/components/ward-management/ward-model";
@@ -110,7 +111,7 @@ function WardCapacity({ ward, now }: { ward: HandoverWard | undefined; now: Inst
       </span>
       <span className={stale ? styles.stale : undefined}>
         {stale ? <StatusGlyph tone="warning" size={8} /> : null}
-        {durMinutes(now - ward.confirmedAt)} ago
+        {agoMinutes(now - ward.confirmedAt)} ago
       </span>
     </span>
   );

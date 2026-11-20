@@ -1167,7 +1167,7 @@ describe("movements board tab in the address", () => {
 });
 
 describe("M3: the worklist leads and check in lives on Transport (3 Nov 2026)", () => {
-  it("swaps the timeline for the worklist with a Graph or Table switch (Graph by default, D-265)", () => {
+  it("swaps the timeline for the worklist with a Graph or Table switch (Table by default since 20 Nov 2026, D-270)", () => {
     window.localStorage.removeItem("ward-flow-movements-timeline");
     renderScreen();
     const panel = screen.getByRole("region", { name: "Today’s traffic" });
