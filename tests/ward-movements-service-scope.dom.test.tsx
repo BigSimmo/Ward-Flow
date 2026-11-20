@@ -140,6 +140,9 @@ describe("Movements — service scoping (build plan D2, item 44)", () => {
     // isolates the panel's own numeric FIGURES via `movements-day-metric` (added for exactly this),
     // which must still be byte-identical, and separately proves the attention band's own movement
     // ids and order are unaffected (only the marker differs) further down this file.
+    // D-270 (20 Nov 2026): Movements opens on Table, whose bar line counts the (scoped) worklist.
+    // This case pins the unscoped timeline, so it chooses Graph, as a person would.
+    window.localStorage.setItem("ward-flow-movements-timeline", "graph");
     const withoutService = renderScreen();
     const dayMetrics = screen.getAllByTestId("movements-day-metric").map((el) => el.textContent);
     const trafficPanel = screen.getByRole("region", { name: /Today.s traffic/u }).textContent;
@@ -155,6 +158,7 @@ describe("Movements — service scoping (build plan D2, item 44)", () => {
     expect(screen.getByRole("region", { name: "Transport right now" }).textContent).toBe(transportPanel);
     fireEvent.click(screen.getByRole("button", { name: "Shape of the day" }));
     expect(screen.getByRole("region", { name: "Shape of the day" }).textContent).toBe(shapePanel);
+    window.localStorage.removeItem("ward-flow-movements-timeline");
   });
 
   it("renders the exact §3 Movements sentence, at the top of the page, and the scope bar's D-a urgent-outside-service line", () => {

@@ -12,8 +12,6 @@ import { defaultWardConfiguration } from "@/components/ward-management/ward-conf
 const REFERRED_SHARE = 0.4;
 /** The share of the time from the referral to the next recorded step that passes before acceptance. */
 const ACCEPTED_SHARE = 0.5;
-/** The share of the time from acceptance to the first transport time that passes before the pull. */
-const PULLED_SHARE = 0.4;
 
 /** The earliest recorded step after the department stage: transport, departure, closure or the anchor. */
 function nextRecordedStep(movement: Movement, anchor: Instant): Instant {
@@ -60,41 +58,6 @@ export function withDemoStageTimes(movements: readonly Movement[], anchor: Insta
     if (referredAt >= limit) return movement;
     const acceptedAt =
       movement.acceptedAt ?? referredAt + Math.max(1, Math.round((limit - referredAt) * ACCEPTED_SHARE));
-    return withDemoStageChanges({ ...movement, referredAt, acceptedAt });
+    return { ...movement, referredAt, acceptedAt };
   });
-}
-
-/**
- * UX review 20 Nov 2026 (Josh "yes"): Weekly's "Where the time goes" read "None finished this week"
- * for the pull, departure and travel steps, because no seeded journey carried the stage changes
- * those steps are timed from. A seeded journey already collected (moving) or arrived, with no
- * recorded stage change, gains the entries the reducer would have written on its way there: the
- * pull, part-way from the acceptance to its first transport time; the collection, at its recorded
- * collection; and the arrival, at its recorded arrival. Demo data only, from the journey's own
- * times. A journey with any stage change of its own, or no room between its steps, is left alone.
- */
-function withDemoStageChanges(movement: Movement): Movement {
-  if (movement.stage !== "moving" && movement.stage !== "arrived") return movement;
-  if (movement.stageChanges.length > 0 || movement.acceptedAt === undefined) return movement;
-  const transport = movement.transport;
-  if (transport?.collectedAt === undefined) return movement;
-  const firstTransport = Math.min(
-    ...[transport.acceptedAt, transport.enRouteAt, transport.collectedAt].filter(
-      (at): at is number => typeof at === "number",
-    ),
-  );
-  if (firstTransport - movement.acceptedAt < 2) return movement;
-  const pulledAt = movement.acceptedAt + Math.max(1, Math.round((firstTransport - movement.acceptedAt) * PULLED_SHARE));
-  const arrivedAt = movement.stage === "arrived" ? (transport.arrivedAt ?? movement.closure?.at) : undefined;
-  if (movement.stage === "arrived" && (arrivedAt === undefined || arrivedAt < transport.collectedAt)) return movement;
-  return {
-    ...movement,
-    stageChanges: [
-      { at: pulledAt, from: "accepted_awaiting_bed", to: "pulled", by: "ward" },
-      { at: transport.collectedAt, from: "pulled", to: "moving", by: "officer" },
-      ...(arrivedAt === undefined
-        ? []
-        : [{ at: arrivedAt, from: "moving" as const, to: "arrived" as const, by: "officer" }]),
-    ],
-  };
 }
