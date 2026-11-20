@@ -432,7 +432,7 @@ safe global key across 30 files.
 | `D-268` | `decisions.md`:3078 | D-268. "ED journeys open" is renamed "Open ED movements" (18 November 2026) |
 | `D-269` | `decisions.md`:3086 | D-269. The 19 November pre-demo audit fixes go ahead as recommended (19 November 2026) |
 | `D-270` | `decisions.md`:3095 | D-270. The 20 November UX review fixes go ahead as recommended (20 November 2026) |
-| `D-271` | `decisions.md`:3101 | D-271. The 20 November demo re-walk fixes go ahead before the freeze (20 November 2026) |
+| `D-271` | `decisions.md`:3102 | D-271. The 20 November demo re-walk fixes go ahead before the freeze (20 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -1004,7 +1004,7 @@ safe global key across 30 files.
 - `D-268` — line 3078, heading: "D-268. "ED journeys open" is renamed "Open ED movements" (18 November 2026)"
 - `D-269` — line 3086, heading: "D-269. The 19 November pre-demo audit fixes go ahead as recommended (19 November 2026)"
 - `D-270` — line 3095, heading: "D-270. The 20 November UX review fixes go ahead as recommended (20 November 2026)"
-- `D-271` — line 3101, heading: "D-271. The 20 November demo re-walk fixes go ahead before the freeze (20 November 2026)"
+- `D-271` — line 3102, heading: "D-271. The 20 November demo re-walk fixes go ahead before the freeze (20 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
