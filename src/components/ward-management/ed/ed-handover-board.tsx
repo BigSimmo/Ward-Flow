@@ -5,17 +5,9 @@
 // handover table, in the pattern of the rebuilt Waiting page: a card head with the title, count,
 // search and order; the filter chips and tier key under it; quiet capital column heads; rows grouped
 // by time in the department; and an Enlarge button that gives the table the whole screen.
-import { ChevronDown, Maximize2, Minimize2 } from "lucide-react";
+import { ChevronDown, Minimize2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import {
-  Button,
-  PortraitRail,
-  SearchField,
-  Segmented,
-  StatusGlyph,
-  FullScreenFrame,
-  FullScreenMarkSlot,
-} from "@/components/wf";
+import { Button, PortraitRail, SearchField, StatusGlyph, FullScreenFrame, FullScreenMarkSlot } from "@/components/wf";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { EdBoardChips } from "./ed-board-chips";
 import { EdNeedsYou } from "./ed-needs-you";
@@ -173,12 +165,6 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
     name: "A to Z by surname",
     current: "in current order",
   };
-  const orderWords =
-    patientSort === "longest"
-      ? "Longest in ED first"
-      : patientSort === "name"
-        ? "A to Z by surname"
-        : "In current order";
 
   return (
     // D-192 (shared design parts item 7, F-39): enlarged, the table covers the page footer, so the
@@ -191,6 +177,8 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
       className={`${styles.panel} ${styles.full} ${styles.listSection} ${handover.handover}`}
       data-enlarged={fullscreenBoard ? "true" : undefined}
     >
+      {/* UX review (D-270, pattern E): one row for the title, search and Export; one row of
+          filters. Sort moves to the column heads, the key behind "?", Enlarge stays on the tab row. */}
       <div className={handover.handoverHead}>
         <div className={handover.handoverTitle}>
           {/* UX review 20 Nov 2026 (Josh "yes"): "On the board", since the page is already the ED's
@@ -201,7 +189,6 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
               {filtered ? `${boardMatchCount} of ${patients.length}` : patients.length}
             </span>
           </h2>
-          <p>{orderWords}</p>
           <EdCrewsWaitingLine movements={patients} now={now} />
         </div>
         <div className={handover.handoverTools}>
@@ -212,17 +199,6 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
             placeholder="Name or UMRN"
             value={patientQuery}
             onValueChange={setPatientQuery}
-          />
-          <Segmented<string>
-            label="Sort patients"
-            size="sm"
-            value={patientSort}
-            onChange={setPatientSort}
-            items={[
-              { id: "longest", label: "Longest in ED" },
-              { id: "name", label: "Name" },
-              { id: "current", label: "Current order" },
-            ]}
           />
           {needsRailSlides && !fullscreenBoard ? (
             <PortraitRail
@@ -235,25 +211,33 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
             </PortraitRail>
           ) : null}
           <ListExportButton load={exportList} disabled={patients.length === 0} testId="ed-handover-export" />
-          <Button
-            variant={fullscreenBoard ? "pri" : "sec"}
-            size="md"
-            icon={fullscreenBoard ? Minimize2 : Maximize2}
-            aria-pressed={fullscreenBoard}
-            onClick={() => setFullscreenBoard((previous) => !previous)}
-            title={fullscreenBoard ? "Back to the page (Esc)" : "Show the table on the whole screen"}
-          >
-            {fullscreenBoard ? "Exit full screen" : "Enlarge"}
-          </Button>
+          {/* Enlarge sits on the tab row; enlarged, the tab row is covered, so the way back sits here. */}
+          {fullscreenBoard ? (
+            <Button
+              variant="pri"
+              size="md"
+              icon={Minimize2}
+              aria-pressed
+              onClick={() => setFullscreenBoard(false)}
+              title="Back to the page (Esc)"
+            >
+              Exit full screen
+            </Button>
+          ) : null}
+          <details className={handover.keyToggle}>
+            <summary aria-label="What the bars mean" title="What the bars mean">
+              ?
+            </summary>
+            <div className={handover.keyPopover}>
+              <TierBarsKey />
+            </div>
+          </details>
         </div>
       </div>
       <div className={handover.handoverFilters}>
         <EdBoardChips ctx={ctx} />
+        {filtered ? <span className={handover.filterNote}>Filters highlight; everyone stays on the table</span> : null}
         <FullScreenMarkSlot />
-      </div>
-      <div className={handover.handoverKey}>
-        <TierBarsKey />
-        {filtered ? <span>Filters highlight; everyone stays on the table</span> : null}
       </div>
       {patients.length === 0 ? (
         <p className={styles.placeholder}>Nobody recorded on this department&apos;s psychiatry list.</p>
@@ -275,11 +259,34 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
               </colgroup>
               <thead>
                 <tr>
-                  {COLUMNS.map((column) => (
-                    <th key={column} scope="col">
-                      {column}
-                    </th>
-                  ))}
+                  {COLUMNS.map((column) => {
+                    const sortId = column === "Patient" ? "name" : column === "In ED" ? "longest" : null;
+                    if (!sortId) {
+                      return (
+                        <th key={column} scope="col">
+                          {column}
+                        </th>
+                      );
+                    }
+                    const active = patientSort === sortId;
+                    return (
+                      <th
+                        key={column}
+                        scope="col"
+                        aria-sort={active ? (sortId === "name" ? "ascending" : "descending") : "none"}
+                      >
+                        <button
+                          type="button"
+                          className={handover.sortHead}
+                          data-active={active ? "true" : undefined}
+                          onClick={() => setPatientSort(active ? "current" : sortId)}
+                        >
+                          {column}
+                          <ChevronDown size={12} strokeWidth={2} aria-hidden="true" />
+                        </button>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>{body}</tbody>

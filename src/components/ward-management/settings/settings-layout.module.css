@@ -718,3 +718,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* UX review (D-270): the rules filter, at the head of the Rules tab. */
+.rulesFilter {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 var(--wf-s-3);
+}

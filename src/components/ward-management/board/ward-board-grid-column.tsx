@@ -301,11 +301,13 @@ export function WardBoardGridColumn({
                         {cardNameByKey.get(tile.key)}
                       </span>
                     )}
-                    <span className={styles.bedTop}>
-                      <span className={styles.bedState}>Occupied</span>
-                    </span>
-                    <span className={styles.bedFigureRow}>
-                      <span className={styles.days} data-testid={`ward-board-bed-${index + 1}-days`}>
+                    {/* UX review (D-270): the name leads; the stay is the second line at body size,
+                        and "Occupied" goes, since a tile with a name is occupied. */}
+                    <span className={`${styles.bedFigureRow} ${styles.nameFirstFigureRow}`}>
+                      <span
+                        className={`${styles.days} ${styles.stayLine}`}
+                        data-testid={`ward-board-bed-${index + 1}-days`}
+                      >
                         {tile.days}
                         <span className={styles.daysUnit}> day{tile.days === 1 ? "" : "s"}</span>
                       </span>

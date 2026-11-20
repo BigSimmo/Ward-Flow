@@ -1024,32 +1024,6 @@ export function CoordinatorScreen() {
                   : []),
               ]}
             />
-            <span className={`${flowStyles.navRule} ${folderTabClasses.rule}`} aria-hidden="true" />
-            <div className={flowStyles.stageGroup} data-active={shownView === "queue" ? "true" : undefined}>
-              <div className={flowStyles.stageTabs}>
-                {/* The stages filter Flow rather than switch panels, so they are pressed buttons, not tabs. */}
-                <PillTabs
-                  toggles
-                  label="Flow stages"
-                  className={flowStyles.stagePills}
-                  value={shownView === "queue" ? (flowStage ?? "all") : "none"}
-                  onChange={(id) => {
-                    showView("queue");
-                    chooseNeedsFocus("all");
-                    setFlowStage(id === "all" ? undefined : (id as FlowStageId));
-                  }}
-                  items={[
-                    { id: "all", label: "All", count: queue.length },
-                    // Icon design (Josh, 3 Nov 2026): no act-now triangle on the tabs; the late rows carry it.
-                    ...FLOW_STAGES.filter((stage) => stage.id !== "referral").map((stage) => ({
-                      id: stage.id,
-                      label: stage.label,
-                      count: queue.filter((movement) => flowStageOf(movement) === stage.id).length,
-                    })),
-                  ]}
-                />
-              </div>
-            </div>
           </FolderTabs>
 
           <div
@@ -1065,6 +1039,38 @@ export function CoordinatorScreen() {
                   pins. Both sit inside the column, under the folder tabs, so the approved tab join is
                   untouched, and both render nothing until there is something to show. */}
               {/* Batch 4 item 25 (D-142): after a recorded outage, the wards still to confirm. */}
+              {/* UX review (D-270): the Flow stages are filters of Flow, so they sit on their own
+                  row inside Flow, not on the tab row beside the views. */}
+              {shownView === "queue" ? (
+                <div className={flowStyles.flowFilterRow} data-testid="home-flow-filters">
+                  <span className={flowStyles.flowFilterLabel} aria-hidden="true">
+                    Show
+                  </span>
+                  {/* The kit's pill track lets items overflow on a phone, so this box scrolls. */}
+                  <div className={flowStyles.stageTabs}>
+                    <PillTabs
+                      toggles
+                      label="Flow stages"
+                      className={flowStyles.stagePills}
+                      value={flowStage ?? "all"}
+                      onChange={(id) => {
+                        showView("queue");
+                        chooseNeedsFocus("all");
+                        setFlowStage(id === "all" ? undefined : (id as FlowStageId));
+                      }}
+                      items={[
+                        { id: "all", label: "All", count: queue.length },
+                        // Icon design (Josh, 3 Nov 2026): no act-now triangle on the tabs; the late rows carry it.
+                        ...FLOW_STAGES.filter((stage) => stage.id !== "referral").map((stage) => ({
+                          id: stage.id,
+                          label: stage.label,
+                          count: queue.filter((movement) => flowStageOf(movement) === stage.id).length,
+                        })),
+                      ]}
+                    />
+                  </div>
+                </div>
+              ) : null}
               {shownView === "needs" ? <HomeOutageCatchUp now={now} /> : null}
               {/* Wave 4 (D-191, notes item 7): on Needs you the line sits inside its card. */}
               {shownView === "needs" ? null : <HomeSinceBanner now={now} />}

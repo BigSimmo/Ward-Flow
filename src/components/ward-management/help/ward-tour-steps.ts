@@ -298,7 +298,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "checking",
-          { sel: '[data-testid="ward-hero-checking"]' },
+          { sel: '[data-testid="ward-checks-foot"]' },
           "What may be out of date",
           "Checking lists what the figures cannot vouch for, such as discharges held up, people past their expected date or a roster not recorded.",
         ),

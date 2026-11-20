@@ -11,7 +11,7 @@ One ward's beds, who is coming and going, and the decisions due this shift.
 3. Confirm numbers. Confirm the ward's bed figures once you have checked them, so others can trust the count.
 4. Updates. What changed on this ward since you last looked.
 5. Contact and Staff needed. Contact opens the ward's contact lines. Staff needed records a request for extra staff.
-6. Checking. When the capacity was last confirmed, and whether the outage pack has been printed.
+6. Checking. What the figures cannot vouch for, when the capacity was last confirmed, and whether the outage pack has been printed.
 7. Tonight's intake. The hours this ward takes admissions tonight. Edit sets them. On a phone it is under Ward details and checks.
 8. Ward tabs. Ward home, Referrals for this ward to answer, and Decisions.
 9. Find on this ward. Find a bed or a person on this ward.

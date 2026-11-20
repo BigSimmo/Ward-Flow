@@ -2131,3 +2131,12 @@ label.todoMain:has(.todoTick:focus-visible) {
   border-radius: var(--wf-r-lg, 16px);
   padding: var(--wf-s-3) var(--wf-s-4);
 }
+
+/* UX review (D-270, pattern D): the desktop checks card above Coming and going. */
+.deskChecks {
+  margin-bottom: var(--wf-s-3);
+}
+
+.deskChecks .phoneFiguresFoot {
+  padding-bottom: var(--wf-s-3);
+}

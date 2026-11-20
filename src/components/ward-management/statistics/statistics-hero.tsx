@@ -339,31 +339,37 @@ function StatisticsHeroView({
       </>
     );
   }
+  // UX review (D-270): one header for every Statistics tab, as Network's: the tabs leave the
+  // hero for the folder row under it, and the tools sit on one chip row in the hero.
   return (
-    <Hero
-      level={1}
-      className={cx(styles.statsHero, chips ? styles.chipHero : undefined)}
-      eyebrow={eyebrow}
-      title={title}
-      titleMeta={titleAction ? <span className={styles.titleAction}>{titleAction}</span> : undefined}
-      stats={chips ?? stats}
-      statsAlign="end"
-      aside={chips ? exportButton : undefined}
-      bar={
-        <div className={styles.navSlot} data-testid={navTestId}>
-          <StatisticsNav currentSection={section} activeSlug={slug} withSamples={false} wardCount={wardCount} />
-        </div>
-      }
-      barAside={
-        <>
-          {chips ? null : exportButton}
+    <>
+      <Hero
+        level={1}
+        className={cx(styles.statsHero, chips ? styles.chipHero : undefined, folderTabClasses.hero)}
+        eyebrow={eyebrow}
+        title={title}
+        titleMeta={titleAction ? <span className={styles.titleAction}>{titleAction}</span> : undefined}
+        stats={chips ?? stats}
+        statsAlign="end"
+        aside={
+          <LiveChip state={paused ? "paused" : "live"} onHero age={formatInstant(now)} onTogglePause={onTogglePause} />
+        }
+      >
+        <div className={styles.heroToolRow}>
+          {exportButton}
           {tools ? <span className={styles.heroTools}>{tools}</span> : null}
-          <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={onTogglePause} />
-          <span className={styles.divider} aria-hidden="true" />
           <StatisticsSamplesSwitch />
-        </>
-      }
-    />
+        </div>
+      </Hero>
+      <StatisticsNav
+        currentSection={section}
+        activeSlug={slug}
+        withSamples={false}
+        wardCount={wardCount}
+        variant="folder"
+        testId={navTestId}
+      />
+    </>
   );
 }
 

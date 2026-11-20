@@ -805,3 +805,10 @@
   margin: 0;
   font-size: var(--wf-fs-13);
 }
+
+/* UX review (D-270). */
+.searchHint {
+  margin: var(--wf-s-2) 0 0;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+}

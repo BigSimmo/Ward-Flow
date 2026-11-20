@@ -1175,3 +1175,39 @@
   align-items: center;
   gap: var(--wf-s-2);
 }
+
+/* UX review (D-270): wider screens put Counts to check above the cards as one strip, and the
+   cards fill the width (four across at 1440). */
+@media (min-width: 46.5rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .layout > .rail {
+    order: -1;
+    display: flex;
+  }
+
+  .layout > .rail .railCard {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--wf-s-2) var(--wf-s-4);
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .layout > .rail .railCard .serviceHead {
+    gap: var(--wf-s-2);
+  }
+
+  .layout > .rail .checkList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--wf-s-2) var(--wf-s-4);
+    margin: 0;
+  }
+
+  .cardGrid {
+    grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+  }
+}

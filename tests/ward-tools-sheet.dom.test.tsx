@@ -22,7 +22,13 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-function renderSheet(isPhone = false, twoPane = false) {
+/** UX review (D-270): with no search the sheet opens on Most used; most tests read the full groups. */
+function unfoldAllTools() {
+  const all = screen.queryByRole("button", { name: /^Show all \d+ tools$/u });
+  if (all) fireEvent.click(all);
+}
+
+function renderSheet(isPhone = false, twoPane = false, unfold = true) {
   const onNavigate = vi.fn();
   const onNewReferral = vi.fn();
   render(
@@ -36,6 +42,7 @@ function renderSheet(isPhone = false, twoPane = false) {
       />
     </WardFlowProvider>,
   );
+  if (unfold) unfoldAllTools();
   return { onNavigate, onNewReferral };
 }
 
@@ -43,6 +50,21 @@ function renderSheet(isPhone = false, twoPane = false) {
 function showAllRows() {
   for (const more of screen.queryAllByRole("button", { name: /^Show \d+ more$/u })) fireEvent.click(more);
 }
+
+describe("Tools opens on Most used (UX review, D-270)", () => {
+  it("lists the ten a desk uses most, then Show all opens every group", () => {
+    renderSheet(false, false, false);
+    const mostUsed = screen.getByRole("region", { name: "Most used" });
+    expect(within(mostUsed).getAllByRole("button", { name: /./u }).length).toBeGreaterThan(1);
+    expect(screen.queryByRole("region", { name: "Look up" })).toBeNull();
+    expect(screen.getByText("Or type in Search tools to find any of them.")).toBeTruthy();
+    unfoldAllTools();
+    expect(screen.queryByRole("region", { name: "Most used" })).toBeNull();
+    for (const group of ["Do now", "Look up", "Print and share"]) {
+      expect(screen.getByRole("region", { name: group })).toBeTruthy();
+    }
+  });
+});
 
 describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
   it("is one sheet in the reviewed groups, with the repeated items gone", () => {

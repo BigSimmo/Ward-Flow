@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { WardComingAndGoing, tomorrowLine } from "@/components/ward-management/ward/ward-coming-and-going";
@@ -7,13 +8,21 @@ import { WardDeclineReasons, DECLINE_LOCK_LINE } from "@/components/ward-managem
 import { bedSquareFor, squareCounts } from "@/components/ward-management/ward/ward-every-bed-squares";
 import type { BedItem } from "@/components/ward-management/ward/ward-bed-tone";
 import type { WardTomorrowOutlook } from "@/components/ward-management/ward/ward-home-outlook";
-import { wardHeroTopParts } from "@/components/ward-management/ward/ward-hero-top-parts";
-import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
+import { WardScreen } from "@/components/ward-management/ward/ward-screen";
+import { BED_RELEASE_BLOCKED_FIGURE_LABEL } from "@/components/ward-management/ward-derivations";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardScreenReferralsTab } from "@/components/ward-management/ward/ward-screen-referrals-tab";
 import { ToastProvider, buttonClass } from "@/components/wf";
 import { WardPhoneFind } from "@/components/ward-management/ward/ward-phone-find";
+
+vi.mock("next/link", () => ({
+  default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
 
 /**
  * Wave 4 (D-191): Ward home's "Coming and going" part, the decline reasons as kit choice rows and the
@@ -224,29 +233,20 @@ describe("bed squares on Every bed (wave 4, notes 2)", () => {
   });
 });
 
-describe("Checking strip words (wave 4 mock-up)", () => {
-  it('puts the held-up number straight after its label, then the window: "Held up 1 · by tomorrow"', () => {
-    const { wardBand } = wardHeroTopParts({
-      unit: allUnits()[0]!,
-      states: { ready: 0, occupied: 0 } as BedStateCounts,
-      now: NOW_ANCHOR,
-      isPhone: false,
-      arrivalsToday: 0,
-      openArrivals: () => undefined,
-      actNowCount: 0,
-      heldUpCount: 1,
-      pastDateCount: 2,
-      bedCountsStale: false,
-      staffedSpecialling: 0,
-      obsNotRecorded: 0,
-      bedFilter: "all",
-      pickBedFilter: () => undefined,
-      openShiftTodo: () => undefined,
-    });
-    render(<>{wardBand}</>);
-    const text = (screen.getByTestId("ward-hero-checking").textContent ?? "").replace(/\s+/gu, " ");
-    expect(text).toContain("Held up 1 · by tomorrow");
-    expect(text).toContain("Past date 2");
+describe("Checking words in the ward's checks card (UX review, D-270)", () => {
+  it("lists held up, past date and Obs not recorded on the card that replaced the hero's Checking band", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <WardScreen unitId="rph-adult-secure" />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    const text = (screen.getByTestId("ward-checks-foot").textContent ?? "").replace(/\s+/gu, " ");
+    expect(text).toContain(BED_RELEASE_BLOCKED_FIGURE_LABEL);
+    expect(text).toContain("Past expected date");
+    expect(text).toMatch(/Obs not recorded ?\d+/u);
+    expect(screen.queryByTestId("ward-hero-checking")).toBeNull();
   });
 });
 

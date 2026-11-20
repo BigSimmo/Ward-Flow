@@ -219,3 +219,12 @@
     min-width: 0;
   }
 }
+
+/* UX review (D-270): the tools row in the one Statistics header. */
+.heroToolRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  margin-top: var(--wf-s-3);
+}

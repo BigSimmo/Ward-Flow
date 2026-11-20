@@ -143,6 +143,8 @@ import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placemen
 import { WardScreenHomeSection } from "./ward-screen-home-section";
 import { useWardPullThenArrive, WardPullBedChoice } from "./ward-pull-then-arrive";
 import { obsNotRecordedCount } from "./ward-screen-derivations";
+import { WardPackPrintedLine } from "./ward-pack-printed-line";
+import { SAMPLE_OBSERVATION_MIX_LABEL } from "@/components/ward-management/ward-sample-choices";
 import { arrivalsExpectedToday } from "./ward-coming-and-going-rows";
 import { WardAcceptDialog, WardScreenDecisionJobs } from "./ward-on-demand";
 import type { DecisionReport } from "./ward-decisions-cockpit";
@@ -1990,12 +1992,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     </>
   );
   const wardHeroFoot = (
-    <span className={styles.heroFootStack}>
+    <span className={styles.heroFootStack} data-testid="ward-checks-foot">
       <span className={styles.heroMeta}>
         <Clock strokeWidth={1.75} size={14} aria-hidden="true" className={styles.heroMetaIcon} />
         <span>{shiftLine(now)}</span>
         {" · "}
-        {wardMeta} · {staffedSpecialling} staff on constant observation
+        {wardMeta} · {staffedSpecialling} staff on constant observation{" "}
+        {/* D-189 item 2: the sample day's observation levels are a sample mix until Josh sets one. */}
+        <span data-testid="ward-hero-obs-sample">({SAMPLE_OBSERVATION_MIX_LABEL})</span>
       </span>
       <CheckingFoot
         items={[
@@ -2016,10 +2020,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             label: "Past expected date",
             value: bedsList.filter((bed) => bed.pastDate).length,
           },
+          // Ruling 10 (D-191), moved from the hero band (D-270): so 0 staff is not read as "nobody needs obs".
+          { id: "obs-not-recorded", label: "Obs not recorded", value: wardHeroTop.obsNotRecorded },
         ]}
         notChecked={["roster, no feed"]}
-        // On a phone this line sits on the white "Ward details and checks" card, not the dark hero.
-        surface={isPhone ? "page" : "hero"}
+        // UX review (D-270): on every layout this line sits on the white checks card, not the dark hero.
+        surface="page"
       />
     </span>
   );
@@ -2028,6 +2034,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       {/* Walk-through WT-18: "Capacity", so it does not read as the morning bed numbers being confirmed. */}
       {unit.allocatable.source === "ward" ? "Capacity confirmed" : "Last capacity figure"}{" "}
       {formatInstant(unit.allocatable.confirmedAt)} · {ageText(unit.allocatable.confirmedAt, now)}
+      {/* Batch 4 item 24 (D-142): the outage pack's time, after the capacity time (it left the hero band). */}
+      <WardPackPrintedLine unitId={unit.id} now={now} lead=" · " />
     </span>
   );
 
@@ -2229,7 +2237,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             openCapacityModal={openCapacityModal}
             heroTitle={shiftLine(now)}
             wardHeroTop={wardHeroTop}
-            wardHeroMeta={isPhone ? null : <span className={styles.heroMeta}>{wardMeta}</span>}
             decisionsDue={decisionsDue > 0}
             selectActiveTab={selectActiveTab}
             wardMoreMenu={wardMoreMenu}

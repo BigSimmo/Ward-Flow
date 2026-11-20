@@ -210,7 +210,12 @@ export function CapacityHero({
       eyebrow={site || service !== null ? (site ? place : `${place}, not only ${service}`) : undefined}
       phoneEyebrow={site || service !== null ? "show" : undefined}
       // Design lane A (14 Nov 2026): one short page title, the sidebar's name for the page.
-      title="Capacity"
+      // UX review (D-270, pattern A): the bar names the page; the hero says what it shows.
+      title={
+        <>
+          Beds <span className={pageTop.soft}>right now</span>
+        </>
+      }
       aside={<PageLiveChip paused={live.paused} onTogglePause={live.togglePause} />}
     >
       <HeroTop

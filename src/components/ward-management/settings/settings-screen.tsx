@@ -899,6 +899,10 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   // The rule editor, then the rules file and the reference tables that go with it.
   const rulesContent = editsRules ? (
     <>
+      {/* UX review (D-270): the filter of the rules sits with the rules, not in the tab row. */}
+      <div className={rx.rulesFilter} data-setting="changed-only">
+        <ChangedOnlySwitch checked={changedOnly} onChange={setChangedOnly} awayFromDefault={awayFromDefault} />
+      </div>
       <SettingsRulesPane
         draft={draft}
         configuration={configuration}
@@ -1432,20 +1436,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
               );
             })}
           </div>
-          {editsRules ? <span className={cx(folderTabClasses.rule)} aria-hidden="true" /> : null}
-          {editsRules ? (
-            <span className={cx(folderTabClasses.filters, rx.folderFilter)} data-setting="changed-only">
-              <ChangedOnlySwitch
-                checked={changedOnly}
-                onChange={(on) => {
-                  setChangedOnly(on);
-                  if (on) showSection("rules");
-                }}
-                awayFromDefault={awayFromDefault}
-                compact
-              />
-            </span>
-          ) : null}
+          {/* UX review (D-270): the Changed from default switch moves into the Rules tab. */}
         </FolderTabs>
 
         {refusedLine}

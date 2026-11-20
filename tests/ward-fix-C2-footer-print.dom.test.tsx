@@ -26,9 +26,8 @@ import { forgetDowntimePack } from "@/components/ward-management/reports/downtim
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { WardSharedSaveContext } from "@/components/ward-management/shell/ward-shared-save-context";
 import { useWardFlowSelect, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { allUnits, DEMONSTRATION_DAY_LABEL, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
-import { wardHeroTopParts } from "@/components/ward-management/ward/ward-hero-top-parts";
+import { DEMONSTRATION_DAY_LABEL, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { ToastProvider } from "@/components/wf";
 
 afterEach(() => {
@@ -115,32 +114,18 @@ describe("3.3 a pack print is recorded only when the person says it printed", ()
 });
 
 describe("3.5 the ward page's constant observation figure is labelled as staff", () => {
-  it("names the figure as staff, matching its spoken label", () => {
-    const unit = allUnits()[0]!;
-    const { wardBand } = wardHeroTopParts({
-      unit,
-      states: { ready: 0, occupied: 0 } as BedStateCounts,
-      now: NOW_ANCHOR,
-      isPhone: false,
-      arrivalsToday: 0,
-      openArrivals: () => undefined,
-      actNowCount: 0,
-      heldUpCount: 0,
-      pastDateCount: 0,
-      bedCountsStale: false,
-      staffedSpecialling: 2,
-      obsNotRecorded: 0,
-      bedFilter: "all",
-      pickBedFilter: () => undefined,
-      openShiftTodo: () => undefined,
-    });
-    render(<>{wardBand}</>);
-    const band = screen.getByTestId("ward-hero-checking");
-    // Wave 4 (D-191): the mock words the cell "Staff on constant obs".
-    expect(band).toHaveTextContent("Staff on constant obs");
-    expect(band.textContent).not.toMatch(/Constant obs(?! staff)/);
-    // The band speaks a cell's ariaLabel only when the cell is pressable, so read the label it is given.
-    const cells = (wardBand.props as { cells: { id: string; ariaLabel?: string }[] }).cells;
-    expect(cells.find((cell) => cell.id === "obs")?.ariaLabel).toBe("Staff on constant observation: 2");
+  it("names the figure as staff on the ward's checks card, beside the sample mix label", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <WardScreen unitId="rph-adult-secure" />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    // UX review (D-270): the hero's Checking band left for the page's checks card.
+    const card = screen.getByTestId("ward-checks-foot");
+    expect(card).toHaveTextContent(/\d+ staff on constant observation/u);
+    expect(card.textContent).not.toMatch(/Constant obs(?! staff)/);
+    expect(screen.queryByTestId("ward-hero-checking")).toBeNull();
   });
 });
