@@ -683,11 +683,6 @@
   align-items: stretch;
 }
 
-.folderFilter {
-  display: flex;
-  align-items: center;
-}
-
 .phoneTop > div:last-child {
   flex-direction: column;
   align-items: stretch;

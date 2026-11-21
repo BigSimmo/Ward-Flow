@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import { cookies, headers } from "next/headers";
 import { resolveMetadataBase } from "@/lib/metadata-base";
 import {
-  APP_THEME_COLORS,
+  APP_CHROME_COLORS,
   FIRST_PAINT_STYLE,
   GLARE_BOOTSTRAP_SCRIPT,
   GLARE_COOKIE_NAME,
@@ -107,8 +107,8 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
   colorScheme: "light dark",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: APP_THEME_COLORS.light },
-    { media: "(prefers-color-scheme: dark)", color: APP_THEME_COLORS.dark },
+    { media: "(prefers-color-scheme: light)", color: APP_CHROME_COLORS.light },
+    { media: "(prefers-color-scheme: dark)", color: APP_CHROME_COLORS.dark },
   ],
 };
 

@@ -804,6 +804,9 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
         </div>
 
         <div className={styles.layout}>
+          {/* D-276: wider screens show Counts to check above the cards (D-270), so it comes first in
+              reading order too, not only on screen. */}
+          {isPhone ? null : rail}
           <div className={styles.wardsColumn}>
             {placed.length === 0 ? (
               <Card className={cx(styles.emptyCard, styles.wrapText)}>
@@ -920,9 +923,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             >
               {rail}
             </PhoneSheet>
-          ) : (
-            rail
-          )}
+          ) : null}
         </div>
 
         {unplaced.length > 0 ? (

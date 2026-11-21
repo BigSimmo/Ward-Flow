@@ -1184,7 +1184,6 @@
   }
 
   .layout > .rail {
-    order: -1;
     display: flex;
   }
 

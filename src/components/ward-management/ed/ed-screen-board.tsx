@@ -125,8 +125,8 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
               size="sm"
               value={patientSort}
               onChange={setPatientSort}
+              // D-276: the same two orders as the laptop board's column heads (D-270 dropped "Current order").
               items={[
-                { id: "current", label: "Current order" },
                 { id: "longest", label: "Longest in ED" },
                 { id: "name", label: "Patient name" },
               ]}

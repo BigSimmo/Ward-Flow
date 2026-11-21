@@ -1946,20 +1946,15 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     setActiveTab("attn");
     setPhonePanel("shift");
   };
+  const obsNotRecorded = obsNotRecordedCount(unit.id, admissions ?? []);
   const wardHeroTop = {
     unit,
     states,
-    now,
-    isPhone,
     // Review F-3: only people expected today, the same rule the Arrivals list uses.
     arrivalsToday: arrivalsExpectedToday(accepted, now).length,
     openArrivals: () => showHome("ward-flow"),
     actNowCount,
-    heldUpCount: blockedReleases.length,
-    pastDateCount: bedsList.filter((bed) => bed.pastDate).length,
-    bedCountsStale,
-    staffedSpecialling,
-    obsNotRecorded: obsNotRecordedCount(unit.id, admissions ?? []),
+    obsNotRecorded,
     bedFilter,
     pickBedFilter,
     openShiftTodo,
@@ -1991,6 +1986,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         : ""}
     </>
   );
+  // D-276: the checks card's counts on one line while it is folded (one-column layouts).
+  const pastDateCount = bedsList.filter((bed) => bed.pastDate).length;
+  const wardChecksSummary = `${bedCountsStale ? "Bed counts old · " : ""}Releases held up ${blockedReleases.length} · Past expected date ${pastDateCount} · Obs not recorded ${obsNotRecorded}`;
   const wardHeroFoot = (
     <span className={styles.heroFootStack} data-testid="ward-checks-foot">
       <span className={styles.heroMeta}>
@@ -2018,10 +2016,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           {
             id: "past",
             label: "Past expected date",
-            value: bedsList.filter((bed) => bed.pastDate).length,
+            value: pastDateCount,
           },
           // Ruling 10 (D-191), moved from the hero band (D-270): so 0 staff is not read as "nobody needs obs".
-          { id: "obs-not-recorded", label: "Obs not recorded", value: wardHeroTop.obsNotRecorded },
+          { id: "obs-not-recorded", label: "Obs not recorded", value: obsNotRecorded },
         ]}
         notChecked={["roster, no feed"]}
         // UX review (D-270): on every layout this line sits on the white checks card, not the dark hero.
@@ -2312,6 +2310,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           setPhoneWalking={setPhoneWalking}
           now={now}
           wardHeroFoot={wardHeroFoot}
+          wardChecksSummary={wardChecksSummary}
           wardHeroFootAside={wardHeroFootAside}
           bedQuery={bedQuery}
           setBedQuery={setBedQuery}

@@ -20,6 +20,15 @@ export const APP_THEME_COLORS = {
   dark: "#0b0e11",
 } as const satisfies Record<ResolvedTheme, string>;
 
+/* The browser chrome (Android status bar, installed-app title bar) sits on top of the navy header,
+   so `theme-color` uses the header's own navy (--wf-hero-1 in ward-flow-v9-tokens.css) in both
+   themes, not the page background (D-276). Glare mode keeps a light header, so it keeps
+   APP_THEME_COLORS.light. Re-check both whenever --wf-hero-1 moves. */
+export const APP_CHROME_COLORS = {
+  light: "#22384d",
+  dark: "#22374d",
+} as const satisfies Record<ResolvedTheme, string>;
+
 /** localStorage key for an explicit light/dark pin. */
 export const THEME_STORAGE_KEY = "clinical-kb-theme";
 
@@ -50,7 +59,7 @@ export const LEGACY_WARD_APPEARANCE_KEY = "ward-flow-appearance";
  * clause — this string ships in every page's `<head>`. Its cookie write is Secure over https, as in
  * `./theme-client` (live audit item 18).
  */
-export const THEME_BOOTSTRAP_SCRIPT = `(function(){var K="${THEME_STORAGE_KEY}",L="${LEGACY_WARD_APPEARANCE_KEY}",t=null;try{t=localStorage.getItem(K);var w=localStorage.getItem(L);if(t!=="light"&&t!=="dark"&&(w==="light"||w==="dark")){t=w;localStorage.setItem(K,w);try{document.cookie="${THEME_COOKIE_NAME}="+w+"; path=/; max-age=31536000; SameSite=Lax"+(location.protocol==="https:"?"; Secure":"");}catch(e){/* cookie blocked - storage still holds the pin */}}if(w!==null)localStorage.removeItem(L);}catch(e){/* storage blocked (private/partitioned) - fall through to the cookie, then the OS preference */}if(t!=="light"&&t!=="dark"){t=null;try{var m=document.cookie.match(/(?:^|; )${THEME_COOKIE_NAME}=(light|dark)(?:;|$)/);if(m)t=m[1];}catch(e){/* cookie access blocked (sandboxed frame) - the OS preference below applies */}}var r=document.documentElement,q=null;try{q=window.matchMedia("(prefers-color-scheme: dark)");}catch(e){/* no matchMedia - treat the OS as light */}function paint(d){r.classList.toggle("dark",d);var c=d?"${APP_THEME_COLORS.dark}":"${APP_THEME_COLORS.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(x){x.setAttribute("content",c);});}if(r.setAttribute){if(t)r.setAttribute("data-theme",t);else r.removeAttribute("data-theme");}paint(t?t==="dark":!!(q&&q.matches));try{q.addEventListener("change",function(){if(!r.getAttribute("data-theme"))paint(q.matches);});}catch(e){/* old browser - Auto follows the OS on the next load */}})();`;
+export const THEME_BOOTSTRAP_SCRIPT = `(function(){var K="${THEME_STORAGE_KEY}",L="${LEGACY_WARD_APPEARANCE_KEY}",t=null;try{t=localStorage.getItem(K);var w=localStorage.getItem(L);if(t!=="light"&&t!=="dark"&&(w==="light"||w==="dark")){t=w;localStorage.setItem(K,w);try{document.cookie="${THEME_COOKIE_NAME}="+w+"; path=/; max-age=31536000; SameSite=Lax"+(location.protocol==="https:"?"; Secure":"");}catch(e){/* cookie blocked - storage still holds the pin */}}if(w!==null)localStorage.removeItem(L);}catch(e){/* storage blocked (private/partitioned) - fall through to the cookie, then the OS preference */}if(t!=="light"&&t!=="dark"){t=null;try{var m=document.cookie.match(/(?:^|; )${THEME_COOKIE_NAME}=(light|dark)(?:;|$)/);if(m)t=m[1];}catch(e){/* cookie access blocked (sandboxed frame) - the OS preference below applies */}}var r=document.documentElement,q=null;try{q=window.matchMedia("(prefers-color-scheme: dark)");}catch(e){/* no matchMedia - treat the OS as light */}function paint(d){r.classList.toggle("dark",d);var c=d?"${APP_CHROME_COLORS.dark}":"${APP_CHROME_COLORS.light}";document.querySelectorAll('meta[name="theme-color"]').forEach(function(x){x.setAttribute("content",c);});}if(r.setAttribute){if(t)r.setAttribute("data-theme",t);else r.removeAttribute("data-theme");}paint(t?t==="dark":!!(q&&q.matches));try{q.addEventListener("change",function(){if(!r.getAttribute("data-theme"))paint(q.matches);});}catch(e){/* old browser - Auto follows the OS on the next load */}})();`;
 
 /**
  * Shared design parts item 12 (Josh, 13 Nov 2026; F-62): in dark mode the first frame flashed white

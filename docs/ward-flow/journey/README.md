@@ -74,6 +74,11 @@ transition or record effects and evidence; event names alone are insufficient. R
 are an explicit local command. Provider state, backup/restore and physical-device acceptance remain
 separate checks. The guide below is retained historical evidence rather than current instructions.
 
+Source digests re-reviewed for D-276 (22 November 2026):
+
+- `ward/ward-screen.tsx`: the checks card's folded one-line summary is built beside the Checking line, and six unused hero inputs were removed. No dispatch, payload, role or cited line changed.
+- `settings/settings-screen.tsx`: the rules filter switch renders once on a phone (it showed twice). No dispatch, role or cited line changed.
+
 Source digests re-reviewed for D-275 (22 November 2026):
 
 - `ward-flow-reducer.ts`: `CLEAR_EXPECT_FLAG` now also clears the flag the wait raised by itself (`expectReviewDue` in `ward-expect-review.ts`), storing it with `automatic: true` and moving an earlier cleared flag to the history. Its notes and refusal row say so. Every other event is unchanged; one import and the longer case moved later citations down by one to twenty lines.

@@ -584,7 +584,10 @@ function ToolsSheetView({
     window.requestAnimationFrame(() => {
       const scroller = sheetScroller();
       if (scroller) scroller.scrollTop = listScroll;
-      document.querySelector<HTMLElement>(`[data-testid="ward-tools-toggle-${id}"]`)?.focus({ preventScroll: true });
+      // D-276: a tool opened from a chip may have no row in Most used; then focus goes back to Search.
+      (document.querySelector<HTMLElement>(`[data-testid="ward-tools-toggle-${id}"]`) ?? searchRef.current)?.focus({
+        preventScroll: true,
+      });
     });
   };
 
@@ -980,7 +983,8 @@ function ToolsSheetView({
   const mostUsed = groups.flatMap((group) =>
     group.entries.slice(0, mostUsedTake[group.id]).map((entry) => ({ entry, group: group.id })),
   );
-  const showMostUsed = !words && !showAllTools;
+  // D-276: a desk with ten tools or fewer has nothing to hide, so it shows its full list.
+  const showMostUsed = !words && !showAllTools && matches > mostUsed.length;
 
   // Q309: recent tools first; until there are any, the desk's likely three.
   // Only tools this desk lists, so a chip remembered from another desk never opens here.
@@ -1307,7 +1311,19 @@ function ToolsSheetView({
               </h3>
               <div className={styles.card} data-tool-group="most-used">
                 {mostUsed.map(({ entry, group }) => renderRow(entry, group))}
-                <button type="button" className={styles.showMore} onClick={() => setShowAllTools(true)}>
+                <button
+                  type="button"
+                  className={styles.showMore}
+                  onClick={() => {
+                    // D-276: the button goes once pressed, so focus moves to the first tool of the full list.
+                    setShowAllTools(true);
+                    window.requestAnimationFrame(() =>
+                      document
+                        .querySelector<HTMLElement>("[data-tool-group] button, [data-tool-group] a")
+                        ?.focus({ preventScroll: true }),
+                    );
+                  }}
+                >
                   Show all {matches} tools
                   <ChevronDown aria-hidden="true" strokeWidth={1.75} />
                 </button>

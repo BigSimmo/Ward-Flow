@@ -373,6 +373,19 @@ describe("disabled and pre-paint values", () => {
     expect(appThemeColors).toContain(`dark: "${colourOf(v2Dark, "--background")}"`);
   });
 
+  it("keeps the browser chrome colours on the navy header (D-276)", () => {
+    // theme-color paints the Android status bar and installed-app title bar above the header.
+    const theme = readFileSync(new URL("../src/lib/theme.ts", import.meta.url), "utf8");
+    const v9 = readFileSync(new URL("../src/app/ward-flow-v9-tokens.css", import.meta.url), "utf8");
+    const chrome = sourceFrom(theme, "export const APP_CHROME_COLORS", {
+      label: "theme.ts export const APP_CHROME_COLORS",
+    });
+    const heroes = [...v9.matchAll(/--wf-hero-1:\s*(#[0-9a-f]{6});/gi)].map((match) => match[1].toLowerCase());
+    for (const value of [...chrome.matchAll(/(?:light|dark): "(#[0-9a-f]{6})"/gi)].map((match) => match[1])) {
+      expect(heroes, `${value} is no longer a --wf-hero-1 value`).toContain(value.toLowerCase());
+    }
+  });
+
   it("keeps the brand mark on the current accent", () => {
     // The favicon and generated icon routes render outside any stylesheet, so they hard-code
     // the brand colours. Since D-261 the BedChart mark takes them from the v9 kit, which

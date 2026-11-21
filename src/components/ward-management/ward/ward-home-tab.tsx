@@ -75,6 +75,7 @@ import {
   SrOnly,
   StatusGlyph,
   useIsPhone,
+  useMediaQuery,
   type WfTone,
 } from "@/components/wf";
 import { MissingValue } from "@/components/wf/missing-value";
@@ -109,6 +110,9 @@ import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 
 // The arrival identity check loads on first use, so it adds nothing to the ward page's first load.
+/** One column below this width (`.homeTop` in the CSS module repeats it). */
+const WARD_HOME_STACKED_QUERY = "(max-width: 70rem)";
+
 const ArrivalIdentityDialog = dynamic(
   withLoadRetry(() =>
     import("@/components/ward-management/arrival-identity-dialog").then((m) => m.ArrivalIdentityDialog),
@@ -221,6 +225,8 @@ interface WardHomeTabProps {
   phoneHeroFoot?: React.ReactNode;
   /** Phone: the one line under Ward figures, right now, while it is closed. */
   phoneFiguresSummary?: string;
+  /** Desktop and tablet: the checks card's counts on one line, shown while it is folded (D-276). */
+  checksSummary?: string;
   /** Phone: the find box, which sits under Every bed. */
   phoneFind?: React.ReactNode;
   /** Phone: the shift name and hours, under the This shift sheet's title. */
@@ -291,6 +297,7 @@ export function WardHomeTab({
   onShiftSheetOpenChange,
   phoneHeroFoot,
   phoneFiguresSummary,
+  checksSummary,
   phoneFind,
   phoneShiftLabel,
   onWalkingChange,
@@ -300,6 +307,8 @@ export function WardHomeTab({
 }: WardHomeTabProps) {
   const [, startTransition] = useTransition();
   const phoneSheets = phonePanel !== undefined;
+  // The page goes to one column at 70rem (`.homeTop` in the CSS module); the checks card folds there (D-276).
+  const stackedLayout = useMediaQuery(WARD_HOME_STACKED_QUERY);
   const {
     bedReleases,
     leaveBeds = [],
@@ -1458,6 +1467,27 @@ export function WardHomeTab({
           </div>
         ) : null}
         {phoneBoardHint !== null && boardWaitingCount > 0 ? phoneBoardHint : null}
+        {/* UX review (D-270, pattern D; placement D-276): what left the hero. Beside the beds it sits
+            open above Coming and going; once the page is one column it comes first, folded, with its
+            counts on one line, so it is not a scroll below the whole bed grid. */}
+        {!phoneSheets && phoneHeroFoot ? (
+          <details
+            key={stackedLayout ? "stacked" : "side"}
+            open={!stackedLayout}
+            className={`${styles.phoneFigures} ${styles.deskChecks}`}
+            data-testid="ward-desk-checks"
+          >
+            <summary>
+              <span className={styles.phoneFiguresTitle}>Checks and ward details</span>
+              {(stackedLayout ? checksSummary : phoneFiguresSummary) ? (
+                <span className={styles.phoneFiguresLine}>{stackedLayout ? checksSummary : phoneFiguresSummary}</span>
+              ) : null}
+            </summary>
+            <div className={styles.phoneFiguresBody}>
+              <div className={styles.phoneFiguresFoot}>{phoneHeroFoot}</div>
+            </div>
+          </details>
+        ) : null}
         <Card
           hidden={bedArea ? true : undefined}
           className={`${styles.areaBeds} ${styles.v6Card}`}
@@ -1670,7 +1700,7 @@ export function WardHomeTab({
             <summary>
               {/* Audit 11 Oct 2026: the bed counts here repeated the hero and the group headings, so
                   the fold keeps only the ward's details and what is not checked. */}
-              <span className={styles.phoneFiguresTitle}>Ward details and checks</span>
+              <span className={styles.phoneFiguresTitle}>Checks and ward details</span>
               {phoneFiguresSummary ? <span className={styles.phoneFiguresLine}>{phoneFiguresSummary}</span> : null}
             </summary>
             <div className={styles.phoneFiguresBody}>
@@ -1679,23 +1709,7 @@ export function WardHomeTab({
           </details>
         ) : null}
 
-        {phoneSheets ? null : (
-          <div className={styles.flowWrap}>
-            {/* UX review (D-270, pattern D): what left the hero, in the page above Coming and going. */}
-            {phoneHeroFoot ? (
-              <details open className={`${styles.phoneFigures} ${styles.deskChecks}`} data-testid="ward-desk-checks">
-                <summary>
-                  <span className={styles.phoneFiguresTitle}>Checks and ward details</span>
-                  {phoneFiguresSummary ? <span className={styles.phoneFiguresLine}>{phoneFiguresSummary}</span> : null}
-                </summary>
-                <div className={styles.phoneFiguresBody}>
-                  <div className={styles.phoneFiguresFoot}>{phoneHeroFoot}</div>
-                </div>
-              </details>
-            ) : null}
-            {renderFlowCard()}
-          </div>
-        )}
+        {phoneSheets ? null : <div className={styles.flowWrap}>{renderFlowCard()}</div>}
       </div>
 
       {phoneSheets ? (

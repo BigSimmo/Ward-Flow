@@ -141,6 +141,18 @@ export function watchWardPwaWorker(container: ServiceWorkerContainer, notices: (
       // updatefound may have fired before register() resolved. Watch that update too.
       watchInstalling();
       offer(registration, registration.waiting);
+      // D-276: an app left open across the morning release asks for the new worker when it comes
+      // back on screen, at most every 30 minutes, so the "New version" notice can appear.
+      let lastCheck = Date.now();
+      document.addEventListener(
+        "visibilitychange",
+        () => {
+          if (cancelled || document.visibilityState !== "visible" || Date.now() - lastCheck < 30 * 60_000) return;
+          lastCheck = Date.now();
+          registration.update().catch(() => {});
+        },
+        { signal: lifecycle.signal },
+      );
     } catch {
       // No worker (private mode, blocked, or offline at first load): Ward Flow works without one.
     }

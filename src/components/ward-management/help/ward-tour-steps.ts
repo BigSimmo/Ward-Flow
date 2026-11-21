@@ -298,7 +298,8 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "checking",
-          { sel: '[data-testid="ward-checks-foot"]' },
+          // D-276: in one column the checks card starts folded, so its title stands in for the line.
+          { sel: '[data-testid="ward-checks-foot"], [data-testid="ward-desk-checks"]:not([open]) > summary' },
           "What may be out of date",
           "Checking lists what the figures cannot vouch for, such as discharges held up, people past their expected date or a roster not recorded.",
         ),

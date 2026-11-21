@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { BRAND_DESCRIPTION, BRAND_NAME } from "@/lib/brand";
-import { APP_THEME_COLORS } from "@/lib/theme";
+import { APP_CHROME_COLORS, APP_THEME_COLORS } from "@/lib/theme";
 
 const WARD_FLOW = "/bedchart";
 const SHORTCUT_ICONS = [{ src: "/icons/icon-96", type: "image/png", sizes: "96x96" }];
@@ -9,9 +9,10 @@ const SHORTCUT_ICONS = [{ src: "/icons/icon-96", type: "image/png", sizes: "96x9
 // PWA manifest — makes the app installable with a proper icon. Icons derive from
 // the single brand-mark source: the SVG for modern browsers, plus generated PNG
 // "any" and "maskable" sets from app/icons/[variant]. The manifest takes one
-// colour, so it uses the light app colour (APP_THEME_COLORS.light) for the splash
-// screen and title bar; the page's own viewport.themeColor / meta theme-color
-// (app/layout.tsx and use-theme.ts) still follows light and dark once it loads.
+// colour each: the light page colour (APP_THEME_COLORS.light) for the splash screen,
+// and the header navy (APP_CHROME_COLORS.light) for the title bar so it matches the
+// header beneath it (D-276). The page's own meta theme-color (app/layout.tsx and
+// theme-client.ts) follows light and dark once it loads.
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: BRAND_NAME,
@@ -26,7 +27,7 @@ export default function manifest(): MetadataRoute.Manifest {
     dir: "ltr",
     display: "standalone",
     background_color: APP_THEME_COLORS.light,
-    theme_color: APP_THEME_COLORS.light,
+    theme_color: APP_CHROME_COLORS.light,
     // Prefer the standalone window but allow a graceful minimal-ui fallback on
     // platforms that cannot honour it; never fall back to fullscreen.
     display_override: ["standalone", "minimal-ui"],

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
-  APP_THEME_COLORS,
+  APP_CHROME_COLORS,
   GLARE_COOKIE_NAME,
   GLARE_STORAGE_KEY,
   THEME_COOKIE_NAME,
@@ -59,12 +59,12 @@ describe("the one theme switch", () => {
     setThemePreference("dark");
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     expect(document.documentElement.classList.contains("dark")).toBe(true);
-    expect(meta.content).toBe(APP_THEME_COLORS.dark);
+    expect(meta.content).toBe(APP_CHROME_COLORS.dark);
 
     setThemePreference("light");
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
     expect(document.documentElement.classList.contains("dark")).toBe(false);
-    expect(meta.content).toBe(APP_THEME_COLORS.light);
+    expect(meta.content).toBe(APP_CHROME_COLORS.light);
   });
 
   it("persists a pin in storage and the cookie the server layout reads, and clears both for system", () => {
