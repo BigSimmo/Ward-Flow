@@ -3112,7 +3112,8 @@ D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
 
 - **Date:** 21 November 2026, 11:48 AM AWST (03:48 UTC). **Decided by:** Josh, in the thread "Unblock open Ward Flow PRs", choosing "Yes, warnings by default" on "Turn the sign-out and rulings-index commit checks into warnings (PR #1724)?"
 - **Decision:** on a feature commit, the sign-out clash check and the generated-index checks (including the owner rulings index) warn instead of blocking. `PRECOMMIT_SIGNOUT_STRICT=1` and `PRECOMMIT_DOCS_SYNC_STRICT=1` make them block again. This amends AGENTS.md rule 7, which said the hook blocks a file another branch holds.
-- **Unchanged:** the push guard's in-flight CI and format checks still block (Josh was asked separately; this PR leaves them as they were). The secret and identifier scan, the Ward Flow repository and checkout guards, the direct `main` and `live` push block, the armed auto-merge force-push block and `--admission-only` still block. CI still checks the generated indexes. The rulings-first rule still applies: every ruling is a D entry in its PR.
+- **Push checks (Josh, 21 November 2026, 12:09 PM AWST, 04:09 UTC, choosing "Yes, warnings for both" on "Also let pushes go ahead with a warning during running CI or unformatted files (#1724)?"):** the push guard's in-flight CI and format checks also warn instead of blocking; `GUARD_PUSH_STRICT=1` makes them block again.
+- **Unchanged:** the secret and identifier scan, the Ward Flow repository and checkout guards, the direct `main` and `live` push block, the armed auto-merge force-push block and `--admission-only` still block. CI still checks the generated indexes. The rulings-first rule still applies: every ruling is a D entry in its PR.
 - **Boundary:** local Git hooks and agent rules only. No app, clinical rule, signed value or saved record changes.
 
 The next free number is D-273.

@@ -44,6 +44,7 @@ import {
   pushedTipMatchesHead,
   staticGuard,
   cleanupFormatCheckout,
+  demoteNonHardLineGuards,
   unlinkDependencyLink,
   isMainBranch,
   isWardFlowBranch,
@@ -615,7 +616,7 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     expect(verdict.runs).toHaveLength(1);
   });
 
-  it("documents blocking CI admission and named skips in the workflow linked by AGENTS.md", () => {
+  it("documents warn-by-default CI admission (D-272), strict mode and named skips in the workflow linked by AGENTS.md", () => {
     const agents = readFileSync(join(process.cwd(), "AGENTS.md"), "utf8");
     expect(agents).toContain("docs/agents/git-publication.md#normal-pushes-and-prs");
     const publication = readFileSync(join(process.cwd(), "docs/agents/git-publication.md"), "utf8");
@@ -623,7 +624,8 @@ describe("in-flight CI push guard (#HSSHRG)", () => {
     expect(normalPushes).toBeDefined();
     const line = normalPushes?.split("\n").find((entry) => entry.includes("in-flight CI push check"));
     expect(line).toBeDefined();
-    expect(line).toContain("is a blocking check, not an advisory one");
+    // D-272: the check warns by default and blocks only in strict mode.
+    expect(line).toContain("blocks only with `GUARD_PUSH_STRICT=1` (D-272)");
     expect(line).toContain("SKIP_IN_FLIGHT_CI_GUARD=1");
     expect(line).not.toContain("PREPUSH_CI_STRICT");
     expect(line).not.toMatch(/is advisory during interactive work/);
@@ -1226,5 +1228,28 @@ describe("guard-push main() wiring", () => {
     // Destination refusal happens before the other guards can contact GitHub.
     expect(result.stderr).not.toContain("gh not available");
     expect(result.stderr).not.toContain("auto-merge");
+  });
+
+  it("demotes only in-flight-ci and format failures unless GUARD_PUSH_STRICT=1", () => {
+    type GuardRow = { name: string; ok: boolean; message?: string; note?: string };
+    const sample: GuardRow[] = [
+      { name: "ward-flow-remote", ok: false, message: "bad remote" },
+      { name: "direct-main-push", ok: false, message: "no main push" },
+      { name: "auto-merge", ok: false, message: "armed force-push" },
+      { name: "in-flight-ci", ok: false, message: "ci busy" },
+      { name: "format", ok: false, message: "unformatted" },
+      { name: "static", ok: false, message: "lint fail" },
+    ];
+    const relaxed = demoteNonHardLineGuards(sample, { strict: false }) as GuardRow[];
+    expect(relaxed.find((r) => r.name === "ward-flow-remote")?.ok).toBe(false);
+    expect(relaxed.find((r) => r.name === "direct-main-push")?.ok).toBe(false);
+    expect(relaxed.find((r) => r.name === "auto-merge")?.ok).toBe(false);
+    expect(relaxed.find((r) => r.name === "static")?.ok).toBe(false);
+    expect(relaxed.find((r) => r.name === "in-flight-ci")?.ok).toBe(true);
+    expect(relaxed.find((r) => r.name === "in-flight-ci")?.note).toContain("warn-only on feature branch");
+    expect(relaxed.find((r) => r.name === "format")?.ok).toBe(true);
+
+    const strict = demoteNonHardLineGuards(sample, { strict: true }) as GuardRow[];
+    expect(strict.filter((r) => !r.ok)).toHaveLength(6);
   });
 });
