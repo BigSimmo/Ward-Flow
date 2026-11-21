@@ -16,6 +16,7 @@ import { typedClock } from "@/components/ward-management/ward-legal-time-as-type
 import { movementReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { arrivalTiming, arrivalTimingWords } from "@/components/ward-management/ward-arrival-timing";
+import { expectReviewDue, expectReviewTag } from "@/components/ward-management/ward-expect-review";
 import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
 import { arrivalEtaLabel, arrivalModeLabel } from "@/components/ward-management/referrals/arrival-time-modal";
 import { EdAdmissionChecklist } from "./ed-admission-checklist";
@@ -50,6 +51,7 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
   } = row;
   const { now, units, readmissionIndex } = ctx;
   const arrivalWords = arrivalTimingWords(arrivalTiming(movement, now), now);
+  const expectReview = expectReviewDue(movement, now);
   const linkedReferral =
     movement.referralId === undefined
       ? undefined
@@ -111,6 +113,13 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
         <span className={styles.sub} data-testid={`ward-ed-arrival-plan-${movement.id}`}>
           Ward ETA {arrivalEtaLabel(movement.arrivalDetails.estimatedArrivalAt, now)}
           {movement.arrivalDetails.trackingNumber ? ` · ${movement.arrivalDetails.trackingNumber}` : ""}
+        </span>
+      ) : null}
+      {/* D-275: not arrived after the signed wait (48 hours voluntary, 7 days not voluntary), or a
+          person's flag: review the plan. */}
+      {expectReview ? (
+        <span className={styles.expectReview} role="status" data-testid={`ward-ed-expect-review-${movement.id}`}>
+          <StatusGlyph tone="warning" size={10} /> {expectReviewTag(expectReview)}
         </span>
       ) : null}
       {/* D-221: the one arrival-timing rule and phrase (no "ETA in 0m" for the hour after the ETA). */}

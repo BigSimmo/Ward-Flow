@@ -742,7 +742,8 @@ terminal); "open" means no closure yet.
   movement exists; `startedAt`/`paperExpiresAt` finite; `formCode` recognised. Case at `:8264`.
 - **`CLEAR_EXPECT_FLAG`** — roles: `ward`, `coordinator`, `ed`, `community`. Effect: sets
   `movement.expectFlag.clearedAt`/`clearedBy`. Guards: movement exists; there must be an open
-  expect flag to clear. Case at `:8392`.
+  expect flag to clear, or one the wait raised by itself (D-275, `expectReviewDue` in
+  `ward-expect-review.ts`), which is stored with `automatic: true` as the review record. Case at `:8392`.
 - **`RAISE_EXPECT_FLAG`** — roles: same four. Effect: sets `movement.expectFlag` to
   `{raisedAt, kind}`. Guards: movement exists; refused if an open flag already exists; `kind` must
   be exactly `voluntary_48h`/`involuntary_7d`. Case at `:8405`.

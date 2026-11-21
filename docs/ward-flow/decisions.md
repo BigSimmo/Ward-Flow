@@ -288,6 +288,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-272](#d-272-the-sign-out-and-rulings-index-commit-checks-warn-by-default-21-november-2026)                                                                  | The sign-out and rulings-index commit checks warn by default                                                  | Active                                           |
 | [D-273](#d-273-weeklys-where-the-time-goes-gets-finished-steps-by-replaying-real-steps-after-the-freeze-21-november-2026)                                      | Weekly's "Where the time goes" gets finished steps by replaying real steps after the freeze                   | Active                                           |
 | [D-274](#d-274-the-22-november-merge-freeze-is-cancelled-21-november-2026)                                                                                     | The 22 November merge freeze is cancelled                                                                     | Active                                           |
+| [D-275](#d-275-the-48-hour-and-7-day-plan-review-flags-show-by-themselves-22-november-2026)                                                                    | The 48 hour and 7 day plan review flags show by themselves                                                    | Active                                           |
 
 ---
 
@@ -3133,4 +3134,13 @@ D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
 - **Unchanged:** release timing rules (no release while a test run is going, and not 19:00 to 22:00 UTC), auto-merge only, and the clinical sign-off rules. The release pause switch (`WARD_RELEASE_PAUSED`) stays off.
 - **Boundary:** a process rule only. No clinical rule, signed value, permission, screen or saved record changes. Synthetic data only.
 
-The next free number is D-275.
+## D-275. The 48 hour and 7 day plan review flags show by themselves (22 November 2026)
+
+- **Date:** 22 November 2026, 2:15 AM AWST (21 November, 18:15 UTC). **Decided by:** Josh, in the project chat: "no. Add the flags now as PR.", after "I approve." (21 November, 4:34 PM AWST) to building VALUE-047 and VALUE-048. This replaces the earlier plan to build them after the demonstration.
+- **Decision:** a person on an open movement who has not arrived on a ward is flagged for a plan review by itself once they have waited the signed time from the movement's start: 48 hours if voluntary (`expectFlagVoluntary`, VALUE-047) and 7 days if not voluntary (`expectFlagInvoluntary`, VALUE-048). Before this the flag existed only when someone pressed Raise expectation review flag.
+- **Rules as built:** the wait uses the named "not voluntary" rule (D-186 item 4), so a person with no legal status recorded gets the 48 hour wait, as the hand-raised flag always has. The flag goes once the person arrives (or transport records them delivered) or the movement closes. Clearing it (Clear expectation review flag) is the record that someone reviewed the plan; the review is stored with who cleared it and when, and the next wait counts from that clear. A flag a person raises by hand still shows until cleared. The flag never moves, frees or closes anything.
+- **Where it shows:** the coordinator's Home Flow list row, the ED board row (and the phone person sheet), the head line of the person's Now page while they are being placed or moved, and the movement's workflow actions, as "Review plan: not arrived after 48 hours" (or 7 days), or "Review plan: flagged by staff" for a hand-raised one.
+- **Unchanged:** both values stay as signed on 15 October 2026 (D-56); no new value is added. Clinical change: built in one held pull request, merged only on Josh's yes.
+- **Boundary:** synthetic data only. Not validated clinical decision support.
+
+The next free number is D-276.

@@ -321,7 +321,8 @@ capacity figure anywhere in this group is real.
     `legalMismatchKind`, `unitBedOfferBlocked` — thin re-exported/local warning helpers built on
     `ward-legal-clock.ts` and `ward-eligibility.ts` (arrival lateness, medical-clearance and
     leave-bed warnings, the 48h/7-day expect flag, person/ward legal mismatch, and single-room/
-    closed-bay offer blocking).
+    closed-bay offer blocking). The flag that shows on screen, raised by hand or by the wait
+    itself (D-275), is `expectReviewDue` in `ward-expect-review.ts`.
   - `candidateReason` — re-exported from `ward-eligibility.ts`, not defined here.
   - `stageCopy` — re-exported from `ward-stage-copy.ts` (see that file's own entry for why).
   - `WAITLIST_INSTEAD_OF_DECLINE_REASONS`, `GENDER_MISMATCH_DECLINE_REASON` — re-exported from
