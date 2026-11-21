@@ -36,7 +36,7 @@ type ExpectReviewMovement = Pick<
 >;
 
 /** The signed wait for each kind, in minutes. */
-export function expectReviewWaitMinutes(kind: ExpectReviewKind): number {
+function expectReviewWaitMinutes(kind: ExpectReviewKind): number {
   return kind === "involuntary_7d" ? EXPECT_FLAG_INVOLUNTARY_MINUTES : EXPECT_FLAG_VOLUNTARY_MINUTES;
 }
 
