@@ -36,6 +36,7 @@ import { reduceStaffRequest, type StaffRequestRecord } from "./staffing/staff-re
 import type { PilotControlState } from "./ward-flow-pilot-control-events";
 import { classifyLegalStatus, legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
 import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
+import { expectReviewDue } from "@/components/ward-management/ward-expect-review";
 import { authorisationBlocksPlacement } from "@/components/ward-management/ward-authorisation";
 import {
   EXAMINATION_COMMUNITY_ORDER_AWAITING_RELEASE,
@@ -2147,12 +2148,29 @@ export function reduceClinicalEvent(
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
       if (movement.closure) return reject(state, event, "This movement is closed.");
-      if (!movement.expectFlag || movement.expectFlag.clearedAt !== undefined) {
-        return reject(state, event, `movement ${movement.id} has no open expect flag to clear`);
+      if (movement.expectFlag && movement.expectFlag.clearedAt === undefined) {
+        const updated: Movement = {
+          ...movement,
+          expectFlag: { ...movement.expectFlag, clearedAt: event.now, clearedBy: event.role },
+        };
+        return replaceMovement(state, movement.id, updated);
       }
+      // D-275: the flag the wait raised by itself. Clearing it stores it, so the review is on the
+      // record and the next wait counts from now; an earlier cleared flag moves to the history.
+      const automatic = expectReviewDue(movement, event.now);
+      if (!automatic) return reject(state, event, `movement ${movement.id} has no open expect flag to clear`);
       const updated: Movement = {
         ...movement,
-        expectFlag: { ...movement.expectFlag, clearedAt: event.now, clearedBy: event.role },
+        expectFlag: {
+          raisedAt: automatic.since,
+          kind: automatic.kind,
+          automatic: true,
+          clearedAt: event.now,
+          clearedBy: event.role,
+        },
+        ...(movement.expectFlag
+          ? { expectFlagHistory: [...(movement.expectFlagHistory ?? []), movement.expectFlag] }
+          : {}),
       };
       return replaceMovement(state, movement.id, updated);
     }

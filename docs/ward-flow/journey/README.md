@@ -74,6 +74,14 @@ transition or record effects and evidence; event names alone are insufficient. R
 are an explicit local command. Provider state, backup/restore and physical-device acceptance remain
 separate checks. The guide below is retained historical evidence rather than current instructions.
 
+Source digests re-reviewed for D-275 (22 November 2026):
+
+- `ward-flow-reducer.ts`: `CLEAR_EXPECT_FLAG` now also clears the flag the wait raised by itself (`expectReviewDue` in `ward-expect-review.ts`), storing it with `automatic: true` and moving an earlier cleared flag to the history. Its notes and refusal row say so. Every other event is unchanged; one import and the longer case moved later citations down by one to twenty lines.
+- `movements/movement-workflow-actions.tsx`: the one expectation button sends `CLEAR_EXPECT_FLAG` whenever a flag shows, hand-raised or automatic, and a status line shows the flag. Other dispatches, payloads and roles are unchanged; cited lines moved.
+- `ed/ed-screen-row-facts.tsx`: a display-only line shows the flag on the ED row. No dispatch changed; cited lines moved.
+- `patients/patient-status-card.tsx`: the placement modes' head line adds the flag (display only). No dispatch, gate or role changed; cited lines moved.
+- `ward-model.ts`: an optional `automatic` field on the stored expect flag and its history. No stage or transition changed.
+
 Source digests re-reviewed for D-226 to D-228 (14 November 2026):
 
 - `ward-flow-record-legal-events.ts` and `ward-flow-events.ts`: `RECORD_LEGAL_FORM_WRITTEN`, `RECORD_LEGAL_FORM_CODE` and `RECORD_LEGAL_FORM_CONTINUATION` now refuse a 3C, 5B, 6C or 6D after a Form 3E unless the coordinator sends a listed `after3EReason` (D-226). Their "needs" notes and refusals say so. Other events in these files are unchanged; cited lines moved.

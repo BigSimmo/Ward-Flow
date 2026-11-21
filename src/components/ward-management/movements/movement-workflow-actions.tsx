@@ -15,6 +15,7 @@ import { perthDateTimeLocal } from "../ward-clock";
 import { legalFormTimeOrderProblem } from "../ward-legal-form-time-order";
 import { resolveSubjectPatient } from "../ward-patient-resolver";
 import { isNotVoluntary } from "@/components/ward-management/ward-legal-meaning";
+import { expectReviewDue, expectReviewTag } from "@/components/ward-management/ward-expect-review";
 import { authorisationBlocksPlacement } from "@/components/ward-management/ward-authorisation";
 import { legalRecordWarnings } from "@/components/ward-management/ward-legal-order-rules";
 import { refusedAfter3E, type After3EReason } from "@/components/ward-management/ward-legal-after-3e";
@@ -37,9 +38,9 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
   const gate = useRoleGate();
   // M9: a ward desk acts as its own ward, and is not offered the bed steps when the bed is elsewhere.
   const { acting, bedElsewhere } = useDeskActingWard(routeRole, movement.acceptedUnitId);
-  const expectationGate = gate(
-    movement.expectFlag && movement.expectFlag.clearedAt === undefined ? "CLEAR_EXPECT_FLAG" : "RAISE_EXPECT_FLAG",
-  );
+  // D-275: the flag shows by itself once the signed wait runs out, as well as when a person raises it.
+  const expectReview = expectReviewDue(movement, now);
+  const expectationGate = gate(expectReview ? "CLEAR_EXPECT_FLAG" : "RAISE_EXPECT_FLAG");
   const leaveGate = gate("EVALUATE_LEAVE_BED_WARNINGS");
   const mismatchGate = gate("FLAG_LEGAL_MISMATCH");
   const buzzGate = gate("SEND_WARD_BUZZ");
@@ -119,7 +120,7 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
             onClick={() => {
               if (!expectationGate.allowed) return;
               before();
-              if (movement.expectFlag && movement.expectFlag.clearedAt === undefined) {
+              if (expectReview) {
                 raise("CLEAR_EXPECT_FLAG", { movementId: movement.id });
               } else {
                 raise("RAISE_EXPECT_FLAG", {
@@ -129,11 +130,14 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
               }
             }}
           >
-            {movement.expectFlag && movement.expectFlag.clearedAt === undefined
-              ? "Clear expectation review flag"
-              : "Raise expectation review flag"}
+            {expectReview ? "Clear expectation review flag" : "Raise expectation review flag"}
           </button>
         )}
+        {open && expectReview ? (
+          <p role="status" data-testid={`workflow-expect-review-${movement.id}`}>
+            {expectReviewTag(expectReview)}
+          </p>
+        ) : null}
         {open && expectationGate.note}
         {/* D-221 item 8: no "Review late arrival" button. Late notices store themselves when the
             time is saved; the event stays only for older records and the server's sweep. */}
