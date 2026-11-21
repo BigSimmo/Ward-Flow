@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/his
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**827 rulings/items extracted, across 43 of 44 files.**
+**828 rulings/items extracted, across 43 of 44 files.**
 **0 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 **1 file(s) recorded as holding no ruling of their own**, each with its reason. See below.
 
@@ -32,7 +32,7 @@ line, in the order discovered — confirm which instance you mean before citing 
 
 ---
 
-## ID index — 577 distinct IDs
+## ID index — 578 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -436,6 +436,7 @@ safe global key across 30 files.
 | `D-272` | `decisions.md`:3113 | D-272. The sign-out and rulings-index commit checks warn by default (21 November 2026) |
 | `D-273` | `decisions.md`:3121 | D-273. Weekly's "Where the time goes" gets finished steps by replaying real steps after the freeze (21 November 2026) |
 | `D-274` | `decisions.md`:3128 | D-274. The 22 November merge freeze is cancelled (21 November 2026) |
+| `D-275` | `decisions.md`:3136 | D-275. Build every fix from the 21 November review of main; big visible changes are mocked up first (22 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -744,7 +745,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-265 item(s):
+266 item(s):
 
 - `D-1` — line 294, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 304, heading: "D-2. Railway is disconnected"
@@ -1011,6 +1012,7 @@ safe global key across 30 files.
 - `D-272` — line 3113, heading: "D-272. The sign-out and rulings-index commit checks warn by default (21 November 2026)"
 - `D-273` — line 3121, heading: "D-273. Weekly's "Where the time goes" gets finished steps by replaying real steps after the freeze (21 November 2026)"
 - `D-274` — line 3128, heading: "D-274. The 22 November merge freeze is cancelled (21 November 2026)"
+- `D-275` — line 3136, heading: "D-275. Build every fix from the 21 November review of main; big visible changes are mocked up first (22 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
