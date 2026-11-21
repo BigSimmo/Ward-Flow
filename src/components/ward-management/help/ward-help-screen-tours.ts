@@ -15,6 +15,10 @@ import type { HowTo, ShowMeStep } from "./ward-help-howto";
 import { type Around, HERO, id, MORE_PAGES, named, starts } from "./ward-help-screen-tours-pages";
 
 const PHONE_FIGURES = starts("wf-phone-hero-figure-");
+/** The folded checks card's title: the phone card, or the desk card in one column (D-276). */
+const FOLDED_CHECKS = {
+  sel: '[data-testid="ward-phone-figures"] > summary, [data-testid="ward-desk-checks"]:not([open]) > summary',
+};
 
 /**
  * One Show me step: the part to light (the first of its targets on screen), then what its card says
@@ -1082,29 +1086,15 @@ const AROUND: readonly Around[] = [
         title: "Contact and Staff needed",
         body: "Contact opens the ward's contact lines. Staff needed records a request for extra staff.",
       }),
-      // UX review (D-270): Checking left the hero for the checks card; on a phone, and in one column (D-276), that card is folded.
-      step(
-        [
-          id("ward-checks-foot"),
-          { sel: '[data-testid="ward-phone-figures"] > summary' },
-          { sel: '[data-testid="ward-desk-checks"]:not([open]) > summary' },
-        ],
-        {
-          title: "Checking",
-          body: "What the figures cannot vouch for, when the capacity was last confirmed, and whether the outage pack has been printed.",
-        },
-      ),
-      step(
-        [
-          id("ward-intake-window"),
-          { sel: '[data-testid="ward-phone-figures"] > summary' },
-          { sel: '[data-testid="ward-desk-checks"]:not([open]) > summary' },
-        ],
-        {
-          title: "Tonight's intake",
-          body: "The hours this ward takes admissions tonight. Edit sets them. It is in Checks and ward details.",
-        },
-      ),
+      // UX review (D-270): Checking left the hero for the checks card; on a phone that card is folded.
+      step([id("ward-checks-foot"), FOLDED_CHECKS], {
+        title: "Checking",
+        body: "What the figures cannot vouch for, when the capacity was last confirmed, and whether the outage pack has been printed.",
+      }),
+      step([id("ward-intake-window"), FOLDED_CHECKS], {
+        title: "Tonight's intake",
+        body: "The hours this ward takes admissions tonight. Edit sets them. It is in Checks and ward details.",
+      }),
       step(id("ward-tabs"), {
         title: "Ward tabs",
         body: "Ward home, Referrals for this ward to answer, and Decisions.",
