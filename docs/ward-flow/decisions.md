@@ -289,6 +289,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-273](#d-273-weeklys-where-the-time-goes-gets-finished-steps-by-replaying-real-steps-after-the-freeze-21-november-2026)                                      | Weekly's "Where the time goes" gets finished steps by replaying real steps after the freeze                   | Active                                           |
 | [D-274](#d-274-the-22-november-merge-freeze-is-cancelled-21-november-2026)                                                                                     | The 22 November merge freeze is cancelled                                                                     | Active                                           |
 | [D-275](#d-275-the-48-hour-and-7-day-plan-review-flags-show-by-themselves-22-november-2026)                                                                    | The 48 hour and 7 day plan review flags show by themselves                                                    | Active                                           |
+| [D-276](#d-276-build-every-fix-from-the-21-november-review-of-main-big-visible-changes-are-mocked-up-first-22-november-2026)                                   | Build every fix from the 21 November review of main; big visible changes are mocked up first                  | Active                                           |
 
 ---
 
@@ -3143,4 +3144,12 @@ D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
 - **Unchanged:** both values stay as signed on 15 October 2026 (D-56); no new value is added. Clinical change: built in one held pull request, merged only on Josh's yes.
 - **Boundary:** synthetic data only. Not validated clinical decision support.
 
-The next free number is D-276.
+## D-276. Build every fix from the 21 November review of main; big visible changes are mocked up first (22 November 2026)
+
+- **Date:** 22 November 2026, 2:54 AM AWST (21 November, 18:54 UTC). **Decided by:** Josh, in the project chat, answering the review in the thread "Review main for bugs before demo": "Go ahead and build and complete all of these for me", "Fix all bugs and issues" and "Please can you utilise a mockup for all issues for me where big design changes occurred".
+- **Decision:** the demo script is corrected for the D-270 layouts (Act 1's title "Beds right now", **Open** on the All EDs card, Act 5's "Checks and ward details" card). The claims that the ED list "is not re-sorted" are reworded: the ED board is sorted by time in ED or by name, never scored or ranked by any judgement. The review's small bugs (the ED tier key, Tools focus, the ED sort) and polish follow in a later pull request. A fix that changes the look of a page noticeably (such as the ward checks card at 820 or the Android status bar colour) is mocked up and approved before it is built. Whether the 6 am release ran is checked.
+- **Mock-ups approved:** 22 November 2026, 3:22 AM AWST (21 November, 19:22 UTC), Josh in the project chat: "Yes to all recommendations". Both are built in the fixes pull request: once the ward page is one column (70rem and below, such as an iPad at 820) the Checks and ward details card comes before Every bed, folded, with its counts on one line; and the browser status bar (`theme-color`, the installed app's title bar) uses the header navy in light and dark, not white or near black. Glare mode keeps white.
+- **Why:** the script must match the screen for the demo, and the ED board no longer offers "Current order" on a laptop.
+- **Boundary:** wording and small behaviour fixes only. No clinical rule, signed value, permission or saved record format changes. Synthetic data only.
+
+The next free number is D-277.
