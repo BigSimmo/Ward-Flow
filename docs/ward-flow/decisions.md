@@ -285,6 +285,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-269](#d-269-the-19-november-pre-demo-audit-fixes-go-ahead-as-recommended-19-november-2026)                                                                  | The 19 November pre-demo audit fixes go ahead as recommended                                                  | Active                                           |
 | [D-270](#d-270-the-20-november-ux-review-fixes-go-ahead-as-recommended-20-november-2026)                                                                       | The 20 November UX review fixes go ahead as recommended                                                       | Active                                           |
 | [D-271](#d-271-the-20-november-demo-re-walk-fixes-go-ahead-before-the-freeze-20-november-2026)                                                                 | The 20 November demo re-walk fixes go ahead before the freeze                                                 | Active                                           |
+| [D-272](#d-272-weeklys-where-the-time-goes-gets-finished-steps-by-replaying-real-steps-after-the-freeze-21-november-2026)                                      | Weekly's "Where the time goes" gets finished steps by replaying real steps after the freeze                   | Active                                           |
 
 ---
 
@@ -3107,4 +3108,11 @@ D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
 - **Why:** the 20 November re-walk of live b4adc2c1 found these as the small faults a demo audience could notice.
 - **Boundary:** wording, print and toast behaviour only. No clinical rule, signed value, event, permission or saved record changes. Synthetic data only.
 
-The next free number is D-272.
+## D-272. Weekly's "Where the time goes" gets finished steps by replaying real steps after the freeze (21 November 2026)
+
+- **Date:** 21 November 2026, 12:48 PM AWST (04:48 UTC). **Decided by:** Josh, on the decision card in the thread "Mock up the UX review changes", asking 'How should Weekly's "Where the time goes" get finished steps in the demo?'. He picked "Replay real steps after freeze" (the recommended option) over "Leave it as not recorded" and "Backfill and change the rule".
+- **Decision:** after the 22 November freeze, a few seeded journeys are walked through the real reducer events, so the app records true stage history and Weekly's "Where the time goes" shows finished steps. Nothing is backfilled: the standing rule that seeded journeys are never given invented stage history (`StageChange`, ward-model-movement-parts.ts) stays, with its tests.
+- **Why:** it shows finished steps without inventing history. It was too big a change for the freeze, so it was held back from D-270's first PR (#1721).
+- **Boundary:** the replayed journeys stay clearly apart from the plain seed, or any test that reads the plain seed (such as ward-waiting-stages' "not recorded" later stages) changes only with a stated reason. No clinical rule, signed value, permission or saved record format changes. Synthetic data only.
+
+The next free number is D-273.
