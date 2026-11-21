@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 
 import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
-import { splitDuration } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, splitDuration } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { SMALL_NUMBER_NOT_SHOWN } from "@/components/ward-management/ward-access-scope-records";
@@ -17,11 +17,13 @@ import {
 import {
   per100,
   pilotMeasures,
+  pilotSteps,
   type DurationSummary,
   type PilotMeasures,
   type PilotMeasuresInput,
 } from "./pilot-measures";
 import type { ReportWeek } from "./weekly-report";
+import { replayedJourneyMovements } from "./weekly-replayed-journeys";
 
 type ReportCount = StatisticsCount;
 type ReportDuration = Omit<DurationSummary, "sampleSize" | "population" | "median" | "p90"> & {
@@ -150,6 +152,7 @@ export function usePilotFigures(measures: WeeklyPilot) {
     held: durationFigure(measures.requestToBedHeld, "beds pulled"),
     steps,
     longestStepId: longest?.id,
+    replayedSampleJourneys: "replayedSampleJourneys" in measures ? measures.replayedSampleJourneys : undefined,
     requests: {
       raised: person(requests.raised),
       window: windowText(requests.windowMinutes),
@@ -196,7 +199,10 @@ export function useOperationalPilot(
     morningRollupConfirmations,
     morningRollupDeadlineMinutes,
   } = input;
-  return useMemo(
+  // D-273: the step figures also read the replayed sample journeys, which only move by whole days.
+  const today = Math.floor(now / MINUTES_PER_DAY);
+  const replayed = useMemo(() => replayedJourneyMovements(today * MINUTES_PER_DAY), [today]);
+  const measures = useMemo(
     () =>
       pilotMeasures(
         {
@@ -222,5 +228,13 @@ export function useOperationalPilot(
       morningRollupDeadlineMinutes,
       week,
     ],
+  );
+  return useMemo(
+    () => ({
+      ...measures,
+      steps: pilotSteps([...movements, ...replayed], week),
+      replayedSampleJourneys: replayed.length,
+    }),
+    [measures, movements, replayed, week],
   );
 }
