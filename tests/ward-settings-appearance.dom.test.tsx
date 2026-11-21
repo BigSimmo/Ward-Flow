@@ -21,7 +21,7 @@ import { applyAppearance, applyGlare } from "@/components/ward-management/shell/
 import { NextRailBody as WardRail } from "@/components/ward-management/shell-next/next-rail-body";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider } from "@/components/wf";
-import { APP_THEME_COLORS, GLARE_STORAGE_KEY } from "@/lib/theme";
+import { APP_CHROME_COLORS, GLARE_STORAGE_KEY } from "@/lib/theme";
 
 /**
  * 🔴 **THE APPEARANCE CONTROL, AND THE WHOLE REASON IT WAITED: IT MUST WRITE THE STATE THAT ALREADY
@@ -108,7 +108,7 @@ describe("the settings screen's appearance control", () => {
     meta.name = "theme-color";
     document.head.append(meta);
     act(() => applyAppearance("dark"));
-    expect(meta.content, "browser chrome colour drifted from the app theme").toBe(APP_THEME_COLORS.dark);
+    expect(meta.content, "browser chrome colour drifted from the app theme").toBe(APP_CHROME_COLORS.dark);
     meta.remove();
 
     fireEvent.click(within(panel).getByRole("radio", { name: "Light" }));

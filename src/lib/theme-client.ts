@@ -13,6 +13,7 @@
  * its own single writer, `setGlarePreference`. `GLARE_BOOTSTRAP_SCRIPT` is its pre-paint half.
  */
 import {
+  APP_CHROME_COLORS,
   APP_THEME_COLORS,
   GLARE_COOKIE_NAME,
   GLARE_ON_VALUE,
@@ -85,7 +86,7 @@ export function applyThemeToDocument(preference: ThemePreference): ResolvedTheme
   else root.setAttribute("data-theme", preference);
   root.classList.toggle("dark", resolved === "dark");
   for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
-    meta.content = APP_THEME_COLORS[resolved];
+    meta.content = glare ? APP_THEME_COLORS.light : APP_CHROME_COLORS[resolved];
   }
   return resolved;
 }

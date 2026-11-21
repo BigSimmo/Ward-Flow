@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  APP_CHROME_COLORS,
   APP_THEME_COLORS,
   GLARE_BOOTSTRAP_SCRIPT,
   GLARE_COOKIE_NAME,
@@ -39,6 +40,8 @@ describe("theme helpers", () => {
     // moved and this assertion did not, so the light value tracking
     // the root-mounted v2 layer is enforced in tests/design-token-contract.test.ts.
     expect(APP_THEME_COLORS).toEqual({ light: "#ffffff", dark: "#0b0e11" });
+    // The status bar matches the navy header in both themes (D-275).
+    expect(APP_CHROME_COLORS).toEqual({ light: "#22384d", dark: "#22374d" });
   });
 
   it("still applies the OS dark theme when localStorage is blocked", () => {
@@ -65,7 +68,7 @@ describe("theme helpers", () => {
 
     expect(toggle).toHaveBeenCalledWith("dark", true);
     expect(classes).toEqual(new Set(["ckb-v2", "dark"]));
-    expect(setAttribute).toHaveBeenCalledWith("content", APP_THEME_COLORS.dark);
+    expect(setAttribute).toHaveBeenCalledWith("content", APP_CHROME_COLORS.dark);
   });
 
   it("reads the appearance preference from the stored value", () => {
@@ -113,7 +116,7 @@ describe("theme helpers", () => {
     );
 
     expect(toggle).toHaveBeenCalledWith("dark", true);
-    expect(setAttribute).toHaveBeenCalledWith("content", APP_THEME_COLORS.dark);
+    expect(setAttribute).toHaveBeenCalledWith("content", APP_CHROME_COLORS.dark);
   });
 
   /** A fake <html> and storage, enough to run the pre-paint script end to end. */
@@ -169,7 +172,7 @@ describe("theme helpers", () => {
     page.run();
     expect(page.attributes.get("data-theme")).toBe("light");
     expect(page.classes.has("dark")).toBe(false);
-    expect(page.metas[0].content).toBe(APP_THEME_COLORS.light);
+    expect(page.metas[0].content).toBe(APP_CHROME_COLORS.light);
   });
 
   it("follows the OS with no data-theme when nothing is pinned, and keeps following it", () => {
@@ -179,7 +182,7 @@ describe("theme helpers", () => {
     expect(page.classes.has("dark")).toBe(false);
     page.fireOsChange(true);
     expect(page.classes.has("dark"), "Auto did not follow the OS change").toBe(true);
-    expect(page.metas[0].content).toBe(APP_THEME_COLORS.dark);
+    expect(page.metas[0].content).toBe(APP_CHROME_COLORS.dark);
   });
 
   it("leaves a pin alone when the OS changes", () => {

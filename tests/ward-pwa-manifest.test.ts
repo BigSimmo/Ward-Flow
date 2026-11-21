@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import manifest from "@/app/manifest";
 import { STARTUP_SCREENS, startupImages } from "@/app/icons/startup-images";
 import { generateStaticParams as iconParams } from "@/app/icons/[variant]/route";
-import { APP_THEME_COLORS } from "@/lib/theme";
+import { APP_CHROME_COLORS, APP_THEME_COLORS } from "@/lib/theme";
 import { config as proxyConfig } from "@/proxy";
 
 /** PWA plan items 1, 3, 7, 9, 10 and 14 (Oct 2026): the install surface. */
@@ -21,7 +21,7 @@ describe("web app manifest", () => {
   });
 
   it("uses the light app colour for the splash screen and title bar", () => {
-    expect(app.theme_color).toBe(APP_THEME_COLORS.light);
+    expect(app.theme_color).toBe(APP_CHROME_COLORS.light);
     expect(app.background_color).toBe(APP_THEME_COLORS.light);
   });
 

@@ -46,6 +46,8 @@ type WardScreenHomeSectionProps = {
   setPhoneWalking: Dispatch<SetStateAction<boolean>>;
   now: number;
   wardHeroFoot: ReactElement;
+  /** The checks card's counts on one line, shown while it is folded (D-275). */
+  wardChecksSummary: string;
   wardHeroFootAside: ReactElement;
   bedQuery: string;
   setBedQuery: Dispatch<SetStateAction<string>>;
@@ -149,6 +151,7 @@ export function WardScreenHomeSection({
   setPhoneWalking,
   now,
   wardHeroFoot,
+  wardChecksSummary,
   wardHeroFootAside,
   bedQuery,
   setBedQuery,
@@ -271,6 +274,7 @@ export function WardScreenHomeSection({
           </>
         }
         phoneFiguresSummary="Shift, roster, legal status and feeds"
+        checksSummary={wardChecksSummary}
         phoneFind={isPhone ? <WardPhoneFind value={bedQuery} onChange={setBedQuery} /> : undefined}
         unit={unit}
         onAcceptInPrinciple={handleAcceptInPrinciple}
