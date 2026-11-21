@@ -288,6 +288,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-272](#d-272-the-sign-out-and-rulings-index-commit-checks-warn-by-default-21-november-2026)                                                                  | The sign-out and rulings-index commit checks warn by default                                                  | Active                                           |
 | [D-273](#d-273-weeklys-where-the-time-goes-gets-finished-steps-by-replaying-real-steps-after-the-freeze-21-november-2026)                                      | Weekly's "Where the time goes" gets finished steps by replaying real steps after the freeze                   | Active                                           |
 | [D-274](#d-274-the-22-november-merge-freeze-is-cancelled-21-november-2026)                                                                                     | The 22 November merge freeze is cancelled                                                                     | Active                                           |
+| [D-275](#d-275-build-every-fix-from-the-21-november-review-of-main-big-visible-changes-are-mocked-up-first-22-november-2026)                                   | Build every fix from the 21 November review of main; big visible changes are mocked up first                  | Active                                           |
 
 ---
 
