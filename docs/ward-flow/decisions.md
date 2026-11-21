@@ -3133,4 +3133,11 @@ D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
 - **Unchanged:** release timing rules (no release while a test run is going, and not 19:00 to 22:00 UTC), auto-merge only, and the clinical sign-off rules. The release pause switch (`WARD_RELEASE_PAUSED`) stays off.
 - **Boundary:** a process rule only. No clinical rule, signed value, permission, screen or saved record changes. Synthetic data only.
 
-The next free number is D-275.
+## D-275. Build every fix from the 21 November review of main; big visible changes are mocked up first (22 November 2026)
+
+- **Date:** 22 November 2026, 2:54 AM AWST (21 November, 18:54 UTC). **Decided by:** Josh, in the project chat, answering the review in the thread "Review main for bugs before demo": "Go ahead and build and complete all of these for me", "Fix all bugs and issues" and "Please can you utilise a mockup for all issues for me where big design changes occurred".
+- **Decision:** the demo script is corrected for the D-270 layouts (Act 1's title "Beds right now", **Open** on the All EDs card, Act 5's "Checks and ward details" card). The claims that the ED list "is not re-sorted" are reworded: the ED board is sorted by time in ED or by name, never scored or ranked by any judgement. The review's small bugs (the ED tier key, Tools focus, the ED sort) and polish follow in a later pull request. A fix that changes the look of a page noticeably (such as the ward checks card at 820 or the Android status bar colour) is mocked up and approved before it is built. Whether the 6 am release ran is checked.
+- **Why:** the script must match the screen for the demo, and the ED board no longer offers "Current order" on a laptop.
+- **Boundary:** wording and small behaviour fixes only. No clinical rule, signed value, permission or saved record format changes. Synthetic data only.
+
+The next free number is D-276.
