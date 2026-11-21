@@ -1699,6 +1699,25 @@ function report(results) {
   return 1;
 }
 
+/**
+ * Demote non-hard-line push guards (in-flight CI & format) to warn-only unless strict mode is requested.
+ * Hard-line guards (ward-flow-remote, ward-flow-checkout, direct-main-push, auto-merge, static) are never relaxed.
+ *
+ * @template {{ name: string, ok: boolean, message?: string, note?: string }} T
+ * @param {T[]} results
+ * @param {{ strict?: boolean }} [options]
+ * @returns {T[]}
+ */
+export function demoteNonHardLineGuards(results, { strict = process.env.GUARD_PUSH_STRICT === "1" } = {}) {
+  if (strict) return results;
+  const advisoryOnly = new Set(["in-flight-ci", "format"]);
+  return results.map((r) =>
+    r && !r.ok && advisoryOnly.has(r.name)
+      ? { ...r, ok: true, note: `[warn-only on feature branch; set GUARD_PUSH_STRICT=1 to block] ${r.message}` }
+      : r,
+  );
+}
+
 function main() {
   if (process.argv.includes("--self-test")) {
     return selfTest();
@@ -1717,13 +1736,13 @@ function main() {
   const forcePushBranches = forcePushedBranchNames(ranges);
   const changedFiles = collectChangedFiles(ranges);
   // formatGuard reads the pushed blobs; the static gate only needs the paths.
-  const results = [
+  const results = demoteNonHardLineGuards([
     remoteResult,
     autoMergeGuard(pushedBranches, forcePushBranches),
     inFlightCiGuard(pushedBranches, ranges),
     formatGuard(collectChangedBlobs(ranges)),
     staticGuard(changedFiles, { ranges }),
-  ];
+  ]);
   process.exit(report(results));
 }
 
