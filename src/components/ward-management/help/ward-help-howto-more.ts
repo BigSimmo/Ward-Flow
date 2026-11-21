@@ -803,9 +803,9 @@ export const CRAWL_JOBS: readonly HowTo[] = [
     id: "expectation-flag",
     topic: "Beds and referrals",
     title: "Raise or clear an expectation review flag",
-    keywords: "expectation review flag voluntary involuntary raise clear",
+    keywords: "expectation review flag voluntary involuntary raise clear not arrived review plan",
     answer:
-      "Open the movement, then Additional workflow controls. Under Movement workflow actions, press Raise expectation review flag to mark the movement for an expectation review. The same button then reads Clear expectation review flag.",
+      "The flag shows by itself on Home, the ED board and the movement once a person has waited the signed time without arriving. Open the movement, then Additional workflow controls. Under Movement workflow actions, press Raise or Clear expectation review flag. A clear records the review and restarts the wait.",
     desks: ["coordinator", "ward", "ed", "community"],
     acts: ["RAISE_EXPECT_FLAG", "CLEAR_EXPECT_FLAG"],
     go: ["movements", "home"],

@@ -37,6 +37,7 @@ import { defaultWardConfiguration } from "@/components/ward-management/ward-conf
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { arrivalTimingIsLate, arrivalTimingPhrase } from "@/components/ward-management/ward-arrival-timing";
+import { expectReviewDue, expectReviewTag } from "@/components/ward-management/ward-expect-review";
 import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
 import { PULL_NO_LIMIT_RECORDED, pullHoldText } from "@/components/ward-management/ward-bed-hold";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
@@ -335,6 +336,17 @@ export function PriorityQueue({
                 {legalFactor ? legalFactor.detail : "Form due time passed"}
               </span>
             ) : null}
+            {/* D-275: a person still not arrived after the signed wait (48 hours voluntary, 7 days not
+                voluntary) is flagged for a plan review, as is a flag a person raised. */}
+            {(() => {
+              const review = expectReviewDue(movement, now);
+              return review ? (
+                <span className={styles.queueMark} data-testid={`ward-queue-expect-review-${movement.id}`}>
+                  <StatusGlyph tone="warning" size={9} />
+                  {expectReviewTag(review)}
+                </span>
+              ) : null;
+            })()}
             {/* A1-14 (audit 13 Oct 2026): an offer made from Home shows on the row, so the
                         coordinator sees it is out and how long the ward has had it. */}
             {movement.referredUnitIds.length > 0 && !movement.acceptedUnitId && movement.stage !== "pulled" ? (
