@@ -285,6 +285,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-269](#d-269-the-19-november-pre-demo-audit-fixes-go-ahead-as-recommended-19-november-2026)                                                                  | The 19 November pre-demo audit fixes go ahead as recommended                                                  | Active                                           |
 | [D-270](#d-270-the-20-november-ux-review-fixes-go-ahead-as-recommended-20-november-2026)                                                                       | The 20 November UX review fixes go ahead as recommended                                                       | Active                                           |
 | [D-271](#d-271-the-20-november-demo-re-walk-fixes-go-ahead-before-the-freeze-20-november-2026)                                                                 | The 20 November demo re-walk fixes go ahead before the freeze                                                 | Active                                           |
+| [D-272](#d-272-the-sign-out-and-rulings-index-commit-checks-warn-by-default-21-november-2026)                                                                  | The sign-out and rulings-index commit checks warn by default                                                  | Active                                           |
 
 ---
 
@@ -3107,4 +3108,11 @@ D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
 - **Why:** the 20 November re-walk of live b4adc2c1 found these as the small faults a demo audience could notice.
 - **Boundary:** wording, print and toast behaviour only. No clinical rule, signed value, event, permission or saved record changes. Synthetic data only.
 
-The next free number is D-272.
+## D-272. The sign-out and rulings-index commit checks warn by default (21 November 2026)
+
+- **Date:** 21 November 2026, 11:48 AM AWST (03:48 UTC). **Decided by:** Josh, in the thread "Unblock open Ward Flow PRs", choosing "Yes, warnings by default" on "Turn the sign-out and rulings-index commit checks into warnings (PR #1724)?"
+- **Decision:** on a feature commit, the sign-out clash check and the generated-index checks (including the owner rulings index) warn instead of blocking. `PRECOMMIT_SIGNOUT_STRICT=1` and `PRECOMMIT_DOCS_SYNC_STRICT=1` make them block again. The push guard's in-flight CI and format checks also warn unless `GUARD_PUSH_STRICT=1`. This amends AGENTS.md rule 7, which said the hook blocks a file another branch holds.
+- **Unchanged:** the secret and identifier scan, the Ward Flow repository and checkout guards, the direct `main` and `live` push block, the armed auto-merge force-push block and `--admission-only` still block. CI still checks the generated indexes. The rulings-first rule still applies: every ruling is a D entry in its PR.
+- **Boundary:** local Git hooks and agent rules only. No app, clinical rule, signed value or saved record changes.
+
+The next free number is D-273.
