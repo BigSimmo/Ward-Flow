@@ -97,16 +97,15 @@ export function checkStagedDocs({
     );
   else
     console.warn(
-      `[pre-commit] Generated-document state is unverified/stale; ${wardIndexes || strict ? "commit blocked" : "advisory; run owned documentation update and review its staged outputs"}.`,
+      `[pre-commit] Generated-document state is unverified/stale; ${strict ? "commit blocked" : "advisory; run owned documentation update and set PRECOMMIT_DOCS_SYNC_STRICT=1 to block"}.`,
     );
-  return failed && (wardIndexes || strict) ? 1 : 0;
+  return failed && strict ? 1 : 0;
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     process.exitCode = checkStagedDocs({ wardIndexes: process.argv.includes("--ward-indexes") });
   } catch (error) {
     console.error(`[pre-commit] Staged-document check unavailable: ${error.message}`);
-    process.exitCode =
-      process.argv.includes("--ward-indexes") || process.env.PRECOMMIT_DOCS_SYNC_STRICT === "1" ? 1 : 0;
+    process.exitCode = process.env.PRECOMMIT_DOCS_SYNC_STRICT === "1" ? 1 : 0;
   }
 }

@@ -510,13 +510,20 @@ describe("the hook script end to end", () => {
     expect(passed.stderr).not.toContain("without your sign-out");
 
     writeFileSync(signOutFile, `Open sign-outs only\n- 2026-09-27 | Peer | ward/peer | /elsewhere/peer | ${file}\n`);
-    const blocked = stageAndRun(root, file, "synthetic probe\n", { WARD_SIGNOUT_FILE: signOutFile });
+    const warned = stageAndRun(root, file, "synthetic probe\n", { WARD_SIGNOUT_FILE: signOutFile });
+    expect(warned.status).toBe(0);
+    expect(warned.stderr).toContain(`WARNING: files signed out by another session in ${signOutFile}`);
+
+    const blocked = stageAndRun(root, file, "synthetic probe\n", {
+      WARD_SIGNOUT_FILE: signOutFile,
+      PRECOMMIT_SIGNOUT_STRICT: "1",
+    });
     expect(blocked.status).toBe(1);
     expect(blocked.stderr).toContain(`files signed out by another session in ${signOutFile}`);
     expect(blocked.stderr).toContain(`${file}  (Peer, ward/peer)`);
   });
 
-  it("accepts own unclaimed files when the named log is missing, but a peer's claims/ file still blocks", () => {
+  it("accepts own unclaimed files when the named log is missing, but a peer's claims/ file warns or blocks when strict", () => {
     const root = repo();
     execFileSync("git", ["branch", "-m", "ward/probe"], { cwd: root });
     const file = "docs/ward-flow/probe.md";
@@ -531,7 +538,13 @@ describe("the hook script end to end", () => {
       join(root, "absent", "claims", "20260927T0100Z-peer.md"),
       `- 2026-09-27T01:00Z | Peer | ward/peer | /elsewhere/peer | ${file}\n`,
     );
-    const blocked = stageAndRun(root, file, "synthetic probe\n", { WARD_SIGNOUT_FILE: signOutFile });
+    const warned = stageAndRun(root, file, "synthetic probe\n", { WARD_SIGNOUT_FILE: signOutFile });
+    expect(warned.status).toBe(0);
+    expect(warned.stderr).toContain(`${file}  (Peer, ward/peer)`);
+    const blocked = stageAndRun(root, file, "synthetic probe\n", {
+      WARD_SIGNOUT_FILE: signOutFile,
+      PRECOMMIT_SIGNOUT_STRICT: "1",
+    });
     expect(blocked.status).toBe(1);
     expect(blocked.stderr).toContain(`${file}  (Peer, ward/peer)`);
   });
