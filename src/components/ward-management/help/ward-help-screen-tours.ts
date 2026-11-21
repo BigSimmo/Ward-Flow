@@ -1082,9 +1082,10 @@ const AROUND: readonly Around[] = [
         title: "Contact and Staff needed",
         body: "Contact opens the ward's contact lines. Staff needed records a request for extra staff.",
       }),
-      step(id("ward-hero-checking"), {
+      // UX review (D-270): Checking left the hero for the checks card; on a phone that card is folded.
+      step([id("ward-checks-foot"), { sel: '[data-testid="ward-phone-figures"] > summary' }], {
         title: "Checking",
-        body: "When the capacity was last confirmed, and whether the outage pack has been printed.",
+        body: "What the figures cannot vouch for, when the capacity was last confirmed, and whether the outage pack has been printed.",
       }),
       step([id("ward-intake-window"), { sel: '[data-testid="ward-phone-figures"] > summary' }], {
         title: "Tonight's intake",

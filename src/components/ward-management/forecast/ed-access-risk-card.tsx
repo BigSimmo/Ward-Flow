@@ -74,6 +74,25 @@ export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant })
       </div>
     ) : null;
 
+  // UX review (D-270): one bed type at risk reads as a strip, not a full-width card.
+  if (rows.length === 1) {
+    const row = rows[0];
+    return (
+      <section className={handover.riskStrip} aria-labelledby="forecast-ed-risk-title" data-testid="forecast-ed-risk">
+        <StatusGlyph tone="warning" size={8} />
+        <h2 id="forecast-ed-risk-title">May pass {hours} in ED</h2>
+        <span>
+          <b>{BED_KIND_LABEL[row.kind]}</b> in {splitDuration(row.minutesLeft)}
+        </span>
+        <span className={handover.riskSoft}>{releaseText(row, now, showWards)}</span>
+        {over > 0 ? <span className={handover.riskSoft}>{over} already past</span> : null}
+        <span className={handover.riskMethod} data-testid="forecast-ed-risk-method">
+          {FORECAST_METHOD_LINE}
+        </span>
+      </section>
+    );
+  }
+
   return (
     <section className={handover.listsCard} aria-labelledby="forecast-ed-risk-title" data-testid="forecast-ed-risk">
       <header className={handover.listsHead}>

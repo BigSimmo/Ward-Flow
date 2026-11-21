@@ -240,7 +240,8 @@ test.describe("@mockup phone navigation preparation", () => {
     // tab now opens Capacity at a glance, so Referrals is reached from the Menu and Capacity from the
     // glance's "Open full Capacity" link.
     { from: "menu", path: "/bedchart/referrals", heading: /^Referrals$/ },
-    { from: "glance", path: "/bedchart/capacity", heading: /^Capacity$/ },
+    // UX review (D-270, pattern A): the bar names the page; Capacity's hero says "Beds right now".
+    { from: "glance", path: "/bedchart/capacity", heading: /^Beds right now$/ },
   ] as const) {
     test(`phone ${destination.from} prepares ${destination.path} before the tap`, async ({ page, request }) => {
       const identity = await request.get("/api/local-project-id");
@@ -815,7 +816,8 @@ test("@mockup Tools opened offline shows Try again, then opens by itself once ba
   await retry.getByRole("button", { name: "Try again" }).click();
   await expect(retry).toContainText("Tools did not load");
   await context.setOffline(false);
-  await expect(tools.getByRole("heading", { name: "Look up" })).toBeVisible();
+  // UX review (D-270): with no search, Tools opens on Most used.
+  await expect(tools.getByRole("heading", { name: /^Most used/u })).toBeVisible();
   await expect(retry).toHaveCount(0);
 });
 

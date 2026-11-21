@@ -973,6 +973,14 @@ function ToolsSheetView({
     group.entries.findIndex((entry) => entry.key === open) >= GROUP_SHOWN;
   const groupOf = (key: EntryKey): GroupId => GROUPS.find((group) => order[group.id].includes(key))?.id ?? "look";
   const matches = groups.reduce((total, group) => total + group.entries.length, 0);
+  // UX review (D-270): with no search, one list of the ten a desk uses most (its order's first
+  // four to do, four to look up and two to share); the rest are behind search or Show all tools.
+  const [showAllTools, setShowAllTools] = useState(false);
+  const mostUsedTake: Record<GroupId, number> = { do: 4, look: 4, share: 2 };
+  const mostUsed = groups.flatMap((group) =>
+    group.entries.slice(0, mostUsedTake[group.id]).map((entry) => ({ entry, group: group.id })),
+  );
+  const showMostUsed = !words && !showAllTools;
 
   // Q309: recent tools first; until there are any, the desk's likely three.
   // Only tools this desk lists, so a chip remembered from another desk never opens here.
@@ -1291,6 +1299,21 @@ function ToolsSheetView({
                 </button>
               </div>
             </div>
+          ) : showMostUsed ? (
+            <section className={styles.group} aria-label="Most used">
+              <h3 className={styles.groupHeading}>
+                Most used
+                <span className={styles.groupCount}>{mostUsed.length}</span>
+              </h3>
+              <div className={styles.card} data-tool-group="most-used">
+                {mostUsed.map(({ entry, group }) => renderRow(entry, group))}
+                <button type="button" className={styles.showMore} onClick={() => setShowAllTools(true)}>
+                  Show all {matches} tools
+                  <ChevronDown aria-hidden="true" strokeWidth={1.75} />
+                </button>
+              </div>
+              <p className={styles.searchHint}>Or type in Search tools to find any of them.</p>
+            </section>
           ) : (
             groups.map((group) => (
               <section key={group.id} className={styles.group} aria-label={group.title}>

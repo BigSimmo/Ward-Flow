@@ -263,14 +263,12 @@ export function WardScreenHomeSection({
         boardWaitingCount={boardWaiting.length}
         phoneShiftLabel={shiftLine(now)}
         phoneHeroFoot={
-          isPhone ? (
-            <>
-              {wardHeroFoot}
-              {/* Feature item 13: tonight's intake hours, information only. */}
-              <WardIntakeWindowControl unit={unit} now={now} />
-              {wardHeroFootAside}
-            </>
-          ) : undefined
+          <>
+            {wardHeroFoot}
+            {/* Feature item 13: tonight's intake hours, information only. */}
+            <WardIntakeWindowControl unit={unit} now={now} />
+            {wardHeroFootAside}
+          </>
         }
         phoneFiguresSummary="Shift, roster, legal status and feeds"
         phoneFind={isPhone ? <WardPhoneFind value={bedQuery} onChange={setBedQuery} /> : undefined}

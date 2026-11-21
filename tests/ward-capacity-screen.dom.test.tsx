@@ -177,8 +177,9 @@ describe("the Capacity screen", () => {
     // after the fact.
     renderScreen();
     expect(screen.getByRole("main")).toBeInTheDocument();
-    // Design lane A (14 Nov 2026): one short title, the sidebar's name for the page.
-    expect(screen.getByRole("heading", { level: 1, name: "Capacity" })).toBeInTheDocument();
+    // UX review (D-270, pattern A, overriding design lane A): the bar names the page; the hero
+    // says what it shows.
+    expect(screen.getByRole("heading", { level: 1, name: "Beds right now" })).toBeInTheDocument();
   });
 
   // Page tops (Josh, 9 Nov 2026): the hero's Locked ready / Open ready chips went with the new top;

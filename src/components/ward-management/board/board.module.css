@@ -6134,3 +6134,20 @@
   border-bottom: 1px solid var(--line);
   background: var(--surface-2);
 }
+
+/* UX review (D-270): days as the second line, at body size. */
+.nameFirstFigureRow {
+  margin-top: 2px;
+}
+
+.bed .stayLine,
+.stayLine {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14, 1.35) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.stayLine .daysUnit {
+  font: inherit;
+  text-transform: none;
+  letter-spacing: 0;
+}

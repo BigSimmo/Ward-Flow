@@ -806,6 +806,8 @@ describe("read-only report screens", () => {
     inProvider(
       <WardToolsSheet isPhone={false} roleLabel="Bed coordinator" onNavigate={() => {}} onNewReferral={() => {}} />,
     );
+    // UX review (D-270): with no search the sheet opens on Most used; this reads the full groups.
+    fireEvent.click(screen.getByRole("button", { name: /^Show all \d+ tools$/u }));
     expect(screen.getByRole("link", { name: /Downtime pack/u })).toHaveAttribute("href", "/bedchart/reports/downtime");
     expect(screen.getByRole("link", { name: /Patient chronology/u })).toHaveAttribute(
       "href",

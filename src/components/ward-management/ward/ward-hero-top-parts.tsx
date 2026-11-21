@@ -1,14 +1,8 @@
-import { HeroAct, HeroBand, HeroFigures, SrOnly, WindowWord, durMinutes } from "@/components/wf";
+import { HeroAct, HeroFigures, SrOnly, WindowWord } from "@/components/wf";
 import type { Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
-import { formatInstant } from "@/components/ward-management/ward-clock";
-import { ageText } from "@/components/ward-management/ward-confirmation-age";
-import { BED_RELEASE_BLOCKED_FIGURE_LABEL } from "@/components/ward-management/ward-derivations";
-import { SAMPLE_OBSERVATION_MIX_LABEL } from "@/components/ward-management/ward-sample-choices";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
-import { WardPackPrintedLine } from "./ward-pack-printed-line";
 import styles from "./ward-hero-top-parts.module.css";
-import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 
 /** Count label "Label · window" (shared parts spec 2): the kit's window word, in the hero's quiet ink. */
 function windowed(label: string, window: Parameters<typeof WindowWord>[0]["word"]) {
@@ -42,22 +36,17 @@ export type WardHeroTopInput = {
 };
 
 /**
- * Page tops (Josh approved, 9 Nov 2026): the ward hero's figures, its one next step and the Checking
- * band, as Home's top. Every value is one the ward screen already derived; a figure filters the bed board.
+ * Page tops (Josh approved, 9 Nov 2026): the ward hero's figures and its one next step, as Home's top.
+ * Every value is one the ward screen already derived; a figure filters the bed board. UX review (D-270):
+ * the Checking band left the hero for the page's checks card (`wardHeroFoot` in ward-screen), so the
+ * check counts in this input are read there, not here.
  */
 export function wardHeroTopParts({
   unit,
   states,
-  now,
-  isPhone,
   arrivalsToday,
   openArrivals,
   actNowCount,
-  heldUpCount,
-  pastDateCount,
-  bedCountsStale,
-  staffedSpecialling,
-  obsNotRecorded,
   bedFilter,
   pickBedFilter,
   openShiftTodo,
@@ -117,66 +106,5 @@ export function wardHeroTopParts({
     ) : (
       <HeroAct tone="calm" title="No tasks due now" action={action} />
     );
-  const confirmedWords = unit.allocatable.source === "ward" ? "Confirmed" : "Last figure";
-  const staleCount = bedCountsStale ? 1 : 0;
-  const wardBand = (
-    <HeroBand
-      title={windowed("Checking", "now")}
-      testId="ward-hero-checking"
-      aside={
-        <>
-          {/* Walk-through WT-18: "Capacity", so it does not read as the morning bed numbers being confirmed. */}
-          {isPhone
-            ? confirmedWords
-            : unit.allocatable.source === "ward"
-              ? "Capacity confirmed"
-              : "Last capacity figure"}{" "}
-          <b>{formatInstant(unit.allocatable.confirmedAt)}</b>
-          {" · "}
-          {/* Whole minutes: a capacity figure's age never reads to the second (audit, 17 Nov 2026). */}
-          {ageText(unit.allocatable.confirmedAt, now)}
-          {/* Batch 4 item 24 (D-142): the outage pack's time, after the capacity time; a line of its own on a phone. */}
-          {isPhone ? null : <WardPackPrintedLine unitId={unit.id} now={now} lead=" · " />}
-        </>
-      }
-      note={isPhone ? <WardPackPrintedLine unitId={unit.id} now={now} /> : undefined}
-      cells={[
-        {
-          id: "held",
-          // Ruling 5: held up counts "by tomorrow"; the count is the page's selector (PR C moves it).
-          // Mock-up: the number straight after the label, the window after it ("Held up 1 · by tomorrow").
-          label: "Held up",
-          value: heldUpCount,
-          sub: <span className={styles.winAfter}>· by tomorrow</span>,
-          tone: heldUpCount > 0 ? "danger" : undefined,
-          ariaLabel: `${BED_RELEASE_BLOCKED_FIGURE_LABEL}: ${heldUpCount}`,
-        },
-        { id: "past", label: "Past date", value: pastDateCount, ariaLabel: `Past expected date: ${pastDateCount}` },
-        {
-          id: "stale",
-          label: "Stale counts",
-          value: staleCount,
-          tone: bedCountsStale ? "warning" : undefined,
-          ariaLabel: `Bed counts older than ${durMinutes(CLINICAL_VALUES.bedCountFresh.value)}: ${staleCount}`,
-        },
-        {
-          id: "obs",
-          // Root-cause fix 3.5: this counts staff, not patients (one person on two-staff constant is 2).
-          label: "Staff on constant obs",
-          value: staffedSpecialling,
-          // D-189 item 2: the sample day's observation levels are a sample mix until Josh sets one.
-          note: <span data-testid="ward-hero-obs-sample">{SAMPLE_OBSERVATION_MIX_LABEL}</span>,
-          ariaLabel: `Staff on constant observation: ${staffedSpecialling}`,
-        },
-        {
-          // Ruling 10 (D-191): quiet, beside the staff count, so 0 staff is not read as "nobody needs obs".
-          id: "obs-not-recorded",
-          label: "Obs not recorded",
-          value: obsNotRecorded,
-          ariaLabel: `Stays with no observation level recorded, including pulled beds: ${obsNotRecorded}`,
-        },
-      ]}
-    />
-  );
-  return { wardFigures, wardAct, wardBand };
+  return { wardFigures, wardAct };
 }

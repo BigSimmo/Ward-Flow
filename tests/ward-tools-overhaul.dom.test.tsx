@@ -302,6 +302,9 @@ describe("Each desk's own Tools order (2 Nov 2026)", () => {
   }
   function renderSheet() {
     withFlow(<WardToolsSheet isPhone={false} roleLabel="Desk" onNavigate={vi.fn()} onNewReferral={vi.fn()} />);
+    // UX review (D-270): with no search the sheet opens on Most used; these read the full groups.
+    const all = screen.queryByRole("button", { name: /^Show all \d+ tools$/u });
+    if (all) fireEvent.click(all);
   }
 
   it.each([

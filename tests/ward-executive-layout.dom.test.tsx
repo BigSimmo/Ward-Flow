@@ -245,6 +245,8 @@ describe("the real layout's authenticated executive branch", () => {
     await openLayout();
     fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
     const tools = screen.getByTestId("ward-bar-tools-sheet");
+    // UX review (D-270): with no search the sheet opens on Most used; this reads the full groups.
+    fireEvent.click(within(tools).getByRole("button", { name: /^Show all \d+ tools$/u }));
     fireEvent.click(within(tools).getByRole("button", { name: /^Change view$/ }));
     expect((guard.connection as WardSharedConnection).switchRole).toHaveBeenCalledOnce();
     // Tools overhaul (2 Nov 2026): the executive desk's rows are Key figures, Find a bed, On-call,

@@ -3,7 +3,6 @@
 // The ward screen's ward card and top action bar. Split out of `ward-screen.tsx` (18 October 2026)
 // to keep that file under the line cap.
 
-import { WardIntakeWindowControl } from "./ward-intake-window-control";
 import { useEffect, useState } from "react";
 import { type WardHeroTopInput, wardHeroTopParts } from "./ward-hero-top-parts";
 import { Bed, Check, Presentation, Send, Zap } from "lucide-react";
@@ -74,7 +73,6 @@ type WardScreenTopBarProps = {
   /** "Day shift 7:00 am to 3:00 pm": the hero's title, the hours in the quieter weight. */
   heroTitle: string;
   wardHeroTop: WardHeroTopInput;
-  wardHeroMeta: ReactElement | null;
   /** Decisions are due: its tab count is the red circle. */
   decisionsDue: boolean;
   selectActiveTab: (next: "attn" | "board" | "coming" | "out" | "beds" | "referrals" | "return") => void;
@@ -131,7 +129,6 @@ export function WardScreenTopBar({
   openCapacityModal,
   heroTitle,
   wardHeroTop,
-  wardHeroMeta,
   decisionsDue,
   selectActiveTab,
   wardMoreMenu,
@@ -172,7 +169,7 @@ export function WardScreenTopBar({
   // the shift, as Home's names the moment; the ward's name leads the spoken heading.
   const position = `${plural(states.ready, "bed", "beds")} ready, ${states.occupied} occupied`;
   const shift = splitShift(heroTitle);
-  const { wardFigures, wardAct, wardBand } = wardHeroTopParts(wardHeroTop);
+  const { wardFigures, wardAct } = wardHeroTopParts(wardHeroTop);
   const updates = useSinceLastLookReview(`ward:${unit.id}`);
   // Feature 10 and 32 (9 Nov 2026): Staff needed and the ward's contact card, as quick chips; an open
   // staff request's tag sits under the band.
@@ -346,11 +343,9 @@ export function WardScreenTopBar({
                 ]}
               />
             }
-            band={wardBand}
+            // UX review (D-270, pattern D): the Checking band, the fine print and Tonight left the hero
+            // for the page's "Checks and ward details" card, above Coming and going.
           >
-            {wardHeroMeta}
-            {/* Feature item 13: tonight's intake hours, information only. */}
-            {wardHeroMeta ? <WardIntakeWindowControl unit={unit} now={now} /> : null}
             {staffContact.tag}
           </HeroTop>
         </Hero>

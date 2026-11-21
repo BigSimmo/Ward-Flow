@@ -138,7 +138,8 @@ describe("enlarged views carry the mark", () => {
     );
     const board = screen.getByRole("region", { name: "This department's patients" });
     expect(marksIn(board)).toHaveLength(0);
-    fireEvent.click(within(board).getByRole("button", { name: "Enlarge" }));
+    // UX review (D-270, pattern E): Enlarge sits on the tab row; the table keeps Exit full screen.
+    fireEvent.click(screen.getByTestId("ward-ed-tabs-enlarge"));
     const enlarged = screen.getByRole("region", { name: "This department's patients" });
     expect(enlarged).toHaveAttribute("data-wf-full-screen", "true");
     expect(marksIn(enlarged)).toHaveLength(1);

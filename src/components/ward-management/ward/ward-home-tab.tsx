@@ -1679,7 +1679,23 @@ export function WardHomeTab({
           </details>
         ) : null}
 
-        {phoneSheets ? null : <div className={styles.flowWrap}>{renderFlowCard()}</div>}
+        {phoneSheets ? null : (
+          <div className={styles.flowWrap}>
+            {/* UX review (D-270, pattern D): what left the hero, in the page above Coming and going. */}
+            {phoneHeroFoot ? (
+              <details open className={`${styles.phoneFigures} ${styles.deskChecks}`} data-testid="ward-desk-checks">
+                <summary>
+                  <span className={styles.phoneFiguresTitle}>Checks and ward details</span>
+                  {phoneFiguresSummary ? <span className={styles.phoneFiguresLine}>{phoneFiguresSummary}</span> : null}
+                </summary>
+                <div className={styles.phoneFiguresBody}>
+                  <div className={styles.phoneFiguresFoot}>{phoneHeroFoot}</div>
+                </div>
+              </details>
+            ) : null}
+            {renderFlowCard()}
+          </div>
+        )}
       </div>
 
       {phoneSheets ? (

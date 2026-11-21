@@ -39,25 +39,6 @@
   max-width: 100%;
 }
 
-.navRule {
-  grid-area: rule;
-  width: 1px;
-  height: 20px;
-  background: var(--wf-line-2, var(--wf-line));
-}
-
-.stageGroup {
-  grid-area: stages;
-  display: flex;
-  align-items: center;
-  min-width: 0;
-}
-
-.stageGroup > .stageTabs {
-  flex: 1 1 0;
-  width: auto;
-}
-
 .nav > :last-child {
   grid-area: more;
 }
@@ -72,9 +53,6 @@
   }
   .nav > :first-child {
     justify-self: start;
-  }
-  .navRule {
-    display: none;
   }
 }
 
@@ -196,20 +174,39 @@
   }
 }
 
-/* Phone-first proposal (4 Nov 2026, local mock-up): the Flow stage tabs show only on Flow, so
- * Needs you opens straight onto Act now. */
-@media (max-width: 46.4375rem) {
-  .stageGroup:not([data-active="true"]),
-  .stageGroup:not([data-active="true"]) + * + .navRule {
-    display: none;
-  }
-}
-
 /* Review EH-4: on a phone "More for this list" shows only its icon (about 38 px wide), so its tap
    cover widens to 48 px, as the kit's icon-only button does. The cover is invisible; the button
    looks the same. */
 @media (max-width: 46.4375rem) {
   .moreCover.moreCover.moreCover::after {
     inset: -4px min(0px, calc((100% - 48px) / 2));
+  }
+}
+
+/* UX review (D-270): the Flow stage filters, one row inside Flow. */
+.flowFilterRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  margin-bottom: var(--wf-s-3);
+}
+
+/* Content width, so the stages wrap under "Show" when they do not fit beside it (as mocked); on a
+ * phone "Show" hides and the row scrolls. */
+.flowFilterRow > .stageTabs {
+  flex: 1 1 auto;
+  width: auto;
+}
+
+.flowFilterLabel {
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+/* UX review (D-270): on a phone the stage chips speak for themselves; "Show" only costs the row width. */
+@media (max-width: 46.4375rem) {
+  .flowFilterLabel {
+    display: none;
   }
 }

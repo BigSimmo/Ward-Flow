@@ -113,15 +113,15 @@ describe("list order lines", () => {
 
   it("the ED board table is named for the Sort it is in", () => {
     inProvider(<EdScreen edId="rph-ed" />);
-    // ED handover table (1 Nov 2026): the table is the handover, sorted by the mock-up's Segmented.
+    // ED handover table (1 Nov 2026): the table is the handover. UX review (D-270): it sorts from
+    // the Patient and In ED column heads, and "Current order" goes.
+    const longest = screen.getByRole("table", { name: "Emergency department handover, longest in ED first" });
+    fireEvent.click(within(within(longest).getByRole("columnheader", { name: /^Patient/u })).getByRole("button"));
+    const byName = screen.getByRole("table", { name: "Emergency department handover, A to Z by surname" });
+    fireEvent.click(within(within(byName).getByRole("columnheader", { name: /^In ED/u })).getByRole("button"));
     expect(
       screen.getByRole("table", { name: "Emergency department handover, longest in ED first" }),
     ).toBeInTheDocument();
-    const sort = screen.getByRole("radiogroup", { name: "Sort patients" });
-    fireEvent.click(within(sort).getByRole("radio", { name: "Name" }));
-    expect(screen.getByRole("table", { name: "Emergency department handover, A to Z by surname" })).toBeInTheDocument();
-    fireEvent.click(within(sort).getByRole("radio", { name: "Current order" }));
-    expect(screen.getByRole("table", { name: "Emergency department handover, in current order" })).toBeInTheDocument();
   });
 
   it("Alerts says the desktop Now order for each arrangement", () => {

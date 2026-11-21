@@ -69,6 +69,9 @@ describe("Figures in the Tools sheet", () => {
     fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
     const tools = screen.getByRole("dialog", { name: "Tools" });
     await within(tools).findByTestId("ward-tools-toggle-figures", {}, { timeout: 15_000 });
+    // UX review (D-270): with no search the sheet opens on Most used; these read the full groups.
+    const all = within(tools).queryByRole("button", { name: /^Show all \d+ tools$/u });
+    if (all) fireEvent.click(all);
     return tools;
   }
 

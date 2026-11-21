@@ -21,6 +21,8 @@ describe("Log a delay as a short form in Tools (item 6c)", () => {
         <WardToolsSheet isPhone={false} roleLabel="Bed coordinator" onNavigate={vi.fn()} onNewReferral={vi.fn()} />
       </WardFlowProvider>,
     );
+    // UX review (D-270): with no search the sheet opens on Most used; this reads the full groups.
+    fireEvent.click(screen.getByRole("button", { name: /^Show all \d+ tools$/u }));
     fireEvent.click(screen.getByTestId("ward-tools-toggle-log-delay"));
     const form = await screen.findByTestId("tools-log-delay");
     const save = within(form).getByTestId("tools-log-delay-save");
@@ -46,6 +48,8 @@ describe("Log a delay as a short form in Tools (item 6c)", () => {
         <WardToolsSheet isPhone={false} roleLabel="Bed coordinator" onNavigate={vi.fn()} onNewReferral={vi.fn()} />
       </WardFlowProvider>,
     );
+    // UX review (D-270): with no search the sheet opens on Most used; this reads the full groups.
+    fireEvent.click(screen.getByRole("button", { name: /^Show all \d+ tools$/u }));
     fireEvent.click(screen.getByTestId("ward-tools-toggle-log-delay"));
     const form = await screen.findByTestId("tools-log-delay");
     const search = within(form).getByRole("searchbox", { name: "Find a person by name or UMRN" });
