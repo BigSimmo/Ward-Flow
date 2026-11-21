@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -100,19 +100,27 @@ describe("ED board redesign", () => {
     );
   });
 
-  it("uses the kit's search field and Segmented sort, with no 'Current order' select", () => {
+  it("uses the kit's search field and sorts from the column heads, with no 'Current order' (D-270)", () => {
     renderEd();
     expect(screen.getByRole("searchbox", { name: "Find a patient or UMRN" })).toHaveAttribute(
       "placeholder",
       "Name or UMRN",
     );
-    const sort = screen.getByRole("radiogroup", { name: "Sort patients" });
-    expect(
-      within(sort)
-        .getAllByRole("radio")
-        .map((radio) => radio.textContent),
-    ).toEqual(["Longest in ED", "Name", "Current order"]); // handover build order (Josh, 1 Nov 2026)
-    expect(within(sort).getByRole("radio", { name: "Longest in ED" })).toHaveAttribute("aria-checked", "true");
+    // UX review (D-270): sorting moves to the Patient and In ED column heads; "Current order" goes.
+    expect(screen.queryByRole("radiogroup", { name: "Sort patients" })).toBeNull();
     expect(screen.queryByRole("combobox", { name: /Sort/u })).toBeNull();
+    const table = screen.getByRole("table", { name: /^Emergency department handover/u });
+    expect(within(table).queryByText(/Current order/u)).toBeNull();
+    const patientHead = within(table).getByRole("columnheader", { name: /^Patient/u });
+    const inEdHead = within(table).getByRole("columnheader", { name: /^In ED/u });
+    expect(inEdHead).toHaveAttribute("aria-sort", "descending");
+    expect(patientHead).toHaveAttribute("aria-sort", "none");
+    fireEvent.click(within(patientHead).getByRole("button"));
+    expect(patientHead).toHaveAttribute("aria-sort", "ascending");
+    expect(inEdHead).toHaveAttribute("aria-sort", "none");
+    // Pressing the active head again keeps its order: there is no way back to "Current order".
+    fireEvent.click(within(patientHead).getByRole("button"));
+    expect(patientHead).toHaveAttribute("aria-sort", "ascending");
+    expect(table).toHaveAccessibleName(/A to Z by surname/u);
   });
 });

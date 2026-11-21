@@ -32,6 +32,8 @@ describe.each(["messages", "contacts"] as const)("repeat copy feedback (%s)", (t
         />
       </WardFlowProvider>,
     );
+    // UX review (D-270): with no search the sheet opens on Most used; this reads the full groups.
+    fireEvent.click(screen.getByRole("button", { name: /^Show all \d+ tools$/u }));
     fireEvent.click(screen.getByTestId(`ward-tools-toggle-${tool}`));
     const panel = screen.getByTestId(`ward-tools-${tool}`);
     const copy = COPY_BUTTON[tool](panel);

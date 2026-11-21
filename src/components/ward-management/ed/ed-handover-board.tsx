@@ -279,7 +279,8 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
                           type="button"
                           className={handover.sortHead}
                           data-active={active ? "true" : undefined}
-                          onClick={() => setPatientSort(active ? "current" : sortId)}
+                          // D-270: "Current order" goes, so a head always picks its own order.
+                          onClick={() => setPatientSort(sortId)}
                         >
                           {column}
                           <ChevronDown size={12} strokeWidth={2} aria-hidden="true" />
