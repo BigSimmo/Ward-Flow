@@ -11,7 +11,7 @@ const SHORTCUT_ICONS = [{ src: "/icons/icon-96", type: "image/png", sizes: "96x9
 // "any" and "maskable" sets from app/icons/[variant]. The manifest takes one
 // colour each: the light page colour (APP_THEME_COLORS.light) for the splash screen,
 // and the header navy (APP_CHROME_COLORS.light) for the title bar so it matches the
-// header beneath it (D-275). The page's own meta theme-color (app/layout.tsx and
+// header beneath it (D-276). The page's own meta theme-color (app/layout.tsx and
 // theme-client.ts) follows light and dark once it loads.
 export default function manifest(): MetadataRoute.Manifest {
   return {

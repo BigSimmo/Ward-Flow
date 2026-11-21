@@ -55,7 +55,7 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
     now,
   } = ctx;
   const [folded, setFolded] = useState<Record<string, boolean>>({});
-  // D-275: the tier key closes with Escape or a press outside it, like the kit's other pop-overs.
+  // D-276: the tier key closes with Escape or a press outside it, like the kit's other pop-overs.
   const keyRef = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
     const close = (event: Event) => {
@@ -305,7 +305,7 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
                           onClick={() => setPatientSort(sortId)}
                         >
                           {column}
-                          {/* D-275: the arrow shows the order's direction: up for A to Z, down for longest first. */}
+                          {/* D-276: the arrow shows the order's direction: up for A to Z, down for longest first. */}
                           {sortId === "name" ? (
                             <ChevronUp size={12} strokeWidth={2} aria-hidden="true" />
                           ) : (

@@ -373,7 +373,7 @@ describe("disabled and pre-paint values", () => {
     expect(appThemeColors).toContain(`dark: "${colourOf(v2Dark, "--background")}"`);
   });
 
-  it("keeps the browser chrome colours on the navy header (D-275)", () => {
+  it("keeps the browser chrome colours on the navy header (D-276)", () => {
     // theme-color paints the Android status bar and installed-app title bar above the header.
     const theme = readFileSync(new URL("../src/lib/theme.ts", import.meta.url), "utf8");
     const v9 = readFileSync(new URL("../src/app/ward-flow-v9-tokens.css", import.meta.url), "utf8");

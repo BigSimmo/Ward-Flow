@@ -584,7 +584,7 @@ function ToolsSheetView({
     window.requestAnimationFrame(() => {
       const scroller = sheetScroller();
       if (scroller) scroller.scrollTop = listScroll;
-      // D-275: a tool opened from a chip may have no row in Most used; then focus goes back to Search.
+      // D-276: a tool opened from a chip may have no row in Most used; then focus goes back to Search.
       (document.querySelector<HTMLElement>(`[data-testid="ward-tools-toggle-${id}"]`) ?? searchRef.current)?.focus({
         preventScroll: true,
       });
@@ -983,7 +983,7 @@ function ToolsSheetView({
   const mostUsed = groups.flatMap((group) =>
     group.entries.slice(0, mostUsedTake[group.id]).map((entry) => ({ entry, group: group.id })),
   );
-  // D-275: a desk with ten tools or fewer has nothing to hide, so it shows its full list.
+  // D-276: a desk with ten tools or fewer has nothing to hide, so it shows its full list.
   const showMostUsed = !words && !showAllTools && matches > mostUsed.length;
 
   // Q309: recent tools first; until there are any, the desk's likely three.
@@ -1315,7 +1315,7 @@ function ToolsSheetView({
                   type="button"
                   className={styles.showMore}
                   onClick={() => {
-                    // D-275: the button goes once pressed, so focus moves to the first tool of the full list.
+                    // D-276: the button goes once pressed, so focus moves to the first tool of the full list.
                     setShowAllTools(true);
                     window.requestAnimationFrame(() =>
                       document

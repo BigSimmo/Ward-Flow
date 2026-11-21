@@ -20,7 +20,7 @@
 }
 
 /* Q345: Home's navigation, one row above the two columns: the Needs you and Flow switch, then More.
- * D-270 moved the stages into Flow's own row, so the tab row keeps only these two (D-275). */
+ * D-270 moved the stages into Flow's own row, so the tab row keeps only these two (D-276). */
 .nav {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

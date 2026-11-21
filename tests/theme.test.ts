@@ -40,7 +40,7 @@ describe("theme helpers", () => {
     // moved and this assertion did not, so the light value tracking
     // the root-mounted v2 layer is enforced in tests/design-token-contract.test.ts.
     expect(APP_THEME_COLORS).toEqual({ light: "#ffffff", dark: "#0b0e11" });
-    // The status bar matches the navy header in both themes (D-275).
+    // The status bar matches the navy header in both themes (D-276).
     expect(APP_CHROME_COLORS).toEqual({ light: "#22384d", dark: "#22374d" });
   });
 

@@ -124,7 +124,7 @@ describe("ED board redesign", () => {
     expect(table).toHaveAccessibleName(/A to Z by surname/u);
   });
 
-  it("closes the tier key with Escape or a press outside it (D-275)", () => {
+  it("closes the tier key with Escape or a press outside it (D-276)", () => {
     renderEd();
     const summary = screen.getByLabelText("What the bars mean");
     const key = summary.closest("details")!;

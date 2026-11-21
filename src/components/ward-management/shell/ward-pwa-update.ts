@@ -141,7 +141,7 @@ export function watchWardPwaWorker(container: ServiceWorkerContainer, notices: (
       // updatefound may have fired before register() resolved. Watch that update too.
       watchInstalling();
       offer(registration, registration.waiting);
-      // D-275: an app left open across the morning release asks for the new worker when it comes
+      // D-276: an app left open across the morning release asks for the new worker when it comes
       // back on screen, at most every 30 minutes, so the "New version" notice can appear.
       let lastCheck = Date.now();
       document.addEventListener(

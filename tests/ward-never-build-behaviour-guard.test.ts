@@ -117,7 +117,7 @@ describe("never-build: the ED queue is never re-sorted by need", () => {
     expect(start, "the ED board Sort control must still exist").toBeGreaterThanOrEqual(0);
     const control = board.slice(start, board.indexOf("/>", board.indexOf("items={[", start)));
     const options = [...control.matchAll(/\{ id: "([^"]*)"/gu)].map((match) => match[1]);
-    // D-275: "Current order" left with D-270; both orders are by recorded wait or name, never need.
+    // D-276: "Current order" left with D-270; both orders are by recorded wait or name, never need.
     expect(options).toEqual(["longest", "name"]);
   });
 

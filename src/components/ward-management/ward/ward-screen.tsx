@@ -1986,7 +1986,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         : ""}
     </>
   );
-  // D-275: the checks card's counts on one line while it is folded (one-column layouts).
+  // D-276: the checks card's counts on one line while it is folded (one-column layouts).
   const pastDateCount = bedsList.filter((bed) => bed.pastDate).length;
   const wardChecksSummary = `${bedCountsStale ? "Bed counts old · " : ""}Releases held up ${blockedReleases.length} · Past expected date ${pastDateCount} · Obs not recorded ${obsNotRecorded}`;
   const wardHeroFoot = (

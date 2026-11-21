@@ -269,7 +269,7 @@ const ALLOWED: readonly Allowed[] = [
     file: "shell/ward-pwa-update.ts",
     expr: "30 * 60_000",
     n: 1,
-    why: "software timing: how often a returning app asks for a new version (D-275), not clinical",
+    why: "software timing: how often a returning app asks for a new version (D-276), not clinical",
   },
   {
     file: "shell/ward-alert-preferences.ts",

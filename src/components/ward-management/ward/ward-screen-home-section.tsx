@@ -46,7 +46,7 @@ type WardScreenHomeSectionProps = {
   setPhoneWalking: Dispatch<SetStateAction<boolean>>;
   now: number;
   wardHeroFoot: ReactElement;
-  /** The checks card's counts on one line, shown while it is folded (D-275). */
+  /** The checks card's counts on one line, shown while it is folded (D-276). */
   wardChecksSummary: string;
   wardHeroFootAside: ReactElement;
   bedQuery: string;

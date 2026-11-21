@@ -22,7 +22,7 @@ export const APP_THEME_COLORS = {
 
 /* The browser chrome (Android status bar, installed-app title bar) sits on top of the navy header,
    so `theme-color` uses the header's own navy (--wf-hero-1 in ward-flow-v9-tokens.css) in both
-   themes, not the page background (D-275). Glare mode keeps a light header, so it keeps
+   themes, not the page background (D-276). Glare mode keeps a light header, so it keeps
    APP_THEME_COLORS.light. Re-check both whenever --wf-hero-1 moves. */
 export const APP_CHROME_COLORS = {
   light: "#22384d",

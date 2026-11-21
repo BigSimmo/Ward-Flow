@@ -900,7 +900,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const rulesContent = editsRules ? (
     <>
       {/* UX review (D-270): the filter of the rules sits with the rules, not in the tab row. On a phone
-          the rules pane's own top line already carries it, so it shows once (D-275). */}
+          the rules pane's own top line already carries it, so it shows once (D-276). */}
       {isPhone ? null : (
         <div className={rx.rulesFilter} data-setting="changed-only">
           <ChangedOnlySwitch checked={changedOnly} onChange={setChangedOnly} awayFromDefault={awayFromDefault} />

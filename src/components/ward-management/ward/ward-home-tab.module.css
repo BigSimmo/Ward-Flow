@@ -2132,7 +2132,7 @@ label.todoMain:has(.todoTick:focus-visible) {
   padding: var(--wf-s-3) var(--wf-s-4);
 }
 
-/* UX review (D-270, pattern D; D-275): the checks card. Beside the beds it sits in the second
+/* UX review (D-270, pattern D; D-276): the checks card. Beside the beds it sits in the second
    column above Coming and going, the beds spanning both rows; one column, it comes first. The second
    row takes the spare height so the card's row stays its own height. */
 @media (min-width: 70.0625rem) {

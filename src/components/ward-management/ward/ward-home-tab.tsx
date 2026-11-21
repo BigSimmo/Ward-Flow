@@ -225,7 +225,7 @@ interface WardHomeTabProps {
   phoneHeroFoot?: React.ReactNode;
   /** Phone: the one line under Ward figures, right now, while it is closed. */
   phoneFiguresSummary?: string;
-  /** Desktop and tablet: the checks card's counts on one line, shown while it is folded (D-275). */
+  /** Desktop and tablet: the checks card's counts on one line, shown while it is folded (D-276). */
   checksSummary?: string;
   /** Phone: the find box, which sits under Every bed. */
   phoneFind?: React.ReactNode;
@@ -307,7 +307,7 @@ export function WardHomeTab({
 }: WardHomeTabProps) {
   const [, startTransition] = useTransition();
   const phoneSheets = phonePanel !== undefined;
-  // The page goes to one column at 70rem (`.homeTop` in the CSS module); the checks card folds there (D-275).
+  // The page goes to one column at 70rem (`.homeTop` in the CSS module); the checks card folds there (D-276).
   const stackedLayout = useMediaQuery(WARD_HOME_STACKED_QUERY);
   const {
     bedReleases,
@@ -1467,7 +1467,7 @@ export function WardHomeTab({
           </div>
         ) : null}
         {phoneBoardHint !== null && boardWaitingCount > 0 ? phoneBoardHint : null}
-        {/* UX review (D-270, pattern D; placement D-275): what left the hero. Beside the beds it sits
+        {/* UX review (D-270, pattern D; placement D-276): what left the hero. Beside the beds it sits
             open above Coming and going; once the page is one column it comes first, folded, with its
             counts on one line, so it is not a scroll below the whole bed grid. */}
         {!phoneSheets && phoneHeroFoot ? (
