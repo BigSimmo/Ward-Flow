@@ -19,12 +19,12 @@
   white-space: nowrap;
 }
 
-/* Q345: Home's navigation, one row above the two columns. Needs you and Flow are the raised
- * switch; a short rule, then the stages as quieter tabs that read as Flow's sub-level. */
+/* Q345: Home's navigation, one row above the two columns: the Needs you and Flow switch, then More.
+ * D-270 moved the stages into Flow's own row, so the tab row keeps only these two (D-275). */
 .nav {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
-  grid-template-areas: "switch rule stages more";
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "switch more";
   align-items: center;
   gap: var(--wf-s-2) var(--wf-s-3);
   width: 100%;
@@ -43,17 +43,8 @@
   grid-area: more;
 }
 
-/* Narrower than a desktop: the switch and More share the top line, the stages sit under the switch. */
-@media (max-width: 63.99rem) {
-  .nav {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "switch more"
-      "stages stages";
-  }
-  .nav > :first-child {
-    justify-self: start;
-  }
+.nav > :first-child {
+  justify-self: start;
 }
 
 /* The stage tabs drop the track and run a size smaller, so they read as part of Flow, not a

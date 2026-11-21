@@ -123,4 +123,17 @@ describe("ED board redesign", () => {
     expect(patientHead).toHaveAttribute("aria-sort", "ascending");
     expect(table).toHaveAccessibleName(/A to Z by surname/u);
   });
+
+  it("closes the tier key with Escape or a press outside it (D-275)", () => {
+    renderEd();
+    const summary = screen.getByLabelText("What the bars mean");
+    const key = summary.closest("details")!;
+    key.open = true;
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(key.open).toBe(false);
+    expect(summary).toHaveFocus();
+    key.open = true;
+    fireEvent.pointerDown(document.body);
+    expect(key.open).toBe(false);
+  });
 });

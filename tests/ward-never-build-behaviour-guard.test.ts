@@ -110,14 +110,15 @@ describe("never-build: nothing happens because time passes", () => {
 });
 
 describe("never-build: the ED queue is never re-sorted by need", () => {
-  it("the ED board's Sort offers only current order, longest in ED and patient name", () => {
+  it("the ED board's Sort offers only longest in ED and patient name", () => {
     const board = readFileSync(`${WARD}/ed/ed-screen-board.tsx`, "utf8");
     // ED board redesign (31 Oct 2026): the Sort is the kit's Segmented, its orders listed as items.
     const start = board.indexOf('label="Sort patients"');
     expect(start, "the ED board Sort control must still exist").toBeGreaterThanOrEqual(0);
     const control = board.slice(start, board.indexOf("/>", board.indexOf("items={[", start)));
     const options = [...control.matchAll(/\{ id: "([^"]*)"/gu)].map((match) => match[1]);
-    expect(options).toEqual(["current", "longest", "name"]);
+    // D-275: "Current order" left with D-270; both orders are by recorded wait or name, never need.
+    expect(options).toEqual(["longest", "name"]);
   });
 
   it("the ED board's comparator reads wait or name only", () => {

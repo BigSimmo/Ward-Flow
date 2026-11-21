@@ -17,16 +17,10 @@ function windowed(label: string, window: Parameters<typeof WindowWord>[0]["word"
 export type WardHeroTopInput = {
   unit: Unit;
   states: BedStateCounts;
-  now: number;
-  isPhone: boolean;
   /** Wave 4 (ruling 9): accepted people coming to this ward, the Arrivals · today figure. */
   arrivalsToday: number;
   openArrivals: () => void;
   actNowCount: number;
-  heldUpCount: number;
-  pastDateCount: number;
-  bedCountsStale: boolean;
-  staffedSpecialling: number;
   /** Ruling 10: stays with no observation level recorded (`obsNotRecordedCount`, ward-screen-derivations). */
   obsNotRecorded: number;
   /** The bed board's filter, so a figure that sets it says it is pressed. */
@@ -39,7 +33,7 @@ export type WardHeroTopInput = {
  * Page tops (Josh approved, 9 Nov 2026): the ward hero's figures and its one next step, as Home's top.
  * Every value is one the ward screen already derived; a figure filters the bed board. UX review (D-270):
  * the Checking band left the hero for the page's checks card (`wardHeroFoot` in ward-screen), so the
- * check counts in this input are read there, not here.
+ * check counts are read there.
  */
 export function wardHeroTopParts({
   unit,

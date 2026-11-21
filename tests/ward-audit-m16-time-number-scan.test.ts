@@ -266,6 +266,12 @@ const ALLOWED: readonly Allowed[] = [
     why: "software prompt: offer the shift digest in the last 30 minutes (feature 15)",
   },
   {
+    file: "shell/ward-pwa-update.ts",
+    expr: "30 * 60_000",
+    n: 1,
+    why: "software timing: how often a returning app asks for a new version (D-275), not clinical",
+  },
+  {
     file: "shell/ward-alert-preferences.ts",
     expr: "21 * 60",
     n: 1,

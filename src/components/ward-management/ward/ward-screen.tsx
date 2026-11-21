@@ -1949,16 +1949,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const wardHeroTop = {
     unit,
     states,
-    now,
-    isPhone,
     // Review F-3: only people expected today, the same rule the Arrivals list uses.
     arrivalsToday: arrivalsExpectedToday(accepted, now).length,
     openArrivals: () => showHome("ward-flow"),
     actNowCount,
-    heldUpCount: blockedReleases.length,
-    pastDateCount: bedsList.filter((bed) => bed.pastDate).length,
-    bedCountsStale,
-    staffedSpecialling,
     obsNotRecorded: obsNotRecordedCount(unit.id, admissions ?? []),
     bedFilter,
     pickBedFilter,

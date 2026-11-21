@@ -1089,7 +1089,7 @@ const AROUND: readonly Around[] = [
       }),
       step([id("ward-intake-window"), { sel: '[data-testid="ward-phone-figures"] > summary' }], {
         title: "Tonight's intake",
-        body: "The hours this ward takes admissions tonight. Edit sets them. On a phone it is under Ward details and checks.",
+        body: "The hours this ward takes admissions tonight. Edit sets them. It is in Checks and ward details.",
       }),
       step(id("ward-tabs"), {
         title: "Ward tabs",

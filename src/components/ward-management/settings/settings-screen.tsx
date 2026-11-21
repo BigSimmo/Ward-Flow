@@ -899,10 +899,13 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   // The rule editor, then the rules file and the reference tables that go with it.
   const rulesContent = editsRules ? (
     <>
-      {/* UX review (D-270): the filter of the rules sits with the rules, not in the tab row. */}
-      <div className={rx.rulesFilter} data-setting="changed-only">
-        <ChangedOnlySwitch checked={changedOnly} onChange={setChangedOnly} awayFromDefault={awayFromDefault} />
-      </div>
+      {/* UX review (D-270): the filter of the rules sits with the rules, not in the tab row. On a phone
+          the rules pane's own top line already carries it, so it shows once (D-275). */}
+      {isPhone ? null : (
+        <div className={rx.rulesFilter} data-setting="changed-only">
+          <ChangedOnlySwitch checked={changedOnly} onChange={setChangedOnly} awayFromDefault={awayFromDefault} />
+        </div>
+      )}
       <SettingsRulesPane
         draft={draft}
         configuration={configuration}

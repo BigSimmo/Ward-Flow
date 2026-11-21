@@ -5,8 +5,8 @@
 // handover table, in the pattern of the rebuilt Waiting page: a card head with the title, count,
 // search and order; the filter chips and tier key under it; quiet capital column heads; rows grouped
 // by time in the department; and an Enlarge button that gives the table the whole screen.
-import { ChevronDown, Minimize2 } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { ChevronDown, ChevronUp, Minimize2 } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button, PortraitRail, SearchField, StatusGlyph, FullScreenFrame, FullScreenMarkSlot } from "@/components/wf";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { EdBoardChips } from "./ed-board-chips";
@@ -55,6 +55,28 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
     now,
   } = ctx;
   const [folded, setFolded] = useState<Record<string, boolean>>({});
+  // D-275: the tier key closes with Escape or a press outside it, like the kit's other pop-overs.
+  const keyRef = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    const close = (event: Event) => {
+      const key = keyRef.current;
+      if (!key?.open) return;
+      if (event instanceof KeyboardEvent) {
+        if (event.key !== "Escape") return;
+        event.preventDefault();
+        key.open = false;
+        key.querySelector("summary")?.focus();
+        return;
+      }
+      if (event.target instanceof Node && !key.contains(event.target)) key.open = false;
+    };
+    document.addEventListener("keydown", close);
+    document.addEventListener("pointerdown", close);
+    return () => {
+      document.removeEventListener("keydown", close);
+      document.removeEventListener("pointerdown", close);
+    };
+  }, []);
 
   // The enlarged table covers the page; Escape gives the page back.
   useEffect(() => {
@@ -224,7 +246,7 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
               Exit full screen
             </Button>
           ) : null}
-          <details className={handover.keyToggle}>
+          <details ref={keyRef} className={handover.keyToggle}>
             <summary aria-label="What the bars mean" title="What the bars mean">
               ?
             </summary>
@@ -283,7 +305,12 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
                           onClick={() => setPatientSort(sortId)}
                         >
                           {column}
-                          <ChevronDown size={12} strokeWidth={2} aria-hidden="true" />
+                          {/* D-275: the arrow shows the order's direction: up for A to Z, down for longest first. */}
+                          {sortId === "name" ? (
+                            <ChevronUp size={12} strokeWidth={2} aria-hidden="true" />
+                          ) : (
+                            <ChevronDown size={12} strokeWidth={2} aria-hidden="true" />
+                          )}
                         </button>
                       </th>
                     );

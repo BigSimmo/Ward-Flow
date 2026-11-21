@@ -1670,7 +1670,7 @@ export function WardHomeTab({
             <summary>
               {/* Audit 11 Oct 2026: the bed counts here repeated the hero and the group headings, so
                   the fold keeps only the ward's details and what is not checked. */}
-              <span className={styles.phoneFiguresTitle}>Ward details and checks</span>
+              <span className={styles.phoneFiguresTitle}>Checks and ward details</span>
               {phoneFiguresSummary ? <span className={styles.phoneFiguresLine}>{phoneFiguresSummary}</span> : null}
             </summary>
             <div className={styles.phoneFiguresBody}>
