@@ -288,7 +288,8 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-272](#d-272-the-sign-out-and-rulings-index-commit-checks-warn-by-default-21-november-2026)                                                                  | The sign-out and rulings-index commit checks warn by default                                                  | Active                                           |
 | [D-273](#d-273-weeklys-where-the-time-goes-gets-finished-steps-by-replaying-real-steps-after-the-freeze-21-november-2026)                                      | Weekly's "Where the time goes" gets finished steps by replaying real steps after the freeze                   | Active                                           |
 | [D-274](#d-274-the-22-november-merge-freeze-is-cancelled-21-november-2026)                                                                                     | The 22 November merge freeze is cancelled                                                                     | Active                                           |
-| [D-275](#d-275-build-every-fix-from-the-21-november-review-of-main-big-visible-changes-are-mocked-up-first-22-november-2026)                                   | Build every fix from the 21 November review of main; big visible changes are mocked up first                  | Active                                           |
+| [D-275](#d-275-the-48-hour-and-7-day-plan-review-flags-show-by-themselves-22-november-2026)                                                                    | The 48 hour and 7 day plan review flags show by themselves                                                    | Active                                           |
+| [D-276](#d-276-build-every-fix-from-the-21-november-review-of-main-big-visible-changes-are-mocked-up-first-22-november-2026)                                   | Build every fix from the 21 November review of main; big visible changes are mocked up first                  | Active                                           |
 
 ---
 
@@ -3134,11 +3135,21 @@ D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
 - **Unchanged:** release timing rules (no release while a test run is going, and not 19:00 to 22:00 UTC), auto-merge only, and the clinical sign-off rules. The release pause switch (`WARD_RELEASE_PAUSED`) stays off.
 - **Boundary:** a process rule only. No clinical rule, signed value, permission, screen or saved record changes. Synthetic data only.
 
-## D-275. Build every fix from the 21 November review of main; big visible changes are mocked up first (22 November 2026)
+## D-275. The 48 hour and 7 day plan review flags show by themselves (22 November 2026)
+
+- **Date:** 22 November 2026, 2:15 AM AWST (21 November, 18:15 UTC). **Decided by:** Josh, in the project chat: "no. Add the flags now as PR.", after "I approve." (21 November, 4:34 PM AWST) to building VALUE-047 and VALUE-048. This replaces the earlier plan to build them after the demonstration.
+- **Decision:** a person on an open movement who has not arrived on a ward is flagged for a plan review by itself once they have waited the signed time from the movement's start: 48 hours if voluntary (`expectFlagVoluntary`, VALUE-047) and 7 days if not voluntary (`expectFlagInvoluntary`, VALUE-048). Before this the flag existed only when someone pressed Raise expectation review flag.
+- **Rules as built:** the wait uses the named "not voluntary" rule (D-186 item 4), so a person with no legal status recorded gets the 48 hour wait, as the hand-raised flag always has. The flag goes once the person arrives (or transport records them delivered) or the movement closes. Clearing it (Clear expectation review flag) is the record that someone reviewed the plan; the review is stored with who cleared it and when, and the next wait counts from that clear. A flag a person raises by hand still shows until cleared. The flag never moves, frees or closes anything.
+- **Where it shows:** the coordinator's Home Flow list row, the ED board row (and the phone person sheet), the head line of the person's Now page while they are being placed or moved, and the movement's workflow actions, as "Review plan: not arrived after 48 hours" (or 7 days), or "Review plan: flagged by staff" for a hand-raised one.
+- **Unchanged:** both values stay as signed on 15 October 2026 (D-56); no new value is added. Clinical change: built in one held pull request, merged only on Josh's yes.
+- **Boundary:** synthetic data only. Not validated clinical decision support.
+
+## D-276. Build every fix from the 21 November review of main; big visible changes are mocked up first (22 November 2026)
 
 - **Date:** 22 November 2026, 2:54 AM AWST (21 November, 18:54 UTC). **Decided by:** Josh, in the project chat, answering the review in the thread "Review main for bugs before demo": "Go ahead and build and complete all of these for me", "Fix all bugs and issues" and "Please can you utilise a mockup for all issues for me where big design changes occurred".
 - **Decision:** the demo script is corrected for the D-270 layouts (Act 1's title "Beds right now", **Open** on the All EDs card, Act 5's "Checks and ward details" card). The claims that the ED list "is not re-sorted" are reworded: the ED board is sorted by time in ED or by name, never scored or ranked by any judgement. The review's small bugs (the ED tier key, Tools focus, the ED sort) and polish follow in a later pull request. A fix that changes the look of a page noticeably (such as the ward checks card at 820 or the Android status bar colour) is mocked up and approved before it is built. Whether the 6 am release ran is checked.
+- **Mock-ups approved:** 22 November 2026, 3:22 AM AWST (21 November, 19:22 UTC), Josh in the project chat: "Yes to all recommendations". Both are built in the fixes pull request: once the ward page is one column (70rem and below, such as an iPad at 820) the Checks and ward details card comes before Every bed, folded, with its counts on one line; and the browser status bar (`theme-color`, the installed app's title bar) uses the header navy in light and dark, not white or near black. Glare mode keeps white.
 - **Why:** the script must match the screen for the demo, and the ED board no longer offers "Current order" on a laptop.
 - **Boundary:** wording and small behaviour fixes only. No clinical rule, signed value, permission or saved record format changes. Synthetic data only.
 
-The next free number is D-276.
+The next free number is D-277.

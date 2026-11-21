@@ -1861,8 +1861,8 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
-        "line": 1202,
-        "sha256": "65c00712b51488eae672773b7b33301e35c625232da847abe937b2a17a538e09"
+        "line": 1203,
+        "sha256": "20a646b9c4f8318d6a129427214754c5a575059a4b7c8dc41182e1abdf29dafe"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -1912,7 +1912,7 @@
       {
         "path": "src/components/ward-management/ward-model.ts",
         "line": 1,
-        "sha256": "45598f7a8812733dffb4cbf9fd97230c97567d8f28dbe77ae2704895ed0d8025"
+        "sha256": "f0afa004e36f244537febfaa76b2298cc5e5ad9b0e448bbe2c233af1d789241f"
       },
       {
         "path": "src/components/ward-management/ward-patient-registration-reducer.ts",

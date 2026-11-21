@@ -1120,11 +1120,15 @@ export type Movement = MovementBase & {
   waitlistedUnitIds?: string[];
   /**
    * Expect flag: voluntary past 48h or involuntary past 7 days. Removal is a confirmed action
-   * (`CLEAR_EXPECT_FLAG`), never automatic.
+   * (`CLEAR_EXPECT_FLAG`), never automatic. Since D-275 the flag also shows by itself once the wait
+   * runs out (`expectReviewDue`, `ward-expect-review.ts`); clearing that one stores it here with
+   * `automatic: true` and `raisedAt` set to when the wait ran out.
    */
   expectFlag?: {
     raisedAt: Instant;
     kind: "voluntary_48h" | "involuntary_7d";
+    /** D-275: the wait raised it, not a person. Absent on a person's raise. */
+    automatic?: true;
     clearedAt?: Instant;
     clearedBy?: WardFlowRole;
   };
@@ -1135,6 +1139,7 @@ export type Movement = MovementBase & {
   expectFlagHistory?: {
     raisedAt: Instant;
     kind: "voluntary_48h" | "involuntary_7d";
+    automatic?: true;
     clearedAt?: Instant;
     clearedBy?: WardFlowRole;
   }[];

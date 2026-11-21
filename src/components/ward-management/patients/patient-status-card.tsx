@@ -24,6 +24,7 @@ import type { EventLogEntry } from "@/components/ward-management/ward-event-log"
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import { bedHold, PULL_NO_LIMIT_RECORDED } from "@/components/ward-management/ward-bed-hold";
 import { arrivalTiming, arrivalTimingWords } from "@/components/ward-management/ward-arrival-timing";
+import { expectReviewDue, expectReviewTag } from "@/components/ward-management/ward-expect-review";
 import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { legalStatusTextIsInvoluntary } from "@/components/ward-management/ward-support-notifications";
@@ -402,6 +403,21 @@ export function absenceVoluntary(movement: Movement | undefined, patient: Patien
   );
 }
 
+/**
+ * D-275: a person not arrived after the signed wait (48 hours voluntary, 7 days not voluntary), or
+ * flagged by staff, carries the plan review flag in the head line of every placement mode.
+ */
+function withExpectReview(mode: PatientMode, ctx: PatientStatusContext, status: PatientStatus): PatientStatus {
+  const placing = mode === "find" || mode === "held" || mode === "transit";
+  const review = placing && ctx.movement ? expectReviewDue(ctx.movement, ctx.now) : null;
+  if (!review || status.verdict === "Progress unavailable") return status;
+  return {
+    ...status,
+    tone: status.tone === "danger" ? "danger" : "warning",
+    meta: `${status.meta}. ${expectReviewTag(review)}`,
+  };
+}
+
 /** Builds the status card for a mode from the live record. Every value comes from shared state. */
 /**
  * The status for this mode, with every action the route's role may not take for now shown as
@@ -414,7 +430,7 @@ export function buildPatientStatus(
   summary?: SenderMovementPartialView | null,
   acceptedPlacementAllowed = false,
 ): PatientStatus {
-  const status = statusFor(mode, ctx, summary);
+  const status = withExpectReview(mode, ctx, statusFor(mode, ctx, summary));
   const limit = ctx.roleLimit;
   const neverSteps: WardFlowEventType[] = [];
   const limited = (action: StatusAction | undefined): StatusAction | undefined => {

@@ -17,7 +17,7 @@ Audits 12 and 14, which added the recovery card near the end, and walked again o
 1366 x 768, and walked twice on the clinical PR #1656 build at 1366 x 768 (headless Chromium,
 scripted). Acts 2, 3, 6B and the Close were reworded on 20 November 2026 to match the screen after a
 demo re-walk at 1440 x 900, and Acts 1, 2 and 5 again on 22 November 2026 for the new page layouts
-(D-270, D-275). Rehearse once before any audience.
+(D-270, D-276). Rehearse once before any audience.
 Previous rewrites: 10 November, 24 October and 20 October 2026 (PR #510). Documentation owns._
 
 ## Read this first
