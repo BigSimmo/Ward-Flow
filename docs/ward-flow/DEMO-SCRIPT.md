@@ -1,6 +1,6 @@
 # BedChart demonstration script
 
-<!-- last-checked: 2026-11-20 -->
+<!-- last-checked: 2026-11-22 -->
 
 **What this is:** an 11-minute walk-through of one synthetic patient journey, from the morning bed
 meeting to arrival on the ward, then a short look at what is new.  
@@ -16,7 +16,8 @@ production build and once on the public demo (Chromium, 1440 px wide), then agai
 Audits 12 and 14, which added the recovery card near the end, and walked again on the PR C build at
 1366 x 768, and walked twice on the clinical PR #1656 build at 1366 x 768 (headless Chromium,
 scripted). Acts 2, 3, 6B and the Close were reworded on 20 November 2026 to match the screen after a
-demo re-walk at 1440 x 900. Rehearse once before any audience.
+demo re-walk at 1440 x 900, and Acts 1, 2 and 5 again on 22 November 2026 for the new page layouts
+(D-270, D-276). Rehearse once before any audience.
 Previous rewrites: 10 November, 24 October and 20 October 2026 (PR #510). Documentation owns._
 
 ## Read this first
@@ -25,8 +26,8 @@ Previous rewrites: 10 November, 24 October and 20 October 2026 (PR #510). Docume
   clinical use. Say so at the start and at the end. If asked whether it is a medical device, say: "We
   believe it sits outside the medical device definition. No regulatory adviser has confirmed that
   yet." Do not state it as settled.
-- **The app never decides.** It never places a patient, scores risk, suggests a best ward, re-sorts
-  the ED queue, works out a Mental Health Act time or releases a pulled bed. Every step in this
+- **The app never decides.** It never places a patient, scores risk, suggests a best ward, ranks
+  the ED queue by any judgement, works out a Mental Health Act time or releases a pulled bed. Every step in this
   script is a person's click.
 - **Words.** A bed kept for an incoming patient is **pulled**, with a pull time limit. "Held" is only
   for a bed kept for its own patient while they are on leave or absent.
@@ -128,7 +129,7 @@ recorded yet.
 
 **Screen:** **Capacity** in the left-hand menu.
 
-**Do:** point to the title "Capacity" and the four figures beneath it: "Ready · now",
+**Do:** point to the title "Beds right now" and the four figures beneath it: "Ready · now",
 "Need a bed · now", "Short · now" and "In use · now". Point to the pill "… of … counts confirmed ·
 since …", which names a ward still to confirm and the time it last did. Note the beds-ready number
 beside **Capacity** in the left-hand menu: you will come back to it in Act 3. Then point to the band
@@ -166,7 +167,7 @@ Act 3. The TV's discharges figure is the same as the sheet's.
 
 ## Act 2: A patient waiting in ED (1:30-3:30)
 
-**Screen:** Royal Perth Hospital ED. In the left-hand menu press **All EDs**, then **Enter** on the
+**Screen:** Royal Perth Hospital ED. In the left-hand menu press **All EDs**, then **Open** on the
 RPH ED card.
 
 **Do:** point to the figures at the top ("… on the board", "… no bed yet", "… under a form") and the
@@ -175,8 +176,8 @@ filters **Under a form** and **No bed yet**.
 **Say:**
 
 > "This is the emergency department's view: who is waiting for a mental health bed, how long, and
-> under which legal form. The ED's list stays in the order the ED keeps it. BedChart does not
-> re-sort it or score anyone."
+> under which legal form. The board is sorted by time in ED, longest first, or by name from the
+> column heads. It is never scored or ranked by any judgement."
 
 **Do:** scroll down to **Under 8 hours** and click **Pellingworth, Keira**. A panel opens. Point to its **Legal form** card
 first: Form 3B is still shown as recorded, with the next form to record. Then point to **Where the referral is**, just
@@ -330,10 +331,10 @@ Press **Esc**, and point to "Arrived · transfer complete" on her page.
 > her page now belongs to the ward."
 
 **Do:** in the left-hand menu press **More**, then **All wards**, then **Open ward** on the
-**Dabakarn** card. Point to Keira in the bed grid, and to **Staff on constant obs** in the ward's
-**Checking · now** strip, which counts staff assigned to constant observation (none on this ward
-just now). Beside it, **Obs not recorded** counts people on the ward with no observation level
-recorded. It is a count only: no level is shown or suggested.
+**Dabakarn** card. Point to Keira in the bed grid. Then, in the **Checks and ward details** card
+beside it, point to "… staff on constant observation", which counts staff assigned to constant
+observation (none on this ward just now). In the **Checking** line below it, **Obs not recorded**
+counts people on the ward with no observation level recorded. It is a count only: no level is shown or suggested.
 
 **Say:**
 
@@ -410,8 +411,8 @@ Say these with confidence:
 - **Nobody is placed by the app.** Every refer, accept, pull and move is a person's click. Pulling a
   bed takes two clicks and offers Undo. The coordinator or the accepting ward's desk may pull it, and
   the record names which desk did.
-- **No ranking.** Wards are listed in a fixed network order, never ranked or suggested. The ED's
-  list is not re-sorted.
+- **No ranking.** Wards are listed in a fixed network order, never ranked or suggested. The ED
+  board is sorted by time in ED or by name, never scored.
 - **No computed legal times.** Legal expiry is shown only when it was typed from the paper form;
   otherwise the app says the time was not written. It never works out a Mental Health Act duration.
 - **Pulls never release themselves.** A pulled bed shows its pull time limit; when it runs out, a
