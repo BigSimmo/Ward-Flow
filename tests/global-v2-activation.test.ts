@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { sourceFrom } from "./helpers/source-contract";
 
-import { APP_THEME_COLORS, THEME_BOOTSTRAP_SCRIPT } from "../src/lib/theme";
+import { APP_CHROME_COLORS, THEME_BOOTSTRAP_SCRIPT } from "../src/lib/theme";
 
 const layout = readFileSync(new URL("../src/app/layout.tsx", import.meta.url), "utf8");
 const globals = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8");
@@ -60,8 +60,8 @@ describe("global v2 activation", () => {
   });
 
   it.each([
-    { prefersDark: false, expectedClasses: ["ckb-v2"], expectedColour: APP_THEME_COLORS.light },
-    { prefersDark: true, expectedClasses: ["ckb-v2", "dark"], expectedColour: APP_THEME_COLORS.dark },
+    { prefersDark: false, expectedClasses: ["ckb-v2"], expectedColour: APP_CHROME_COLORS.light },
+    { prefersDark: true, expectedClasses: ["ckb-v2", "dark"], expectedColour: APP_CHROME_COLORS.dark },
   ])(
     "retains ckb-v2 through the $prefersDark first-paint branch",
     ({ prefersDark, expectedClasses, expectedColour }) => {

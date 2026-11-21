@@ -75,10 +75,10 @@ import {
   SrOnly,
   StatusGlyph,
   useIsPhone,
+  useMediaQuery,
   type WfTone,
 } from "@/components/wf";
 import { MissingValue } from "@/components/wf/missing-value";
-import { useMediaQuery } from "@/components/wf/use-is-phone";
 import { bedGlyphTone, type BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
