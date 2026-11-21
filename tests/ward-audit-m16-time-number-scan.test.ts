@@ -80,6 +80,12 @@ type Allowed = { readonly file: string; readonly expr: string; readonly n: numbe
 /** File-specific hits that are not clinical values, each with its reason and its count in the file. */
 const ALLOWED: readonly Allowed[] = [
   {
+    file: "reports/weekly-replayed-journeys.ts",
+    expr: "7 * 60",
+    n: 1,
+    why: "example history (D-273): the time of day each replayed example journey starts, never a clinical time",
+  },
+  {
     file: "alerts/alert-detail.tsx",
     expr: "booking.expectedArrivalAt - booking.bookedAt <= 720",
     n: 1,

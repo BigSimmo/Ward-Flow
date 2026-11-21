@@ -57,6 +57,8 @@ export type PilotMeasures = {
   requestToBedHeld: DurationSummary;
   /** Where the time goes: each step's typical time, counted in the week the step finished. */
   steps: PilotStep[];
+  /** D-273: how many replayed example journeys the steps also read (Weekly's own desk, example history on). */
+  replayedSampleJourneys?: number;
   /** Supporting: bed requests raised in the week. */
   requests: {
     raised: number;
@@ -154,14 +156,18 @@ function between(from: Instant | undefined, to: Instant | undefined): number | u
   return to - from;
 }
 
+/** Movements and the week to count them in. */
+type StepSource = { movements: readonly Movement[]; week: ReportWeek };
+
 /** A step counted in the week its end falls in. */
 function stepSummary(
-  movements: readonly Movement[],
-  week: ReportWeek,
+  sources: readonly StepSource[],
   start: (movement: Movement) => Instant | undefined,
   end: (movement: Movement) => Instant | undefined,
 ): DurationSummary {
-  const finished = movements.filter((movement) => inWeek(end(movement), week));
+  const finished = sources.flatMap(({ movements, week }) =>
+    movements.filter((movement) => inWeek(end(movement), week)),
+  );
   const durations = finished
     .map((movement) => between(start(movement), end(movement)))
     .filter((minutes): minutes is number => minutes !== undefined);
@@ -213,6 +219,58 @@ function openedBefore(other: Movement, movement: Movement): boolean {
   return other.openedAt < movement.openedAt || (other.openedAt === movement.openedAt && other.id < movement.id);
 }
 
+/**
+ * "Where the time goes": each step's typical time, counted in the week the step finished. Weekly adds
+ * the replayed example journeys here only (D-273, `weekly-replayed-journeys.ts`).
+ */
+export function pilotSteps(
+  movements: readonly Movement[],
+  week: ReportWeek,
+  /** D-273: more movements, each set counted in its own week (`weekly-replayed-journeys.ts`). */
+  more: readonly StepSource[] = [],
+): PilotStep[] {
+  const sources = [{ movements, week }, ...more];
+  return [
+    {
+      id: "ask",
+      label: "Request raised to first ward asked",
+      summary: stepSummary(
+        sources,
+        (m) => m.openedAt,
+        (m) => m.referredAt,
+      ),
+    },
+    {
+      id: "answer",
+      label: "First ward asked to a ward accepting",
+      summary: stepSummary(
+        sources,
+        (m) => m.referredAt,
+        (m) => m.acceptedAt,
+      ),
+    },
+    {
+      id: "hold",
+      label: "Ward accepting to bed pulled",
+      summary: stepSummary(
+        sources,
+        (m) => m.acceptedAt,
+        (m) => firstReached(m, "pulled"),
+      ),
+    },
+    {
+      id: "leave",
+      label: "Bed pulled to leaving the ED",
+      summary: stepSummary(sources, (m) => firstReached(m, "pulled"), leftEd),
+    },
+    {
+      id: "travel",
+      label: "Leaving the ED to arriving on the ward",
+      summary: stepSummary(sources, leftEd, arrived),
+    },
+  ];
+}
+
 export function pilotMeasures(input: PilotMeasuresInput, week: ReportWeek): PilotMeasures {
   const { movements, referrals, patients, now, pullHoldMinutes, units, morningRollupConfirmations } = input;
   const { morningRollupDeadlineMinutes } = input;
@@ -259,48 +317,7 @@ export function pilotMeasures(input: PilotMeasuresInput, week: ReportWeek): Pilo
     heldInWeek.length,
   );
 
-  const steps: PilotStep[] = [
-    {
-      id: "ask",
-      label: "Request raised to first ward asked",
-      summary: stepSummary(
-        movements,
-        week,
-        (m) => m.openedAt,
-        (m) => m.referredAt,
-      ),
-    },
-    {
-      id: "answer",
-      label: "First ward asked to a ward accepting",
-      summary: stepSummary(
-        movements,
-        week,
-        (m) => m.referredAt,
-        (m) => m.acceptedAt,
-      ),
-    },
-    {
-      id: "hold",
-      label: "Ward accepting to bed pulled",
-      summary: stepSummary(
-        movements,
-        week,
-        (m) => m.acceptedAt,
-        (m) => firstReached(m, "pulled"),
-      ),
-    },
-    {
-      id: "leave",
-      label: "Bed pulled to leaving the ED",
-      summary: stepSummary(movements, week, (m) => firstReached(m, "pulled"), leftEd),
-    },
-    {
-      id: "travel",
-      label: "Leaving the ED to arriving on the ward",
-      summary: stepSummary(movements, week, leftEd, arrived),
-    },
-  ];
+  const steps = pilotSteps(movements, week);
 
   // Supporting: requests raised in the week.
   const raised = movements.filter((movement) => inWeek(movement.openedAt, week));

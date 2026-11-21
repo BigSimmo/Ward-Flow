@@ -3,12 +3,13 @@
 import { useMemo } from "react";
 
 import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
-import { splitDuration } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, splitDuration } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { SMALL_NUMBER_NOT_SHOWN } from "@/components/ward-management/ward-access-scope-records";
 
 import type { ExecutiveReportingWeek } from "../statistics/executive-statistics-contract";
+import { useStatisticsSamples } from "../statistics/statistics-samples";
 import {
   statisticsCountText as reportCount,
   exactStatisticsCount,
@@ -17,11 +18,13 @@ import {
 import {
   per100,
   pilotMeasures,
+  pilotSteps,
   type DurationSummary,
   type PilotMeasures,
   type PilotMeasuresInput,
 } from "./pilot-measures";
 import type { ReportWeek } from "./weekly-report";
+import { replayedJourneyMovements, replayedJourneyWeek } from "./weekly-replayed-journeys";
 
 type ReportCount = StatisticsCount;
 type ReportDuration = Omit<DurationSummary, "sampleSize" | "population" | "median" | "p90"> & {
@@ -150,6 +153,7 @@ export function usePilotFigures(measures: WeeklyPilot) {
     held: durationFigure(measures.requestToBedHeld, "beds pulled"),
     steps,
     longestStepId: longest?.id,
+    replayedSampleJourneys: "replayedSampleJourneys" in measures ? measures.replayedSampleJourneys : undefined,
     requests: {
       raised: person(requests.raised),
       window: windowText(requests.windowMinutes),
@@ -196,7 +200,11 @@ export function useOperationalPilot(
     morningRollupConfirmations,
     morningRollupDeadlineMinutes,
   } = input;
-  return useMemo(
+  // D-273: with example history on, the step figures also read the replayed example journeys,
+  // counted against this week moved back to the day they were walked.
+  const samples = useStatisticsSamples();
+  const today = Math.floor(now / MINUTES_PER_DAY);
+  const measures = useMemo(
     () =>
       pilotMeasures(
         {
@@ -223,4 +231,14 @@ export function useOperationalPilot(
       week,
     ],
   );
+  return useMemo(() => {
+    if (!samples) return measures;
+    const replayed = replayedJourneyMovements();
+    const replayWeek = replayedJourneyWeek(week, today * MINUTES_PER_DAY);
+    return {
+      ...measures,
+      steps: pilotSteps(movements, week, [{ movements: replayed, week: replayWeek }]),
+      replayedSampleJourneys: replayed.length,
+    };
+  }, [measures, movements, samples, today, week]);
 }
