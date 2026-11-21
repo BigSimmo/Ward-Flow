@@ -24,7 +24,7 @@ import {
   type PilotMeasuresInput,
 } from "./pilot-measures";
 import type { ReportWeek } from "./weekly-report";
-import { replayedJourneyMovements } from "./weekly-replayed-journeys";
+import { replayedJourneyMovements, replayedJourneyWeek } from "./weekly-replayed-journeys";
 
 type ReportCount = StatisticsCount;
 type ReportDuration = Omit<DurationSummary, "sampleSize" | "population" | "median" | "p90"> & {
@@ -200,11 +200,10 @@ export function useOperationalPilot(
     morningRollupConfirmations,
     morningRollupDeadlineMinutes,
   } = input;
-  // D-273: with example history on, the step figures also read the replayed example journeys, which
-  // only move by whole days.
+  // D-273: with example history on, the step figures also read the replayed example journeys,
+  // counted against this week moved back to the day they were walked.
   const samples = useStatisticsSamples();
   const today = Math.floor(now / MINUTES_PER_DAY);
-  const replayed = useMemo(() => (samples ? replayedJourneyMovements(today * MINUTES_PER_DAY) : []), [samples, today]);
   const measures = useMemo(
     () =>
       pilotMeasures(
@@ -232,12 +231,14 @@ export function useOperationalPilot(
       week,
     ],
   );
-  return useMemo(
-    () => ({
+  return useMemo(() => {
+    if (!samples) return measures;
+    const replayed = replayedJourneyMovements();
+    const replayWeek = replayedJourneyWeek(week, today * MINUTES_PER_DAY);
+    return {
       ...measures,
-      steps: pilotSteps([...movements, ...replayed], week),
+      steps: pilotSteps(movements, week, [{ movements: replayed, week: replayWeek }]),
       replayedSampleJourneys: replayed.length,
-    }),
-    [measures, movements, replayed, week],
-  );
+    };
+  }, [measures, movements, samples, today, week]);
 }

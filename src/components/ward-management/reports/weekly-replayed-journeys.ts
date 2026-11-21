@@ -21,9 +21,9 @@ import { eligibility } from "@/components/ward-management/ward-eligibility";
 import type { WardFlowEvent, WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
+
+import type { ReportWeek } from "./weekly-report";
 import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
-import { shiftInstants } from "@/components/ward-management/ward-reanchor";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 export const REPLAYED_JOURNEY_DAYS = 14;
 
@@ -51,12 +51,17 @@ const STEP_MINUTES: readonly (readonly [number, number, number, number, number])
   [20, 65, 140, 90, 40],
 ];
 
-/** The scratch world's day zero is the plain seed's, whose now is `NOW_ANCHOR` on day 0. */
-const SCRATCH_TODAY = Math.floor(NOW_ANCHOR / MINUTES_PER_DAY) * MINUTES_PER_DAY;
+/**
+ * The walk's own today: day 0, the plain seed's day (its now is `NOW_ANCHOR`, 10:42 on day 0). The
+ * journeys keep the times the reducer recorded; Weekly counts them against its week moved back to
+ * this day (`replayedJourneyWeek`), so nothing is shifted after it was recorded.
+ */
+const WALK_DAY: Instant = 0;
 
-let replayed: readonly Movement[] | undefined;
+let walked: readonly Movement[] | undefined;
 
 function walk(): readonly Movement[] {
+  const today = WALK_DAY;
   let state: WardFlowState = seedWardFlowState();
   const seededIds = new Set(state.movements.map((movement) => movement.id));
   const dispatch = (event: WardFlowEvent) => {
@@ -67,7 +72,7 @@ function walk(): readonly Movement[] {
   const journeys: Movement[] = [];
   for (let day = REPLAYED_JOURNEY_DAYS; day >= 1; day -= 1) {
     const [ask, answer, hold, leave, travel] = STEP_MINUTES[day % STEP_MINUTES.length];
-    let at = SCRATCH_TODAY - day * MINUTES_PER_DAY + START_MINUTE;
+    let at = today - day * MINUTES_PER_DAY + START_MINUTE;
     const raised = dispatch({
       type: "RAISE_REFERRAL",
       role: ACTED_AS.ed,
@@ -131,12 +136,17 @@ function walk(): readonly Movement[] {
   return journeys;
 }
 
+/** The replayed journeys: one a day for the fourteen days before the walk's own day. */
+export function replayedJourneyMovements(): readonly Movement[] {
+  walked ??= walk();
+  return walked;
+}
+
 /**
- * The replayed journeys, moved so their days fall before `now`'s day. The walk runs once; each call
- * only moves its times by whole days.
+ * `week` moved back by whole days from `now`'s day to the walk's day, so the replayed journeys stand
+ * in the same place against it as if they had been walked in the fourteen days before `now`.
  */
-export function replayedJourneyMovements(now: Instant): readonly Movement[] {
-  replayed ??= walk();
-  const today = Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY;
-  return shiftInstants(replayed, today - SCRATCH_TODAY);
+export function replayedJourneyWeek(week: ReportWeek, now: Instant): ReportWeek {
+  const days = Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY - WALK_DAY;
+  return { ...week, start: week.start - days, end: week.end - days, countedEnd: week.countedEnd - days };
 }

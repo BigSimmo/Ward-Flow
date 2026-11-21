@@ -5,6 +5,7 @@ import { reportWeek } from "@/components/ward-management/reports/weekly-report";
 import {
   REPLAYED_JOURNEY_DAYS,
   replayedJourneyMovements,
+  replayedJourneyWeek,
 } from "@/components/ward-management/reports/weekly-replayed-journeys";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { MINIMUM_EFFECTIVENESS_SAMPLE } from "@/components/ward-management/ward-derivations-records";
@@ -13,9 +14,11 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 // D-273 (Josh, 21 Nov 2026): Weekly's steps read journeys replayed through the real reducer, kept
 // apart from the plain seed, which still never backfills a stage change.
-describe("Weekly replayed sample journeys (D-273)", () => {
-  it("walks one journey a day through every stage, with times the reducer recorded", () => {
-    const journeys = replayedJourneyMovements(NOW_ANCHOR);
+describe("Weekly replayed example journeys (D-273)", () => {
+  it("walks one journey a day before the seed's day, through every stage, in reducer order", () => {
+    // The walk's own day is day 0, the plain seed's.
+    expect(Math.floor(NOW_ANCHOR / MINUTES_PER_DAY)).toBe(0);
+    const journeys = replayedJourneyMovements();
     expect(journeys).toHaveLength(REPLAYED_JOURNEY_DAYS);
     for (const journey of journeys) {
       expect(journey.stage).toBe("arrived");
@@ -28,39 +31,37 @@ describe("Weekly replayed sample journeys (D-273)", () => {
         "moving",
         "arrived",
       ]);
-      expect(journey.transport?.arrivedAt).toBeLessThan(Math.floor(NOW_ANCHOR / MINUTES_PER_DAY) * MINUTES_PER_DAY);
+      expect(journey.transport?.arrivedAt).toBeLessThan(0);
     }
   });
 
   it("leaves the plain seed alone", () => {
-    replayedJourneyMovements(NOW_ANCHOR);
+    const replayedAt = new Set(replayedJourneyMovements().map((journey) => journey.openedAt));
     const seed = seedWardFlowState();
     expect(seed.movements.every((movement) => movement.stageChanges.length === 0)).toBe(true);
-    const replayedIds = new Set(replayedJourneyMovements(NOW_ANCHOR).map((journey) => journey.openedAt));
-    expect(seed.movements.some((movement) => replayedIds.has(movement.openedAt))).toBe(false);
+    expect(seed.movements.some((movement) => replayedAt.has(movement.openedAt))).toBe(false);
   });
 
-  it("gives every step a published typical time in last week, whatever weekday today is", () => {
-    for (let weekday = 0; weekday < 7; weekday += 1) {
-      const now = NOW_ANCHOR + weekday * MINUTES_PER_DAY;
-      const dayZero = new Date("2026-11-16T00:00:00+08:00");
+  it("gives every step a published typical time in last week, whatever the day and weekday", () => {
+    const dayZero = new Date("2026-11-16T00:00:00+08:00");
+    for (const day of [0, 1, 2, 3, 4, 5, 6, 9, 30]) {
+      const now = NOW_ANCHOR + day * MINUTES_PER_DAY;
       const week = reportWeek(0, now, dayZero);
-      const steps = pilotSteps(replayedJourneyMovements(now), week);
+      const steps = pilotSteps([], week, [
+        { movements: replayedJourneyMovements(), week: replayedJourneyWeek(week, now) },
+      ]);
       for (const step of steps) {
-        expect(step.summary.sampleSize, `${step.id} on weekday ${weekday}`).toBe(7);
+        expect(step.summary.sampleSize, `${step.id} on day ${day}`).toBe(7);
         expect(step.summary.sampleSize).toBeGreaterThanOrEqual(MINIMUM_EFFECTIVENESS_SAMPLE);
         expect(step.summary.median).toBeGreaterThan(0);
       }
     }
   });
 
-  it("moves with the clock by whole days only", () => {
-    const today = replayedJourneyMovements(NOW_ANCHOR);
-    const later = replayedJourneyMovements(NOW_ANCHOR + 90);
-    const tomorrow = replayedJourneyMovements(NOW_ANCHOR + MINUTES_PER_DAY);
-    expect(later.map((journey) => journey.openedAt)).toEqual(today.map((journey) => journey.openedAt));
-    expect(tomorrow.map((journey) => journey.openedAt)).toEqual(
-      today.map((journey) => journey.openedAt + MINUTES_PER_DAY),
-    );
+  it("moves the counted week back by whole days only", () => {
+    const week = reportWeek(0, NOW_ANCHOR + 3 * MINUTES_PER_DAY + 90, new Date("2026-11-16T00:00:00+08:00"));
+    const moved = replayedJourneyWeek(week, NOW_ANCHOR + 3 * MINUTES_PER_DAY + 90);
+    expect(week.start - moved.start).toBe(3 * MINUTES_PER_DAY);
+    expect(week.end - moved.end).toBe(3 * MINUTES_PER_DAY);
   });
 });

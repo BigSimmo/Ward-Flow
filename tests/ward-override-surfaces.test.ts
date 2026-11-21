@@ -286,6 +286,11 @@ const ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON: Record<string, string> = {
   // engine eligibility, shows any refusal on the board, and leaves exceptional placement with the
   // coordinator review that records the reason.
   "src/components/ward-management/ward/ward-screen.tsx": "ACCEPT_REFERRAL",
+  // D-273 (21 Nov 2026): Weekly's example journeys are a scripted walk through the reducer, not a
+  // screen. Each one refers, accepts and pulls only at a ward the eligibility check passes, and a
+  // refused step drops that journey, so there is never an override to record. Nobody presses it.
+  "src/components/ward-management/reports/weekly-replayed-journeys.ts":
+    "REFER_TO_UNITS, ACCEPT_IN_PRINCIPLE, PULL_PATIENT",
   // RB5 (item 16, 2026-09-17): community-screen.tsx's handleConfirmAccept is the community team's
   // OWN acceptance of a community_team destination. ward-flow-reducer.ts's ACCEPT_REFERRAL case
   // only reads overrideReason inside its psychiatric_ward branch -- a community acceptance holds
@@ -676,8 +681,9 @@ describe("ward override-surface guard", () => {
     // 23 Oct 2026: Home's Offer went with the unreachable phone ward sheet (5).
     // WS-03 (26 Oct 2026) added the one-step Pull the bed (6); WT-08 took it off again (5).
     // Review P4-1 (PR #1659): the pull form's pull again after an Undo (6).
-    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(6);
-    expect(stillInViolation.size).toBe(6);
+    // D-273 (21 Nov 2026): Weekly's scripted example journeys, which no one presses (7).
+    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(7);
+    expect(stillInViolation.size).toBe(7);
   });
 
   // --- The compliance guard: every site the scan CAN see meets the rule. ---
@@ -815,6 +821,10 @@ describe("ward override-surface guard", () => {
       // coordinator-facing equivalent of community-screen.tsx's own handleConfirmAccept above).
       // The file already builds an overrideReason on the first site, so it needs no allowlist entry.
       "src/components/ward-management/referrals/referral-match.tsx::ACCEPT_REFERRAL": 3,
+      // D-273: Weekly's scripted example journeys, one site each (allowlisted above).
+      "src/components/ward-management/reports/weekly-replayed-journeys.ts::ACCEPT_IN_PRINCIPLE": 1,
+      "src/components/ward-management/reports/weekly-replayed-journeys.ts::PULL_PATIENT": 1,
+      "src/components/ward-management/reports/weekly-replayed-journeys.ts::REFER_TO_UNITS": 1,
       "src/components/ward-management/ward/ward-answer-view.tsx::ACCEPT_IN_PRINCIPLE": 2,
       "src/components/ward-management/ward/ward-answer-view.tsx::PULL_PATIENT": 1,
       // ⚠️ TWO EACH SINCE THE OVERRIDE CONTROL LANDED, and the divergence this pin exists to
