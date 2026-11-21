@@ -1082,15 +1082,29 @@ const AROUND: readonly Around[] = [
         title: "Contact and Staff needed",
         body: "Contact opens the ward's contact lines. Staff needed records a request for extra staff.",
       }),
-      // UX review (D-270): Checking left the hero for the checks card; on a phone that card is folded.
-      step([id("ward-checks-foot"), { sel: '[data-testid="ward-phone-figures"] > summary' }], {
-        title: "Checking",
-        body: "What the figures cannot vouch for, when the capacity was last confirmed, and whether the outage pack has been printed.",
-      }),
-      step([id("ward-intake-window"), { sel: '[data-testid="ward-phone-figures"] > summary' }], {
-        title: "Tonight's intake",
-        body: "The hours this ward takes admissions tonight. Edit sets them. It is in Checks and ward details.",
-      }),
+      // UX review (D-270): Checking left the hero for the checks card; on a phone, and in one column (D-276), that card is folded.
+      step(
+        [
+          id("ward-checks-foot"),
+          { sel: '[data-testid="ward-phone-figures"] > summary' },
+          { sel: '[data-testid="ward-desk-checks"]:not([open]) > summary' },
+        ],
+        {
+          title: "Checking",
+          body: "What the figures cannot vouch for, when the capacity was last confirmed, and whether the outage pack has been printed.",
+        },
+      ),
+      step(
+        [
+          id("ward-intake-window"),
+          { sel: '[data-testid="ward-phone-figures"] > summary' },
+          { sel: '[data-testid="ward-desk-checks"]:not([open]) > summary' },
+        ],
+        {
+          title: "Tonight's intake",
+          body: "The hours this ward takes admissions tonight. Edit sets them. It is in Checks and ward details.",
+        },
+      ),
       step(id("ward-tabs"), {
         title: "Ward tabs",
         body: "Ward home, Referrals for this ward to answer, and Decisions.",
