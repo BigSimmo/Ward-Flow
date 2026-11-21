@@ -1102,12 +1102,21 @@ async function main() {
         `${mergeScope.mainlineIncoming.length} clean incoming path(s) from origin/main skip the overlap check`,
       );
     if (clashes.length > 0) {
-      failed = true;
-      console.error(`[pre-commit] BLOCKED: files signed out by another session in ${SIGN_OUT_FILE}:`);
+      const signOutStrict = admissionOnly || process.env.PRECOMMIT_SIGNOUT_STRICT === "1";
+      if (signOutStrict) {
+        failed = true;
+        console.error(`[pre-commit] BLOCKED: files signed out by another session in ${SIGN_OUT_FILE}:`);
+      } else {
+        console.warn(
+          `[pre-commit] WARNING: files signed out by another session in ${SIGN_OUT_FILE} (advisory on feature commit; set PRECOMMIT_SIGNOUT_STRICT=1 to block):`,
+        );
+      }
       for (const { file, owner, branch: theirs } of clashes) console.error(`  ${file}  (${owner}, ${theirs})`);
-      console.error(
-        "  Ask the coordinator before editing these. A Josh-approved scoped takeover must name each exact file in your sign-out.",
-      );
+      if (signOutStrict) {
+        console.error(
+          "  Ask the coordinator before editing these. A Josh-approved scoped takeover must name each exact file in your sign-out.",
+        );
+      }
     }
   } else if (!admissionOnly) {
     report.push(

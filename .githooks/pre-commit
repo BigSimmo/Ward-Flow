@@ -72,7 +72,10 @@ ward_flow_index_check() {
   if ! node "$ward_script" --check >/dev/null 2>&1; then
     echo "[pre-commit] $ward_script --check FAILED - a generated index disagrees with its source:" >&2
     node "$ward_script" --check >&2 2>&1 || true
-    exit 1
+    if [ "${PRECOMMIT_DOCS_SYNC_STRICT:-0}" = "1" ]; then
+      exit 1
+    fi
+    echo "[pre-commit] Warning: Continuing commit without blocking (set PRECOMMIT_DOCS_SYNC_STRICT=1 to block)." >&2
   fi
 }
 
@@ -86,7 +89,12 @@ ward_flow_index_check "scripts/ward-flow/owner-rulings-index.mjs"   '^(docs/hist
 ward_flow_index_check "scripts/ward-flow/mockup-manifest.mjs"   '^design/third-edition-mockups/'
 ward_flow_index_check "scripts/ward-flow/screen-verification.mjs"   '^(docs/ward-flow/screen-verification\.json$|docs/ward-flow/SCREEN-VERIFICATION\.md$|scripts/ward-flow/screen-pairs\.mjs$|design/third-edition-mockups/MANIFEST\.json$)'
 if [ -f scripts/check-staged-docs.mjs ] && command -v node >/dev/null 2>&1; then
-  node scripts/check-staged-docs.mjs --ward-indexes || exit 1
+  if ! node scripts/check-staged-docs.mjs --ward-indexes; then
+    if [ "${PRECOMMIT_DOCS_SYNC_STRICT:-0}" = "1" ]; then
+      exit 1
+    fi
+    echo "[pre-commit] Warning: Continuing commit without blocking on generated index check (set PRECOMMIT_DOCS_SYNC_STRICT=1 to block)." >&2
+  fi
 fi
 }
 

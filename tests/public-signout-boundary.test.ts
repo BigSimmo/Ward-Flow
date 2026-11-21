@@ -192,11 +192,11 @@ describe("public repository ownership boundary", () => {
     writeFileSync(join(root, file), "synthetic backend note\n");
     git(root, "add", file);
     const signOutFile = join(root, "sign-out.md");
-    const run = () =>
+    const run = (extraEnv: Record<string, string> = {}) =>
       spawnSync(process.execPath, [SCRIPT], {
         cwd: root,
         encoding: "utf8",
-        env: { ...process.env, WARD_SIGNOUT_FILE: signOutFile },
+        env: { ...process.env, WARD_SIGNOUT_FILE: signOutFile, ...extraEnv },
       });
     // Q374: the branch or PR is the claim. An empty or missing log admits your own file.
     writeFileSync(signOutFile, "Open sign-outs only\n");
@@ -209,7 +209,10 @@ describe("public repository ownership boundary", () => {
       signOutFile,
       `Open sign-outs only\n- 2026-09-28 | Peer | codex/peer | /elsewhere/peer | ${file}, repo=BigSimmo/Ward-Flow\n`,
     );
-    const blocked = run();
+    const warned = run();
+    expect(warned.status).toBe(0);
+    expect(warned.stderr).toContain("WARNING: files signed out by another session");
+    const blocked = run({ PRECOMMIT_SIGNOUT_STRICT: "1" });
     expect(blocked.status).toBe(1);
     expect(blocked.stderr).toContain("files signed out by another session");
   });

@@ -118,7 +118,12 @@ describe("Ward Flow local main fold guard (.githooks/pre-commit)", () => {
     git(root, "commit", "--quiet", "-m", "initial generated fixture");
     writeFileSync(decisions, "# Synthetic decisions\n\n## D-1 Updated fixture ruling\n");
     git(root, "add", "docs/ward-flow/decisions.md");
-    const stale = runFullHook(root, { SKIP_DOCS_SYNC_HOOK: "1" });
+    // A stale index warns by default and blocks only with PRECOMMIT_DOCS_SYNC_STRICT=1 (D-272).
+    const warned = runFullHook(root, { SKIP_DOCS_SYNC_HOOK: "1" });
+    expect(warned.status, warned.stderr).toBe(0);
+    expect(warned.stderr).toContain("owner-rulings-index.mjs --check FAILED");
+    expect(warned.stderr).toContain("PRECOMMIT_DOCS_SYNC_STRICT=1");
+    const stale = runFullHook(root, { SKIP_DOCS_SYNC_HOOK: "1", PRECOMMIT_DOCS_SYNC_STRICT: "1" });
     expect(stale.status).not.toBe(0);
     expect(stale.stderr).toContain("owner-rulings-index.mjs --check FAILED");
     execFileSync(process.execPath, [script], { cwd: root });
@@ -193,7 +198,7 @@ describe("Ward Flow local main fold guard (.githooks/pre-commit)", () => {
     expect(result.stderr).toContain("COMMITTING WARD FLOW TO LOCAL MAIN IS BLOCKED");
   });
 
-  describe("sign-out clash check is on by default and bypassed only by explicit opt-in", () => {
+  describe("sign-out clash check warns by default, blocks when strict, and is skipped only by explicit opt-in", () => {
     function signOutFixture(log = "Open sign-outs only\n") {
       const root = repoFixture("ward/signout-fixture");
       mkdirSync(join(root, "scripts"), { recursive: true });
@@ -231,11 +236,19 @@ describe("Ward Flow local main fold guard (.githooks/pre-commit)", () => {
       expect(result.stderr).not.toContain("without your sign-out");
     });
 
-    it("blocks a Ward file another branch holds by default", { timeout: 90_000 }, () => {
+    // D-272: another branch's hold warns by default and blocks only with PRECOMMIT_SIGNOUT_STRICT=1.
+    it("warns on a Ward file another branch holds by default", { timeout: 90_000 }, () => {
       const { root, env } = signOutFixture(PEER_LOG);
       const result = runFullHook(root, env);
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stderr).toContain("WARNING: files signed out by another session");
+    });
+
+    it("blocks a Ward file another branch holds when PRECOMMIT_SIGNOUT_STRICT=1", { timeout: 90_000 }, () => {
+      const { root, env } = signOutFixture(PEER_LOG);
+      const result = runFullHook(root, { ...env, PRECOMMIT_SIGNOUT_STRICT: "1" });
       expect(result.status).not.toBe(0);
-      expect(result.stderr).toContain("files signed out by another session");
+      expect(result.stderr).toContain("BLOCKED: files signed out by another session");
     });
 
     it("allows the commit only when SKIP_SIGNOUT_GUARD=1 is set explicitly", { timeout: 90_000 }, () => {
