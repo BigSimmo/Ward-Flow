@@ -9,7 +9,8 @@
  * arrived by dispatching the ordinary events into `wardFlowReducer` on a scratch copy of the plain
  * seed, so every time it carries is one the reducer recorded. Only the resulting movements leave
  * this file, and only Weekly's step figures read them: they are kept apart from the plain seed and
- * from every other screen, and the live world never holds them.
+ * from every other screen, and the live world never holds them. Weekly reads them only while
+ * example history is on (`statistics-samples.ts`), and its step card says so.
  *
  * One journey a day for the fourteen days before today, each starting at a fixed time of day, so any
  * whole week (Monday to Sunday) of the last two holds exactly seven of them, whatever weekday today is.

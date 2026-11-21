@@ -9,6 +9,7 @@ import type { Unit } from "@/components/ward-management/ward-model";
 import { SMALL_NUMBER_NOT_SHOWN } from "@/components/ward-management/ward-access-scope-records";
 
 import type { ExecutiveReportingWeek } from "../statistics/executive-statistics-contract";
+import { useStatisticsSamples } from "../statistics/statistics-samples";
 import {
   statisticsCountText as reportCount,
   exactStatisticsCount,
@@ -199,9 +200,11 @@ export function useOperationalPilot(
     morningRollupConfirmations,
     morningRollupDeadlineMinutes,
   } = input;
-  // D-273: the step figures also read the replayed sample journeys, which only move by whole days.
+  // D-273: with example history on, the step figures also read the replayed example journeys, which
+  // only move by whole days.
+  const samples = useStatisticsSamples();
   const today = Math.floor(now / MINUTES_PER_DAY);
-  const replayed = useMemo(() => replayedJourneyMovements(today * MINUTES_PER_DAY), [today]);
+  const replayed = useMemo(() => (samples ? replayedJourneyMovements(today * MINUTES_PER_DAY) : []), [samples, today]);
   const measures = useMemo(
     () =>
       pilotMeasures(

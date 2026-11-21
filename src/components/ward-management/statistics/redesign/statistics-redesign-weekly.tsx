@@ -303,7 +303,7 @@ export function WeeklyBody(props: WeeklyBodyProps) {
               ) : (
                 "Steps finished in the week"
               )}
-              {pilot.replayedSampleJourneys ? " · includes sample journeys replayed through the app" : null}
+              {pilot.replayedSampleJourneys ? " · includes example journeys replayed through the app" : null}
             </Foot>
           }
         >

@@ -57,7 +57,7 @@ export type PilotMeasures = {
   requestToBedHeld: DurationSummary;
   /** Where the time goes: each step's typical time, counted in the week the step finished. */
   steps: PilotStep[];
-  /** D-273: how many replayed sample journeys the steps also read (Weekly's own desk only). */
+  /** D-273: how many replayed example journeys the steps also read (Weekly's own desk, example history on). */
   replayedSampleJourneys?: number;
   /** Supporting: bed requests raised in the week. */
   requests: {
@@ -217,7 +217,7 @@ function openedBefore(other: Movement, movement: Movement): boolean {
 
 /**
  * "Where the time goes": each step's typical time, counted in the week the step finished. Weekly adds
- * the replayed sample journeys here only (D-273, `weekly-replayed-journeys.ts`).
+ * the replayed example journeys here only (D-273, `weekly-replayed-journeys.ts`).
  */
 export function pilotSteps(movements: readonly Movement[], week: ReportWeek): PilotStep[] {
   return [
