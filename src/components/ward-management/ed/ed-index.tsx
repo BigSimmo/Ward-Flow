@@ -145,7 +145,7 @@ function rowClock(row: EdRow): WaitClock {
 /**
  * October 2026 design review (Josh, 31 Oct 2026): the title counts every department ("62 waiting
  * across 10 EDs · 8 with someone waiting"), hospital names wrap on the cards instead of ending in
- * "…", and departments with nobody waiting share one line with an Enter button each, rather than a
+ * "…", and departments with nobody waiting share one line with an Open button each, rather than a
  * full empty card.
  */
 export function EdIndex() {
@@ -405,7 +405,7 @@ export function EdIndex() {
                     longest >= accessTarget ? "danger" : longest >= ED_SEVERE_PRESSURE_WAIT_MINUTES ? "warning" : "calm"
                   }
                   title={`${longestRow.short} · ${splitDuration(longest)}${isPhone ? "" : ` · ${longestRow.summary.waiting} waiting`}`}
-                  action={{ label: "Enter", href: edHref(longestRow.summary.ed.id), testId: "ed-index-act-enter" }}
+                  action={{ label: "Open", href: edHref(longestRow.summary.ed.id), testId: "ed-index-act-enter" }}
                   testId="ed-index-act"
                 />
               ) : (
@@ -745,9 +745,9 @@ function EnterLink({ row }: { row: EdRow }) {
       className={buttonClass({ variant: "sec", size: "sm" })}
       href={edHref(row.summary.ed.id)}
       data-testid={`ed-index-link-${row.summary.ed.id}`}
-      aria-label={`Enter ${row.short}`}
+      aria-label={`Open ${row.short}`}
     >
-      Enter
+      Open
     </Link>
   );
 }
@@ -791,7 +791,7 @@ function EdCard({
       data-testid={`ed-index-card-${summary.ed.id}`}
     >
       {/* Device audit 11 Oct 2026: one control per card. The card itself opens the preview, and
-          Enter stays as the one button. */}
+          Open stays as the one button. */}
       <button
         type="button"
         className={styles.cardOpen}

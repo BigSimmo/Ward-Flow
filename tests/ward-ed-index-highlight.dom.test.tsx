@@ -193,7 +193,7 @@ describe("All EDs — design review (Josh, 31 Oct 2026): title count and the nob
     expect(clearOnly()).toHaveLength(total - withWaiting);
   });
 
-  it("puts each department with nobody waiting on one line, with its own Enter button and no card", () => {
+  it("puts each department with nobody waiting on one line, with its own Open button (Enter until 20 Nov 2026) and no card", () => {
     renderIndex();
     const line = screen.getByRole("group", { name: "Departments with nobody waiting" });
     expect(within(line).getByText("Nobody waiting")).toBeInTheDocument();
@@ -202,7 +202,7 @@ describe("All EDs — design review (Josh, 31 Oct 2026): title count and the nob
     for (const entry of clear) {
       expect(line).toContainElement(entry);
       const id = entry.getAttribute("data-testid")!.replace("ed-index-clear-", "");
-      expect(within(entry).getByRole("link", { name: /^Enter / })).toHaveAttribute("href", `/bedchart/ed/${id}`);
+      expect(within(entry).getByRole("link", { name: /^Open / })).toHaveAttribute("href", `/bedchart/ed/${id}`);
       expect(screen.queryByTestId(`ed-index-card-${id}`)).not.toBeInTheDocument();
     }
     // Every card has someone waiting, and reads the chip's own words for forms.

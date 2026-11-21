@@ -228,7 +228,7 @@ export function EdPreviewFoot({ row }: { row: EdRow }) {
         data-testid="ed-index-preview-enter"
       >
         <Icon icon={LogIn} size={16} />
-        Enter {row.short}
+        Open {row.short}
       </Link>
     </div>
   );

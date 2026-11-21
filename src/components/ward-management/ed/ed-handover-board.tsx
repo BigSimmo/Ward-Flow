@@ -193,8 +193,10 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
     >
       <div className={handover.handoverHead}>
         <div className={handover.handoverTitle}>
+          {/* UX review 20 Nov 2026 (Josh "yes"): "On the board", since the page is already the ED's
+              and "handover" is the print's word. */}
           <h2>
-            ED handover{" "}
+            On the board{" "}
             <span className={handover.handoverCount}>
               {filtered ? `${boardMatchCount} of ${patients.length}` : patients.length}
             </span>

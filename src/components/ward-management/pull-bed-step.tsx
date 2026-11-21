@@ -28,7 +28,12 @@ import {
   pullUndoTransportBookedLine,
 } from "./pull-bed-facts";
 import { STARTED_JOURNEY_UNDONE } from "./ward-bed-pull-undo";
-import { noteJourneyUndoToast, plainUndoRefusal } from "./ward-undo-journey-toasts";
+import {
+  noteJourneyUndoToast,
+  noteUndoRefusalToast,
+  noteUndoToastEnds,
+  plainUndoRefusal,
+} from "./ward-undo-journey-toasts";
 
 // WS-03: the one-step pull loads only when someone opens it.
 const PullAcceptedReferral = dynamic(
@@ -143,7 +148,7 @@ export function usePullBedStep(): PullBedStep {
       const movement = pulledMovement(movements, pulled);
       const stageIndex = movement ? pullStageIndex(movement, pulled) : undefined;
       if (!dispatch || !movement || stageIndex === undefined || at > pullUndoUntil(pulled)) {
-        toast?.push({ tone: "warning", title: PULL_UNDO_GONE });
+        noteUndoRefusalToast(toast?.push({ tone: "warning", title: PULL_UNDO_GONE }));
         return;
       }
       run(
@@ -168,7 +173,7 @@ export function usePullBedStep(): PullBedStep {
                 ((outcome?.status === "refused" ? plainUndoRefusal(outcome.message ?? "") : undefined) ??
                 wardCommandFailure(outcome));
           if (failure) {
-            toast?.push({ tone: "warning", title: failure });
+            noteUndoRefusalToast(toast?.push({ tone: "warning", title: failure }));
             return;
           }
           const referralId = pulled.entry.referral.id;
@@ -211,6 +216,8 @@ export function usePullBedStep(): PullBedStep {
         undo: { durationMs: BED_PULL_UNDO_TOAST_MS, until, onUndo: () => undo(pulled) },
       });
       if (toastId !== undefined) pullToasts.current.set(pulled.entry.referral.id, toastId);
+      // Re-walk 20 Nov 2026 (fault 1): it also closes once the board clock passes the time it names.
+      noteUndoToastEnds(toastId, pullUndoUntil(pulled));
       // Item 4 (19 Nov 2026): the toast closes itself once this journey records a later step.
       const movement = pulledMovement(latest.current.movements, pulled);
       const stageIndex = movement ? pullStageIndex(movement, pulled) : undefined;

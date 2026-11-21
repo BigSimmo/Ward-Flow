@@ -360,14 +360,32 @@
   color: var(--wf-ink-3);
   font-weight: 400;
 }
-/* Q245: Open ED movements keeps all six columns (Median included) inside a half-width card at
- * 1280: tighter inner gaps and a narrower ED name, which wraps. The card's 16px edges stay. */
+/* Q245: Open ED movements (and, since 20 Nov 2026, the wards table beside it) keeps all its
+ * columns inside a half-width card at 1280: tighter inner gaps and a narrower name, which wraps.
+ * The card's 16px edges stay. */
 .tableFit th,
 .tableFit td {
   padding-inline: 8px;
 }
 .tableFit .name {
   min-width: 7rem;
+}
+/* UX review 20 Nov 2026 (broken item 2): at 1440 the kit's 80px cell floor pushed Median out of
+ * the card and waits wrapped as "1 d 5 / h". Short count columns take their own width, waits stay
+ * on one line and the long "Open movements" heading may wrap instead. */
+.tableFit th,
+.tableFit td {
+  min-width: 0;
+}
+.tableFit td {
+  white-space: nowrap;
+}
+.tableFit thead th,
+.tableFit thead th button {
+  white-space: normal;
+}
+.tableFit thead th button {
+  text-align: inherit;
 }
 .gv {
   display: inline-flex;

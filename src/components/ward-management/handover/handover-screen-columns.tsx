@@ -22,7 +22,7 @@ export function screenColumnsFor(columns: HandoverColumn[], columnIds: readonly 
       header: "Next step",
       width: 280,
       cell: (row, cellCtx) => {
-        const step = nextStep(row, cellCtx.now, cellCtx.cutoff, cellCtx.readyBeds);
+        const step = nextStep(row, cellCtx.now, cellCtx.cutoff, cellCtx.readyBeds, cellCtx.face);
         return (
           <span className={styles.two}>
             <span className={styles.stepLine} title={step.text}>

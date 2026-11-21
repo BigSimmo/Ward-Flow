@@ -52,6 +52,15 @@ const printField = (id: string, row: ReturnType<typeof rowOf>) =>
   HANDOVER_COLUMNS.find((column) => column.id === id)!.paper(row, ctx);
 
 describe("Handover output audit repairs", () => {
+  it("prints Move by and Pull ends on one 24-hour face in the same row (re-walk 20 Nov 2026, D-254)", () => {
+    const pulled = rowOf(
+      movement({ stage: "pulled", acceptedUnitId: sourceUnit.id, pullExpiresAt: 600 + 90, legalForm: undefined }),
+    );
+    expect(printField("due", pulled)).toMatch(/^Pull ends \d{2}:\d{2}/u);
+    expect(printField("next", pulled)).toMatch(/^Move by \d{2}:\d{2}, /u);
+    expect(`${printField("due", pulled)} ${printField("next", pulled)}`).not.toMatch(/am|pm/iu);
+  });
+
   it("retains a source ward's outgoing movement even before a destination is asked", () => {
     const record = movement({ sourceAdmissionId: source.id });
     expect(

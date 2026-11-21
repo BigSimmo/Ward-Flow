@@ -83,9 +83,54 @@ export function journeyUndoToastsMovedOn(
   return stale;
 }
 
+/**
+ * Re-walk 20 Nov 2026 (fault 1): the board-clock minute each waiting Undo toast's window ends. The
+ * toast's own timer counts real time, so a demo clock jump left "Undo until 10:47 am" on screen at
+ * 11:42, offering an Undo the engine would refuse. `WardUndoWorldClear` closes it, as its X would.
+ */
+const windowEnds = new Map<string, number>();
+
+/** Notes when a just-raised Undo toast's window ends on the board clock. */
+export function noteUndoToastEnds(toastId: string | undefined, endsAt: number): void {
+  if (toastId !== undefined) windowEnds.set(toastId, endsAt);
+}
+
+/** The noted Undo toasts whose window has passed at `now`, each named once (as `journeyUndoToastsMovedOn`). */
+export function undoToastsPastWindow(now: number, isShown?: (toastId: string) => boolean): string[] {
+  const past: string[] = [];
+  for (const [toastId, endsAt] of windowEnds) {
+    if (isShown && !isShown(toastId)) windowEnds.delete(toastId);
+    else if (now > endsAt) {
+      windowEnds.delete(toastId);
+      past.push(toastId);
+    }
+  }
+  return past;
+}
+
+/**
+ * Re-walk 20 Nov 2026 (fault 1): a refused Undo's warning stays until closed, so it outlived a demo
+ * reset that replaced the record it was about. Its toast is noted here so the reset closes it too.
+ */
+const refusals = new Set<string>();
+
+/** Notes a warning toast that says an Undo was refused or unavailable. */
+export function noteUndoRefusalToast(toastId: string | undefined): void {
+  if (toastId !== undefined) refusals.add(toastId);
+}
+
+/** Every noted Undo refusal toast, forgotten as it is returned (a demo reset closes them). */
+export function takeUndoRefusalToasts(): string[] {
+  const all = [...refusals];
+  refusals.clear();
+  return all;
+}
+
 /** Forgets every noted toast (a demo reset closes them all itself; also for tests). */
 export function forgetJourneyUndoToasts(): void {
   waiting.clear();
+  windowEnds.clear();
+  refusals.clear();
 }
 
 const ARRIVED = /closed movement \(Patient arrived\b/u;

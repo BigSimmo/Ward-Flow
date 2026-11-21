@@ -1207,3 +1207,21 @@
     inset: -4px 0;
   }
 }
+
+/* UX review 20 Nov 2026: on a phone a long quiet word ("in ED · Referral time not recorded") kept
+ * the wait on one line and squeezed the name into a one-letter column. On a phone the wait sits
+ * over its word, the side is capped, and the word wraps there instead. */
+@media (max-width: 46.4375rem) {
+  .screen .queueWait {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    max-width: 8.5rem;
+    white-space: normal;
+  }
+
+  .screen .queueWord {
+    justify-content: flex-end;
+    text-align: right;
+  }
+}

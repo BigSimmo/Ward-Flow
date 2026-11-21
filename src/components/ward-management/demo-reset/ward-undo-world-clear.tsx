@@ -7,6 +7,8 @@ import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flo
 import {
   forgetJourneyUndoToasts,
   journeyUndoToastsMovedOn,
+  takeUndoRefusalToasts,
+  undoToastsPastWindow,
 } from "@/components/ward-management/ward-undo-journey-toasts";
 
 /**
@@ -19,18 +21,24 @@ import {
  * Screen audit 19 Nov 2026 (item 4): the same goes for one journey. Once a journey records its next
  * step or closes, the Undo toasts for its earlier steps close too, because the engine would refuse
  * them (`ward-undo-journey-toasts.ts`).
+ *
+ * Re-walk 20 Nov 2026 (fault 1): an Undo toast also closes once the board clock (a demo clock jump
+ * included) passes the time it names, and a reset closes the warnings of refused Undos as well.
  */
 export function WardUndoWorldClear() {
-  const world = useOptionalWardFlowSelect("worldGeneration", "movements");
+  const world = useOptionalWardFlowSelect("worldGeneration", "movements", "now");
   const generation = world?.worldGeneration;
   const movements = world?.movements;
+  const now = world?.now;
   const toast = useOptionalToast();
   const seen = useRef(generation);
   useEffect(() => {
     if (generation === undefined) return;
     if (seen.current !== undefined && seen.current !== generation) {
+      const refused = takeUndoRefusalToasts();
       forgetJourneyUndoToasts();
       toast?.dismissUndo?.();
+      for (const toastId of refused) toast?.dismiss(toastId);
     }
     seen.current = generation;
   }, [generation, toast]);
@@ -38,5 +46,9 @@ export function WardUndoWorldClear() {
     if (!movements || !toast) return;
     for (const toastId of journeyUndoToastsMovedOn(movements, toast.isShown)) toast.dismiss(toastId);
   }, [movements, toast]);
+  useEffect(() => {
+    if (now === undefined || !toast) return;
+    for (const toastId of undoToastsPastWindow(now, toast.isShown)) toast.dismiss(toastId);
+  }, [now, toast]);
   return null;
 }

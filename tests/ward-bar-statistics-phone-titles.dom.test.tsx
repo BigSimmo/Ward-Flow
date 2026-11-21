@@ -1,5 +1,5 @@
 // Phone review F-12 (Oct 2026): the lean phone bar names each statistics page by its tab's own
-// word, so it never mixes "Statistics compare" with "EDs". Desktop keeps its longer titles.
+// word, so it never mixes "Statistics" with "EDs". Wider screens say "Statistics" on every tab.
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
@@ -53,8 +53,16 @@ describe("statistics titles in the phone bar", () => {
     expect(titleOn("/bedchart/statistics/eds", true)).toBe("EDs");
   });
 
-  it("leaves the desktop titles as they were", () => {
-    expect(titleOn("/bedchart/statistics/overview", false)).toBe("Statistics overview");
-    expect(titleOn("/bedchart/statistics/compare", false)).toBe("Statistics compare");
+  // UX review 20 Nov 2026 (pattern A): the wider bar carries the page's short name on every tab.
+  it("says Statistics on every statistics tab on wider screens", () => {
+    expect(titleOn("/bedchart/statistics/overview", false)).toBe("Statistics");
+    expect(titleOn("/bedchart/statistics/compare", false)).toBe("Statistics");
+    expect(titleOn("/bedchart/statistics/wards", false)).toBe("Statistics");
+    expect(titleOn("/bedchart/statistics/eds", false)).toBe("Statistics");
+  });
+
+  it("names Today's review and Leave instead of BedChart", () => {
+    expect(titleOn("/bedchart/review", false)).toBe("Today's review");
+    expect(titleOn("/bedchart/leave", false)).toBe("Leave");
   });
 });

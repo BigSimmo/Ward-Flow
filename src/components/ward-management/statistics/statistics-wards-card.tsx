@@ -219,7 +219,7 @@ export function StatisticsWardsCard({
         role="region"
         aria-label="Inpatient mental health ward capacity and demand, scrollable table"
       >
-        <table className={cx(tableClasses.table, redesign.table)} id="wardPressureTable">
+        <table className={cx(tableClasses.table, redesign.table, redesign.tableFit)} id="wardPressureTable">
           <caption className="sr-only">Inpatient mental health ward capacity and demand</caption>
           <thead>
             <tr>
