@@ -1,10 +1,12 @@
 name: Ward Flow dependency audit
 
 # Advisory intelligence changes even when the lockfiles do not. This independent workflow
-# reports on main nightly (02:30 AWST); it does not change PR or release-gate policy.
+# reports on main weekly (Mondays 02:30 AWST, Sundays 18:30 UTC); it does not change PR or
+# release-gate policy. Was nightly until the 2026-11-25 automation clean-up; workflow_dispatch
+# runs it on request between scheduled runs.
 on:
   schedule:
-    - cron: "30 18 * * *"
+    - cron: "30 18 * * 0"
   workflow_dispatch:
 
 permissions:
