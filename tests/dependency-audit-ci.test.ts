@@ -13,8 +13,8 @@ function step(name: string) {
 }
 
 describe("scheduled dependency intelligence", () => {
-  it("checks unchanged lockfiles nightly and on request without adding a PR or deployment gate", () => {
-    expect(workflow).toMatch(/^  schedule:\n    - cron: "30 18 \* \* \*"$/mu);
+  it("checks unchanged lockfiles weekly and on request without adding a PR or deployment gate", () => {
+    expect(workflow).toMatch(/^  schedule:\n    - cron: "30 18 \* \* 0"$/mu);
     expect(workflow).toMatch(/^  workflow_dispatch:/mu);
     expect(workflow).not.toMatch(/^  (?:push|pull_request|pull_request_target|workflow_run):/mu);
     expect(workflow).toMatch(/^    timeout-minutes: 10$/mu);
