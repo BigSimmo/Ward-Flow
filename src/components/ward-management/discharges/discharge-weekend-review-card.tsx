@@ -105,7 +105,7 @@ export function DischargeWeekendReview({
                     ) : canTick ? (
                       <Button
                         size="sm"
-                        aria-label={`Mark ${name} reviewed`}
+                        aria-label={`Mark reviewed: ${name}`}
                         onClick={() =>
                           wardRaise(
                             dispatch,
