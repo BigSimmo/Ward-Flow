@@ -132,11 +132,12 @@ export function HandoverSignOffChip({
       onClick={onClick}
       data-testid="ward-handover-hero-sign-off"
       // Audit four item 20: "Sign off · 4 open", never "1/5", which read like a gate. Signing is never
-      // blocked by an open check; the count only says how many are left to look at.
+      // blocked by an open check; the count only says how many are left to look at. The name keeps the
+      // visible "4 open" in one run (axe label-content-name-mismatch).
       aria-label={
         signed === null
           ? open > 0
-            ? `Sign off, ${open} ${open === 1 ? "check" : "checks"} open`
+            ? `Sign off, ${open} open ${open === 1 ? "check" : "checks"}`
             : "Sign off"
           : undefined
       }

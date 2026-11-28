@@ -1032,7 +1032,14 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           // Audit three #68 (mock-up): nobody away, so every figure is zero. The register and the three
           // overview cards give way to one empty state; the hero stays, and so does the line that says
           // how many have no travel time recorded (D-174).
-          <Card className={styles.emptyCard} data-testid="ward-out-of-area-empty-state">
+          // It is the Away now tab's panel, so the tab's aria-controls names a real element.
+          <Card
+            className={styles.emptyCard}
+            data-testid="ward-out-of-area-empty-state"
+            role="tabpanel"
+            id="ward-out-of-area-view-panel-now"
+            aria-labelledby="ward-out-of-area-view-tab-now"
+          >
             <EmptyState
               icon={MapIcon}
               title="Nobody is in a bed far from home"

@@ -1366,7 +1366,11 @@ export function DelaysBoard({
                     aria-expanded={followOpen}
                     onClick={() => setFollowOpen(true)}
                     count={escalated.length + quietCount > 0 ? escalated.length + quietCount : undefined}
-                    aria-label={`Follow-up, ${escalated.length} escalated, ${quietCount} quiet`}
+                    aria-label={
+                      escalated.length + quietCount > 0
+                        ? `Follow-up ${escalated.length + quietCount}: ${escalated.length} escalated, ${quietCount} quiet`
+                        : "Follow-up"
+                    }
                     data-testid="delays-follow-up"
                   >
                     {/* Audit three #21: one clear name and one count; the sheet splits Escalated and Quiet. */}
