@@ -143,7 +143,6 @@ describe("a long list folds only when two or more rows would be hidden (Josh, 31
           howToReach={null}
           onDuty={null}
           coverage={null}
-          samples={[]}
           actions={[]}
           attention={[]}
         />

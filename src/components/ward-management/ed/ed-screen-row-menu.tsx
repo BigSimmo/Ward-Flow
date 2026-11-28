@@ -302,7 +302,7 @@ function edUnavailableLines(row: EdBoardRowModel, ctx: EdScreenContext) {
   const ended = movement.closure ? "This movement has ended" : undefined;
   const edName = edShortName(department);
   const logBooking = {
-    label: "Log transport booking",
+    label: "Record transport booking",
     testId: `ward-ed-unavailable-fix-transport-${movement.id}`,
     run: () => toggleBookTransport(movement.id),
   };
@@ -484,7 +484,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
             booked" — this logs a booking already made by phone, so the button states that, never
             "Book transport" as though the app were doing the booking. Redesign (Josh, 31 Oct
             2026): a verb, as the popup's own title and the blocker's fix say. */}
-        Log transport booking
+        Record transport booking
       </button>
       {note("transport", unavailable.transport)}
       {canSetArrivalPlan(movement) ? (

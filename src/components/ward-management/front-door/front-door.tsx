@@ -354,7 +354,7 @@ function DemoFirstDoor({ demoUrl }: { demoUrl: string }) {
           </span>
           <header className={styles.cardHead}>
             <h1>Explore the demo</h1>
-            <p>The demo runs on made-up records across the network. Open it with the demo code you were given.</p>
+            <p>Open it with the demo code you were given.</p>
           </header>
           <a className={`${styles.btn} ${styles.btnPrimary}`} href={demoUrl}>
             <FlaskConical aria-hidden="true" />

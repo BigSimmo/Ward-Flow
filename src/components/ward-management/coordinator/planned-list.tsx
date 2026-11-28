@@ -11,7 +11,6 @@ import { forecastEdName, useForecastModel } from "@/components/ward-management/f
 import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
 import {
   dayOf,
-  formatInstant,
   formatInstantWithDay,
   MINUTES_PER_DAY,
   perthDayLabel,
@@ -70,7 +69,8 @@ export function PlannedList({
       data-testid="home-planned"
       className={tabbed ? `${styles.card} ${styles.tabbed}` : styles.card}
     >
-      <CardHead id="home-planned-title" title={title} meta={`${formatInstant(now)} to ${untilText} · your shift`} />
+      {/* Audit two #50 (P7): title only; the group asides keep the times. */}
+      <CardHead id="home-planned-title" title={title} />
       {past.length > 0 ? (
         <AgendaGroup id="past" label="Past planned time" tone="warning" aside="not done yet" rows={past} now={now} />
       ) : null}
@@ -138,13 +138,9 @@ function AgendaGroup({
         <p className={styles.empty}>{empty}</p>
       ) : (
         <ol className={styles.agenda} aria-labelledby={headId}>
-          {before.map((row) => (
-            <AgendaRow key={row.id} row={row} now={now} />
-          ))}
+          <AgendaRows rows={before} now={now} />
           {timed?.node}
-          {after.map((row) => (
-            <AgendaRow key={row.id} row={row} now={now} />
-          ))}
+          <AgendaRows rows={after} now={now} />
         </ol>
       )}
       {rows.length > FIRST_ROWS ? (
@@ -154,10 +150,71 @@ function AgendaGroup({
           onClick={() => setShowAll((all) => !all)}
           aria-expanded={showAll}
         >
-          {showAll ? "Show fewer" : `Show ${rows.length - FIRST_ROWS} more`}
+          {showAll ? "Show fewer" : `Show all ${rows.length}`}
         </button>
       ) : null}
     </section>
+  );
+}
+
+/**
+ * Audit two #90 (P8, GATE): back-to-back rows of the same kind ("Pull time limit ends" four times)
+ * run under one sub-label with the count, each line then the time, the person and the ward. Rows
+ * stay in time order: only neighbours are joined, so a run never pulls a later row forward.
+ */
+function sameKindRuns(rows: readonly PlannedRow[]): PlannedRow[][] {
+  const runs: PlannedRow[][] = [];
+  for (const row of rows) {
+    const last = runs.at(-1);
+    if (last && last[0]!.what === row.what && last[0]!.kind === row.kind) last.push(row);
+    else runs.push([row]);
+  }
+  return runs;
+}
+
+function AgendaRows({ rows, now }: { rows: readonly PlannedRow[]; now: Instant }) {
+  return sameKindRuns(rows).map((run) =>
+    run.length === 1 ? (
+      <AgendaRow key={run[0]!.id} row={run[0]!} now={now} />
+    ) : (
+      <AgendaRun key={run[0]!.id} run={run} now={now} />
+    ),
+  );
+}
+
+function AgendaRun({ run, now }: { run: readonly PlannedRow[]; now: Instant }) {
+  const first = run[0]!;
+  const labelId = `home-planned-run-${first.id}`;
+  return (
+    <li className={styles.run} data-kind={first.kind} data-testid="home-planned-run">
+      <p className={styles.runLabel} id={labelId}>
+        {first.kind === "target" ? <SrOnly>Your target, not a clinical standard: </SrOnly> : null}
+        {first.what} · {run.length}
+      </p>
+      <ol className={styles.runRows} aria-labelledby={labelId}>
+        {run.map((row) => (
+          <li key={row.id} className={styles.runRow} data-past={row.past ? "true" : undefined}>
+            <time className={styles.time}>
+              {formatInstantWithDay(row.at, now)}
+              {row.past ? <SrOnly>, past planned time</SrOnly> : null}
+            </time>
+            <p className={styles.runLine}>
+              {row.recordId ? (
+                <Link href={patientHref(row.recordId)} className={styles.name}>
+                  {row.who}
+                </Link>
+              ) : (
+                <span className={styles.nameText}>{row.who}</span>
+              )}{" "}
+              ·{" "}
+              <span className={styles.where}>
+                <SpelledCodes text={row.where} />
+              </span>
+            </p>
+          </li>
+        ))}
+      </ol>
+    </li>
   );
 }
 

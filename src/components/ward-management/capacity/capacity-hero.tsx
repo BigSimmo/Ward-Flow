@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ChevronDown, Presentation, Printer } from "lucide-react";
+import { ChevronDown, Printer } from "lucide-react";
 
 import {
   folderTabClasses,
@@ -15,7 +15,6 @@ import {
   Menu,
   SrOnly,
   StatusGlyph,
-  WindowWord,
   type HeroChipItem,
 } from "@/components/wf";
 import { formatWardOccupancy } from "@/components/ward-management/ward-occupancy";
@@ -72,7 +71,6 @@ export function CapacityHero({
   edWaiting,
   networkWide,
   hideEmptyTypes,
-  tvHref,
   onSheet,
   onWard,
   onAskWard,
@@ -123,7 +121,6 @@ export function CapacityHero({
     <span className={styles.figLabel}>
       {occupancyAlert ? <StatusGlyph tone="warning" size={8} /> : null}
       In use
-      <WindowWord word="now" className={styles.winWord} />
       {occupancy.percent === null ? null : <OccupancyBands percent={occupancy.percent} />}
       {/* Occupancy counts pulled beds as in use (audit P100, D-81). Last, so the link's name keeps its
           visible words in one run (axe label-content-name-mismatch). */}
@@ -134,9 +131,7 @@ export function CapacityHero({
   // Wave 4 (D-191, ruling 8): one on-hero action. The sheet opens in one tap; the TV view and the
   // agenda sit under its caret (MU3, Josh 5 Nov 2026, kept).
   const meetingMore = [
-    ...(tvHref && canOpen(tvHref)
-      ? [{ id: "tv", label: "Open on TV", icon: Presentation, onSelect: () => go(tvHref) }]
-      : []),
+    // Open on TV left this menu (audit two, #80): the door stays in the meeting sheet.
     // Only when this desk may open the agenda (access audit, 31 Oct 2026).
     ...(canOpen(BED_MEETING_AGENDA_HREF)
       ? [{ id: "agenda", label: "Open the meeting agenda", onSelect: () => go(BED_MEETING_AGENDA_HREF) }]
@@ -149,11 +144,11 @@ export function CapacityHero({
           {
             id: "meeting",
             label: "Bed meeting sheet",
-            node: (
-              <span className={styles.splitChip}>
+            node:
+              meetingMore.length === 1 ? (
                 <button
                   type="button"
-                  className={`${heroChipClassName} ${styles.splitMain}`}
+                  className={heroChipClassName}
                   onClick={onSheet}
                   aria-haspopup="dialog"
                   data-testid="capacity-bed-meeting"
@@ -161,27 +156,60 @@ export function CapacityHero({
                   <Printer {...ICON} />
                   <span>Bed meeting sheet</span>
                 </button>
-                {meetingMore.length > 0 ? (
-                  <Menu
-                    label="More bed meeting views"
-                    items={meetingMore}
-                    align="end"
-                    trigger={(props) => (
-                      <button
-                        type="button"
-                        {...props}
-                        className={`${heroChipClassName} ${styles.splitCaret}`}
-                        aria-label={`More bed meeting views: ${meetingMore.map((item) => item.label).join(", ")}`}
-                        data-testid="capacity-bed-meeting-more"
-                      >
-                        <ChevronDown size={14} strokeWidth={1.75} aria-hidden="true" />
-                      </button>
-                    )}
-                  />
-                ) : null}
-              </span>
-            ),
+              ) : (
+                <span className={styles.splitChip}>
+                  <button
+                    type="button"
+                    className={`${heroChipClassName} ${styles.splitMain}`}
+                    onClick={onSheet}
+                    aria-haspopup="dialog"
+                    data-testid="capacity-bed-meeting"
+                  >
+                    <Printer {...ICON} />
+                    <span>Bed meeting sheet</span>
+                  </button>
+                  {meetingMore.length > 1 ? (
+                    <Menu
+                      label="More bed meeting views"
+                      items={meetingMore}
+                      align="end"
+                      trigger={(props) => (
+                        <button
+                          type="button"
+                          {...props}
+                          className={`${heroChipClassName} ${styles.splitCaret}`}
+                          aria-label={`More bed meeting views: ${meetingMore.map((item) => item.label).join(", ")}`}
+                          data-testid="capacity-bed-meeting-more"
+                        >
+                          <ChevronDown size={14} strokeWidth={1.75} aria-hidden="true" />
+                        </button>
+                      )}
+                    />
+                  ) : null}
+                </span>
+              ),
           },
+          // Simplification item 11: a menu that would hold one view is that view, a plain chip.
+          ...(meetingMore.length === 1
+            ? [
+                {
+                  id: "meeting-view",
+                  label: String(meetingMore[0].label),
+                  node: (
+                    // Review (1280, 390): the short word keeps the chips on one row; the name says it in full.
+                    <button
+                      type="button"
+                      className={heroChipClassName}
+                      onClick={meetingMore[0].onSelect}
+                      aria-label={String(meetingMore[0].label)}
+                      data-testid="capacity-bed-meeting-more"
+                    >
+                      <span>Agenda</span>
+                    </button>
+                  ),
+                },
+              ]
+            : []),
         ]),
     // Site bed manager: the site's ED, counts only, with the All EDs page's words (WF-FIG-016).
     ...(edWaiting && canOpen(PAGE_OWNERS.waiting.route)
@@ -196,12 +224,16 @@ export function CapacityHero({
           },
         ]
       : []),
+    // Batch 1 item 6 (26 Nov 2026, Flag 5): All wards left the tab row's end and is this row's last,
+    // quiet chip, a plain link to Find. The phone keeps its Wards tab instead.
+    ...(isPhone
+      ? []
+      : [{ id: "all-wards", label: "All wards", href: "/bedchart/hub?tab=wards", testId: "capacity-all-wards-link" }]),
   ];
 
   const jobs = chips.length > 0 ? <HeroQuickChips label="Capacity jobs" items={chips} /> : undefined;
   // Count labels "Label · window" (shared spec 2): the kit's window word in the hero's quiet ink, under
   // the label on a phone.
-  const win = (word: Parameters<typeof WindowWord>[0]["word"]) => <WindowWord word={word} className={styles.winWord} />;
   return (
     <Hero
       level={1}
@@ -231,14 +263,15 @@ export function CapacityHero({
                 // as the Ward hero says it (`networkTotals` sums each row's `pendingPreparation`).
                 label: (
                   <span className={styles.figLabel}>
-                    Ready
-                    {/* The comma rides with the window word, so a phone's wrapped label never starts a line with it. */}
-                    <span className={styles.winJoin}>
-                      {win("now")}
-                      {totals.pendingPreparation ? "," : null}
-                    </span>
+                    {/* Review (390): the comma rides with Ready, and a phone sets the rest on its own line. */}
+                    {/* Audit four item 28: a phone reads "Ready" and sets the beds being made ready as the
+                        figure's quiet second line, so the label never wraps to three lines. */}
+                    Ready{totals.pendingPreparation && !isPhone ? "," : null}
                     {totals.pendingPreparation ? (
-                      <span data-testid="capacity-hero-being-made-ready">{` ${totals.pendingPreparation} being made ready`}</span>
+                      <span
+                        className={styles.readySub}
+                        data-testid="capacity-hero-being-made-ready"
+                      >{` ${totals.pendingPreparation} being made ready`}</span>
                     ) : null}
                   </span>
                 ),
@@ -264,7 +297,14 @@ export function CapacityHero({
               {
                 id: "need",
                 value: gapTotals.waiting,
-                label: <span className={styles.figLabel}>Need a bed{win("now")}</span>,
+                // Review (390): a phone's equal columns take each label's full width, so the phone
+                // shows "Need a bed" and says the rest to a screen reader only.
+                label: (
+                  <span className={styles.figLabel}>
+                    Need a bed
+                    {isPhone ? <SrOnly>, no bed agreed yet</SrOnly> : ", no bed agreed yet"}
+                  </span>
+                ),
                 testId: "capacity-hero-need",
               },
               {
@@ -272,12 +312,7 @@ export function CapacityHero({
                 id: "gap",
                 // D-251: a gap of 0 reads "Enough" with no number, not "Short 0".
                 value: gap === 0 ? "Enough" : Math.abs(gap),
-                label: (
-                  <span className={styles.figLabel}>
-                    {gap === 0 ? "Bed gap" : gap > 0 ? "Spare" : "Short"}
-                    {win("now")}
-                  </span>
-                ),
+                label: <span className={styles.figLabel}>{gap === 0 ? "Bed gap" : gap > 0 ? "Spare" : "Short"}</span>,
                 testId: "capacity-hero-gap",
               },
               {
@@ -332,12 +367,7 @@ export function CapacityHero({
         band={
           typeRows.length > 0 ? (
             <HeroBand
-              title={
-                <>
-                  By bed type
-                  <WindowWord word="now" className={styles.winWord} />
-                </>
-              }
+              title="By bed type"
               aside={networkWide ? "Network-wide" : undefined}
               testId="capacity-mismatch"
               cells={typeRows.map((row) => {
@@ -428,7 +458,18 @@ function OccupancyBands({ percent }: { percent: number }) {
         />
         <span className={styles.occBandMark} style={{ left: `${shown}%` }} />
       </span>
-      <span className={styles.occBandsWords}>{words}</span>
+      {code === "green" ? (
+        <>
+          {/* Under the band there is nothing to warn of: the sentence stays for a screen reader and the
+              line keeps its height, so the four figures stay level. */}
+          <SrOnly>{words}</SrOnly>
+          <span className={`${styles.occBandsWords} ${styles.occBandsQuiet}`} aria-hidden="true">
+            {"\u00a0"}
+          </span>
+        </>
+      ) : (
+        <span className={styles.occBandsWords}>{words}</span>
+      )}
     </span>
   );
 }

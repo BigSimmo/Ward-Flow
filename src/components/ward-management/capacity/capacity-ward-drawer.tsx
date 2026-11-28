@@ -5,7 +5,7 @@
 
 import { useWardFormSave } from "../use-ward-form-save";
 import { capacityConfirmer } from "./capacity-confirmer";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
 import { dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -13,8 +13,21 @@ import type { DischargeOpenHandle, DischargeRecord } from "@/components/ward-man
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { patientListName } from "@/components/ward-management/ward-patients";
 import { useCanOpenHref, useWardRecordActors } from "@/components/ward-management/shell/ward-access";
-import { BookUser, ChevronLeft, ChevronRight } from "lucide-react";
-import { Button, buttonClass, DrawerFootRow, StatusGlyph, useIsPhone, useOptionalToast } from "@/components/wf";
+import { BarChart2, BookUser, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Button,
+  buttonClass,
+  cx,
+  DrawerFootRow,
+  PanelDrawer,
+  StatusGlyph,
+  StatusPill,
+  type DrawerPagerProps,
+  useIsPhone,
+  useOptionalToast,
+} from "@/components/wf";
+import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+import { useCapacityWardTabs } from "./capacity-ward-tabs";
 import { siteLabel } from "@/components/ward-management/ward-absence-labels";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
@@ -342,7 +355,7 @@ export function CapacityWardSidebar({
                 "Closures" button in the drawer's foot. A closed ward still says so here. */}
             {row.unit.isClosed ? (
               <p className={`${local.wdNoticeLine} ${local.warnInk}`}>
-                <StatusGlyph tone="closed" size={9} /> Closed to admissions. Reopen from Closures below.
+                <StatusGlyph tone="closed" size={9} /> Closed to admissions. Reopen ward is below.
               </p>
             ) : null}
           </>
@@ -483,47 +496,65 @@ export function CapacityWardFoot({ row, now }: { row: NetworkWardRow; now: Insta
     recordActors.find((actor) => actor.role === "ward" && actor.actingUnitId === row.unit.id) ?? recordActors[0]!;
   const [closures, setClosures] = useState(false);
   const wardHref = `/bedchart/ward/${row.unit.id}`;
+  const statsHref = wardStatisticsHref(row.unit.id);
+  // Area 3 item 1: All wards' panel foot merges here. Batch 3: /board now redirects to the ward
+  // page's Grid view, so the Bed board link beside Open ward is gone.
   // A ward desk may close beds only on its own ward, the same test as the closure panel's mayAct.
   const mayClose =
     recordActor.role === "coordinator" ||
     recordActor.role === "bed_manager" ||
     (recordActor.role === "ward" && recordActor.actingUnitId === row.unit.id);
   // Redesign (Josh, 30 Oct): each link shows only when this desk can open its page.
-  if (!canOpen(wardHref) && !canOpen(DISCHARGES_HREF) && !mayClose) return null;
+  if (!canOpen(wardHref) && !canOpen(DISCHARGES_HREF) && !canOpen(statsHref) && !mayClose) return null;
+  const quietCount = (canOpen(statsHref) ? 1 : 0) + (mayClose ? 1 : 0);
+  // Gate r10 look upgrade 1: one drawer foot shape, the Alerts drawer's. The filled step takes the
+  // full width on row one (a long ward name gets all of it); the quiet steps share row two in equal
+  // halves, so no link is left alone on its own line.
   return (
-    <DrawerFootRow>
-      {/* One filled action, as every Capacity pop-up foot: Open ward, or the Discharge board when this
-          desk cannot open the ward. Closures is never the filled one. */}
-      {canOpen(wardHref) ? (
-        <Link href={wardHref} className={buttonClass({ variant: "pri" })}>
-          Open ward
-        </Link>
-      ) : null}
-      {canOpen(DISCHARGES_HREF) ? (
-        <Link href={DISCHARGES_HREF} className={buttonClass({ variant: canOpen(wardHref) ? "ghost" : "pri" })}>
-          Discharge board
-        </Link>
-      ) : null}
-      {mayClose ? (
-        <>
-          <Button
-            variant="ghost"
-            className={local.wdFootQuiet}
-            aria-haspopup="dialog"
-            onClick={() => setClosures(true)}
+    <>
+      <DrawerFootRow className={cx(local.wdFoot, quietCount === 1 && local.wdFootOne)}>
+        {/* One filled action, as every Capacity pop-up foot: Open ward, or the Discharge board when this
+            desk cannot open the ward (audit two #6: it is not offered beside Open ward). Closures is never the filled one. */}
+        {/* Audit four #41: the one unit drawer foot, as the ED preview's. Filled Open <unit>, then quiet
+            Statistics and the closures step, all one size. */}
+        {canOpen(wardHref) ? (
+          <Link href={wardHref} className={cx(buttonClass({ variant: "pri" }), local.wdFootPri)}>
+            Open {row.unit.name}
+          </Link>
+        ) : null}
+        {canOpen(DISCHARGES_HREF) && !canOpen(wardHref) ? (
+          <Link href={DISCHARGES_HREF} className={cx(buttonClass({ variant: "pri" }), local.wdFootPri)}>
+            Discharge board
+          </Link>
+        ) : null}
+        {/* Batch 3 (one Ward panel): All wards' "View statistics", for this ward, one weight as in the ED preview. */}
+        {canOpen(statsHref) ? (
+          <Link
+            href={statsHref}
+            className={buttonClass({ variant: "sec" })}
+            aria-label={`Statistics, ${row.unit.name}`}
           >
-            {row.unit.isClosed ? "Closures (ward closed)" : "Closures"}
+            <BarChart2 size={16} aria-hidden="true" />
+            Statistics
+          </Link>
+        ) : null}
+        {mayClose ? (
+          <Button variant="sec" aria-haspopup="dialog" onClick={() => setClosures(true)}>
+            {/* Audit four item 40: the button says the act. A closed ward opens on its reopen step. */}
+            {row.unit.isClosed ? "Reopen ward" : "Close a bed or ward"}
           </Button>
-          <WardClosuresDialog
-            open={closures}
-            onClose={() => setClosures(false)}
-            unit={row.unit}
-            now={now}
-            actor={recordActor}
-          />
-        </>
+        ) : null}
+      </DrawerFootRow>
+      {mayClose ? (
+        <WardClosuresDialog
+          open={closures}
+          onClose={() => setClosures(false)}
+          unit={row.unit}
+          now={now}
+          actor={recordActor}
+        />
       ) : null}
-    </DrawerFootRow>
+    </>
   );
 }
 
@@ -659,5 +690,76 @@ function DischargeRecordFacts({ record, now }: { record: DischargeRecord; now: I
         </>
       ) : null}
     </dl>
+  );
+}
+
+/**
+ * Batch 3 (one Ward panel, 26 Nov 2026 mock-up): the one ward side panel, Capacity's, which All
+ * wards now opens too. Head: the ward, an optional "Site · Service" line and an optional "N ready"
+ * pill; tabs Ward and Discharges; body the Capacity sidebar, with a page's own extras (Heading here,
+ * Ward profile) under it on the Ward tab; foot Open ward, Discharge board, Statistics and Closures.
+ * `countsOnly` (another site's ward for a site bed manager) hides the foot.
+ */
+export function CapacityWardPanel({
+  row,
+  now,
+  onClose,
+  subtitle,
+  readyPill = true,
+  countsOnly = false,
+  testId,
+  week,
+  pager,
+  children,
+}: {
+  row: NetworkWardRow | undefined;
+  now: Instant;
+  onClose: () => void;
+  subtitle?: string;
+  readyPill?: boolean;
+  countsOnly?: boolean;
+  testId?: string;
+  /** The ward's row of the seven-day forecast ("Going out, next 7 days"), as Capacity passes it. */
+  week?: { days: readonly HorizonDay[]; row: HorizonRow | undefined };
+  /** Audit four #31: the kit pager, when the panel was opened from a list of wards. */
+  pager?: DrawerPagerProps;
+  /** Under the sidebar on the Ward tab only. */
+  children?: ReactNode;
+}) {
+  const wardTabs = useCapacityWardTabs(row?.unit.id);
+  return (
+    <PanelDrawer
+      open={row !== undefined}
+      onClose={onClose}
+      title={row?.unit.name ?? "Ward"}
+      subtitle={subtitle}
+      pager={pager}
+      tag={
+        row && readyPill ? (
+          <StatusPill tone={row.ready > 0 ? "success" : "warning"}>{row.ready} ready</StatusPill>
+        ) : undefined
+      }
+      tabs={wardTabs.tabs}
+      tab={wardTabs.tab}
+      onTabChange={wardTabs.onTabChange}
+      tabsLabel="Ward panel view"
+      testId={testId}
+      foot={row && !countsOnly ? <CapacityWardFoot row={row} now={now} /> : undefined}
+    >
+      {row ? (
+        <>
+          <CapacityWardSidebar
+            row={row}
+            onBack={onClose}
+            now={now}
+            tab={wardTabs.tab}
+            showPlace={false}
+            footInDrawer
+            week={week}
+          />
+          {wardTabs.tab === "ward" ? children : null}
+        </>
+      ) : null}
+    </PanelDrawer>
   );
 }

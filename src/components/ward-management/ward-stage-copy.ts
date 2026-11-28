@@ -60,3 +60,17 @@ export function movementStatusLabel(movement: Pick<Movement, "stage" | "transpor
     ? "Arrived at ward, awaiting ward confirmation"
     : stageCopy[movement.stage].label;
 }
+
+/**
+ * Audit two #10 (P18): a list's group heads use the stage strip's own words for the two early stages,
+ * "Referred" and "Review", so one stage has one name on one screen. The other stages keep their full
+ * label; the drawer timeline and the patient page keep every full label (`stageCopy[stage].label`).
+ */
+const GROUP_HEAD_SHORT: ReadonlySet<MovementStage> = new Set<MovementStage>([
+  "placement_requested",
+  "destination_review",
+]);
+
+export function stageGroupLabel(stage: MovementStage): string {
+  return GROUP_HEAD_SHORT.has(stage) ? stageCopy[stage].shortLabel : stageCopy[stage].label;
+}

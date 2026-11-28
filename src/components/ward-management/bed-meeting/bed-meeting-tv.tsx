@@ -11,7 +11,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { ChevronDown, Maximize2, Minimize2, Tv } from "lucide-react";
+import { ChevronDown, Tv } from "lucide-react";
 
 import { bedMeetingSheet, type BedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
 import type { BedKindGap, BedKindId } from "@/components/ward-management/capacity/capacity-derivations";
@@ -947,12 +947,12 @@ function useFullscreen(target: RefObject<HTMLElement | null>) {
     document.addEventListener("fullscreenchange", onChange);
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, [target]);
-  const toggle = () => {
-    // The browser can refuse either request (a kiosk policy, say). The button then does nothing.
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => undefined);
-    else target.current?.requestFullscreen?.().catch(() => undefined);
+  // Audit two #80: Lock as TV enters full screen; Escape or Unlock leaves it. The browser can refuse
+  // the request (a kiosk policy, say), and the lock then still holds.
+  const enter = () => {
+    if (!document.fullscreenElement) target.current?.requestFullscreen?.().catch(() => undefined);
   };
-  return { supported, active, toggle };
+  return { supported, active, enter };
 }
 
 /** Whether the screen is actually on view. On a phone the larger screen card hides the mounted page
@@ -1433,30 +1433,16 @@ export function BedMeetingTvScreen({
           now={shownNow}
           screen={`${current}:${scenario}`}
           chips={[
-            {
-              id: "screen",
-              label: "Change screen",
-              node: <ScreenPicker current={current} label={title} chip={meetingScope} site={siteScope} />,
-            },
-            ...(fullscreen.supported
-              ? [
+            // Audit three #48 (28 Nov 2026): a locked wall screen hides its screen picker; Unlock stays.
+            ...(tvLocked
+              ? []
+              : [
                   {
-                    id: "fullscreen",
-                    label: "Full screen",
-                    node: (
-                      <button
-                        type="button"
-                        className={cx(heroChipClassName, topStyles.wallOnly)}
-                        onClick={fullscreen.toggle}
-                        data-testid="bed-meeting-tv-fullscreen"
-                      >
-                        {fullscreen.active ? <Minimize2 aria-hidden="true" /> : <Maximize2 aria-hidden="true" />}
-                        {fullscreen.active ? "Leave full screen" : "Full screen"}
-                      </button>
-                    ),
+                    id: "screen",
+                    label: "Change screen",
+                    node: <ScreenPicker current={current} label={title} chip={meetingScope} site={siteScope} />,
                   },
-                ]
-              : []),
+                ]),
             {
               id: "lock",
               label: "Lock as TV",
@@ -1465,6 +1451,7 @@ export function BedMeetingTvScreen({
                   href={selfHref}
                   className={cx(heroChipClassName, topStyles.wallOnly)}
                   shared={shared?.enabled === true}
+                  onLock={fullscreen.supported ? fullscreen.enter : undefined}
                 />
               ),
             },
@@ -1504,27 +1491,23 @@ export function BedMeetingTvScreen({
               TV screen, and moving around has its own row below, so changing screen or view never
               shifts a button. */}
           <div className={styles.actions}>
-            {fullscreen.supported ? (
-              <button
-                type="button"
-                className={styles.action}
-                onClick={fullscreen.toggle}
-                data-testid="bed-meeting-tv-fullscreen"
-              >
-                {fullscreen.active ? <Minimize2 aria-hidden="true" /> : <Maximize2 aria-hidden="true" />}
-                {fullscreen.active ? "Leave full screen" : "Full screen"}
-              </button>
-            ) : null}
-            <TvLockControl href={selfHref} className={styles.action} shared={shared?.enabled === true} />
+            <TvLockControl
+              href={selfHref}
+              className={styles.action}
+              shared={shared?.enabled === true}
+              onLock={fullscreen.supported ? fullscreen.enter : undefined}
+            />
             {tvLocked ? null : <TvLeaveLink className={styles.action} />}
           </div>
           <div className={styles.navBar} data-testid="bed-meeting-tv-nav">
-            <div className={styles.navGroup}>
-              <span className={styles.navLabel} aria-hidden="true">
-                Screen
-              </span>
-              <ScreenPicker current={current} label={title} />
-            </div>
+            {tvLocked ? null : (
+              <div className={styles.navGroup}>
+                <span className={styles.navLabel} aria-hidden="true">
+                  Screen
+                </span>
+                <ScreenPicker current={current} label={title} />
+              </div>
+            )}
             <div className={styles.navGroup}>
               <span className={styles.navLabel} aria-hidden="true">
                 View

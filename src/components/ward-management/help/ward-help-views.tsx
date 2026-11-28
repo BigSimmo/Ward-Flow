@@ -98,8 +98,8 @@ export function HelpNews({
             </div>
           );
         })}
-        {newest.length > shown.length ? (
-          <ShowMoreRow onClick={() => setAll(true)}>Show {newest.length - shown.length} earlier</ShowMoreRow>
+        {newest.length > foldLimit(newest.length, FIRST_NEWS) ? (
+          <ShowMoreRow onClick={() => setAll((open) => !open)} expanded={all} total={newest.length} />
         ) : null}
       </section>
       <p className={s.note}>The live site updates once a day, early in the morning.</p>

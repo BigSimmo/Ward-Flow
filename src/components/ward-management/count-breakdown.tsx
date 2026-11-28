@@ -14,17 +14,18 @@ import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useRef, useState, type ReactNode } from "react";
 
-import { Popover, useIsPhone } from "@/components/wf";
+import { Popover, StateLine, useIsPhone } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
 
 import { type BreakdownKind, type BreakdownRow, type BreakdownScope } from "./count-breakdown-model";
+import type { BreakdownFact } from "./count-breakdown-rows";
 import styles from "./count-breakdown.module.css";
 
 const loadPanel = () => import("./count-breakdown-panel");
 const CountBreakdownPanel = dynamic(
   withLoadRetry(() => loadPanel().then((m) => m.CountBreakdownPanel)),
   {
-    loading: () => <p className={styles.loading}>Loading the list…</p>,
+    loading: () => <StateLine kind="loading" compact title="Loading the list" />,
   },
 );
 const CountBreakdownSheet = dynamic(
@@ -43,6 +44,8 @@ export type CountBreakdownProps = {
   countedAt: Instant;
   /** The figure's own list, built on opening. */
   rows: () => readonly BreakdownRow[];
+  /** Optional fact lines above the list: parts of the figure (audit two #91). */
+  facts?: () => readonly BreakdownFact[];
   /** The button's look: the figure's own label or cell class, so the figure looks as before. */
   className?: string;
   anchorClassName?: string;
@@ -60,6 +63,7 @@ export function CountBreakdown({
   scope = "own",
   countedAt,
   rows,
+  facts,
   className,
   anchorClassName,
   testId,
@@ -70,7 +74,7 @@ export function CountBreakdown({
   const isPhone = useIsPhone();
   const [sheetOpen, setSheetOpen] = useState(false);
   const phoneTriggerRef = useRef<HTMLButtonElement>(null);
-  const panelProps = { value, noun, kind, scope, countedAt, rows };
+  const panelProps = { value, noun, kind, scope, countedAt, rows, facts };
   const title = kind === "beds" ? `Where the ${value} ${noun} are` : `Who is in ${value} ${noun}`;
 
   if (isPhone) {

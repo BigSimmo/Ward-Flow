@@ -947,7 +947,7 @@ export function ShortlistPanel({
           triedUnitIds: declinedUnitIds,
           contact: escalationContact,
         });
-        offerUndo({ success: "Escalation recorded." }, { completion });
+        offerUndo({ success: "Escalation recorded" }, { completion });
         return completion;
       },
       () => {
@@ -1107,7 +1107,7 @@ export function ShortlistPanel({
     if (releasePullReason === undefined) return;
     runStep(
       { type: "RELEASE_PULL", role: "coordinator", now, movementId, reason: releasePullReason },
-      releaseUndo(`Pulled bed released for ${patientIdentity.formalName}.`, "Undone. The bed is pulled again."),
+      releaseUndo(`Pulled bed released for ${patientIdentity.formalName}.`, "Undone: The bed is pulled again"),
     );
     setReleasePullOpen(false);
   }
@@ -1124,7 +1124,7 @@ export function ShortlistPanel({
     if (cancelTransportReason === undefined) return;
     runStep(
       { type: "CANCEL_TRANSPORT", role: "coordinator", now, movementId, reason: cancelTransportReason },
-      releaseUndo(`Transport cancelled for ${patientIdentity.formalName}.`, "Undone. The transport is booked again."),
+      releaseUndo(`Transport cancelled for ${patientIdentity.formalName}.`, "Undone: The transport is booked again"),
     );
     setCancelTransportOpen(false);
   }
@@ -1304,7 +1304,7 @@ export function ShortlistPanel({
           {placementNextStep === "hold"
             ? `${acceptedUnit.name} has accepted. Pull the bed so it is kept for this patient.`
             : placementNextStep === "book"
-              ? `The bed at ${acceptedUnit.name} is pulled. Book transport to move the patient.`
+              ? `The bed at ${acceptedUnit.name} is pulled. Record the transport booking to move the patient.`
               : placementNextStep === "release" && hold
                 ? `${hold.label} at ${acceptedUnit.name}. Move the patient or release the bed.`
                 : `Transport is booked to ${acceptedUnit.name}.`}
@@ -1324,10 +1324,10 @@ export function ShortlistPanel({
             {placementNextStep === "hold"
               ? "Pull the bed"
               : placementNextStep === "book"
-                ? "Book transport"
+                ? "Record transport booking"
                 : placementNextStep === "release"
                   ? "Move or release"
-                  : "Open patient"}
+                  : "Patient page"}
           </Link>
           {otherBedsFor === movement.id ? null : (
             <button
@@ -1522,14 +1522,14 @@ export function ShortlistPanel({
                       runStep(
                         { type: "ACCEPT_IN_PRINCIPLE", role: "coordinator", now, movementId, unitId: id },
                         {
-                          success: `Accepted ${patientIdentity.formalName} in principle for ${unit.name}.`,
+                          success: `Accepted ${patientIdentity.formalName} in principle for ${unit.name}`,
                           undo: (at) => ({
                             type: "UNDO_ACCEPT_IN_PRINCIPLE",
                             role: "coordinator",
                             now: at,
                             movementId,
                           }),
-                          undone: `Acceptance undone for ${patientIdentity.formalName}. The referral is back with the ward.`,
+                          undone: `Undone: Acceptance for ${patientIdentity.formalName} · The referral is back with the ward`,
                         },
                       )
                     }
@@ -2300,8 +2300,8 @@ export function ShortlistPanel({
           unlawful surfaces on the Exceptions drawer instead (`destinationNoLongerLawful`). */}
       <details className={shortlistStyles.recordActions}>
         <summary data-badge="Urgency · Legal">Update record</summary>
+        {/* Audit two #74 (N7): the summary names the fold, so no inner heading repeats it. */}
         <section aria-label="Change urgency or legal status">
-          <h4 className={styles.shortlistSectionHeading}>Change urgency or legal status</h4>
           <div className={styles.shortlistActionRow}>
             <button
               type="button"

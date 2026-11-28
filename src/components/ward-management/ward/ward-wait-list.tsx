@@ -46,10 +46,13 @@ function legalAsRecorded(movement: Movement): string {
 export function WardWaitList({
   unit,
   embedded = false,
+  readyOnly = false,
 }: {
   unit: Unit;
   /** Inside the Referrals tab's "This ward's answers" card: no card of its own. */
   embedded?: boolean;
+  /** Only the "Ready for next patient" mark, for an empty Referrals tab. */
+  readyOnly?: boolean;
 }) {
   const { movements, referrals, patients, dispatch, rejections } = useWardFlowSelect(
     "movements",
@@ -83,6 +86,35 @@ export function WardWaitList({
     );
   };
   const ready = unit.isClosed ? undefined : unit.readyForNextAt;
+  const readyMark = (
+    <span className={styles.readyMark} data-testid="ward-ready-for-next">
+      {ready !== undefined ? (
+        <>
+          <span className={styles.readyLine}>
+            <StatusGlyph tone="success" size={8} /> Ready for next patient since{" "}
+            <b className={styles.mono}>{formatInstantWithDay(ready, now)}</b>
+          </span>
+          {actor ? (
+            <Button variant="ghost" size="sm" onClick={() => mark(true)} data-testid="ward-ready-for-next-cancel">
+              Cancel
+            </Button>
+          ) : null}
+        </>
+      ) : actor ? (
+        <Button
+          variant="sec"
+          size="sm"
+          disabledReason={unit.isClosed ? `${unit.name} is closed to admissions.` : undefined}
+          onClick={() => mark(false)}
+          data-testid="ward-ready-for-next-mark"
+        >
+          Ready for next patient
+        </Button>
+      ) : null}
+    </span>
+  );
+  // Audit three #24 (28 Nov 2026): the Referrals tab's one empty state carries only the ready mark.
+  if (readyOnly) return readyMark;
   return (
     <section
       className={cx(styles.card, embedded && styles.embedded)}
@@ -96,31 +128,7 @@ export function WardWaitList({
           <WindowWord word="now" />
         </h3>
         {list.length > 0 ? <span className={styles.note}>Oldest referral first</span> : null}
-        <span className={styles.readyMark} data-testid="ward-ready-for-next">
-          {ready !== undefined ? (
-            <>
-              <span className={styles.readyLine}>
-                <StatusGlyph tone="success" size={8} /> Ready for next patient since{" "}
-                <b className={styles.mono}>{formatInstantWithDay(ready, now)}</b>
-              </span>
-              {actor ? (
-                <Button variant="ghost" size="sm" onClick={() => mark(true)} data-testid="ward-ready-for-next-cancel">
-                  Cancel
-                </Button>
-              ) : null}
-            </>
-          ) : actor ? (
-            <Button
-              variant="sec"
-              size="sm"
-              disabledReason={unit.isClosed ? `${unit.name} is closed to admissions.` : undefined}
-              onClick={() => mark(false)}
-              data-testid="ward-ready-for-next-mark"
-            >
-              Ready for next patient
-            </Button>
-          ) : null}
-        </span>
+        {readyMark}
       </div>
       {list.length === 0 ? (
         <p className={styles.empty}>Nobody is on this ward&rsquo;s wait list.</p>

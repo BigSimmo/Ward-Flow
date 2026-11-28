@@ -16,7 +16,8 @@ import { History } from "lucide-react";
 
 import { Card, CardBody, CardHead, Field, FilterChip, TextInput } from "@/components/wf";
 import { ACCESS_ROLE_LABELS, BREAK_GLASS_REASONS } from "@/components/ward-management/ward-role-access";
-import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import { type Instant } from "@/components/ward-management/ward-clock";
+import { agoText } from "@/components/ward-management/ward-ago-text";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { useUnscopedWardFlow } from "@/components/ward-management/shell/ward-access";
 import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
@@ -61,18 +62,9 @@ function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
 }
 
-/** "3 hours ago", on the demo clock. */
-function agoText(at: Instant | null, now: Instant): string {
-  if (at === null) return "time not sent";
-  const minutes = Math.max(0, now - at);
-  if (minutes < 1) return "just now";
-  const amount =
-    minutes >= MINUTES_PER_DAY
-      ? plural(Math.round(minutes / MINUTES_PER_DAY), "day")
-      : minutes >= 60
-        ? plural(Math.round(minutes / 60), "hour")
-        : plural(minutes, "minute");
-  return `${amount} ago`;
+/** "3 h 05 min ago" on the demo clock: the one shared ago helper (audit two #23). */
+function openedAgo(at: Instant | null, now: Instant): string {
+  return at === null ? "time not sent" : agoText(Math.max(0, now - at));
 }
 
 /** Made-up openings for the local demo, placed around `now`, by the demo staff in the roles list. */
@@ -127,7 +119,7 @@ export function AccessLog() {
   );
 
   return (
-    <Card data-testid="ward-access-log">
+    <Card id="access-log" data-testid="ward-access-log">
       <CardHead title="Access log" icon={History} meta={plural(shown.length, "opening")} />
       <CardBody flush>
         <p className={styles.empty}>
@@ -174,7 +166,7 @@ export function AccessLog() {
                   </span>
                   <span className={styles.meta}>
                     {label(opening.actorId)}
-                    {opening.access ? `, ${deskText(opening.access, units)}` : ""}. {agoText(opening.at, now)}.
+                    {opening.access ? `, ${deskText(opening.access, units)}` : ""}. {openedAgo(opening.at, now)}.
                   </span>
                   <span className={styles.meta} data-testid="ward-access-log-reason">
                     Reason: {openingReason(opening)}

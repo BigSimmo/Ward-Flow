@@ -52,11 +52,20 @@ function LiveAge({ paused }: { paused?: boolean }) {
 }
 
 /** The page's Live chip and its pause button, on the hero band. */
-export function PageLiveChip({ paused, onTogglePause }: { paused: boolean; onTogglePause: () => void }) {
+export function PageLiveChip({
+  paused,
+  onTogglePause,
+  compact = false,
+}: {
+  paused: boolean;
+  onTogglePause: () => void;
+  /** Gate r10: the word alone on a phone ("Demo", no clock), where a long title needs the row. */
+  compact?: boolean;
+}) {
   return (
     <LiveChip
       state={paused ? "paused" : "live"}
-      age={<LiveAge paused={paused} />}
+      age={compact ? null : <LiveAge paused={paused} />}
       onHero
       onTogglePause={onTogglePause}
     />

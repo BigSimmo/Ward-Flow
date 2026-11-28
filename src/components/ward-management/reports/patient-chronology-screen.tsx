@@ -7,20 +7,29 @@ import { useId, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   Check,
+  Clock,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Copy,
   Download,
   FileText,
+  History,
+  Layers,
   ListOrdered,
   Ellipsis,
   Printer,
+  Rows3,
+  Search,
+  Share2,
+  ShieldCheck,
+  UserSearch,
   X,
 } from "lucide-react";
 
 import {
   Button,
+  buttonClass,
   Card,
   CardHead,
   Drawer,
@@ -28,6 +37,8 @@ import {
   Hero,
   HeroPill,
   HeroTop,
+  IconTile,
+  Menu,
   SrOnly,
   PhoneHero,
   PhoneListRow,
@@ -36,13 +47,10 @@ import {
   Segmented,
   SearchField,
   Select,
-  ShowMoreRow,
-  StatusGlyph,
   cx,
   tableClasses,
   useIsPhone,
   useOptionalToast,
-  useIsTabletPortrait,
 } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
@@ -73,13 +81,11 @@ import start from "./patient-chronology-start.module.css";
 import topTitle from "../shell/page-top-title.module.css";
 import { PatientChronologySearch } from "./patient-chronology-search";
 import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
+import { recentsLifetimeNow, useSessionRecents } from "@/components/ward-management/ward-global-search-recents";
 
 const NOT_RECORDED = "Not recorded";
-/** How many people the start list shows before "Show more", and how many each press adds. */
-const START_ROWS = 6;
 
 type SourceTab = "all" | "records" | "audit" | "session";
-type ViewRole = "coordinator" | "nurse";
 
 const SOURCE_OF_TAB: Record<Exclude<SourceTab, "all">, ChronologySource> = {
   records: "Record",
@@ -175,6 +181,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   const baseId = useId();
   const isPhone = useIsPhone();
   const nameFor = usePatientNameDisplay();
+  // The global search's people opened this session, read-only (Thread C mock-up).
+  const sessionRecents = useSessionRecents(recentsLifetimeNow());
   const toast = useOptionalToast();
   // The role is the route (`ward-chrome-role.ts`); nothing else holds a current role.
   const coordinator = wardChromeRole(usePathname() ?? "") === "coordinator";
@@ -193,8 +201,6 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   const [tab, setTab] = useState<SourceTab>("all");
   const [kind, setKind] = useState<string>("all");
   const [query, setQuery] = useState("");
-  const [shownPeople, setShownPeople] = useState(START_ROWS);
-  const [viewRole, setViewRole] = useState<ViewRole>("coordinator");
   const [openKey, setOpenKey] = useState<string | null>(null);
   // Phone only: the sheet that holds record kind and the role view, one tap from the list.
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -234,12 +240,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     [patientId, patients, movements, referrals, admissions, units, auditEvents, eventLog, dayZero, zone],
   );
 
-  // The ward nurse view is a narrower set of sources: the coordinator audit is left out.
-  const nurseView = coordinator && viewRole === "nurse";
-  const sourceRows = useMemo(
-    () => (chronology ? chronology.rows.filter((row) => !(nurseView && row.source === "Audit")) : []),
-    [chronology, nurseView],
-  );
+  const sourceRows = useMemo(() => (chronology ? chronology.rows : []), [chronology]);
   const kinds = useMemo(() => [...new Set(sourceRows.map((row) => row.record))].sort(), [sourceRows]);
   const needle = query.trim().toLowerCase();
   const rows = sourceRows.filter(
@@ -255,7 +256,6 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     tab === "all" ? "All sources" : `${SOURCE_OF_TAB[tab]} only`,
     kind === "all" ? "Every record kind" : `${kind} only`,
     needle ? "Search applied" : "No search",
-    ...(nurseView ? ["Ward manager view"] : []),
   ].join(" · ");
   function clearFilters() {
     setTab("all");
@@ -263,7 +263,6 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     setQuery("");
   }
 
-  const count = (source: ChronologySource) => rows.filter((row) => row.source === source).length;
   // Source tab counts read every event of that source, so an empty source shows 0 without a tap.
   const sourceCount = (source: ChronologySource) => sourceRows.filter((row) => row.source === source).length;
   // Owner rule D-83: surname first, as the resolver's formalName reads ("Family, Given").
@@ -276,13 +275,10 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
       chronology.recordIds.referrals.length +
       chronology.recordIds.admissions.length
     : 0;
-  const auditShown = Boolean(chronology?.auditIncluded) && !nurseView;
+  const auditShown = Boolean(chronology?.auditIncluded);
 
   const openIndex = rows.findIndex((row) => row.key === openKey);
   const open = openIndex >= 0 ? rows[openIndex] : null;
-  const portraitTablet = useIsTabletPortrait();
-  // The side panel opens the event, except on a portrait tablet, where a drawer does.
-  const sideEvent = portraitTablet ? null : open;
 
   function choosePatient(next: string) {
     setPatientId(next);
@@ -317,7 +313,20 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     copyTextToClipboard(text).then(copied, failed);
   }
 
-  // F-57 (C17): closing the side panel's event gives focus back to that event's row in the table.
+  // The rows in view, one line each (the Copy row words), for the Share menu.
+  function copyRows() {
+    const text = rows.map((row) => rowText(row, dayZero, zone)).join("\n");
+    const copied = () =>
+      toast?.push({
+        tone: "success",
+        title: rows.length === 1 ? "Row copied" : `${rows.length} rows copied`,
+        duration: 2600,
+      });
+    const failed = () => toast?.push({ tone: "warning", title: "Could not copy the rows", duration: 4000 });
+    copyTextToClipboard(text).then(copied, failed);
+  }
+
+  // F-57 (C17): closing the event drawer gives focus back to that event's row in the table.
   function closeSideEvent() {
     const key = openKey;
     setOpenKey(null);
@@ -401,77 +410,142 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     </Hero>
   );
 
-  // The start page, used with nobody chosen. No recently-opened store exists, so the list is
-  // named for what it is: people with records on the board, by surname.
+  // Thread C mock-up (26 Nov 2026): the start page opens on the lookup, not an A to Z list of names.
+  // The hero search (the one page search, D-91) opens a person; this card says so, shows how a
+  // chronology reads and lists the people opened from the global search this session (the existing
+  // in-memory recents: kind and id only, cleared when the session ends). No new store.
+  const openedThisSession = sessionRecents
+    .filter((recent) => recent.kind === "person")
+    .flatMap((recent) => people.filter((patient) => patient.id === recent.id))
+    .slice(0, 4);
+  const holds = [
+    { icon: Layers, term: "Records.", text: "Referrals, movements and admissions, each change as saved." },
+    {
+      icon: ShieldCheck,
+      term: "Audit trail.",
+      text: coordinator ? "Coordinator changes and overrides, with reasons." : "Not shown for this role.",
+    },
+    { icon: History, term: "Session log.", text: "This browser session only." },
+    { icon: Clock, term: "Times.", text: "As recorded or typed. Nothing is calculated." },
+  ];
+  const steps = [
+    { icon: UserSearch, label: "Search a person", line: "By name or UMRN, in the box above." },
+    { icon: Rows3, label: "Events in time order", line: "Each change, who made it and why." },
+    { icon: Share2, label: "Share", line: "Copy rows, download a CSV or print." },
+  ];
   const startPage = (
     <div className={start.start}>
-      <Card aria-labelledby={`${baseId}-night`}>
-        <CardHead
-          id={`${baseId}-night`}
-          icon={ListOrdered}
-          title="Patients on the board"
-          // Round 2: a short label instead of the sentence. Ward Flow keeps no list of who you opened,
-          // so this lists people with at least one record, by surname.
-          // The total sits here once, so the Show more row below only says how many it adds.
-          aside={
-            <span className={styles.headMeta} data-testid="ward-chronology-start-count">
-              {people.length} {people.length === 1 ? "patient" : "patients"}, A to Z
-            </span>
-          }
-        />
-        <ul className={start.people} aria-label="Patients on the board">
-          {people.slice(0, shownPeople).map((patient) => (
-            <li key={patient.id}>
-              <button
-                type="button"
-                className={start.person}
-                onClick={() => choosePatient(patient.id)}
-                data-testid="ward-chronology-start-patient"
-              >
-                <span className={start.personName}>{nameFor(pickerName(patient), patient.umrn)}</span>
-                <span className={patient.umrn ? start.personUmrn : start.personUmrnMissing}>
-                  {patient.umrn || "UMRN not recorded"}
-                </span>
-                <ChevronRight size={16} aria-hidden="true" className={start.personGo} />
-              </button>
+      <Card aria-labelledby={`${baseId}-open`} className={start.startCard}>
+        <CardHead id={`${baseId}-open`} icon={ListOrdered} title="Open a chronology" />
+        <div className={start.openBlock}>
+          <IconTile icon={Search} className={start.openTile} />
+          <p className={start.openLine}>Search by name or UMRN to open one person&rsquo;s record, in time order.</p>
+          <p className={start.openCount} data-testid="ward-chronology-start-count">
+            {people.length} {people.length === 1 ? "patient has records" : "patients have records"} on the board
+          </p>
+        </div>
+        {openedThisSession.length > 0 ? (
+          <section className={start.recentBlock} aria-labelledby={`${baseId}-recent`}>
+            <h3 id={`${baseId}-recent`} className={start.blockHead}>
+              Opened this session
+            </h3>
+            <ul className={start.people} aria-labelledby={`${baseId}-recent`}>
+              {openedThisSession.map((patient) => (
+                <li key={patient.id}>
+                  <button
+                    type="button"
+                    className={start.person}
+                    onClick={() => choosePatient(patient.id)}
+                    data-testid="ward-chronology-start-patient"
+                  >
+                    <span className={start.personName}>{nameFor(pickerName(patient), patient.umrn)}</span>
+                    <span className={patient.umrn ? start.personUmrn : start.personUmrnMissing}>
+                      {patient.umrn || "UMRN not recorded"}
+                    </span>
+                    <ChevronRight size={16} aria-hidden="true" className={start.personGo} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+        {/* Audit four #99: on a phone only, "How it reads" repeats the card above it and goes. Desktop keeps it. */}
+        {isPhone ? null : (
+          <section className={start.stepsBlock} aria-labelledby={`${baseId}-reads`}>
+            <h3 id={`${baseId}-reads`} className={start.blockHead}>
+              How it reads
+            </h3>
+            <ol className={start.steps}>
+              {steps.map((step) => (
+                <li key={step.label} className={start.step}>
+                  <IconTile icon={step.icon} />
+                  <span className={start.stepText}>
+                    <span className={start.stepLabel}>{step.label}</span>
+                    <span className={start.stepLine}>{step.line}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+      </Card>
+      <Card aria-labelledby={`${baseId}-holds`} className={start.startCard}>
+        <CardHead id={`${baseId}-holds`} icon={FileText} title="What a chronology holds" />
+        <ul className={start.holdsList}>
+          {holds.map((item) => (
+            <li key={item.term} className={start.holdsRow}>
+              <IconTile icon={item.icon} />
+              <span>
+                <b>{item.term}</b> {item.text}
+              </span>
             </li>
           ))}
         </ul>
-        {/* Round 2: one Show more, then the search finds anyone else, rather than about 30 presses. */}
-        {shownPeople < people.length ? (
-          shownPeople === START_ROWS ? (
-            // Final check: the shared Show more row (one size everywhere); the total is in the card head.
-            <ShowMoreRow onClick={() => setShownPeople(START_ROWS * 3)} expanded={false}>
-              Show {Math.min(START_ROWS * 2, people.length - START_ROWS)} more
-            </ShowMoreRow>
-          ) : (
-            <div className={start.more}>
-              <span className={start.moreNote}>
-                {Math.min(shownPeople, people.length)} of {people.length} · search for anyone else
-              </span>
-            </div>
-          )
-        ) : null}
-      </Card>
-      <Card aria-labelledby={`${baseId}-holds`}>
-        <CardHead id={`${baseId}-holds`} icon={FileText} title="What a chronology holds" />
-        <ul className={start.holdsList}>
-          <li>
-            <b>Records.</b> Referrals, movements and admissions, each change as saved.
-          </li>
-          <li>
-            <b>Audit trail.</b>{" "}
-            {coordinator ? "Coordinator changes and overrides, with reasons." : "Not shown for this role."}
-          </li>
-          <li>
-            <b>Session log.</b> This browser session only.
-          </li>
-          <li>
-            <b>Times.</b> As recorded or typed. Nothing is calculated.
-          </li>
-        </ul>
       </Card>
     </div>
+  );
+
+  /* One Share menu at every width: Copy rows, Download CSV, Print (D-91; audit two #15). */
+  const shareMenu = (phoneBar: boolean) => (
+    <Menu
+      label="Share"
+      align="end"
+      className={phoneBar ? phone.barShare : undefined}
+      items={[
+        {
+          id: "copy",
+          label: <span data-testid="ward-chronology-copy-rows">Copy rows</span>,
+          icon: Copy,
+          disabled: rows.length === 0,
+          onSelect: () => {
+            if (rows.length > 0) copyRows();
+          },
+        },
+        {
+          id: "csv",
+          label: <span data-testid="ward-chronology-csv">Export CSV</span>,
+          icon: Download,
+          onSelect: downloadCsv,
+        },
+        {
+          id: "print",
+          label: <span data-testid="ward-chronology-print">Print</span>,
+          icon: Printer,
+          onSelect: () => window.print(),
+        },
+      ]}
+      trigger={(props) => (
+        <button
+          type="button"
+          {...props}
+          className={buttonClass(phoneBar ? { variant: "sec" } : { variant: "ghost", size: "sm" })}
+          data-testid="ward-chronology-share"
+        >
+          <Share2 size={16} strokeWidth={1.75} aria-hidden="true" />
+          Share
+        </button>
+      )}
+    />
   );
 
   const sourceTabs = (size: "sm" | "md") => (
@@ -497,10 +571,6 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     <p className={styles.cardNote} data-testid="ward-chronology-audit-withheld">
       Coordinator audit not shown for this role
     </p>
-  ) : nurseView ? (
-    <p className={styles.cardNote} data-testid="ward-chronology-nurse-view">
-      Ward manager view: records and session log only.
-    </p>
   ) : null;
 
   const emptyState = !chronology ? null : sourceRows.length === 0 ? (
@@ -523,9 +593,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
 
   /* ---------------------------------------------------------------- phone */
   if (isPhone) {
-    const kindSummary = `${kind === "all" ? "Every record kind" : `${kind} only`}${
-      coordinator ? ` · ${nurseView ? "Ward manager" : "Bed coordinator"}` : ""
-    }`;
+    const kindSummary = `${kind === "all" ? "Every record kind" : `${kind} only`}`;
     return (
       <div
         className={cx(styles.page, styles.phonePage, phone.outputPage)}
@@ -669,18 +737,10 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                     onClick={() => setFiltersOpen(true)}
                   >
                     <Ellipsis size={20} aria-hidden="true" />
-                    <span className={phone.srOnly}>Record kind, view and print: {kindSummary}</span>
+                    <span className={phone.srOnly}>Record kind: {kindSummary}</span>
                   </button>
                 </span>
-                <Button
-                  variant="pri"
-                  icon={Download}
-                  className={phone.barPrimary}
-                  onClick={downloadCsv}
-                  data-testid="ward-chronology-csv"
-                >
-                  Download CSV
-                </Button>
+                {shareMenu(true)}
               </div>
             </>
           ) : (
@@ -718,9 +778,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
           <PhoneSheet
             open={filtersOpen}
             onClose={() => setFiltersOpen(false)}
-            title="Record kind and view"
+            title="Record kind"
             description="Filters the events listed; the counts are of this source"
-            primary={{ label: "Done", onAction: () => setFiltersOpen(false) }}
             data-testid="ward-chronology-phone-filter-sheet"
           >
             <div className={styles.sheetBody}>
@@ -749,26 +808,6 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                   />
                 ))}
               </ul>
-              {coordinator ? (
-                <Segmented<ViewRole>
-                  size="md"
-                  className={styles.phoneSeg}
-                  label="View as"
-                  value={viewRole}
-                  onChange={(next) => {
-                    setViewRole(next);
-                    if (next === "nurse" && tab === "audit") setTab("all");
-                    setOpenKey(null);
-                  }}
-                  items={[
-                    { id: "coordinator", label: "Bed coordinator" },
-                    { id: "nurse", label: "Ward manager" },
-                  ]}
-                />
-              ) : null}
-              <Button variant="sec" icon={Printer} onClick={() => window.print()} data-testid="ward-chronology-print">
-                Print
-              </Button>
             </div>
           </PhoneSheet>
           <PhoneSheet
@@ -853,23 +892,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
             titleMeta={
               chronology ? <span className={umrnMissing ? styles.umrnMissing : styles.umrn}>{umrn}</span> : undefined
             }
-            aside={
-              chronology ? (
-                <span className={styles.heroActions} data-print-hide>
-                  <Button
-                    variant="onHero"
-                    icon={Printer}
-                    onClick={() => window.print()}
-                    data-testid="ward-chronology-print"
-                  >
-                    Print
-                  </Button>
-                  <Button variant="light" icon={Download} onClick={downloadCsv} data-testid="ward-chronology-csv">
-                    Download CSV
-                  </Button>
-                </span>
-              ) : undefined
-            }
+            // Thread C mock-up: Print and Download CSV moved into the filter bar's Share menu.
             // The counts live once, in the Summary rail beside the table (device audit 11 Oct 2026).
             // The patient search is the header's main control; the generated line sits beside it.
             bar={<div className={start.heroSearch}>{patientSearch("hero")}</div>}
@@ -901,24 +924,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                 </option>
               ))}
             </Select>
-            {coordinator ? (
-              <span className={styles.roleSwitch}>
-                <span className={styles.fieldWord}>View as</span>
-                <Segmented<ViewRole>
-                  label="View as"
-                  value={viewRole}
-                  onChange={(next) => {
-                    setViewRole(next);
-                    if (next === "nurse" && tab === "audit") setTab("all");
-                    setOpenKey(null);
-                  }}
-                  items={[
-                    { id: "coordinator", label: "Bed coordinator" },
-                    { id: "nurse", label: "Ward manager" },
-                  ]}
-                />
-              </span>
-            ) : null}
+            <span className={start.shareEnd}>{shareMenu(false)}</span>
           </div>
         ) : null}
 
@@ -1028,90 +1034,44 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
               )}
             </Card>
 
-            <aside
-              className={styles.chronoSide}
-              id={`${baseId}-panel`}
-              aria-label={sideEvent ? "Event" : "Summary"}
-              data-wf-rail=""
-            >
-              {sideEvent ? (
-                <Card aria-labelledby={`${baseId}-event-title`}>
-                  <CardHead
-                    id={`${baseId}-event-title`}
-                    title={sideEvent.action}
-                    aside={
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        iconOnly
-                        icon={X}
-                        aria-label="Close event"
-                        onClick={closeSideEvent}
-                      />
-                    }
+            <aside className={styles.chronoSide} id={`${baseId}-panel`} aria-label="Summary" data-wf-rail="">
+              <Card aria-labelledby={`${baseId}-summary-title`}>
+                <CardHead
+                  id={`${baseId}-summary-title`}
+                  title="Summary"
+                  aside={<span className={umrnMissing ? styles.umrnQuietMissing : styles.umrnQuiet}>{umrn}</span>}
+                />
+                <div className={styles.sideBody}>
+                  <FactGrid
+                    facts={[
+                      { id: "events", label: "Events", value: String(rows.length) },
+                      { id: "records", label: "Linked records", value: String(recordCount) },
+                    ]}
                   />
-                  {eventBody(sideEvent)}
-                </Card>
-              ) : (
-                <Card aria-labelledby={`${baseId}-summary-title`}>
-                  <CardHead
-                    id={`${baseId}-summary-title`}
-                    title="Summary"
-                    aside={<span className={umrnMissing ? styles.umrnQuietMissing : styles.umrnQuiet}>{umrn}</span>}
-                  />
-                  <div className={styles.sideBody}>
-                    <FactGrid
-                      facts={[
-                        { id: "events", label: "Events", value: String(rows.length) },
-                        { id: "records", label: "Linked records", value: String(recordCount) },
-                      ]}
-                    />
-                    <dl className={styles.sideList}>
-                      <div>
-                        <dt>First</dt>
-                        <dd className={styles.time}>{firstLast(rows, dayZero, zone, "first")}</dd>
-                      </div>
-                      <div>
-                        <dt>Latest</dt>
-                        <dd className={styles.time}>{firstLast(rows, dayZero, zone, "last")}</dd>
-                      </div>
-                      <div>
-                        <dt>No occurred time</dt>
-                        <dd>{rows.filter((row) => row.occurredAt === null).length} show Not recorded</dd>
-                      </div>
-                    </dl>
-                    <h3 className={styles.sideHead}>By source</h3>
-                    <ul className={styles.tally}>
-                      {(["Record", "Audit", "Session log"] as const)
-                        .filter((source) => source !== "Audit" || auditShown)
-                        .map((source) => (
-                          <li key={source}>
-                            <SourceMark source={source} />
-                            <span>{source}</span>
-                            <b>{count(source)}</b>
-                          </li>
-                        ))}
-                    </ul>
-                    <h3 className={styles.sideHead}>By record kind</h3>
-                    <ul className={styles.tally}>
-                      {kinds.map((entry) => (
-                        <li key={entry}>
-                          <StatusGlyph tone="neutral" size={7} />
-                          <span>{entry}</span>
-                          <b>{rows.filter((row) => row.record === entry).length}</b>
-                        </li>
-                      ))}
-                    </ul>
-                    <p className={styles.cardNote}>Select an event to open it here.</p>
-                  </div>
-                </Card>
-              )}
+                  <dl className={styles.sideList}>
+                    <div>
+                      <dt>First</dt>
+                      <dd className={styles.time}>{firstLast(rows, dayZero, zone, "first")}</dd>
+                    </div>
+                    <div>
+                      <dt>Latest</dt>
+                      <dd className={styles.time}>{firstLast(rows, dayZero, zone, "last")}</dd>
+                    </div>
+                    <div>
+                      <dt>No occurred time</dt>
+                      <dd>{rows.filter((row) => row.occurredAt === null).length} show Not recorded</dd>
+                    </div>
+                  </dl>
+                  <p className={styles.cardNote}>Select an event to open it.</p>
+                </div>
+              </Card>
             </aside>
-            {/* Portrait tablet: the summary stays under the table and a clicked event slides over
-                from the right, so every column of the table stays readable. */}
+            {/* Thread C mock-up (A28): one event drawer at every desk and tablet width. The Summary rail
+                stays in view and a clicked event slides over from the right; closing it gives focus
+                back to that event's row. */}
             <Drawer
-              open={portraitTablet && open !== null}
-              onClose={() => setOpenKey(null)}
+              open={!isPhone && open !== null}
+              onClose={closeSideEvent}
               title={open?.action ?? "Event"}
               data-testid="ward-chronology-event-drawer"
             >
@@ -1122,8 +1082,6 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
           startPage
         )}
 
-        {/* With nobody chosen the start page's own card says how times are kept. */}
-        {chronology ? <p className={styles.disclosure}>Times as recorded or typed, nothing calculated.</p> : null}
         <WardPrototypeFooter testId="ward-chronology-footer" note="Synthetic data" className={phone.phPageFoot} />
       </main>
     </div>

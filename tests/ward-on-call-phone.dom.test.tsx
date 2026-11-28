@@ -362,31 +362,43 @@ describe("PhoneDirectory, the inset grouped list", () => {
   });
 });
 
+/** Audit four #98: the sheet is the kit drawer, opened from a list, so it always carries the pager. */
+const PAGER = { index: 0, total: 1, noun: "contact", onStep: vi.fn() };
+
 describe("PhoneSheet, the contact bottom sheet", () => {
   it("names the contact and its service, and opens on who answers now with Copy number and Copy email (OC1)", () => {
     const bfc = entry("nmhs-bfc");
     const number = numberAt(bfc, NOW_ANCHOR)!;
     const actions = makeActions();
-    render(<PhoneSheet entry={bfc} actions={actions} notice={<p>Synthetic notice</p>} onClose={vi.fn()} />);
+    render(
+      <PhoneSheet entry={bfc} actions={actions} notice={<p>Synthetic notice</p>} pager={PAGER} onClose={vi.fn()} />,
+    );
 
     const sheet = screen.getByRole("dialog", { name: bfc.name });
     expect(sheet).toHaveAttribute("data-testid", "ward-on-call-sheet");
-    expect(sheet).toHaveAccessibleDescription("North Metro");
+    // Line two of the head: the service tag (the place only repeats the service, so it is left out).
+    expect(within(sheet).getByTestId("wf-drawer-pager")).toBeInTheDocument();
+    expect(sheet).toHaveTextContent("North Metro");
     expect(within(sheet).getByText("Synthetic notice")).toBeInTheDocument();
 
     // D-72: calling only copied the number, so the sheet has no Call button.
     expect(within(sheet).queryByRole("button", { name: `Call ${number}` })).not.toBeInTheDocument();
-    expect(within(sheet).getByRole("region", { name: "Who answers now" })).toHaveTextContent(number);
+    const now = within(sheet).getByRole("region", { name: "Who answers now" });
+    expect(now).toHaveTextContent(number);
+    // The copy steps sit in the drawer's foot, not in the body's now block.
+    expect(within(now).queryByRole("button", { name: "Copy number" })).not.toBeInTheDocument();
     fireEvent.click(within(sheet).getByRole("button", { name: "Copy number" }));
     expect(actions.onCopy).toHaveBeenCalledWith(number, "Number copied");
     fireEvent.click(within(sheet).getByRole("button", { name: "Copy email" }));
     expect(actions.onCopy).toHaveBeenCalledWith(bfc.email, "Email copied");
   });
 
-  it("stars the contact, keeping one name and showing state through aria-pressed", () => {
+  it("stars the contact from the foot, reading Starred once pressed, with state through aria-pressed", () => {
     const bfc = entry("nmhs-bfc");
     const actions = makeActions();
-    const { rerender } = render(<PhoneSheet entry={bfc} actions={actions} notice={null} onClose={vi.fn()} />);
+    const { rerender } = render(
+      <PhoneSheet entry={bfc} actions={actions} notice={null} pager={PAGER} onClose={vi.fn()} />,
+    );
 
     const star = screen.getByRole("button", { name: `Star ${bfc.name}` });
     expect(star).toHaveAttribute("aria-pressed", "false");
@@ -394,18 +406,24 @@ describe("PhoneSheet, the contact bottom sheet", () => {
     expect(actions.onToggleFavourite).toHaveBeenCalledWith("nmhs-bfc");
 
     rerender(
-      <PhoneSheet entry={bfc} actions={{ ...actions, favourites: ["nmhs-bfc"] }} notice={null} onClose={vi.fn()} />,
+      <PhoneSheet
+        entry={bfc}
+        actions={{ ...actions, favourites: ["nmhs-bfc"] }}
+        notice={null}
+        pager={PAGER}
+        onClose={vi.fn()}
+      />,
     );
-    expect(screen.getByRole("button", { name: `Star ${bfc.name}` })).toHaveAttribute("aria-pressed", "true");
+    // Audit four #98: the foot's Star reads "Starred" once pressed, and keeps aria-pressed.
+    expect(screen.getByRole("button", { name: `Starred ${bfc.name}` })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("adds the place to the description for a ward and drops Call and Copy for an email-only inbox", () => {
     const inbox = ENTRIES.find((item) => item.kind === "referralInbox" && item.lines.length === 0)!;
-    render(<PhoneSheet entry={inbox} actions={makeActions()} notice={null} onClose={vi.fn()} />);
+    render(<PhoneSheet entry={inbox} actions={makeActions()} notice={null} pager={PAGER} onClose={vi.fn()} />);
 
     const sheet = screen.getByRole("dialog", { name: inbox.name });
-    expect(sheet.getAttribute("aria-describedby")).toBeTruthy();
-    expect(sheet).toHaveAccessibleDescription(new RegExp(`, Referral inbox, ${inbox.groupTitle}$`, "u"));
+    expect(sheet).toHaveTextContent(`Referral inbox, ${inbox.groupTitle}`);
     expect(within(sheet).queryByRole("button", { name: /^Call / })).not.toBeInTheDocument();
     expect(within(sheet).queryByRole("button", { name: "Copy number" })).not.toBeInTheDocument();
     expect(within(sheet).getByRole("button", { name: "Copy referral email" })).toBeInTheDocument();
@@ -413,7 +431,9 @@ describe("PhoneSheet, the contact bottom sheet", () => {
 
   it("closes on Escape and on the close button", () => {
     const onClose = vi.fn();
-    render(<PhoneSheet entry={entry("sw-bfc")} actions={makeActions()} notice={null} onClose={onClose} />);
+    render(
+      <PhoneSheet entry={entry("sw-bfc")} actions={makeActions()} notice={null} pager={PAGER} onClose={onClose} />,
+    );
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(1);

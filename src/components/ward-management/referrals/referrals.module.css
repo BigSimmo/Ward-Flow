@@ -3570,23 +3570,6 @@
   overflow-wrap: anywhere;
 }
 
-.drawerPager {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: 2px;
-}
-
-.drawerPagerCount {
-  min-width: 3.5rem;
-  color: var(--wf-ink-2);
-  font-family: var(--wf-mono);
-  font-feature-settings: "tnum" 1;
-  font-size: var(--wf-fs-12);
-  text-align: center;
-  white-space: nowrap;
-}
-
 /* The foot: one filled primary across the width, then the quiet buttons at one height. */
 .drawerFootNote {
   margin: 0;
@@ -3601,6 +3584,12 @@
 .drawerPrimary > * {
   flex: 1 1 auto;
   justify-content: center;
+}
+
+/* States review B (27 Nov 2026): Pull the bed and Copy to notes share the primary row with the 8px
+   gap the row below has. */
+html .drawerPrimary {
+  gap: var(--wf-s-2);
 }
 
 .drawerFootRow.drawerFootRow {
@@ -3626,6 +3615,16 @@
   border: none;
   border-radius: 0;
   box-shadow: none;
+}
+
+/* States review 02 (27 Nov 2026): the rule above and the match sheet's desktop inset
+   (referral-match-phone.module.css) have the same weight, so a production CSS order could pad the
+   Decide and Place bodies 16px inside the facts card. The html prefix keeps them flush on the
+   drawer's own gap, as r7 drew them. The phone keeps its own rule. */
+@media (min-width: 46.5rem) {
+  html .drawerContent .matchPanel {
+    padding: 0;
+  }
 }
 
 /* A note that used to fill the empty detail column, now a plain line under the queue. */

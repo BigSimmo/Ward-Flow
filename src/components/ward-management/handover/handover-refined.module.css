@@ -1,3 +1,6 @@
+/* Audit two B21: every table cell rule here starts with `html`, one element more than the kit's
+   `.table td` and `.table th`, so the page's own cell rules win in the production build as in dev,
+   whatever order the two style sheets load in. Order among this file's own rules is unchanged. */
 /* Handover, refined A (9 Oct 2026). Tokens only, 12px floor, status by shape and colour. */
 
 .page {
@@ -138,6 +141,17 @@
   text-overflow: ellipsis;
 }
 
+.keysScroll {
+  max-height: min(60vh, 22rem);
+  overflow-y: auto;
+}
+
+.keysGroup {
+  margin: 8px 4px 0;
+  font: 600 var(--wf-fs-12) / 16px var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
 .keys {
   display: flex;
   flex-direction: column;
@@ -156,8 +170,10 @@
 }
 
 .keys dt {
+  display: inline-flex;
+  justify-content: center;
+  gap: 4px;
   min-width: 44px;
-  text-align: center;
 }
 
 .keys dd {
@@ -354,11 +370,11 @@
   overflow: visible;
 }
 
-.tableScrollFitted .sheetTable th {
+html .tableScrollFitted .sheetTable th {
   top: var(--wf-header-height, 3.75rem);
 }
 
-.tableScrollFitted .sheetTable tr.groupRow > td {
+html .tableScrollFitted .sheetTable tr.groupRow > td {
   top: calc(var(--wf-header-height, 3.75rem) + 36px);
 }
 
@@ -377,7 +393,7 @@
 
 /* Cell padding and dividers come from the wf table primitive; this adds the sticky head and the
    12px floor for the header label. */
-.sheetTable th {
+html .sheetTable th {
   position: sticky;
   top: 0;
   z-index: 2;
@@ -386,20 +402,19 @@
   letter-spacing: 0.04em;
 }
 
-.sheetTable td {
-  height: 52px;
+/* Final look (26 Nov 2026): a row is the kit table's density row (--wf-row, 44px by default), as
+   every build drew it while the kit's table stylesheet loaded after this one. The fixed 52px, 40px
+   and 56px heights here took effect only when a route loaded the two in the other order. */
+html .sheetTable td {
+  height: var(--wf-row);
   vertical-align: middle;
-}
-
-.compact td {
-  height: 40px;
 }
 
 .compact .two .sub {
   display: none;
 }
 
-.present td {
+html .present td {
   height: 60px;
   font-size: var(--wf-fs-14);
 }
@@ -408,7 +423,7 @@
   cursor: pointer;
 }
 
-.row:hover td {
+html .row:hover td {
   background: var(--wf-hover);
 }
 
@@ -417,15 +432,15 @@
   outline-offset: -2px;
 }
 
-.rowHighlighted td {
+html .rowHighlighted td {
   background: var(--wf-accent-tint);
 }
 
-.rowSelected td {
+html .rowSelected td {
   background: var(--wf-selected);
 }
 
-.sheetTable tr.groupRow > td {
+html .sheetTable tr.groupRow > td {
   height: 36px;
   padding: 0;
   position: sticky;
@@ -1090,7 +1105,7 @@
     font-size: 9pt;
   }
 
-  .sheetTable th {
+  html .sheetTable th {
     position: static;
   }
 }
@@ -1125,16 +1140,16 @@
 /* ---------------------------------------------------------------- v10 */
 
 /* Highlights tint the rows they match; every row stays. */
-.row[data-highlighted="true"] td {
+html .row[data-highlighted="true"] td {
   background: color-mix(in srgb, var(--wf-accent) 8%, var(--wf-surface));
 }
 
-.row[data-highlighted="true"]:hover td {
+html .row[data-highlighted="true"]:hover td {
   background: color-mix(in srgb, var(--wf-accent) 12%, var(--wf-surface));
 }
 
 /* A picked row keeps its selected tint over a highlight. */
-.row[data-highlighted="true"].rowSelected td {
+html .row[data-highlighted="true"].rowSelected td {
   background: var(--wf-selected);
 }
 
@@ -1216,6 +1231,13 @@
   margin-bottom: var(--wf-s-3);
 }
 
+/* r10 (final-b2 #13): with no narrowed count, Arrange is the row's one control, so the row closes up
+   to the 8px rhythm above the list instead of reading as a band of its own. */
+.portraitTools:has(> .portraitNote:empty) {
+  margin-top: calc(-1 * var(--wf-s-1));
+  margin-bottom: var(--wf-s-2);
+}
+
 .portraitNote {
   flex: 1 1 auto;
   min-width: 0;
@@ -1260,17 +1282,38 @@
   padding: 4px;
 }
 
-.moreList a {
+/* States B review: kit menu rows. The two buttons and the two links share one left edge and one
+   height, in ink-1 with ink-2 icons, not link blue. html wins over the kit's ghost button. */
+html .moreList > :is(a, button) {
   justify-content: flex-start;
+  width: 100%;
   height: 40px;
+  padding-inline: var(--space-2);
+  color: var(--wf-ink-1);
+}
+
+html .moreList > :is(a, button) > svg {
+  color: var(--wf-ink-2);
 }
 
 .viewPanel {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
   min-width: 280px;
   padding: 8px;
+}
+
+.viewRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.viewLabel {
+  font: 600 var(--wf-fs-12) / 16px var(--wf-font);
+  color: var(--wf-ink-2);
 }
 
 .viewChoices {
@@ -1403,10 +1446,6 @@
   text-overflow: ellipsis;
   display: block;
   max-width: 100%;
-}
-
-.sheetTable td {
-  height: 56px;
 }
 
 .sheetTable .two > b {
@@ -1599,4 +1638,29 @@ button.sinceLine {
 button.sinceLine:focus-visible {
   outline: 2px solid var(--wf-hero-ink);
   outline-offset: 2px;
+}
+
+/* Batch 3 (one Handover): "To review before handover" under the grouped table. */
+.reviewBlock {
+  margin-top: var(--wf-s-3);
+}
+
+/* Audit four item 37: the Sign off dialog's body, the five checks and the signed line, no card. */
+.signDialogBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+.signDialogBody > .signed {
+  margin-top: var(--wf-s-2);
+}
+
+/* Gate r10 look upgrade 7: "since 11:46 pm yesterday" wraps to a second line at 1280 rather than
+   clipping; the cell's own ellipsis never reaches it. */
+.two > .sinceWrap.sinceWrap {
+  display: block;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: normal;
 }

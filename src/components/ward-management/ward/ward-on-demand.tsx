@@ -6,6 +6,7 @@
 
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
+import { StateLine } from "@/components/wf";
 
 export const WardAcceptDialog = dynamic(
   withLoadRetry(() => import("./ward-answer-accept-dialog").then((m) => m.WardAcceptDialog)),
@@ -19,5 +20,5 @@ export const WardScreenDecisionJobs = dynamic(
 );
 export const OverrideRegister = dynamic(
   withLoadRetry(() => import("@/components/ward-management/override-register").then((m) => m.OverrideRegister)),
-  { ssr: false, loading: () => <p role="status">Loading overrides…</p> },
+  { ssr: false, loading: () => <StateLine kind="loading" compact title="Loading overrides" /> },
 );

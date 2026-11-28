@@ -75,10 +75,6 @@
   color: var(--wf-ink-3);
 }
 
-.rail .policy {
-  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4) var(--wf-s-8);
-}
-
 .checks,
 .roles,
 .toc {
@@ -192,5 +188,26 @@
 
   .cols {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Design review (27 Nov 2026): on a phone the hero's aside (Jump to) stays at the title row's right end
+   instead of taking a row of its own. The hero's first row is its title block then its aside; the
+   doubled class outweighs the hero's own phone rules. */
+@media (max-width: 46.4375rem) {
+  .heroAsideEnd.heroAsideEnd > :first-child {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: var(--wf-s-3);
+  }
+
+  .heroAsideEnd.heroAsideEnd > :first-child > :first-child {
+    flex: 1 1 0;
+  }
+
+  .heroAsideEnd.heroAsideEnd > :first-child > :last-child:not(:first-child) {
+    order: 0;
+    flex: 0 0 auto;
+    margin-left: auto;
   }
 }

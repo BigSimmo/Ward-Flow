@@ -21,7 +21,7 @@ New here? Open **Help** and choose **Take the tour**.
 
 ## Most common tasks
 
-1. **Check beds.** Check each ward's figures and who confirmed them. If one looks out of date,
+1. **Check counts.** Check each ward's figures and who confirmed them. If one looks out of date,
    ask the coordinator to use **Request ward update**.
 2. **Bed releases.** Flag, confirm or block a bed due to come free, from the ward page.
 3. **Discharges held up.** Record or clear what is holding up a discharge, on **Discharges**.

@@ -70,3 +70,8 @@ p.heroNote {
 .win[data-wf-window] {
   color: var(--wf-hero-ink-3);
 }
+
+/* Ward page Decisions (review fix): the page's own gap sits above the prompts, not a second one. */
+:global([data-embedded="true"]) .oneNotice {
+  margin-top: 0;
+}

@@ -256,7 +256,7 @@ describe("Referrals tab headings (wave 4 mock-up, review FS-12)", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <ToastProvider>
-          <WardScreenReferralsTab active unit={unit} waiting={1} bedRequests={0} onOpenBedRequests={() => undefined} />
+          <WardScreenReferralsTab active unit={unit} waiting={1} bedRequests={0} />
         </ToastProvider>
       </WardFlowProvider>,
     );

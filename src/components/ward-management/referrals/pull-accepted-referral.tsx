@@ -14,17 +14,11 @@ import { legalStatusMismatchWarning } from "../ward-eligibility";
 import { legalFormStatusWarning } from "../ward-legal-form-fit";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { BED_PULL_UNDO_TOAST_MS } from "../ward-operational-defaults";
-import {
-  BED_PULL_UNDONE,
-  STARTED_JOURNEY_UNDONE,
-  bedPullUndoEvent,
-  nextPullTarget,
-  startedJourneyPull,
-} from "../ward-bed-pull-undo";
+import { STARTED_JOURNEY_UNDONE, bedPullUndoEvent, nextPullTarget, startedJourneyPull } from "../ward-bed-pull-undo";
 import { formatInstantWithDay } from "../ward-clock";
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { WardCommandOutcome } from "../ward-shared-client";
-import { useUndoableStep } from "../use-undoable-step";
+import { undoneToastTitle, useUndoableStep } from "../use-undoable-step";
 import { useWardRaise } from "../ward-flow-raise";
 import { legalFormName, legalStatusFull, SELECTABLE_LEGAL_FORMS } from "../ward-legal-forms";
 import type { LegalStatus } from "../ward-model";
@@ -325,7 +319,7 @@ export function PullAcceptedReferral({
         success: `Bed pulled at ${unitName} for ${name}`,
         who: name,
         undo,
-        undone: `${BED_PULL_UNDONE} ${left}`,
+        undone: `${undoneToastTitle(`Bed pulled at ${unitName} for ${name}`)} · ${left.replace(/\.$/, "")}`,
         undoToastMs: BED_PULL_UNDO_TOAST_MS,
         onAccepted: onDone,
       },

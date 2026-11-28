@@ -712,11 +712,6 @@ export function AllFactorsDrawer({ form, open, onClose }: { form: FormApi; open:
             value={form.state.rest}
             onChange={(v) => form.update((s) => ({ ...s, rest: v, restCov: null }))}
           />
-          <DrawerFootRow>
-            <Button variant="pri" onClick={onClose}>
-              Done
-            </Button>
-          </DrawerFootRow>
         </>
       }
     >

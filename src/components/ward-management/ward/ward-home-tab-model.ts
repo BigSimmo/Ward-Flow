@@ -14,7 +14,7 @@ import { stageCopy } from "@/components/ward-management/ward-derivations";
 export const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   PULL_PATIENT: "Pull the bed",
-  PATIENT_ARRIVED: "Confirm arrival",
+  PATIENT_ARRIVED: "Record arrival",
 };
 
 export const OVERRIDE_SUBMIT_UNAVAILABLE_REASON =

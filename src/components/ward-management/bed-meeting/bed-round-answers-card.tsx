@@ -67,7 +67,7 @@ export function BedRoundAnswersCard({ service }: { service: HealthService | null
             </ul>
             {limit < shown.length || all ? (
               <ShowMoreRow onClick={() => setAll((value) => !value)} expanded={all} controls={listId}>
-                {all ? "Show fewer" : `Show ${shown.length - limit} more`}
+                {all ? "Show fewer" : `Show all ${shown.length}`}
               </ShowMoreRow>
             ) : null}
           </>

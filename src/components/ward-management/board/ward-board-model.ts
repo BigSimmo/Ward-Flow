@@ -82,14 +82,16 @@ export type Tile =
       preparing?: true;
     };
 
-export const BOARD_FILTERS = ["all", "look", "ready", "quiet"] as const;
+// Audit two #57 (P53): one filter set for the Ward page's Picture and Grid, in the Picture's order and
+// words, so switching the drawing keeps the same choices. Grid adds only its Sort.
+export const BOARD_FILTERS = ["all", "look", "leaving", "ready"] as const;
 export type BoardFilter = (typeof BOARD_FILTERS)[number];
 
 export const BOARD_FILTER_LABELS: Record<BoardFilter, string> = {
-  all: "All beds",
-  look: "Needs a look",
+  all: "All",
+  look: "To check",
+  leaving: "Due out today",
   ready: "Ready",
-  quiet: "No discharge due",
 };
 
 export const BOARD_ORDERS = ["stay", "leaving", "recorded"] as const;

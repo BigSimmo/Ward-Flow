@@ -120,7 +120,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-95](#d-95-one-page-scroll-and-a-click-outside-closes-a-drawer-3-november-2026)                                                                              | One page scroll; outside click closes                                                                         | Active                                           |
 | [D-96](#d-96-a-named-bed-is-pulled-and-its-patient-is-not-also-waiting-8-november-2026)                                                                        | A named bed is pulled, not also waiting                                                                       | Active                                           |
 | [D-97](#d-97-owner-answers-on-seven-open-items-n21-n25-n26-n29-n40-n41-and-wf-b008-8-november-2026)                                                            | Seven open items answered                                                                                     | Active                                           |
-| [D-98](#d-98-friction-pass-quick-bar-patient-peek-and-ward-peek-8-november-2026)                                                                               | Quick bar, Patient peek, Ward peek                                                                            | Active                                           |
+| [D-98](#d-98-friction-pass-quick-bar-patient-peek-and-ward-peek-8-november-2026)                                                                               | Quick bar, Patient peek, Ward peek                                                                            | Partly replaced by D-280                         |
 | [D-99](#d-99-real-details-in-the-referral-drawers-sample-patients-25-september-2026)                                                                           | "Real details" in the referral drawer's sample patients                                                       | Active                                           |
 | [D-100](#d-100-under-a-form-means-one-rule-everywhere-9-november-2026)                                                                                         | "Under a form" means one rule everywhere                                                                      | Active                                           |
 | [D-101](#d-101-clinically-ready-for-discharge-with-one-delay-reason-9-november-2026)                                                                           | Clinically ready for discharge, with one delay reason                                                         | Active                                           |
@@ -290,6 +290,12 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-274](#d-274-the-22-november-merge-freeze-is-cancelled-21-november-2026)                                                                                     | The 22 November merge freeze is cancelled                                                                     | Active                                           |
 | [D-275](#d-275-the-48-hour-and-7-day-plan-review-flags-show-by-themselves-22-november-2026)                                                                    | The 48 hour and 7 day plan review flags show by themselves                                                    | Active                                           |
 | [D-276](#d-276-build-every-fix-from-the-21-november-review-of-main-big-visible-changes-are-mocked-up-first-22-november-2026)                                   | Build every fix from the 21 November review of main; big visible changes are mocked up first                  | Active                                           |
+| [D-277](#d-277-the-transport-desk-cancellation-notice-stays-a-card-27-november-2026)                                                                           | The transport desk cancellation notice stays a card                                                           | Active                                           |
+| [D-278](#d-278-audit-four-is-locked-and-built-116-simplification-items-plus-the-five-r10-recommendations-28-november-2026)                                     | Audit four is locked and built: 116 simplification items, plus the five r10 recommendations                   | Active                                           |
+| [D-279](#d-279-a-referral-raised-from-an-inpatient-bed-shows-its-source-as-a-read-only-from-line-28-november-2026)                                             | A referral raised from an inpatient bed shows its source as a read-only "From" line                           | Active                                           |
+| [D-280](#d-280-waitings-coordinator-pop-up-becomes-a-more-menu-28-november-2026)                                                                               | Waiting's Coordinator pop-up becomes a "More" menu                                                            | Active                                           |
+| [D-281](#d-281-names-that-read-alike-are-called-similar-names-28-november-2026)                                                                                | Names that read alike are called "Similar names"                                                              | Active                                           |
+| [D-282](#d-282-leaving-a-ward-is-record-discharge-28-november-2026)                                                                                            | Leaving a ward is "Record discharge"                                                                          | Active                                           |
 
 ---
 
@@ -3152,4 +3158,49 @@ D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
 - **Why:** the script must match the screen for the demo, and the ED board no longer offers "Current order" on a laptop.
 - **Boundary:** wording and small behaviour fixes only. No clinical rule, signed value, permission or saved record format changes. Synthetic data only.
 
-The next free number is D-277.
+## D-277. The transport desk cancellation notice stays a card (27 November 2026)
+
+- **Date:** 27 November 2026, 1:40 PM AWST (05:40 UTC). **Decided by:** Josh, in the project chat (the simplification review, decision D5): "Card lock in".
+- **Decision:** the transport desk's cancellation notice stays a card (option A). The one-line version is dropped. No change to the screen.
+- **Why:** the 26 November rule was to mock the notice as a one-line banner with a count and a link to the list in History, and to keep the card if the mock-up looked weaker. Josh decided from the mock-up and kept the card.
+- **Boundary:** a no-change ruling. No clinical rule, signed value, permission or saved record changes. Synthetic data only.
+
+## D-278. Audit four is locked and built: 116 simplification items, plus the five r10 recommendations (28 November 2026)
+
+- **Date:** 28 November 2026, 9:29 AM AWST (01:29 UTC), with later rulings the same day at 9:40 AM AWST (01:40 UTC), 8:48 PM AWST (12:48 UTC) and 8:49 PM AWST (12:49 UTC). **Decided by:** Josh, in the project chat.
+- **Decision:** at 9:29 AM AWST Josh said "lock in and go ahead with the plan to upgrade with all recommendations from the audit after running adversarial review" and answered "YES to ALL". That locks every audit four recommendation, its challenge to audit three, audit three as the base, and the overnight choices as recommended. The locked list is 116 items (31 reworded or changed at the final lock review). Item 87 is dropped. Item 113 is flipped to keep as built (Mark moving asks for a reason and also covers a missing Form 4A). Items 32 and 34 are design-system rules built in the build phase. Items 113 to 117 build nothing. The source is `LOCKED-AUDIT-4.json` and `LOCKED-ALL.md` (the project's simplification files, outside this repository).
+- **The five r10 rulings:** at 8:48 PM AWST on 28 November Josh said yes to all five recommendations from the r10 mock-up review: item 103's in-place time record fold is dropped (the time record stays a second sheet); item 36 is accepted as built (the duplicate entry goes and no "Open the full form" link is added); item 62's foot-line part is dropped and the Jump links go; item 98's Referral summary, Legal forms and On-call drawers are updated to the one drawer pattern in the build; and item 13 has no Undo after Record arrival on a planned arrival (the engine cannot undo a booking's arrival).
+- **Other rulings the same day:** at 9:40 AM AWST Josh said yes to recent suburb lookups being kept this session only, not stored on the device (A3-65), and chose the word for item 111 (see D-281). At 8:49 PM AWST (12:49 UTC) he said to build all of r10 into the real app now, as one pull request to `BigSimmo/Ward-Flow`, which replaces the earlier plan to run a staff "what do you see" test first. Find Wards at 820 (the table reaching the card edge) had no ruling, so it takes the recommendation: the same edge fade as item 97.
+- **Built in this pull request:** every locked item, by screen:
+
+- **Boundary:** wording, layout and small behaviour changes only, except item 109, which changes the saved source of a ward-origin referral (D-279). No clinical rule, signed value or permission changes. Help, desk guides, quick-starts and the demo script are updated to the new words. Synthetic data only.
+
+## D-279. A referral raised from an inpatient bed shows its source as a read-only "From" line (28 November 2026)
+
+- **Date:** 28 November 2026, 9:29 AM AWST (01:29 UTC). **Decided by:** Josh, in the project chat, as part of the audit four lock (D-278), item 109.
+- **Decision:** when a referral is raised from an inpatient bed, hide the Source toggle and the typed field, and show the sending ward as a read-only "From" line so the source stays in view. The saved source uses the existing sending-ward path.
+- **Why:** a ward cannot file under another source (D-59), so asking for a typed "Referring community service" invites a wrong entry.
+- **Boundary:** saved data changes: the source of a ward-origin referral now comes from the sending ward, never from typed text. Guard: D-59. The wiring was to be checked in the build phase.
+
+## D-280. Waiting's Coordinator pop-up becomes a "More" menu (28 November 2026)
+
+- **Date:** 28 November 2026, 9:29 AM AWST (01:29 UTC). **Decided by:** Josh, in the project chat, as part of the audit four lock (D-278), item 110. **Amends D-98 item 3.**
+- **Decision:** delete "Wards that could take them" from the Waiting drawer (the Wards tab is in view). The Coordinator pop-up becomes a kit menu called "More" holding Find a bed and Open on Home. The ED board pop-up stays as it is. The foot reads Escalate, Movement, More, ED board.
+- **What D-98 item 3 keeps:** Waiting's ED board pop-up is still a glance, and the ED glance is untouched. Find a bed stays. Only the Coordinator pop-up changes, from a pop-up to a menu.
+- **Boundary:** a layout and wording change. No clinical rule, signed value, permission or saved record changes. Synthetic data only.
+
+## D-281. Names that read alike are called "Similar names" (28 November 2026)
+
+- **Date:** 28 November 2026, 9:40 AM AWST (01:40 UTC). **Decided by:** Josh, in the project chat, answering "Yes to both recommendations"; he chose "Similar names" and not "Look-alike names" for item 111.
+- **Decision:** one term in the Find Teams hero figure, chip, column head, cell, phone tab and the Suburbs card: "Similar names". It replaces "read alike", "Read alike", "Name check" and "Reads like 3 others".
+- **Why:** audit three left the word to Josh, so nothing had been built.
+- **Boundary:** wording only. Help, the word list and the glossary use the same term.
+
+## D-282. Leaving a ward is "Record discharge" (28 November 2026)
+
+- **Date:** 28 November 2026, 9:29 AM AWST (01:29 UTC). **Decided by:** Josh, in the project chat, as part of the audit four lock (D-278), item 112.
+- **Decision:** use "Record discharge" for the button, dialog title and primary action, replacing "Record that they have left" and "Confirm discharge". "Release" is for a bed (Release pulled bed), never a person. "Leave" means leave from the ward only. Visible words only: saved notices and audit text are not rewritten.
+- **Why:** audit three chose "Record that they have left" for the bed sheet, so this swap is Josh's to confirm, and the lock confirms it.
+- **Boundary:** wording only. The criteria-led "patient told" confirm (D-60, D-64) is unchanged. No clinical rule, signed value or saved record changes.
+
+The next free number is D-283.

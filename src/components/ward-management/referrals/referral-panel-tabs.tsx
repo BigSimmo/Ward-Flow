@@ -115,7 +115,7 @@ export function PatientTab({
             <p className={cx(s.lead, !readMore && reason.length > 220 && s.clamp)}>{reason}</p>
             {reason.length > 220 ? (
               <button type="button" className={s.link} onClick={() => setReadMore((open) => !open)}>
-                {readMore ? "Show less" : "Read all"}
+                {readMore ? "Show fewer" : "Read all"}
               </button>
             ) : null}
           </>
@@ -253,7 +253,7 @@ export function PatientTab({
             <p className={cx(s.text, !historyMore && history.length > 180 && s.clamp)}>{history}</p>
             {history.length > 180 ? (
               <button type="button" className={s.link} onClick={() => setHistoryMore((open) => !open)}>
-                {historyMore ? "Show less" : "Read all"}
+                {historyMore ? "Show fewer" : "Read all"}
               </button>
             ) : null}
           </>

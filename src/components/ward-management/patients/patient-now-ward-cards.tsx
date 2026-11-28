@@ -52,7 +52,8 @@ export function PatientNextStepCard({
         {who ? <WhoDoesThis className={styles.nextWho}>{who}</WhoDoesThis> : null}
       </div>
       {/* F-54 (A9-35): no empty button slot when this desk can never take the step. */}
-      {step.action && !neverEvent ? (
+      {/* The pinned bar already carries this action on a phone, so the card keeps title and detail only. */}
+      {step.action && !neverEvent && !quiet ? (
         <div className={styles.nextAction}>
           <PatientNextStepButton
             action={step.action}
@@ -102,7 +103,7 @@ export function PatientDischargeReadiness({
   const rows = dischargeReadiness(admission, patient, dayZero);
   return (
     <Card data-testid="ward-patient-discharge-readiness">
-      <CardHead level={2} icon={ListChecks} title="Discharge readiness" meta="As recorded" />
+      <CardHead level={2} icon={ListChecks} title="Discharge readiness" />
       <ul className={styles.list} aria-label="Discharge readiness">
         {rows.map((row) => (
           <li key={row.key} className={styles.item} data-testid={`ward-patient-ready-${row.key}`} data-done={row.done}>

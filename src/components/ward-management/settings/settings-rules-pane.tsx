@@ -34,13 +34,13 @@ import {
   fullRules,
   type ConfigurationAuditEvent,
 } from "@/components/ward-management/settings/settings-screen-model";
-import { Card, CardHead, Segmented, StatusGlyph, Switch, cx } from "@/components/wf";
+import { Button, Card, CardHead, InfoTip, Segmented, StatusGlyph, Switch, cx } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "./settings-layout.module.css";
 import { DEFAULT_RULES, RULES, rulesAwayFromDefault, surgeChanges, type RuleKey } from "./settings-rule-catalogue";
 import { IMPACT_NOUNS, bedsPulledNow, impactText, ruleImpact } from "./settings-rule-impact";
-import { RuleRow, type RuleRange } from "./settings-rows";
+import { RuleRow, shownOn, type RuleRange } from "./settings-rows";
 
 function rangeOf(
   key: RuleKey,
@@ -65,6 +65,7 @@ export function SettingsRulesPane({
   changedOnly: changedOnlyProp,
   onChangedOnly,
   statusInHero = false,
+  onRestore,
 }: {
   draft: WardConfiguration;
   /** The saved rules. */
@@ -88,6 +89,8 @@ export function SettingsRulesPane({
    * in the page's header strip and sticky bar, so the pane leaves them out.
    */
   statusInHero?: boolean;
+  /** A phone's Restore defaults, at the right end of the top line (the desktop button sits in the screen's Rules head). */
+  onRestore?: () => void;
 }) {
   const rules = fullRules(draft);
   const saved = fullRules(configuration);
@@ -138,10 +141,33 @@ export function SettingsRulesPane({
       defaultValue: DEFAULT_RULES[key],
       defaultDisplay: entry.display(DEFAULT_RULES[key]),
       format: entry.display,
-      usedBy: entry.shownOn,
       unavailableReason: blockReason,
       effect: effectFor(key),
     };
+  };
+
+  /**
+   * Audit three #19 (Josh, 28 Nov 2026): where a card's rules show is said once, behind one ⓘ in
+   * the card head, not as a caption on every row. Each row keeps its live count.
+   */
+  const shownOnTip = (keys: readonly RuleKey[]) => {
+    const entries = keys.map((key) => RULES.find((rule) => rule.key === key)!);
+    const pages = new Set(entries.map((entry) => entry.shownOn));
+    return (
+      <InfoTip about="where these rules show">
+        {pages.size === 1 ? (
+          shownOn(entries[0]!.shownOn)
+        ) : (
+          <span className={rx.shownOnList}>
+            {entries.map((entry) => (
+              <span key={entry.key}>
+                <b>{entry.label}</b>: {shownOn(entry.shownOn).replace(/^Shown on /u, "")}
+              </span>
+            ))}
+          </span>
+        )}
+      </InfoTip>
+    );
   };
 
   return (
@@ -169,14 +195,28 @@ export function SettingsRulesPane({
             <span className={rx.lastChange} data-testid="ward-settings-recent-changes" data-setting="recent-changes">
               <RuleLastSave ruleChanges={ruleChanges} now={now} />
             </span>
-            <span data-setting="changed-only">
-              <ChangedOnlySwitch
-                checked={changedOnly}
-                onChange={setChangedOnly}
-                awayFromDefault={awayFromDefault}
-                compact
-              />
-            </span>
+            {/* Audit two #68: the switch shows only once a rule differs from its default. */}
+            {awayFromDefault > 0 || changedOnly ? (
+              <span data-setting="changed-only">
+                <ChangedOnlySwitch
+                  checked={changedOnly}
+                  onChange={setChangedOnly}
+                  awayFromDefault={awayFromDefault}
+                  compact
+                />
+              </span>
+            ) : null}
+            {onRestore ? (
+              <Button
+                variant="sec"
+                size="sm"
+                onClick={onRestore}
+                aria-haspopup="dialog"
+                data-testid="btn-restore-rules"
+              >
+                Restore defaults…
+              </Button>
+            ) : null}
           </div>
         </>
       )}
@@ -196,6 +236,7 @@ export function SettingsRulesPane({
               id="timings-title"
               icon={Clock}
               title="ED and placement"
+              aside={shownOnTip(["ed", "cap", "hold"])}
               action={
                 // A desk that cannot change the rules reads the timing set as words, not a greyed switch.
                 readOnlyWords !== null ? (
@@ -255,7 +296,14 @@ export function SettingsRulesPane({
           </Card>
 
           <Card aria-labelledby="warnings-title" data-rule-card>
-            <CardHead iconPlain id="warnings-title" icon={Gavel} title="Form warnings" meta="Your defaults" />
+            <CardHead
+              iconPlain
+              id="warnings-title"
+              icon={Gavel}
+              title="Form warnings"
+              meta="Your defaults"
+              aside={shownOnTip(["soon", "urgent"])}
+            />
             <RuleRow
               {...common("soon")}
               testId="setting-due-soon-row"
@@ -299,7 +347,10 @@ export function SettingsRulesPane({
             {/* The two warnings on one window, read from the draft: calm, early warning, final warning. */}
             <div className={styles.cascade} aria-hidden="true">
               <div className={styles.cascadeTrack}>
-                <span style={{ flexGrow: Math.max(0, DUE_SOON_RANGE_MINUTES.max - rules.soon) }} />
+                <span
+                  className={styles.cascadeCalm}
+                  style={{ flexGrow: Math.max(0, DUE_SOON_RANGE_MINUTES.max - rules.soon) }}
+                />
                 <span className={styles.cascadeSoon} style={{ flexGrow: Math.max(0, rules.soon - rules.urgent) }} />
                 <span className={styles.cascadeUrgent} style={{ flexGrow: rules.urgent }} />
               </div>
@@ -325,6 +376,7 @@ export function SettingsRulesPane({
               icon={Timer}
               title="Deadlines and reply targets"
               meta="Your defaults, not clinical standards"
+              aside={shownOnTip(["morning", "referralTarget", "transferTarget", "transportTarget"])}
             />
             <RuleRow
               {...common("morning")}
@@ -378,6 +430,7 @@ export function SettingsRulesPane({
               icon={Telescope}
               title="Alerts from recorded dates"
               meta="Coordinators only. Your defaults"
+              aside={shownOnTip(["forecastShort", "forecastEdLead", "forecastWorse"])}
             />
             <RuleRow
               {...common("forecastShort")}

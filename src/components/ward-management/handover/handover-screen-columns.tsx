@@ -65,7 +65,7 @@ export function screenColumnsFor(columns: HandoverColumn[], columnIds: readonly 
                       </span>
                     </span>
                   ) : (
-                    <span className={`${styles.sub} ${styles.mono} ${styles.trunc}`}>
+                    <span className={`${styles.sub} ${styles.mono} ${styles.trunc} ${styles.sinceWrap}`}>
                       since {formatInstantWithDay(row.openedAt, cellCtx.now)}
                     </span>
                   )}

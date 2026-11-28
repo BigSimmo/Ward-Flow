@@ -266,9 +266,12 @@ export function unitHref(unitId: string): string {
   return `/bedchart/ward/${encodeURIComponent(unitId)}`;
 }
 
-/** The bed board for a unit, with the same literal-path and encoding contract as `unitHref`. */
+/**
+ * The bed board for a unit. Simplification 26 Nov 2026 (mock-up): the board is the Ward page's Grid
+ * view of Every bed, so this is the ward route with that view on; `/bedchart/board/[unitId]` redirects here.
+ */
 export function wardBoardHref(unitId: string): string {
-  return `/bedchart/board/${encodeURIComponent(unitId)}`;
+  return `/bedchart/ward/${encodeURIComponent(unitId)}?view=grid`;
 }
 
 /**

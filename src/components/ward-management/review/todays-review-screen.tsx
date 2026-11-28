@@ -9,12 +9,18 @@ import {
   Button,
   buttonClass,
   Card,
+  CardFoot,
   CardHead,
   EmptyState,
+  GroupHead,
   Hero,
-  HeroStat,
+  HeroFigures,
+  HeroTop,
   PillTabs,
+  ShowMoreRow,
   StatusGlyph,
+  foldHidden,
+  foldLimit,
   type WfTone,
 } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -75,7 +81,7 @@ const overrideReason = (event: AuditEvent) =>
  * decline, override, open problem and action the app stopped, newest first, with a ward's repeated
  * declines on one line. The filter row uses the shared header's quiet stage-filter style.
  */
-export function TodaysReviewScreen() {
+function useTodaysReviewModel({ inHandover = false }: { inHandover?: boolean } = {}) {
   const {
     movements,
     units,
@@ -282,9 +288,11 @@ export function TodaysReviewScreen() {
             Each one is also in Needs you on Home. Hand over any you will not clear.
           </span>
         </span>
-        <Link href={HANDOVER_HREF} className={`${buttonClass({ variant: "sec", size: "sm" })} ${styles.todoAction}`}>
-          Open Handover
-        </Link>
+        {inHandover ? null : (
+          <Link href={HANDOVER_HREF} className={`${buttonClass({ variant: "sec", size: "sm" })} ${styles.todoAction}`}>
+            Open Handover
+          </Link>
+        )}
       </li>
     );
   }
@@ -373,22 +381,146 @@ export function TodaysReviewScreen() {
     );
   }
 
+  return { review, left, filter, setFilter, shown, now, shiftLabel, todoRow, eventRow };
+}
+
+type TodaysReviewModel = ReturnType<typeof useTodaysReviewModel>;
+
+/** "Everything today": the filter and the newest-first list. A body only, for a card or a group. */
+const EVERYTHING_TODAY_LIMIT = 8;
+
+function EverythingTodayList({ model }: { model: TodaysReviewModel }) {
+  const { review, filter, setFilter, shown, now, eventRow } = model;
+  // Fable batch 3: eight rows, then the kit's Show more row.
+  const [expanded, setExpanded] = useState(false);
+  const limit = expanded ? shown.length : foldLimit(shown.length, EVERYTHING_TODAY_LIMIT);
+  const hidden = foldHidden(shown.length, EVERYTHING_TODAY_LIMIT);
+  const listId = `review-events-${filter}`;
   return (
-    <main id="main-content" className={styles.main} data-testid="ward-todays-review">
-      <Hero
-        level={1}
-        eyebrow="Activity"
-        title="Today's review"
-        titleMeta={`Statewide · as at ${shiftLabel}`}
-        stats={
+    <>
+      <div className={styles.filterRow}>
+        <PillTabs
+          label="Show"
+          items={FILTERS.map((item) => ({ ...item, count: review.counts[item.id] }))}
+          value={filter}
+          onChange={setFilter}
+          idPrefix="review-filter"
+          className={styles.quiet}
+        />
+      </div>
+      <div role="tabpanel" id={`review-filter-panel-${filter}`} aria-labelledby={`review-filter-tab-${filter}`}>
+        {shown.length === 0 ? (
+          <EmptyState
+            title={filter === "all" ? "Nothing off-plan today" : "None today"}
+            meta={`Checked at ${formatInstantWithDay(now, now)}`}
+          />
+        ) : (
           <>
-            <HeroStat value={left} label="Overrides to review" tone={left > 0 ? "warning" : undefined} />
-            <HeroStat value={review.declineCount} label="Declines" />
-            <HeroStat value={review.counts.override} label="Overrides" />
-            <HeroStat value={review.counts.problem} label="Open problems" />
+            <ul id={listId} className={styles.events}>
+              {shown.slice(0, limit).map(eventRow)}
+            </ul>
+            {hidden > 0 ? (
+              <ShowMoreRow onClick={() => setExpanded((open) => !open)} expanded={expanded} controls={listId}>
+                {expanded ? "Show fewer" : `Show ${hidden} more`}
+              </ShowMoreRow>
+            ) : null}
           </>
+        )}
+      </div>
+    </>
+  );
+}
+
+/**
+ * Batch 3 (one Handover): Today's review's "Everything today" as the second group of Governance's
+ * Review tab, under a GroupHead, in both renderers.
+ */
+export function EverythingTodayGroup() {
+  const model = useTodaysReviewModel();
+  return (
+    <div className={styles.group} data-testid="review-everything-today">
+      <GroupHead title="Everything today" count={model.shown.length} meta="Newest first" />
+      <EverythingTodayList model={model} />
+    </div>
+  );
+}
+
+export const REVIEW_HISTORY_HREF = "/bedchart/governance?tab=review";
+const BEFORE_HANDOVER_LIMIT = 8;
+
+/**
+ * Batch 3 (one Handover): "Before you hand over" moved to Handover's Patients tab, under the grouped
+ * table, as "To review before handover". Eight rows, then Show more; a designed All clear state.
+ */
+export function BeforeHandoverReview({ className }: { className?: string }) {
+  const model = useTodaysReviewModel({ inHandover: true });
+  const [expanded, setExpanded] = useState(false);
+  const { review, left, todoRow } = model;
+  const total = review.todos.length;
+  const limit = expanded ? total : foldLimit(total, BEFORE_HANDOVER_LIMIT);
+  const hidden = foldHidden(total, BEFORE_HANDOVER_LIMIT);
+  const listId = "handover-review-todos";
+  return (
+    <Card aria-labelledby="handover-review-title" data-testid="handover-review-before" className={className}>
+      <CardHead
+        id="handover-review-title"
+        title="To review before handover"
+        icon={ClipboardCheck}
+        iconPlain
+        aside={
+          <Badge tone={left > 0 ? "warning" : "success"} size="sm">
+            {left > 0 ? `${left} to review` : "Overrides reviewed"}
+          </Badge>
         }
       />
+      {total === 0 ? (
+        <EmptyState
+          title="All clear"
+          meta={`Nothing to settle · checked ${formatInstantWithDay(model.now, model.now)}`}
+        />
+      ) : (
+        <>
+          <ul id={listId} className={styles.todos}>
+            {review.todos.slice(0, limit).map(todoRow)}
+          </ul>
+          {hidden > 0 ? (
+            <ShowMoreRow onClick={() => setExpanded((open) => !open)} expanded={expanded} controls={listId}>
+              {expanded ? "Show fewer" : `Show ${hidden} more`}
+            </ShowMoreRow>
+          ) : null}
+        </>
+      )}
+      <CardFoot>
+        <Link href={REVIEW_HISTORY_HREF} className={buttonClass({ variant: "ghost", size: "sm" })}>
+          Review history
+        </Link>
+      </CardFoot>
+    </Card>
+  );
+}
+
+/** Today's review page: kept for any desk that cannot open Governance (none today, Flag 3). */
+export function TodaysReviewScreen() {
+  const model = useTodaysReviewModel();
+  const { review, left, todoRow } = model;
+  return (
+    <main id="main-content" className={styles.main} data-testid="ward-todays-review">
+      <Hero level={1} eyebrow="Activity" title="Today's review" titleMeta="Statewide">
+        <HeroTop
+          quickBar={false}
+          figures={
+            <HeroFigures
+              label="Review figures"
+              items={[
+                { id: "to-review", value: left, label: "Overrides to review", tone: left > 0 ? "warning" : undefined },
+                { id: "declines", value: review.declineCount, label: "Declines" },
+                { id: "overrides", value: review.counts.override, label: "Overrides" },
+                { id: "problems", value: review.counts.problem, label: "Open problems" },
+              ]}
+            />
+          }
+        />
+      </Hero>
 
       <div className={styles.grid}>
         <Card aria-labelledby="review-handover-title" data-testid="review-before-handover">
@@ -416,26 +548,7 @@ export function TodaysReviewScreen() {
             iconPlain
             meta="Newest first"
           />
-          <div className={styles.filterRow}>
-            <PillTabs
-              label="Show"
-              items={FILTERS.map((item) => ({ ...item, count: review.counts[item.id] }))}
-              value={filter}
-              onChange={setFilter}
-              idPrefix="review-filter"
-              className={styles.quiet}
-            />
-          </div>
-          <div role="tabpanel" id={`review-filter-panel-${filter}`} aria-labelledby={`review-filter-tab-${filter}`}>
-            {shown.length === 0 ? (
-              <EmptyState
-                title={filter === "all" ? "Nothing off-plan today" : "None today"}
-                meta={`Checked at ${formatInstantWithDay(now, now)}`}
-              />
-            ) : (
-              <ul className={styles.events}>{shown.map(eventRow)}</ul>
-            )}
-          </div>
+          <EverythingTodayList model={model} />
         </Card>
       </div>
 

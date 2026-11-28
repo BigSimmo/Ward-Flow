@@ -581,6 +581,18 @@
   background: var(--wf-canvas);
 }
 
+/* States B review: a strip of list text showed between the bar and the floating dock; the bar's
+   surface runs on down behind the dock. */
+.sticky::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: var(--space-10);
+  background: var(--wf-canvas);
+  pointer-events: none;
+}
+
 /* The kit's 40px phone button, whose own invisible cover keeps the 48px tap floor. */
 .stickyButton {
   flex: 1 1 0;
@@ -596,6 +608,10 @@
 @media (max-height: 30rem) {
   .sticky {
     position: static;
+  }
+
+  .sticky::after {
+    content: none;
   }
 }
 
@@ -717,6 +733,26 @@
   font: 500 var(--wf-fs-13) / 1 var(--wf-mono);
   color: var(--wf-hero-ink-2);
   white-space: nowrap;
+}
+
+/* Design review (27 Nov 2026): the title drops "at 3:00 pm" (the pill says it), and the Which handover
+   pill sits at the right end of the title row instead of on a row of its own. The hero's first row is
+   its title block then its aside; the doubled class outweighs the hero's own phone rules. */
+@media (max-width: 46.4375rem) {
+  .heroShiftEnd.heroShiftEnd > :first-child {
+    flex-wrap: nowrap;
+    gap: var(--wf-s-3);
+  }
+
+  .heroShiftEnd.heroShiftEnd > :first-child > :first-child {
+    flex: 1 1 0;
+  }
+
+  .heroShiftEnd.heroShiftEnd > :first-child > :last-child:not(:first-child) {
+    order: 0;
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
 }
 
 /* The phone column has no gap between the hero and the folder tabs. */

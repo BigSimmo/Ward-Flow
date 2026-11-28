@@ -12,9 +12,29 @@
   gap: var(--wf-s-2);
 }
 
+/* Build of audit four (Low, "Catchment counts" 4px high at 820): the kit slot sits at the top of the
+   40px tab line, so a 32px button's label rode 4px above the tab labels. The row takes the tabs'
+   height and centres the button on their line. Alignment only: the button keeps its own size. */
+@media (min-width: 46.5rem) and (max-width: 63.99rem) {
+  .moreRow {
+    min-height: 40px;
+  }
+}
+
 /* R-STRUCT-29: the newest contact recorded today, a plain line beside Record contact. */
 .lastContact {
   font-size: 0.8125rem;
   color: var(--wf-hero-ink-2);
   white-space: nowrap;
+}
+
+/* Audit four #26: on a tablet the find box leads the sheet at full width, under the tab row. */
+.tabletFind {
+  padding: var(--wf-s-4) var(--wf-s-4) 0;
+}
+
+.tabletFind .find {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: none;
 }

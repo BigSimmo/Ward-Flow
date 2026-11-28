@@ -58,7 +58,7 @@ function EdTransportDialog({ row, ctx }: { row: EdBoardRowModel; ctx: EdScreenCo
       onClose={requestClose}
       closable={!saving}
       closeOnScrim={false}
-      title="Log transport booking"
+      title="Record transport booking"
       // Surname first (D-83), named once under the one-line title.
       description={`${patientInfo.formalName} · booked by phone`}
       size="md"

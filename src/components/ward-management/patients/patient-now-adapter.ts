@@ -290,8 +290,8 @@ function movementNextSteps(
     }
     return [
       {
-        w: "Book transport",
-        d: `Bed pulled at ${acceptedUnit?.name ?? "allocated unit"}. Book transport or record that none is needed.`,
+        w: "Record transport booking",
+        d: `Bed pulled at ${acceptedUnit?.name ?? "allocated unit"}. Record the transport booking, or record that none is needed.`,
         tone: "good" as const,
       },
     ];

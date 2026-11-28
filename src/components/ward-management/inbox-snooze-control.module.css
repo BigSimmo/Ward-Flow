@@ -55,26 +55,36 @@
   font-weight: 600;
 }
 
+/* Audit four #33 with gate r10 F6: kit menu rows held in the kit bordered group (1px line, card
+   radius, hairline dividers) with a chevron, so the list reads as "press one of these". */
 .reasons {
   display: flex;
   flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-ctl);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
 }
 
-.reasons > button.reason {
-  justify-content: space-between;
-  width: 100%;
-  min-height: 40px;
+.reasons > button {
+  min-height: 44px;
   padding: 0 var(--wf-s-3);
   border-radius: 0;
-  color: var(--wf-ink-1);
-  font-weight: 500;
 }
 
-.reasons > button.reason + button.reason {
+.reasons > button + button {
   border-top: 1px solid var(--wf-line);
+}
+
+.reasonChevron {
+  flex: none;
+  margin-inline-start: auto;
+  color: var(--wf-ink-3);
+}
+
+.body[data-inset="none"] {
+  padding: 0;
 }
 
 /* In the phone sheet: the sheet supplies the padding, the times share one row and every row is a
@@ -93,7 +103,7 @@
     line-height: var(--wf-lh-13);
   }
 
-  .reasons > button.reason {
+  .reasons > button {
     min-height: 48px;
     font-size: var(--wf-fs-15);
   }
@@ -116,4 +126,10 @@
   align-items: center;
   gap: var(--wf-s-1);
   white-space: nowrap;
+}
+
+/* Audit three #71: the reason chosen last is marked in quiet ink. */
+.lastUsed {
+  color: var(--wf-ink-3);
+  font-weight: 400;
 }

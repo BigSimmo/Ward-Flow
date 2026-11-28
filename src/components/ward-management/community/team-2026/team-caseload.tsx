@@ -85,13 +85,17 @@ export function TeamCaseload({
         </label>
       </div>
       <div className={`${wt.tableScroll} ${t.tableWrap}`}>
-        <table className={`${wt.table} ${t.table}`}>
+        <table className={`${wt.table} ${t.table} ${t.caseTable}`}>
           <thead>
             <tr>
               <th scope="col">Client</th>
               <th scope="col">Case manager</th>
-              <th scope="col">Psychiatrist</th>
-              <th scope="col">Legal</th>
+              <th scope="col" className={t.psychCol}>
+                Psychiatrist
+              </th>
+              <th scope="col" className={t.legalCol}>
+                Legal
+              </th>
               <th scope="col">Where now</th>
               <th scope="col" className={t.n}>
                 Last seen
@@ -107,12 +111,19 @@ export function TeamCaseload({
               <tr key={c.u}>
                 <td>
                   <Person name={c.n} umrn={c.u} sub={c.a} />
+                  {/* r10 (820): Legal folds under the client, so Where now and Last seen keep their room. */}
+                  <span className={t.legalFold}>
+                    {c.legal === "CTO" ? `CTO${c.legalD ? ` · ${c.legalD}` : ""}` : c.legal}
+                  </span>
                 </td>
                 <td>
                   <CaseManagerCell client={c} />
+                  {/* fix-5 (820): the psychiatrist folds under the case manager, one care team per cell,
+                      so the table fits its card with Next whole. */}
+                  <span className={t.psychFold}>{staffName(c.dr)}</span>
                 </td>
-                <td>{staffName(c.dr)}</td>
-                <td>
+                <td className={t.psychCol}>{staffName(c.dr)}</td>
+                <td className={t.legalCol}>
                   {c.legal === "CTO" ? (
                     <>
                       <span className={t.strong}>CTO</span>

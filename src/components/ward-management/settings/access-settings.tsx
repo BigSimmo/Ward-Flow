@@ -12,12 +12,14 @@
  * of one ward or ED for one shift at most, and end it early. Every change goes behind the step-up
  * check and through the same rules the server uses (`ward-access-admin.ts`).
  *
- * The roles list ends with the Access log (`access-log.tsx`): who opened which person's record.
+ * The roles list ends with a link to the Access log (who opened which person's record), whose one
+ * home is Governance's Audit trail (audit two #124, Josh 28 Nov 2026).
  * The local demo works on made-up staff held for this tab only. The shared workspace reads its
  * lists from the server (`access-shared-source.ts`, through `SharedAccessContext`).
  */
 import { useContext, useMemo, useState, type ReactNode } from "react";
-import { KeyRound, UserPlus, Users } from "lucide-react";
+import { History, KeyRound, UserPlus, Users } from "lucide-react";
+import Link from "next/link";
 
 import {
   Badge,
@@ -29,6 +31,7 @@ import {
   Radio,
   Select,
   TextInput,
+  buttonClass,
   cx,
   requestConfirm,
   type WfTone,
@@ -77,7 +80,6 @@ import {
 } from "@/components/ward-management/shell/ward-access-admin-store";
 import { useStepUp, type StepUpResult } from "@/components/ward-management/shell/ward-step-up";
 import { useSharedAdminSource, useSharedCoverSource } from "@/components/ward-management/settings/access-shared-source";
-import { AccessLog } from "@/components/ward-management/settings/access-log";
 import { SiteFeaturesCard } from "@/components/ward-management/settings/site-features-card";
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
 
@@ -184,11 +186,17 @@ export function AccessSettings() {
   if (previewOf) return <p className={styles.intro}>Preview only. Access changes are made from your own desk.</p>;
   if (desk.role === "admin") return <AccessAdminPanel />;
   // A statewide coordinator gives cover and also manages roles (managesAccess, review on PR #363).
+  // Audit three review: each panel is one column that stacks on its own, so the two columns no
+  // longer share grid rows and leave a hole beside the taller card.
   if (managesAccess(desk))
     return (
       <>
-        <CoverPanel />
-        <AccessAdminPanel />
+        <div className={styles.column}>
+          <CoverPanel />
+        </div>
+        <div className={styles.column}>
+          <AccessAdminPanel />
+        </div>
       </>
     );
   return <CoverPanel />;
@@ -221,11 +229,8 @@ function AccessAdminPanel() {
   return (
     <>
       <div className={cx(styles.lead, siteFeatures && styles.leadBesideRequests)}>
-        {/* Polish r2: the end date is said once, on Give a role. */}
-        <p className={styles.intro}>
-          {desk.role === "admin" ? null : "As a statewide coordinator you also give and remove roles. "}
-          Nobody grants themselves a role.
-        </p>
+        {/* Polish r2: the end date is said once, on Give a role. Audit three review: the note now sits
+            inside the Give a role card. */}
         {source.problem ? (
           <p className={styles.result} role="alert">
             {source.problem}
@@ -285,7 +290,13 @@ function AccessAdminPanel() {
         </div>
       ) : null}
 
-      <GrantForm source={source} units={units} now={now} onRun={run} />
+      <GrantForm
+        source={source}
+        units={units}
+        now={now}
+        onRun={run}
+        note={`${desk.role === "admin" ? "" : "As a statewide coordinator you also give and remove roles. "}Nobody grants themselves a role.`}
+      />
 
       <Card data-testid="ward-access-roles">
         <CardHead title="Everyone with a role" icon={Users} meta={plural(live.length, "role")} />
@@ -350,7 +361,20 @@ function AccessAdminPanel() {
           </ul>
         </CardBody>
       </Card>
-      <AccessLog />
+      {/* Audit two #124 (Josh, 28 Nov 2026): the Access log's one home is Governance, Audit trail.
+          Both desks with this tab (the access admin and the statewide coordinator) open Governance. */}
+      <Card id="access-log" data-testid="ward-access-log-link">
+        <CardHead
+          title="Access log"
+          icon={History}
+          meta="Who opened which record, in Governance"
+          action={
+            <Link href="/bedchart/governance?tab=audit" className={buttonClass({ variant: "sec", size: "sm" })}>
+              Open in Governance
+            </Link>
+          }
+        />
+      </Card>
       {dialog}
     </>
   );
@@ -361,11 +385,14 @@ function GrantForm({
   units,
   now,
   onRun,
+  note,
 }: {
   source: AccessAdminSource;
   units: readonly Unit[];
   now: Instant;
   onRun: (action: () => Promise<StepUpResult>, done: string) => void;
+  /** The panel's note, inside the card (audit three review). */
+  note: string;
 }) {
   // Audit (31 Oct 2026): nothing is chosen for the admin. Each field starts empty, so a role is never
   // given to whoever happened to be first in a list.
@@ -390,6 +417,7 @@ function GrantForm({
     <Card data-testid="ward-access-grant">
       <CardHead title="Give a role" icon={KeyRound} meta="Every role has an end date" />
       <div className={styles.form}>
+        <p className={cx(styles.intro, styles.formNote)}>{note}</p>
         <Field label={source.people ? "Person" : "Account id"}>
           {source.people ? (
             <Select value={person} onChange={(event) => setPerson(event.target.value)}>
@@ -569,9 +597,6 @@ function CoverPanel() {
 
   return (
     <>
-      <p className={styles.intro}>
-        Cover lasts {plural(CLINICAL_VALUES.coverLength.value, "hour")} at most and ends by itself.
-      </p>
       {result}
       <Card data-testid="ward-access-cover" data-setting="cover">
         <CardHead title="Give cover" icon={KeyRound} meta="One ward or one ED" />
@@ -580,6 +605,10 @@ function CoverPanel() {
         ) : (
           <>
             <div className={styles.form}>
+              {/* Audit three review: the cover note sits inside its card. */}
+              <p className={cx(styles.intro, styles.formNote)}>
+                Cover lasts {plural(CLINICAL_VALUES.coverLength.value, "hour")} at most and ends by itself.
+              </p>
               <Field label="Cover of">
                 <Select
                   value={place?.key ?? ""}

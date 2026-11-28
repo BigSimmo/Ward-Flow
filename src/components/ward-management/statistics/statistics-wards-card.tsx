@@ -5,7 +5,8 @@
 
 import { useMemo, useState } from "react";
 
-import { Badge, Button, FilterChip, Segmented, cx, rowDim, tableClasses } from "@/components/wf";
+import { Badge, Button, FilterChip, Segmented, ShowMoreRow, cx, rowDim, tableClasses } from "@/components/wf";
+import { BROWSE_ROWS, useBrowseLead } from "./statistics-browse-slot";
 import {
   Foot,
   MoreLink,
@@ -104,7 +105,10 @@ export function StatisticsWardsCard({
   ).length;
   // A bed manager's board leads with this card, so it carries Bed board, Journey and Map.
   const viewSwitch = useViewSwitchAction();
-  const visibleWards = wardShowAll ? filteredAndSortedWards : filteredAndSortedWards.slice(0, PRESSURE_ROWS);
+  // Network's Browse card: this table leads the Wards segment, eight rows then Show more.
+  const browse = useBrowseLead() !== null;
+  const firstRows = browse ? BROWSE_ROWS : PRESSURE_ROWS;
+  const visibleWards = wardShowAll ? filteredAndSortedWards : filteredAndSortedWards.slice(0, firstRows);
   // Compare is linked only for a desk that may open it (access audit, 31 Oct 2026).
   const canCompare = useCanOpenHref()(STATISTICS_COMPARE_HREF);
 
@@ -152,36 +156,31 @@ export function StatisticsWardsCard({
     );
   };
 
+  const groupSwitch = (
+    <Segmented
+      size="sm"
+      label="Group by"
+      value={groupBy}
+      onChange={setGroupBy}
+      items={[
+        { id: "wards", label: "By ward" },
+        { id: "hospitals", label: "By hospital" },
+      ]}
+    />
+  );
+
   return (
     <StatCardR
       id="pressure"
       title={siteName ? `${siteName} wards` : "Where the pressure is"}
       // Bed manager: the column heads say what the table shows, so the title stands alone.
-      meta={
-        siteName
-          ? undefined
-          : `${overLineCount} ${overLineCount === 1 ? "ward" : "wards"} at or over ${BED_ALERT_THRESHOLD_PERCENT}%`
-      }
-      aside={
-        siteName ? (
-          viewSwitch
-        ) : (
-          <Segmented
-            size="sm"
-            label="Group by"
-            value={groupBy}
-            onChange={setGroupBy}
-            items={[
-              { id: "wards", label: "Wards" },
-              { id: "hospitals", label: "Hospitals" },
-            ]}
-          />
-        )
-      }
+      // Audit three #6: the "at or over" count is the hero line and the chip, not a third time here.
+      meta={siteName ? undefined : "Busiest wards first"}
+      aside={siteName ? viewSwitch : browse ? undefined : groupSwitch}
       data-testid="ward-statistics-pressure"
       foot={
         <Foot link={canCompare ? <MoreLink href={STATISTICS_COMPARE_HREF}>Compare wards</MoreLink> : undefined}>
-          {filteredAndSortedWards.length > PRESSURE_ROWS ? (
+          {!browse && filteredAndSortedWards.length > PRESSURE_ROWS ? (
             <Button size="sm" variant="ghost" onClick={() => setWardShowAll((value) => !value)}>
               {wardShowAll ? `Show top ${PRESSURE_ROWS}` : `Show all ${filteredAndSortedWards.length}`}
             </Button>
@@ -198,6 +197,8 @@ export function StatisticsWardsCard({
           <FilterChip pressed={wardOverLine} onPressedChange={setWardOverLine} tone="warning" count={overLineCount}>
             {`At or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
           </FilterChip>
+          {/* In the Browse card the Wards and Hospitals switch is the table's own group control. */}
+          {browse ? groupSwitch : null}
           <span className={styles.toolbarEnd} id="wardFilterCount" role="status">
             {wardOverLine ? (
               <>
@@ -246,6 +247,11 @@ export function StatisticsWardsCard({
           )}
         </table>
       </div>
+      {browse && filteredAndSortedWards.length > BROWSE_ROWS ? (
+        <ShowMoreRow expanded={wardShowAll} onClick={() => setWardShowAll((value) => !value)}>
+          {wardShowAll ? "Show fewer" : `Show all ${filteredAndSortedWards.length}`}
+        </ShowMoreRow>
+      ) : null}
     </StatCardR>
   );
 }

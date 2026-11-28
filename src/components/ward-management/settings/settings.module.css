@@ -491,6 +491,19 @@
   background: var(--wf-track);
 }
 
+/* Audit four #92 (28 Nov 2026): the calm part is the track itself, which in dark sat at 1.3 to 1 on
+   the card and vanished. Dark only, it takes the same slate as the Delays "Under 8h" band
+   (delays-board.module.css), about 3.4 to 1; light keeps the track. */
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .cascadeCalm {
+    background: color-mix(in srgb, var(--wf-neutral) 55%, var(--wf-data-3));
+  }
+}
+
+:global(:root[data-theme="dark"]) .cascadeCalm {
+  background: color-mix(in srgb, var(--wf-neutral) 55%, var(--wf-data-3));
+}
+
 .cascadeSoon {
   background: color-mix(in srgb, var(--wf-warning) 55%, var(--wf-track));
 }
@@ -672,9 +685,10 @@
   text-decoration: underline;
 }
 
+/* One line now (Sign-in), so one full-width cell: no empty half beside it. */
 .aboutGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 1px;
   margin: 0;
   background: var(--wf-line);

@@ -133,3 +133,16 @@ a.row:focus-visible,
     min-height: 48px;
   }
 }
+
+/* States B review: the one filled button sits at the right of the foot, as in the other dialogs
+   (Print sheet, Done). */
+.foot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* r10 (final-b1 #14): a promise's due time ("10:37 am", with its overdue dot) has a column wide enough
+   to stay on one line, so it never runs into the wrapped sentence beside it. */
+.promiseList .row {
+  grid-template-columns: 6rem minmax(0, 1fr) auto;
+}

@@ -204,11 +204,11 @@ step.
 | **Chronology**          | One patient's events in time order, built from the records for a post-incident review.                         |
 | **Audit trail**         | Coordinator changes and overrides, with their reasons.                                                         |
 | **Session log**         | What this browser session recorded, for this session only.                                                     |
-| **CSV**                 | A plain spreadsheet file. Download CSV saves what you are looking at.                                          |
+| **CSV**                 | A plain spreadsheet file. Export CSV saves what you are looking at.                                            |
 | **Downtime pack**       | A printable copy of the last snapshot, for when the system is down.                                            |
 | **Snapshot**            | A copy of the figures at one time. Only the bed coordinator takes a new one.                                   |
 | **Caseload**            | The people a community team is looking after.                                                                  |
-| **Read alike**          | Community team names that look similar, set side by side.                                                      |
+| **Similar names**       | Community team names that look alike, set side by side.                                                        |
 | **Cover**               | One ward or one ED handed to another desk for at most 12 hours.                                                |
 | **In use**              | Beds occupied or pulled, as a share of a ward's beds.                                                          |
 | **Occupancy**           | The share of beds in use.                                                                                      |

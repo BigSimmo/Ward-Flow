@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, type Ref } from "react";
+import { useState } from "react";
 import { DECLINE_REASON_NOT_SHARED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
 import { BookingsPeekLink } from "./bookings-peek";
-import { ArrowUpRight, Check, ChevronRight, UserRound } from "lucide-react";
+import { Check, ChevronRight, UserRound } from "lucide-react";
 
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
@@ -19,22 +19,17 @@ import {
   type InboxSnoozeEntry,
   type InboxSnoozeReason,
 } from "@/components/ward-management/ward-inbox-snooze";
-import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "@/components/ward-management/inbox-snooze-control";
+import { InboxRowStatus, snoozedLine } from "@/components/ward-management/inbox-snooze-control";
 import { declineReasonLabels } from "@/components/ward-management/movements/movement-workspace-derivations";
-import {
-  RELEASE_PULL_REASONS,
-  changeReasonLabels,
-  type ReleasePullReason,
-} from "@/components/ward-management/ward-change-reasons";
 import {
   Button,
   DrawerFootRow,
-  Field,
   PanelDrawer,
-  Select,
+  type DrawerPagerProps,
   StatusGlyph,
   StatusPill,
   buttonClass,
+  cx,
 } from "@/components/wf";
 
 import {
@@ -55,20 +50,21 @@ import { currentLegalDueAt } from "@/components/ward-management/ward-legal-form-
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { DeclineLadder, WaitTrack, type TrackPoint } from "./alerts-visuals";
 import { AlertArrivedAtWard } from "./alert-arrived-at-ward";
-import { PullNowButton } from "./global-alert-panels";
+import { AlertPlannedArrival, usePlannedArrivalOffered } from "./alert-planned-arrival";
+import { AlertMoreMenu, PullNowSentLine } from "./alert-more-menu";
 import { ReleaseOwnershipButton } from "./alert-release-ownership";
 import { officerHref } from "@/components/ward-management/shell/ward-facade";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import styles from "./alerts.module.css";
 import rd from "./alert-detail-redesign.module.css";
-import parts from "./alerts-screen-parts.module.css";
 
 export type AlertDetailHandlers = {
   onTake: (item: InboxItem) => void;
   onAcknowledge: (item: InboxItem) => void;
   onSnooze: (item: InboxItem, until: Instant, reason: InboxSnoozeReason) => void;
   onReturn: (item: InboxItem) => void;
-  onRelease: (item: InboxItem, reason: ReleasePullReason) => void;
+  /** Opens the one "Release pulled bed" sheet (simplification R1): the reason is chosen there. */
+  onRelease: (item: InboxItem) => void;
   onEscalate?: (item: InboxItem) => void;
 };
 
@@ -92,13 +88,15 @@ export function AlertDetail({
   configuration,
   handlers,
   actionDisabledReason,
-  releaseRef,
   titleId,
   open,
   onClose,
   testId,
   resolveReturnFocusTarget,
+  pager,
 }: {
+  /** Audit four #31: the list pager in the drawer head. */
+  pager?: DrawerPagerProps;
   item: InboxItem;
   movement: Movement | undefined;
   subject: AlertSubject;
@@ -113,7 +111,6 @@ export function AlertDetail({
   configuration: WardConfiguration;
   handlers: AlertDetailHandlers;
   actionDisabledReason?: string;
-  releaseRef?: Ref<HTMLSelectElement>;
   titleId?: string;
   open: boolean;
   onClose: () => void;
@@ -121,7 +118,6 @@ export function AlertDetail({
   /** Where focus goes when the drawer closes and its opener row has gone (a release removes it). */
   resolveReturnFocusTarget?: () => HTMLElement | null;
 }) {
-  const [releaseReason, setReleaseReason] = useState<ReleasePullReason | "">("");
   const [panelTab, setPanelTab] = useState<PanelTab>("act");
   const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   // Whether Escalate means anything for THIS alert comes first: a movement's escalation record belongs
@@ -192,6 +188,7 @@ export function AlertDetail({
               : undefined;
 
   const booking = item.plannedAdmission;
+  const plannedArrivalOffered = usePlannedArrivalOffered(kind === "planned" ? booking : undefined);
   const facts: [string, string][] = [];
   if (booking) {
     facts.push(["Planned ward", subject.from]);
@@ -304,7 +301,9 @@ export function AlertDetail({
     <Button
       icon={mine ? Check : UserRound}
       disabledReason={actionDisabledReason ?? (mine ? "You own this alert" : undefined)}
-      reasonDisplay="tooltip"
+      // States B review: on a phone the drawn "You own this alert" line stacked under Yours and
+      // stretched the foot row; audit three #31 moved "Yours" to the head as a tag instead.
+      reasonDisplay={actionDisabledReason ? "tooltip" : "page"}
       aria-label={mine ? `Yours: ${subjectLine}` : `Take ${subjectLine}`}
       onClick={() => handlers.onTake(item)}
     >
@@ -315,6 +314,9 @@ export function AlertDetail({
   // of the greyed "Yours".
   // INV-ACTION-148 (14 Nov 2026): Hand back only on a row this desk actually took. A row that is the
   // coordinator's by default has nothing to release, and the press was refused.
+  // Audit three #31 (D-192 item 5): an alert that is yours by default shows "Yours" as a tag in the
+  // head, not as a dashed button nobody can press. The foot keeps Take only when it can be pressed,
+  // and Hand back on an alert this desk took (a real step, so it stays a button).
   const takeButton =
     mine && currentInboxOwner(ownership, item.since) !== undefined ? (
       <ReleaseOwnershipButton
@@ -323,70 +325,30 @@ export function AlertDetail({
         disabledReason={actionDisabledReason}
         fallback={ownButton}
       />
-    ) : (
+    ) : mine ? null : (
       ownButton
     );
-  const moreActions = (
-    <details className={styles.moreActions} data-testid="alerts-more-actions">
-      <summary>More actions</summary>
-      <div className={styles.moreGrid}>
-        {movement && !actionDisabledReason ? <PullNowButton movement={movement} /> : null}
-        <Button
-          size="sm"
-          icon={seen ? Check : undefined}
-          disabledReason={actionDisabledReason ?? (seen ? "Already acknowledged" : undefined)}
-          reasonDisplay="tooltip"
-          aria-label={seen ? `Seen: ${subjectLine}` : `Acknowledge ${subjectLine}`}
-          onClick={() => handlers.onAcknowledge(item)}
-        >
-          {seen ? "Seen" : "Acknowledge"}
-        </Button>
-        {snoozedUntil ? (
-          <Button
-            size="sm"
-            aria-label={`Return ${item.title} now for ${subject.displayName}`}
-            disabledReason={actionDisabledReason}
-            onClick={() => handlers.onReturn(item)}
-          >
-            Return now
-          </Button>
-        ) : actionDisabledReason ? (
-          <Button size="sm" disabledReason={actionDisabledReason} aria-label={`Snooze ${subjectLine}`}>
-            Snooze
-          </Button>
-        ) : (
-          <InboxSnoozeControl
-            subject={subjectLine}
-            actNow={inboxItemIsActNow(item.id)}
-            now={now}
-            variant="sec"
-            onSnooze={(until, reason) => handlers.onSnooze(item, until, reason)}
-          />
-        )}
-        <Button
-          size="sm"
-          variant="ghost"
-          icon={isEscalated ? Check : ArrowUpRight}
-          disabledReason={
-            actionDisabledReason ??
-            (!movement
-              ? "This alert has no movement to escalate"
-              : !escalationApplies
-                ? "Escalation is only for an exhausted bed search"
-                : isEscalated
-                  ? "Already escalated"
-                  : undefined)
-          }
-          reasonDisplay="tooltip"
-          aria-label={isEscalated ? `Escalated ${subjectLine}` : `Escalate ${subjectLine}`}
-          onClick={() => {
-            if (movement && escalationApplies && !isEscalated) handlers.onEscalate?.(item);
-          }}
-        >
-          {isEscalated ? "Escalated" : "Escalate"}
-        </Button>
-      </div>
-    </details>
+  const ownTag = !officerDesk && mine ? <StatusPill tone="neutral">Yours</StatusPill> : null;
+  const moreMenu = officerDesk ? null : (
+    <AlertMoreMenu
+      item={item}
+      movement={movement}
+      subjectLine={subjectLine}
+      displayName={subject.displayName}
+      now={now}
+      actionDisabledReason={actionDisabledReason}
+      seen={Boolean(seen)}
+      snoozed={Boolean(snoozedUntil)}
+      actNow={inboxItemIsActNow(item.id)}
+      escalationApplies={escalationApplies}
+      isEscalated={isEscalated}
+      onAcknowledge={() => handlers.onAcknowledge(item)}
+      onReturn={() => handlers.onReturn(item)}
+      onSnooze={(until, reason) => handlers.onSnooze(item, until, reason)}
+      onEscalate={() => {
+        if (movement && escalationApplies && !isEscalated) handlers.onEscalate?.(item);
+      }}
+    />
   );
 
   const tone = group === "act" ? "danger" : group === "wait" ? "warning" : "neutral";
@@ -394,10 +356,14 @@ export function AlertDetail({
   // The triangle never sits in a pill (triangle guard, plan 2k): the tag takes a control's tone, and
   // the act-now triangle stays on the state line in the body.
   const tagTone = tone === "danger" ? "neutral" : tone;
-  const drawerTabs = [
-    { id: "act" as const, label: "Act" },
-    { id: "activity" as const, label: "Activity", count: activity.length > 0 ? activity.length : undefined },
-  ];
+  // #47: the Activity tab shows only when there is activity; with none there is no tab row at all.
+  const hasActivity = activity.length > 0;
+  const drawerTabs = hasActivity
+    ? [
+        { id: "act" as const, label: "Act" },
+        { id: "activity" as const, label: "Activity", count: activity.length },
+      ]
+    : undefined;
   const openAge =
     openedShown !== undefined &&
     (!officerDesk || track.length === 0 || (kind === "declines" && declines.length > 0)) ? (
@@ -471,42 +437,53 @@ export function AlertDetail({
       {snoozedUntil ? <p className={rd.drawerNote}>{snoozedLine(snoozedUntil, now)}</p> : null}
       {/* Transport officer: Take, Acknowledge, Snooze and Escalate are the coordinator's, so they are
           left out and the app's own sentence says why, once. */}
-      {officerDesk ? <p className={rd.drawerNote}>{actionDisabledReason}</p> : moreActions}
+      {officerDesk ? <p className={rd.drawerNote}>{actionDisabledReason}</p> : null}
+      {movement ? <PullNowSentLine movement={movement} /> : null}
     </>
   );
 
-  const activityPanel =
-    activity.length > 0 ? (
-      <ul className={rd.activity}>
-        {activity.map((entry, index) => (
-          <li key={`${entry.at}-${index}`}>
-            <time>{formatInstantWithDay(entry.at, now)}</time>
-            <StatusGlyph tone={entry.done ? "success" : group === "act" ? "danger" : "warning"} size={9} />
-            <span>{entry.text}</span>
-          </li>
-        ))}
-      </ul>
-    ) : (
-      <p className={rd.drawerNote}>Nothing recorded on this alert yet.</p>
-    );
+  const activityPanel = (
+    <ul className={rd.activity}>
+      {activity.map((entry, index) => (
+        <li key={`${entry.at}-${index}`}>
+          <time>{formatInstantWithDay(entry.at, now)}</time>
+          <StatusGlyph tone={entry.done ? "success" : group === "act" ? "danger" : "warning"} size={9} />
+          <span>{entry.text}</span>
+        </li>
+      ))}
+    </ul>
+  );
 
   const patientButton = patientLink ? (
     <Link className={buttonClass({ variant: "sec" })} href={patientLink}>
-      Patient
+      Patient page
       <ChevronRight size={14} aria-hidden="true" />
     </Link>
   ) : null;
 
+  // Audit four item 13: a due planned arrival's filled step is Record arrival (the shared confirm);
+  // Open bookings becomes the quiet second link beside it.
+  const plannedArrival = plannedArrivalOffered && booking ? booking : undefined;
   const foot = snoozedUntil ? (
     patientButton || !officerDesk ? (
-      <DrawerFootRow className={rd.drawerTools}>
-        {officerDesk ? null : takeButton}
-        {patientButton}
-      </DrawerFootRow>
+      <>
+        <DrawerFootRow className={rd.drawerTools}>
+          {officerDesk ? null : takeButton}
+          {patientButton}
+          {moreMenu}
+        </DrawerFootRow>
+      </>
     ) : null
   ) : (
     <>
-      {action.kind === "link" && action.bookingsUnitId !== undefined ? (
+      {plannedArrival ? (
+        <AlertPlannedArrival
+          booking={plannedArrival}
+          displayName={subject.displayName}
+          wardName={subject.from}
+          className={`${styles.wide} ${rd.primary}`}
+        />
+      ) : action.kind === "link" && action.bookingsUnitId !== undefined ? (
         <BookingsPeekLink
           unitId={action.bookingsUnitId}
           href={action.href}
@@ -521,42 +498,30 @@ export function AlertDetail({
           {officerDesk ? action.label : `${action.label} for ${subject.displayName}`}
         </Link>
       ) : (
-        <div className={`${styles.releaseRow} ${parts.releaseRow}`}>
-          <Field label="Reason for release" id={`alerts-release-${item.id}`}>
-            <Select
-              ref={releaseRef}
-              value={releaseReason}
-              onChange={(event) => setReleaseReason(event.target.value as ReleasePullReason | "")}
-            >
-              <option value="">Choose a reason</option>
-              {RELEASE_PULL_REASONS.map((reason) => (
-                <option key={reason} value={reason}>
-                  {changeReasonLabels[reason]}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          {/* One full-width Release, with "Choose a reason first" written under it. */}
-          <div className={parts.releaseAction}>
-            <Button
-              variant="pri"
-              disabledReason={actionDisabledReason ?? (releaseReason === "" ? "Choose a reason first" : undefined)}
-              reasonDisplay="inline"
-              onClick={() => {
-                if (releaseReason === "") return;
-                handlers.onRelease(item, releaseReason);
-                setReleaseReason("");
-              }}
-            >
-              {/* CT-19: the reason-gated release names its patient at the point of commit. */}
-              Release pulled bed for {subject.displayName}
-            </Button>
-          </div>
-        </div>
+        <Button
+          variant="pri"
+          className={`${styles.wide} ${rd.primary}`}
+          disabledReason={actionDisabledReason}
+          reasonDisplay="inline"
+          data-testid="alerts-release-pulled-bed"
+          onClick={() => handlers.onRelease(item)}
+        >
+          {/* CT-19: the release names its patient; the reason is chosen in the shared sheet. */}
+          Release pulled bed for {subject.displayName}
+        </Button>
       )}
       {officerDesk && !patientButton ? null : (
         <DrawerFootRow className={rd.drawerTools}>
           {officerDesk ? null : takeButton}
+          {plannedArrival && action.kind === "link" && action.bookingsUnitId !== undefined ? (
+            <BookingsPeekLink
+              unitId={action.bookingsUnitId}
+              href={action.href}
+              className={buttonClass({ variant: "sec" })}
+            >
+              {action.label}
+            </BookingsPeekLink>
+          ) : null}
           {action.kind !== "link" && movement ? (
             <AlertArrivedAtWard
               movement={movement}
@@ -565,6 +530,7 @@ export function AlertDetail({
             />
           ) : null}
           {patientButton}
+          {moreMenu}
         </DrawerFootRow>
       )}
     </>
@@ -578,19 +544,21 @@ export function AlertDetail({
       open={open}
       onClose={onClose}
       resolveReturnFocusTarget={resolveReturnFocusTarget}
+      pager={pager}
       title={subject.displayName}
       titleId={titleId}
       subtitle={
-        subject.umrn || subject.legalStatus ? (
-          <span className={rd.drawerSubtitle}>
-            {/* No leading " · " when this desk is not shown the UMRN (the transport officer). */}
-            {subject.umrn ? <span className={styles.mono}>{subject.umrn}</span> : null}
-            {subject.umrn && subject.legalStatus ? <span aria-hidden="true">·</span> : null}
-            {subject.legalStatus ? <span>{subject.legalStatus}</span> : null}
+        // Gate r10 F2: row one is name, pager and close; the tags ride the subtitle line, and each
+        // part draws its dot before it, so a wrapped line never ends on a dangling "·".
+        <span className={rd.drawerSubtitle}>
+          {subject.umrn ? <span className={cx(rd.subItem, styles.mono)}>{subject.umrn}</span> : null}
+          {subject.legalStatus ? <span className={rd.subItem}>{subject.legalStatus}</span> : null}
+          <span className={rd.subTags}>
+            <StatusPill tone={tagTone}>{tagLabel}</StatusPill>
+            {ownTag}
           </span>
-        ) : undefined
+        </span>
       }
-      tag={<StatusPill tone={tagTone}>{tagLabel}</StatusPill>}
       closeLabel="Close alert"
       tabs={drawerTabs}
       tab={panelTab}
@@ -602,7 +570,7 @@ export function AlertDetail({
       bodyClassName={rd.drawerBody}
       foot={foot}
     >
-      {panelTab === "activity" ? activityPanel : actPanel}
+      {panelTab === "activity" && hasActivity ? activityPanel : actPanel}
     </PanelDrawer>
   );
 }

@@ -250,3 +250,28 @@
     display: flex;
   }
 }
+
+/* Batch 3: "Everything today" as a GroupHead group in Governance's Review tab. */
+.group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+/* Fable batch 3: one set of columns for the whole list, so every title starts at one position
+   whatever the time or tag; the tag column is a fixed width. */
+.events {
+  display: grid;
+  grid-template-columns: minmax(48px, max-content) 7rem minmax(0, 1fr) auto;
+}
+
+.events > .event {
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+.events > .event > .eventTag {
+  justify-self: start;
+  max-width: 100%;
+}

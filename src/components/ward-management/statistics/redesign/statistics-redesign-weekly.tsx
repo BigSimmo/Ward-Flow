@@ -188,6 +188,12 @@ export function WeeklyBody(props: WeeklyBodyProps) {
     },
   ];
 
+  // Audit two (#66, D-218): a supporting row with no figure and no rate hides; the card's foot says
+  // "Not enough this week" once instead of a column of dashes.
+  const blank = (value: ReactNode) => value === "—" || value === null || value === undefined;
+  const supportShown = support.filter((row) => !(blank(row.value) && blank(row.rate)));
+  const supportHidden = support.length - supportShown.length;
+
   return (
     <div className={s.body}>
       {props.printLines}
@@ -212,15 +218,27 @@ export function WeeklyBody(props: WeeklyBodyProps) {
           <Foot
             how={[
               <>Referral to arrival is the typical time {pilot.arrival.note}.</>,
-              "Measures 2 and 4 are counted outside BedChart: calls per placed referral on a paper tally, wrong-patient and lost changes through the incident route.",
               "Bed figures on time is today only, because each ward's latest confirmation is all that is kept.",
+              // Audit two (#98): the week's pressure figures are the hero's, so their notes live here.
+              ...(isPhone
+                ? []
+                : [
+                    `ED waits are counted in the week the wait first passes ${targetText}, the target set in Settings.`,
+                    "Delayed discharge uses the current expected date, counted from when it was set; earlier dates are not kept.",
+                    <span key="occupancy" data-testid="ward-weekly-occupancy-definition">
+                      {occupancy.definition}
+                    </span>,
+                    "Pressure counts only what this prototype holds, so earlier weeks read low.",
+                  ]),
             ]}
           >
             Targets are still proposals
           </Foot>
         }
       >
-        <Strip label="Pilot measures" cols={4}>
+        {/* Audit two (#99): measures 1 and 3 hold figures, on halves; 2 and 4 hold no figure here, so
+            one line under the tiles names both, as counted outside BedChart. */}
+        <Strip label="Pilot measures" cols={2}>
           <Tile
             title={
               <>
@@ -245,19 +263,6 @@ export function WeeklyBody(props: WeeklyBodyProps) {
           <Tile
             title={
               <>
-                <span className={s.mnum}>2</span>Calls per placed referral
-              </>
-            }
-            sub="Counted outside BedChart"
-          >
-            <p className={s.outside}>
-              <ClipboardList size={15} aria-hidden="true" />
-              On the paper tally
-            </p>
-          </Tile>
-          <Tile
-            title={
-              <>
                 <span className={s.mnum}>3</span>Bed figures on time
               </>
             }
@@ -273,37 +278,42 @@ export function WeeklyBody(props: WeeklyBodyProps) {
               valueText={null}
             />
           </Tile>
-          <Tile
-            title={
-              <>
-                <span className={s.mnum}>4</span>Wrong-patient and lost changes
-              </>
-            }
-            sub="Counted outside BedChart"
-          >
-            <p className={s.outside}>
-              <ShieldAlert size={15} aria-hidden="true" />
-              Through the incident route
-            </p>
-          </Tile>
         </Strip>
+        <p className={s.outsideLine} data-testid="ward-pilot-outside-measures">
+          <span className={s.outsideItem}>
+            <span className={s.mnum}>2</span>
+            <ClipboardList size={15} aria-hidden="true" />
+            Calls per placed referral, on the paper tally
+          </span>
+          <span className={s.outsideItem}>
+            <span className={s.mnum}>4</span>
+            <ShieldAlert size={15} aria-hidden="true" />
+            Wrong-patient and lost changes, through the incident route
+          </span>
+          <span>Both counted outside BedChart</span>
+        </p>
       </StatCardR>
 
       <Grid layout="wide">
         <StatCardR
           id="rd-time"
           title="Where the time goes"
-          meta="Typical per step"
+          // Audit two (#66): the end-to-end total is the card's meta, not a row of its own.
+          meta={"Typical per step"}
           foot={
             <Foot>
+              {/* The foot is a wrapping flex row, so each part is one item and carries the "·" after
+                  it: a wrapped line never starts with a separator (final look, 26 Nov 2026). */}
               {longestStep ? (
-                <>
-                  Longest step: <b>{longestStep.label.toLowerCase()}</b> · steps finished in the week
-                </>
-              ) : (
-                "Steps finished in the week"
-              )}
-              {pilot.replayedSampleJourneys ? " · includes example journeys replayed through the app" : null}
+                <span>
+                  Longest step: <b>{longestStep.label.toLowerCase()}</b> ·
+                </span>
+              ) : null}
+              <span>
+                {longestStep ? "steps finished in the week" : "Steps finished in the week"}
+                {pilot.replayedSampleJourneys ? " ·" : null}
+              </span>
+              {pilot.replayedSampleJourneys ? <span>includes example journeys replayed through the app</span> : null}
             </Foot>
           }
         >
@@ -321,10 +331,6 @@ export function WeeklyBody(props: WeeklyBodyProps) {
               </li>
             ))}
           </ol>
-          <p className={s.endToEnd}>
-            <span>Referral to arrival, typical end to end</span>
-            <b>{pilot.arrival.typical}</b>
-          </p>
         </StatCardR>
         <StatCardR
           id="rd-support"
@@ -334,13 +340,16 @@ export function WeeklyBody(props: WeeklyBodyProps) {
             <Foot
               how={[
                 "Transport is measured against the estimate, as booking times are not recorded.",
+                ...(supportHidden > 0 ? ["A figure with too few records this week is left out."] : []),
                 "People in an ED with no bed request are not held here; the daily check on Waiting lists them.",
               ]}
-            />
+            >
+              {supportHidden > 0 ? "Not enough this week" : null}
+            </Foot>
           }
         >
           <ul className={s.support}>
-            {support.map((row) => (
+            {supportShown.map((row) => (
               <li key={row.name}>
                 <span>
                   {row.name}
@@ -359,85 +368,90 @@ export function WeeklyBody(props: WeeklyBodyProps) {
         </StatCardR>
       </Grid>
 
-      <StatCardR
-        id="rd-pressure-week"
-        title="Pressure this week"
-        foot={
-          <Foot
-            how={[
-              `ED waits are counted in the week the wait first passes ${targetText}, the target set in Settings.`,
-              "Delayed discharge uses the current expected date, counted from when it was set; earlier dates are not kept.",
-              <span key="occupancy" data-testid="ward-weekly-occupancy-definition">
-                {occupancy.definition}
-              </span>,
-            ]}
-          >
-            Counts only what this prototype holds, so earlier weeks read low
-          </Foot>
-        }
-      >
-        <Strip label="Pressure this week" cols={4}>
-          <Tile
-            title={`ED waits first passing ${targetText}`}
-            now={stillWaiting > 0 ? <Now tone="danger">{stillWaiting} waiting</Now> : null}
-            fig={<span data-testid="ward-weekly-ed-count">{edWaits.count}</span>}
-            unit={edWaits.count === 1 ? "movement" : "movements"}
-            sub={
-              <>
-                Longest <b>{edWaits.longest}</b>
-                {edWaits.longestEd ? ` · ${edWaits.longestEd}` : null}
-              </>
-            }
-          />
-          <Tile
-            title="Out of area"
-            now={<Now>{plural(outOfArea.people, "person", "people")}</Now>}
-            fig={<span data-testid="ward-weekly-ooa-days">{outOfArea.bedDays}</span>}
-            unit="bed days"
-            sub={outOfArea.meta}
-          />
-          {delayed.unknown ? (
-            <Tile title="Delayed discharge">
-              {/* with no expected date set for the week, a sentence instead of two "Not known" figures. */}
-              <p className={s.outside} data-testid="ward-weekly-delayed-days">
-                Not enough history: no expected date set for this week.
-              </p>
-            </Tile>
-          ) : (
+      {/* Audit two (#98): on a desktop the four pressure figures are the hero's own, with their
+          people counts in the labels and their notes under the Pilot card. A phone's hero holds three
+          figures, so the card stays there (GATE fallback). */}
+      {isPhone ? (
+        <StatCardR
+          id="rd-pressure-week"
+          title="Pressure this week"
+          foot={
+            <Foot
+              how={[
+                `ED waits are counted in the week the wait first passes ${targetText}, the target set in Settings.`,
+                "Delayed discharge uses the current expected date, counted from when it was set; earlier dates are not kept.",
+                <span key="occupancy" data-testid="ward-weekly-occupancy-definition">
+                  {occupancy.definition}
+                </span>,
+              ]}
+            >
+              Counts only what this prototype holds, so earlier weeks read low
+            </Foot>
+          }
+        >
+          <Strip label="Pressure this week" cols={4}>
             <Tile
-              title="Delayed discharge"
-              now={<Now>{plural(delayed.people, "person", "people")}</Now>}
-              fig={<span data-testid="ward-weekly-delayed-days">{delayed.bedDays}</span>}
-              unit="bed days"
+              title={`ED waits first passing ${targetText}`}
+              now={stillWaiting > 0 ? <Now tone="danger">{stillWaiting} waiting</Now> : null}
+              fig={<span data-testid="ward-weekly-ed-count">{edWaits.count}</span>}
+              unit={edWaits.count === 1 ? "movement" : "movements"}
               sub={
-                delayed.note ? (
-                  <span data-testid="ward-weekly-delayed-history">{delayed.note}</span>
-                ) : (
-                  "Past the expected date"
-                )
+                <>
+                  Longest <b>{edWaits.longest}</b>
+                  {edWaits.longestEd ? ` · ${edWaits.longestEd}` : null}
+                </>
               }
             />
-          )}
-          <Tile
-            title="Recorded occupied bed time"
-            fig={<span data-testid="ward-weekly-occupancy">{occupancy.percent}</span>}
-            sub={
-              <>
-                In use now{" "}
-                <b>
-                  {occupancy.inUse} of {occupancy.beds}
-                </b>{" "}
-                · {occupancy.bedDays.toLocaleString("en-AU")} bed days
-              </>
-            }
-          >
-            {/* no recorded figure ("—"): no meter, so a screen reader is not told 0%. */}
-            {occupancy.value === null ? null : (
-              <Meter value={occupancy.value} max={100} label="Recorded occupied bed time" valueText={null} />
+            <Tile
+              title="Out of area"
+              now={<Now>{plural(outOfArea.people, "person", "people")}</Now>}
+              fig={<span data-testid="ward-weekly-ooa-days">{outOfArea.bedDays}</span>}
+              unit="bed days"
+              sub={outOfArea.meta}
+            />
+            {delayed.unknown ? (
+              <Tile title="Delayed discharge">
+                {/* with no expected date set for the week, a sentence instead of two "Not known" figures. */}
+                <p className={s.outside} data-testid="ward-weekly-delayed-days">
+                  Not enough history: no expected date set for this week.
+                </p>
+              </Tile>
+            ) : (
+              <Tile
+                title="Delayed discharge"
+                now={<Now>{plural(delayed.people, "person", "people")}</Now>}
+                fig={<span data-testid="ward-weekly-delayed-days">{delayed.bedDays}</span>}
+                unit="bed days"
+                sub={
+                  delayed.note ? (
+                    <span data-testid="ward-weekly-delayed-history">{delayed.note}</span>
+                  ) : (
+                    "Past the expected date"
+                  )
+                }
+              />
             )}
-          </Tile>
-        </Strip>
-      </StatCardR>
+            <Tile
+              title="Recorded occupied bed time"
+              fig={<span data-testid="ward-weekly-occupancy">{occupancy.percent}</span>}
+              sub={
+                <>
+                  In use now{" "}
+                  <b>
+                    {occupancy.inUse} of {occupancy.beds}
+                  </b>{" "}
+                  · {occupancy.bedDays.toLocaleString("en-AU")} bed days
+                </>
+              }
+            >
+              {/* no recorded figure ("—"): no meter, so a screen reader is not told 0%. */}
+              {occupancy.value === null ? null : (
+                <Meter value={occupancy.value} max={100} label="Recorded occupied bed time" valueText={null} />
+              )}
+            </Tile>
+          </Strip>
+        </StatCardR>
+      ) : null}
 
       {props.heatmap}
 
@@ -447,7 +461,12 @@ export function WeeklyBody(props: WeeklyBodyProps) {
         <StatCardR
           id="rd-waits"
           title={`ED waits first passing ${targetText}`}
-          meta={`${edWaits.count} in the week`}
+          // Audit two (#98): the waiting-now count and the longest wait moved here from the pressure card.
+          meta={[
+            `${edWaits.count} in the week`,
+            ...(stillWaiting > 0 ? [`${stillWaiting} waiting now`] : []),
+            `longest ${edWaits.longest}${edWaits.longestEd ? `, ${edWaits.longestEd}` : ""}`,
+          ].join(" · ")}
           // F-54 (A9-35): only a desk that may open Waiting is linked to it (the executive desk is not).
           foot={
             <Foot

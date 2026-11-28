@@ -306,7 +306,7 @@ export function WardGlobalSearch({
   scope,
   onNavigate,
   label = "Search",
-  placeholder = "Search people and movements…",
+  placeholder = "Search people and movements",
   initialQuery = "",
   takeFocusFrom,
   accessLifetime = "standalone",

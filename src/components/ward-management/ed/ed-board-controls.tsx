@@ -314,7 +314,7 @@ export function EdPlanPicker({
           aria-activedescendant={choices[active] ? `${id}-option-${active}` : undefined}
           maxLength={80}
           value={query}
-          placeholder="Choose or type a label…"
+          placeholder="Choose or type a label"
           onChange={(event) => {
             setQuery(event.target.value);
             setActive(-1);
@@ -387,17 +387,29 @@ type ItemProps = ButtonHTMLAttributes<HTMLButtonElement> & {
  * action, with the note under it, into "Not available yet" (redesign, pop-ed-actions, Josh
  * 31 Oct 2026). Anything else (a screen-reader sentence) keeps its place at the end.
  */
-function sortEdMenuItems(children: ReactNode, menu: boolean) {
+function sortEdMenuItems(children: ReactNode, menu: boolean, dropNextStep = false) {
   const groups = ED_ACTION_GROUPS.map((name) => ({ name, items: [] as ReactNode[] }));
   const blocked: { key: string; item: ReactNode; note?: ReactNode }[] = [];
   const other: ReactNode[] = [];
-  let last: { group: number } | { blocked: (typeof blocked)[number] } | undefined;
+  let last: { group: number } | { blocked: (typeof blocked)[number] } | { dropped: true } | undefined;
   for (const child of flatten(children)) {
+    // Controls 4 (26 Nov 2026): the person sheet pins the row's next step as its own button, so its
+    // Actions leave out that same action, and its greyed note with it.
+    if (
+      dropNextStep &&
+      isValidElement<ItemProps>(child) &&
+      child.type === "button" &&
+      (child.props as Record<string, unknown>)["data-next-step"] !== undefined
+    ) {
+      last = { dropped: true };
+      continue;
+    }
     if (isValidElement<ItemProps>(child) && child.type === EdUnavailableNote) {
+      if (last && "dropped" in last) continue;
       // The greyed item's note: its reason, why, who acts next and its one fix, all shown at once.
       const note = cloneElement(child as ReactElement<ItemProps>, { menuItem: menu, expanded: true });
       if (last && "blocked" in last) last.blocked.note = note;
-      else if (last) groups[last.group].items.push(note);
+      else if (last && "group" in last) groups[last.group].items.push(note);
       else other.push(note);
       continue;
     }
@@ -434,9 +446,15 @@ export function EdActionList({
   onViewRecord,
   onEditPresentation,
   onEditPlan,
+  oneItem = false,
+  dropNextStep = false,
 }: {
   children: ReactNode;
   menu: boolean;
+  /** The person sheet, where the next step is already the sheet's pinned button (controls 4). */
+  dropNextStep?: boolean;
+  /** Wide board: the three record items are one "Open ED details". */
+  oneItem?: boolean;
   testId: string;
   /** Left out where the record is already open (the phone person sheet). */
   onViewRecord?: () => void;
@@ -445,26 +463,39 @@ export function EdActionList({
 }) {
   const [foldOpen, setFoldOpen] = useState(false);
   const foldId = useId();
-  const { groups, blocked, other } = sortEdMenuItems(children, menu);
+  const { groups, blocked, other } = sortEdMenuItems(children, menu, dropNextStep);
   return (
     <>
       {/* Redesign: the record items take a heading like every other group. Design audit DA-05: a
           menu may hold only menu items or groups, so each group is a labelled group. */}
       <div role="group" aria-label="Patient record" className={styles.menuGroup} data-first-group="">
-        <span aria-hidden="true" className={styles.menuGroupLabel}>
-          Patient record
-        </span>
+        {/* Audit four 103: with only the two edit rows (the phone sheet) the group label says nothing, so it goes. */}
         {onViewRecord ? (
-          <button type="button" role={menu ? "menuitem" : undefined} onClick={onViewRecord}>
-            View patient record
-          </button>
+          <span aria-hidden="true" className={styles.menuGroupLabel}>
+            Patient record
+          </span>
         ) : null}
-        <button type="button" role={menu ? "menuitem" : undefined} onClick={onEditPresentation}>
-          Edit presentation
-        </button>
-        <button type="button" role={menu ? "menuitem" : undefined} onClick={onEditPlan}>
-          Edit plan
-        </button>
+        {onViewRecord && oneItem ? (
+          // Wide board: View record, Edit presentation and Edit plan all open the one person sheet, so
+          // the menu offers one item. The phone omits onViewRecord and keeps its two inline editors.
+          <button type="button" role={menu ? "menuitem" : undefined} onClick={onViewRecord}>
+            Open ED details
+          </button>
+        ) : (
+          <>
+            {onViewRecord ? (
+              <button type="button" role={menu ? "menuitem" : undefined} onClick={onViewRecord}>
+                View patient record
+              </button>
+            ) : null}
+            <button type="button" role={menu ? "menuitem" : undefined} onClick={onEditPresentation}>
+              Edit presentation
+            </button>
+            <button type="button" role={menu ? "menuitem" : undefined} onClick={onEditPlan}>
+              Edit plan
+            </button>
+          </>
+        )}
       </div>
       {groups.map(
         (group) =>
@@ -549,6 +580,7 @@ export function EdActionsMenu({
       onViewRecord={onViewRecord}
       onEditPresentation={onEditPresentation}
       onEditPlan={onEditPlan}
+      oneItem={!isPhone}
     >
       {children}
     </EdActionList>

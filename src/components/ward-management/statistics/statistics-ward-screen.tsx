@@ -5,9 +5,9 @@ import Link from "next/link";
 import {
   BedSingle,
   CalendarClock,
+  ChevronDown,
   Clock,
   Download,
-  FileText,
   LayoutGrid,
   ListOrdered,
   Search,
@@ -17,9 +17,12 @@ import {
 import {
   BarList,
   Button,
+  Card,
   CardBody,
+  CardHead,
   ColumnChart,
   Segmented,
+  durMinutes,
   SrOnly,
   StatusGlyph,
   TextInput,
@@ -75,12 +78,14 @@ import {
   withheldBar,
 } from "./statistics-small-numbers";
 import styles from "./statistics-v6.module.css";
-import { BedsNowCard, ReferralsCard } from "./statistics-ward-cards";
+import { ReferralsCard } from "./statistics-ward-cards";
 import { CompactBedMap } from "./statistics-ward-compact-bed-map";
 import { ROSTER_FIRST_ROWS, WardPhone, rosterStatus, stayDaysOf } from "./statistics-ward-phone";
 import ward from "./statistics-ward.module.css";
+import { useShareOutput } from "./statistics-share";
 import { wardStatisticsTop, type WardStayStrip } from "./statistics-ward-top";
 import { useStatisticsSamples } from "./statistics-samples";
+import { useShareMenuHosted } from "./statistics-share";
 import { shortSiteName } from "./statistics-screen-parts";
 
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
@@ -473,6 +478,7 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
   // Role view (nurse in charge), D-80: the ward desk's Statistics is this page, as counts.
   const wardDesk = useEffectiveWardAccess().role === "ward";
   const samples = useStatisticsSamples();
+  const shareHosted = useShareMenuHosted();
   const small = statisticsCountText;
   const parts = (counts: StatisticsCount[]) => counts.map((count) => small(count));
   const headlineTotal = ready === null ? statistics.readyToLeaveCannot : ready.total;
@@ -503,6 +509,7 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
         dueThisWeekText: small(dueThisWeek),
         stayStrip: slots.stayStrip,
         samples,
+        shareHosted,
       })}
       eyebrowLabel="Ward statistics"
       eyebrowDetail={
@@ -541,146 +548,178 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
               planning, Expected discharges and Referrals, and both columns end near one height. */}
           <FlushRow layout="lead2" data-testid="ward-statistics-ward-measures">
             <FlushStack>
+              {/* Audit two (#100): the Beds now card folds in here for the coordinator. Its four counts
+                  are one line in the map's head and the oldest pulled bed is the map's foot line, so
+                  Discharges is the right column's one card and stretches to end level. The ward desk
+                  has these in its hero. */}
               <StatCard
                 icon={LayoutGrid}
                 title="Bed map"
-                aside={`${unit.beds} beds`}
+                meta={
+                  wardDesk ? (
+                    `${unit.beds} beds`
+                  ) : (
+                    <span data-testid="ward-statistics-ward-beds-now">
+                      {`${unit.beds} beds · `}
+                      <span data-testid="ward-stat-capacity-empty">{model.emptyBeds}</span>
+                      {" empty · "}
+                      <span data-testid="ward-stat-capacity-allocatable">{model.allocatableBeds}</span>
+                      {" allocatable · "}
+                      {model.openBeds}
+                      {" open · "}
+                      <span data-testid="ward-stat-capacity-pending-preparation">{model.pendingPreparation}</span>
+                      {" pending"}
+                    </span>
+                  )
+                }
+                className={ward.tightHead}
                 id="ward-bed-map"
                 data-testid="ward-statistics-ward-bed-map-card"
               >
-                <CardBody className={styles.bodyStack}>{slots.bedMap}</CardBody>
+                <CardBody className={styles.bodyStack}>
+                  {slots.bedMap}
+                  {wardDesk || model.oldestPulled === null ? null : (
+                    <p className={ward.factLine}>
+                      <span className={styles.flagged}>
+                        <StatusGlyph tone="warning" size={9} />
+                        Oldest pulled bed
+                      </span>
+                      <span>
+                        <b>{durMinutes(model.oldestPulled)}</b> not arrived
+                      </span>
+                    </p>
+                  )}
+                </CardBody>
               </StatCard>
-              {wardDesk ? (
-                slots.stay
-              ) : (
-                <FlushRow layout="halves" className={ward.chartRow}>
-                  {slots.stay}
-                  <ReferralsCard referrals={referrals} statistics={statistics} halfWidth />
-                </FlushRow>
-              )}
-              <Barriers ready={ready} error={blockedByReasonError} headlineTotal={headlineTotal} />
+              {/* Simplification mock-up (26 Nov 2026): Length of stay takes the column's width under the
+                  bed map on the ward desk. Design review (27 Nov 2026): for the coordinator, Discharges ends
+                  level with the Bed map and Length of stay spans both columns below, so the Discharges
+                  card has no blank lower half. */}
+              {wardDesk ? slots.stay : null}
             </FlushStack>
 
             <FlushStack>
-              {wardDesk ? null : <BedsNowCard model={model} />}
-              <StatCard
-                icon={FileText}
-                title="Discharge planning"
-                aside="Not yet discharged"
-                id="ward-planning"
-                data-testid="ward-statistics-ward-discharge-planning"
-              >
-                <CardBody className={styles.bodyStack}>
-                  <dl className={styles.figures} data-testid="ward-stat-discharge-date-coverage">
-                    <div className={styles.figure}>
-                      <dd className={styles.figureValue} data-testid="ward-stat-discharge-date-recorded">
-                        {datedShown}
-                      </dd>
-                      <dt className={styles.figureLabel}>With a date</dt>
-                    </div>
-                    <div className={styles.figure}>
-                      <dd className={styles.figureValue} data-testid="ward-stat-discharge-date-not-recorded">
-                        {undatedShown}
-                      </dd>
-                      <dt className={styles.figureLabel}>
-                        {positive(dischargeDates.notRecorded) ? <StatusGlyph tone="warning" size={9} /> : null}
-                        No date
-                      </dt>
-                    </div>
-                    <div className={styles.figure}>
-                      <dd
-                        className={styles.figureValue}
-                        data-testid="ward-stat-discharge-date-share"
-                        data-unmeasured={isUnmeasured(dischargeDates.shareRecorded) ? "" : undefined}
-                      >
-                        {typeof datedShown === "string" || typeof undatedShown === "string" ? (
-                          // A share beside its total would give a hidden part away.
-                          <>{SMALL_NUMBER_NOT_SHOWN}</>
-                        ) : dischargeDates.shareRecorded.kind === "measured" ? (
-                          <>
-                            {figureText(dischargeDates.shareRecorded)}%
-                            <small className={ward.figureSub}>Of {small(dischargeDates.population)} here</small>
-                          </>
+              {/* Simplification mock-up (26 Nov 2026): Discharge planning, Expected discharges and
+                  Discharges held up are one Discharges card with three views. */}
+              <DischargesCard
+                planning={
+                  <>
+                    <dl className={styles.figures} data-testid="ward-stat-discharge-date-coverage">
+                      <div className={styles.figure}>
+                        <dd className={styles.figureValue} data-testid="ward-stat-discharge-date-recorded">
+                          {datedShown}
+                        </dd>
+                        <dt className={styles.figureLabel}>With a date</dt>
+                      </div>
+                      <div className={styles.figure}>
+                        <dd className={styles.figureValue} data-testid="ward-stat-discharge-date-not-recorded">
+                          {undatedShown}
+                        </dd>
+                        <dt className={styles.figureLabel}>
+                          {positive(dischargeDates.notRecorded) ? <StatusGlyph tone="warning" size={9} /> : null}
+                          No date
+                        </dt>
+                      </div>
+                      <div className={styles.figure}>
+                        <dd
+                          className={styles.figureValue}
+                          data-testid="ward-stat-discharge-date-share"
+                          data-unmeasured={isUnmeasured(dischargeDates.shareRecorded) ? "" : undefined}
+                        >
+                          {typeof datedShown === "string" || typeof undatedShown === "string" ? (
+                            // A share beside its total would give a hidden part away.
+                            <>{SMALL_NUMBER_NOT_SHOWN}</>
+                          ) : dischargeDates.shareRecorded.kind === "measured" ? (
+                            <>
+                              {figureText(dischargeDates.shareRecorded)}%
+                              <small className={ward.figureSub}>Of {small(dischargeDates.population)} here</small>
+                            </>
+                          ) : (
+                            <>
+                              <span aria-hidden="true">none</span>
+                              <SrOnly>{`No share can be stated, ${figureText(dischargeDates.shareRecorded)}.`}</SrOnly>
+                            </>
+                          )}
+                        </dd>
+                        <dt className={styles.figureLabel}>Share with a date</dt>
+                      </div>
+                    </dl>
+                    <div data-testid="ward-stat-discharge-outcomes">
+                      <SrOnly>
+                        {exact(outcomes.consideredCount) === 0 ? (
+                          <>No resolved discharge dates.</>
                         ) : (
                           <>
-                            <span aria-hidden="true">none</span>
-                            <SrOnly>{`No share can be stated, ${figureText(dischargeDates.shareRecorded)}.`}</SrOnly>
+                            Of {small(outcomes.consideredCount)} whose date can be judged, written down and the person
+                            has since left, {said(metShown)} met and {said(missedShown)} missed.
+                          </>
+                        )}{" "}
+                        {exact(outcomes.moved) === 0 ? (
+                          <>No admission on this ward has had its discharge date revised.</>
+                        ) : (
+                          <>
+                            Separately, {movedShown}{" "}
+                            {movedShown === 1 ? "admission on this ward has" : "admissions on this ward have"} had a
+                            discharge date revised at least once.
                           </>
                         )}
-                      </dd>
-                      <dt className={styles.figureLabel}>Share with a date</dt>
-                    </div>
-                  </dl>
-                  <div data-testid="ward-stat-discharge-outcomes">
-                    <SrOnly>
-                      {exact(outcomes.consideredCount) === 0 ? (
-                        <>No resolved discharge dates.</>
-                      ) : (
-                        <>
-                          Of {small(outcomes.consideredCount)} whose date can be judged, written down and the person has
-                          since left, {said(metShown)} met and {said(missedShown)} missed.
-                        </>
-                      )}{" "}
-                      {exact(outcomes.moved) === 0 ? (
-                        <>No admission on this ward has had its discharge date revised.</>
-                      ) : (
-                        <>
-                          Separately, {movedShown}{" "}
-                          {movedShown === 1 ? "admission on this ward has" : "admissions on this ward have"} had a
-                          discharge date revised at least once.
-                        </>
-                      )}
-                    </SrOnly>
-                    <div className={styles.tiles} aria-hidden="true">
-                      <div className={styles.tile}>
-                        <span className={styles.tileLabel}>Dates met</span>
-                        <span className={styles.tileValue}>
-                          {exact(outcomes.consideredCount) === 0
-                            ? "none yet"
-                            : `${metShown} of ${small(outcomes.consideredCount)}`}
-                        </span>
-                      </div>
-                      <div className={styles.tile}>
-                        <span className={styles.tileLabel}>Revised</span>
-                        <span className={styles.tileValue}>{movedShown}</span>
-                      </div>
-                      <div className={styles.tile}>
-                        <span className={styles.tileLabel}>Ready, not gone</span>
-                        <span className={styles.tileValue}>{small(headlineTotal)}</span>
+                      </SrOnly>
+                      <div className={styles.tiles} aria-hidden="true">
+                        <div className={styles.tile}>
+                          <span className={styles.tileLabel}>Dates met</span>
+                          <span className={styles.tileValue}>
+                            {exact(outcomes.consideredCount) === 0
+                              ? "none yet"
+                              : `${metShown} of ${small(outcomes.consideredCount)}`}
+                          </span>
+                        </div>
+                        <div className={styles.tile}>
+                          <span className={styles.tileLabel}>Revised</span>
+                          <span className={styles.tileValue}>{movedShown}</span>
+                        </div>
+                        <div className={styles.tile}>
+                          <span className={styles.tileLabel}>Ready, not gone</span>
+                          <span className={styles.tileValue}>{small(headlineTotal)}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardBody>
-              </StatCard>
-              <StatCard icon={CalendarClock} title="Expected discharges" id="ward-discharges">
-                <CardBody className={styles.bodyStack}>
-                  {wardDesk ? (
-                    // Role view (nurse in charge): Due out leaves the hero, so its count heads the chart.
-                    <p className={ward.headFigure}>
-                      <b>{small(dueThisWeek)}</b> due in the next 7 days
-                    </p>
-                  ) : (
-                    <p className={ward.headFigure}>Next 7 days</p>
-                  )}
-                  <ColumnChart
-                    height={200}
-                    label="Expected discharges by day, next 7 days"
-                    columns={dueByDay.map((day) => ({
-                      id: String(day.offset),
-                      label: day.offset === 0 ? "Today" : weekdayOf(now + day.offset * MINUTES_PER_DAY, dayZero),
-                      ...withheldBar(exact(day.count) ?? 0, dueShown[day.offset] ?? small(day.count)),
-                    }))}
-                  />
-                </CardBody>
-              </StatCard>
-              {wardDesk ? <ReferralsCard referrals={referrals} statistics={statistics} /> : null}
+                  </>
+                }
+                byDay={
+                  <>
+                    {wardDesk ? (
+                      // Role view (nurse in charge): Due out leaves the hero, so its count heads the chart.
+                      <p className={ward.headFigure}>
+                        <b>{small(dueThisWeek)}</b> due in the next 7 days
+                      </p>
+                    ) : (
+                      <p className={ward.headFigure}>Next 7 days</p>
+                    )}
+                    <ColumnChart
+                      height={200}
+                      label="Expected discharges by day, next 7 days"
+                      columns={dueByDay.map((day) => ({
+                        id: String(day.offset),
+                        label: day.offset === 0 ? "Today" : weekdayOf(now + day.offset * MINUTES_PER_DAY, dayZero),
+                        ...withheldBar(exact(day.count) ?? 0, dueShown[day.offset] ?? small(day.count)),
+                      }))}
+                    />
+                  </>
+                }
+                heldUp={<Barriers ready={ready} error={blockedByReasonError} headlineTotal={headlineTotal} bare />}
+              />
+              {wardDesk ? <ReferralsCard referrals={referrals} statistics={statistics} halfWidth /> : null}
             </FlushStack>
           </FlushRow>
+
+          {wardDesk ? null : slots.stay}
+
+          {wardDesk ? null : <ReferralsCard referrals={referrals} statistics={statistics} />}
 
           {/* Role view (nurse in charge), D-80: the ward desk's counts grant lists nobody, so the roster
               card, which would only say so, is left out. Its counts are in the cards above. */}
           {!countsOnly ? (
-            slots.roster
+            <MoreFigures>{slots.roster}</MoreFigures>
           ) : wardDesk ? null : (
             <StatCard icon={Users} title="Admission roster" data-testid="ward-statistics-ward-roster">
               <CardBody>
@@ -775,13 +814,15 @@ function StayCard({
           value={choice}
           onChange={setView}
           items={[
+            // Simplification mock-up (26 Nov 2026): Days left; Bands and Table say it (audit two #22:
+            // the rows view is always Table).
             { id: "bands" as const, label: "Bands" },
-            ...(dayRows ? [{ id: "days" as const, label: "Days" }] : []),
-            { id: "data" as const, label: "Data" },
+            { id: "data" as const, label: "Table" },
           ]}
         />
       }
       id={STAY_CARD_ID}
+      className={ward.tightHead}
       data-testid="statistics-ward-stays-chart"
     >
       <CardBody className={styles.bodyStack}>
@@ -876,10 +917,13 @@ function Barriers({
   ready,
   error,
   headlineTotal,
+  bare = false,
 }: {
   ready: ReadyView | null;
   error: string | null;
   headlineTotal: StatisticsCount;
+  /** The Discharges card's Held up view: the body alone, its switch at the top. */
+  bare?: boolean;
 }) {
   const [show, setShow] = useState<"blocked" | "all">("blocked");
   // The reasons add up to the blocked total beside them, so they are hidden together.
@@ -892,108 +936,203 @@ function Barriers({
   };
   const total = small(headlineTotal);
   const rows = ready === null ? [] : ready.tallies.filter((tally) => show === "all" || positive(tally.count));
-  return (
-    <StatCard
-      icon={ListOrdered}
-      title="Discharges held up"
-      id="ward-barriers"
-      action={
-        ready === null ? null : (
-          <Segmented
-            label="Discharges held up shown"
-            value={show}
-            onChange={setShow}
-            items={[
-              { id: "blocked", label: "Held up" },
-              { id: "all", label: `All ${ready.vocabularySize}` },
-            ]}
-          />
-        )
-      }
+  const shownSwitch =
+    ready === null ? null : (
+      <Segmented
+        label="Discharges held up shown"
+        value={show}
+        onChange={setShow}
+        items={[
+          { id: "blocked", label: "Held up" },
+          { id: "all", label: `All ${ready.vocabularySize}` },
+        ]}
+      />
+    );
+  const body = (
+    <section
+      className={ward.barriers}
+      data-testid="ward-stat-ready-section"
+      aria-label="Clinically ready, not yet gone"
     >
-      <CardBody className={styles.bodyStack}>
-        <section
-          className={ward.barriers}
-          data-testid="ward-stat-ready-section"
-          aria-label="Clinically ready, not yet gone"
-        >
-          <p className={styles.srOnly} data-testid="ward-stat-ready-blocked">
-            <span>Clinically ready, not yet gone</span>{" "}
-            {exact(headlineTotal) === 0 ? (
-              <>0. No admission on this ward is held up.</>
-            ) : (
-              <>
-                {total} {total === 1 ? "admission" : "admissions"} on this ward that {total === 1 ? "has" : "have"} not
-                departed {total === 1 ? "carries" : "carry"} a blocker.
-              </>
-            )}
+      <p className={styles.srOnly} data-testid="ward-stat-ready-blocked">
+        <span>Clinically ready, not yet gone</span>{" "}
+        {exact(headlineTotal) === 0 ? (
+          <>0. No admission on this ward is held up.</>
+        ) : (
+          <>
+            {total} {total === 1 ? "admission" : "admissions"} on this ward that {total === 1 ? "has" : "have"} not
+            departed {total === 1 ? "carries" : "carry"} a blocker.
+          </>
+        )}
+      </p>
+      <p
+        className={ward.readyShare}
+        data-testid="ward-stat-ready-share"
+        data-unmeasured={ready !== null && isUnmeasured(ready.shareOfWard) ? "" : undefined}
+      >
+        {ready === null ? (
+          <span>Share of the ward unavailable</span>
+        ) : typeof total === "string" || typeof small(ready.population) === "string" ? (
+          // A share beside the ward's population would give the worded count away.
+          <>
+            <b>{total}</b> ready, not gone, share {SMALL_NUMBER_NOT_SHOWN}
+          </>
+        ) : ready.shareOfWard.kind === "measured" ? (
+          <>
+            <b>{small(headlineTotal)}</b> ready, not gone, <b>{figureText(ready.shareOfWard)}%</b> of the{" "}
+            {said(small(ready.population), "patient", "patients")} here
+          </>
+        ) : (
+          <span>No share can be stated, {figureText(ready.shareOfWard)}</span>
+        )}
+      </p>
+      {ready === null ? (
+        <p className={ward.note} data-testid="ward-stat-blocked-by-reason-error">
+          The blocker breakdown could not be computed for this ward: {error}
+        </p>
+      ) : (
+        <>
+          <p className={styles.srOnly} data-testid="ward-stat-blocked-by-reason-population">
+            {said(small(ready.total), "discharge held up", "discharges held up")} on this ward, out of{" "}
+            {said(small(ready.population), "admission", "admissions")} on this ward that have not departed.
           </p>
-          <p
-            className={ward.readyShare}
-            data-testid="ward-stat-ready-share"
-            data-unmeasured={ready !== null && isUnmeasured(ready.shareOfWard) ? "" : undefined}
-          >
-            {ready === null ? (
-              <span>Share of the ward unavailable</span>
-            ) : typeof total === "string" || typeof small(ready.population) === "string" ? (
-              // A share beside the ward's population would give the worded count away.
-              <>
-                <b>{total}</b> ready, not gone, share {SMALL_NUMBER_NOT_SHOWN}
-              </>
-            ) : ready.shareOfWard.kind === "measured" ? (
-              <>
-                <b>{small(headlineTotal)}</b> ready, not gone, <b>{figureText(ready.shareOfWard)}%</b> of the{" "}
-                {said(small(ready.population), "patient", "patients")} here
-              </>
-            ) : (
-              <span>No share can be stated, {figureText(ready.shareOfWard)}</span>
-            )}
-          </p>
-          {ready === null ? (
-            <p className={ward.note} data-testid="ward-stat-blocked-by-reason-error">
-              The blocker breakdown could not be computed for this ward: {error}
+          {rows.length === 0 ? (
+            <p className={ward.note} aria-hidden="true">
+              Nothing held up
             </p>
           ) : (
-            <>
-              <p className={styles.srOnly} data-testid="ward-stat-blocked-by-reason-population">
-                {said(small(ready.total), "discharge held up", "discharges held up")} on this ward, out of{" "}
-                {said(small(ready.population), "admission", "admissions")} on this ward that have not departed.
-              </p>
-              {rows.length === 0 ? (
-                <p className={ward.note} aria-hidden="true">
-                  Nothing held up
-                </p>
-              ) : (
-                <div aria-hidden="true">
-                  <BarList
-                    label="Discharges held up"
-                    axis
-                    max={countAxisMax(tallyShown.filter((count) => typeof count === "number"))}
-                    labelWidth="12rem"
-                    rows={rows.map((tally) => ({
-                      id: tally.reason,
-                      label: tally.reason.replaceAll("_", " "),
-                      ...withheldBar(exact(tally.count) ?? 0, shownFor(tally.reason)),
-                      display: String(shownFor(tally.reason)),
-                    }))}
-                  />
-                </div>
-              )}
-              <ul className={styles.srOnly} data-testid="ward-stat-blocked-by-reason-list">
-                {ready.tallies.map((tally) => (
-                  <li key={tally.reason} data-testid={`ward-stat-blocked-by-reason-${tally.reason}`}>
-                    {tally.reason}:{" "}
-                    <span data-testid={`ward-stat-blocked-by-reason-${tally.reason}-count`}>
-                      {shownFor(tally.reason)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </>
+            <div aria-hidden="true">
+              <BarList
+                label="Discharges held up"
+                axis
+                max={countAxisMax(tallyShown.filter((count) => typeof count === "number"))}
+                labelWidth="12rem"
+                rows={rows.map((tally) => ({
+                  id: tally.reason,
+                  label: tally.reason.replaceAll("_", " "),
+                  ...withheldBar(exact(tally.count) ?? 0, shownFor(tally.reason)),
+                  display: String(shownFor(tally.reason)),
+                }))}
+              />
+            </div>
           )}
-        </section>
+          <ul className={styles.srOnly} data-testid="ward-stat-blocked-by-reason-list">
+            {ready.tallies.map((tally) => (
+              <li key={tally.reason} data-testid={`ward-stat-blocked-by-reason-${tally.reason}`}>
+                {tally.reason}:{" "}
+                <span data-testid={`ward-stat-blocked-by-reason-${tally.reason}-count`}>{shownFor(tally.reason)}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+  if (bare)
+    return (
+      <>
+        {shownSwitch ? <div className={ward.viewTools}>{shownSwitch}</div> : null}
+        {body}
+      </>
+    );
+  return (
+    <StatCard icon={ListOrdered} title="Discharges held up" id="ward-barriers" action={shownSwitch}>
+      <CardBody className={styles.bodyStack}>{body}</CardBody>
+    </StatCard>
+  );
+}
+
+type DischargeView = "planning" | "day" | "held";
+
+/**
+ * Discharges (simplification mock-up, 26 Nov 2026): Discharge planning, Expected discharges by day
+ * and Discharges held up as three views of one card. Every view is laid out in the same cell, so the
+ * card is as tall as its tallest view and nothing jumps when the view changes.
+ */
+function DischargesCard({ planning, byDay, heldUp }: { planning: ReactNode; byDay: ReactNode; heldUp: ReactNode }) {
+  // Opens on By day, the tallest view (the chart): the card is sized to it so nothing jumps, and the
+  // default view fills the card.
+  const [view, setView] = useState<DischargeView>("day");
+  const views: Array<{ id: DischargeView; label: string; body: ReactNode; anchor: string }> = [
+    { id: "day", label: "By day", body: byDay, anchor: "ward-discharges" },
+    { id: "planning", label: "Planning", body: planning, anchor: "ward-planning" },
+    { id: "held", label: "Held up", body: heldUp, anchor: "ward-barriers" },
+  ];
+  return (
+    <StatCard
+      icon={CalendarClock}
+      title="Discharges"
+      meta={view === "planning" ? "Not yet discharged" : view === "day" ? "Expected, by day" : "Ready, not gone"}
+      action={
+        <Segmented<DischargeView>
+          label="Discharges view"
+          value={view}
+          onChange={setView}
+          items={views.map(({ id, label }) => ({ id, label }))}
+        />
+      }
+      id="ward-discharges-card"
+      className={ward.tightHead}
+      data-testid="ward-statistics-ward-discharges"
+    >
+      <CardBody className={ward.viewStack}>
+        {views.map((entry) => (
+          <div
+            key={entry.id}
+            id={entry.anchor}
+            className={styles.bodyStack}
+            data-view={entry.id}
+            data-testid={entry.id === "planning" ? "ward-statistics-ward-discharge-planning" : undefined}
+            aria-hidden={entry.id === view ? undefined : true}
+            inert={entry.id === view ? undefined : true}
+            data-shown={entry.id === view ? "" : undefined}
+          >
+            {entry.body}
+          </div>
+        ))}
       </CardBody>
     </StatCard>
+  );
+}
+
+/**
+ * More figures (simplification mock-up, 26 Nov 2026): the admission roster folds under one Show more
+ * row, closed by default, so the measures above lead the page. It stays mounted while closed, so the
+ * page's Share menu keeps its roster CSV.
+ */
+function MoreFigures({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section aria-label="More figures" className={ward.moreFigures} data-testid="ward-statistics-more-figures">
+      {/* A full-width card bar: the title is the button, and its cover makes the whole bar take the
+          press; the chevron turns when open. */}
+      <Card className={ward.moreBar}>
+        <CardHead
+          icon={Users}
+          title={
+            <button
+              type="button"
+              className={ward.moreButton}
+              aria-expanded={open}
+              aria-controls="ward-statistics-more-figures-body"
+              onClick={() => setOpen((value) => !value)}
+              data-testid="ward-statistics-more-figures-toggle"
+            >
+              More figures
+            </button>
+          }
+          meta="Admission roster, bed by bed"
+          action={
+            <span className={ward.moreChevron} data-open={open ? "" : undefined} aria-hidden="true">
+              <ChevronDown size={16} strokeWidth={1.75} aria-hidden="true" />
+            </span>
+          }
+        />
+      </Card>
+      <div id="ward-statistics-more-figures-body" hidden={!open}>
+        {children}
+      </div>
+    </section>
   );
 }
 
@@ -1075,6 +1214,12 @@ function Roster({
     });
   }
 
+  // With the hero's figures, the roster CSV is an item of the page's Share menu.
+  const csvShared = useShareOutput(
+    { id: "ward-roster", kind: "csv", label: "Export roster", order: 1, disabled: shown.length === 0 },
+    exportCsv,
+  );
+
   return (
     <StatCard
       icon={Users}
@@ -1108,9 +1253,11 @@ function Roster({
         <span className={styles.toolbarEnd}>
           <b>{shown.length}</b> of {rows.length}
         </span>
-        <Button size="sm" variant="ghost" icon={Download} onClick={exportCsv} disabled={shown.length === 0}>
-          CSV
-        </Button>
+        {csvShared ? null : (
+          <Button size="sm" variant="ghost" icon={Download} onClick={exportCsv} disabled={shown.length === 0}>
+            CSV
+          </Button>
+        )}
       </div>
       <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Admission roster, scrollable table">
         <table className={`${tableClasses.table} ${styles.table}`}>
@@ -1204,7 +1351,7 @@ function Roster({
       </div>
       {shown.length > ROSTER_FIRST_ROWS ? (
         <ShowMoreRow expanded={expanded} onClick={() => setExpanded((open) => !open)}>
-          {expanded ? "Show fewer" : `Show ${shown.length - ROSTER_FIRST_ROWS} more`}
+          {expanded ? "Show fewer" : `Show all ${shown.length}`}
         </ShowMoreRow>
       ) : null}
     </StatCard>

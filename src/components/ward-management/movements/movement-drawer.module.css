@@ -253,9 +253,13 @@
 
 .stepLabel {
   max-width: 100%;
+  /* Item 10: a place name wraps to two lines at most, never one clipped line. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  text-align: center;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
 }
@@ -391,6 +395,14 @@
   margin: 0;
   overflow-wrap: anywhere;
   font-weight: 600;
+}
+
+/* Final r10 F4: a shortlist fact cell (`.fact`, nowrap for its own strip) wraps here like its
+   neighbours, so "Adult · Perth Metropolitan" is never cut off with no ellipsis. */
+.grid.grid > div > dd {
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 
 /* What you can do. */
@@ -788,7 +800,7 @@
 }
 
 /* Review fix (1 Nov 2026): the shared focus ring is lost on the navy band, so it uses the hero ink. */
-.footBand :is(a, button, select):focus-visible {
+.footBand :is(a, button, select):not([role^="menuitem"]):focus-visible {
   outline: 2px solid var(--wf-hero-ink);
   outline-offset: 2px;
   box-shadow: none;
@@ -807,18 +819,25 @@
 }
 
 .footRow > * {
+  flex: 1 1 0;
+  justify-content: center;
+}
+
+/* Gate r10 F2: a menu trigger in the foot fills its cell, so the row keeps even columns. */
+.footMenu > button {
   flex: 1 1 auto;
   justify-content: center;
 }
 
 /* Secondary buttons drawn for the dark band: hero ink on a faint fill, the band's own edge. */
-.footBand .footRow :is(a, button) {
+/* Gate r10 F1: menu rows that open from the band keep the kit Menu ink and flat rows. */
+.footBand .footRow :is(a, button):not([role^="menuitem"]) {
   border-color: var(--wf-hero-edge);
   background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
   color: var(--wf-hero-ink);
 }
 
-.footBand .footRow :is(a, button):hover {
+.footBand .footRow :is(a, button):not([role^="menuitem"]):hover {
   background: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
 }
 
@@ -834,4 +853,13 @@
   border-radius: var(--wf-r-md);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
+}
+
+/* Audit two #33: the phone sheet's More row, 40 high like the other phone controls. */
+.phMore {
+  margin-inline-start: auto;
+}
+
+.phMore > button {
+  min-height: 40px;
 }

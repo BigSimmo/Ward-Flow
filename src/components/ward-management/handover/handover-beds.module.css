@@ -1,3 +1,6 @@
+/* Audit two B21: every table cell rule here starts with `html`, one element more than the kit's
+   `.table td` and `.table th`, so the page's own cell rules win in the production build as in dev,
+   whatever order the two style sheets load in. Order among this file's own rules is unchanged. */
 /* Handover, Beds tab (refined Handover A, 9 Oct 2026). Tokens only, no stripes, text never wraps. */
 
 .root {
@@ -320,7 +323,7 @@
 
 /* Cell padding and dividers come from the wf table primitive; this adds the sticky head and the
    12px floor for the header label. */
-.bedsTable thead th {
+html .bedsTable thead th {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -339,17 +342,17 @@
     overflow: visible;
   }
 
-  .bedsTable thead th {
+  html .bedsTable thead th {
     top: var(--wf-header-height, 3.75rem);
   }
 }
 
-.bedsTable td {
+html .bedsTable td {
   height: 48px;
   vertical-align: middle;
 }
 
-.bedsTable tr.groupRow > th {
+html .bedsTable tr.groupRow > th {
   height: 36px;
   padding: 0;
   background: var(--wf-surface);
@@ -385,16 +388,16 @@
   cursor: pointer;
 }
 
-.row:hover > td {
+html .row:hover > td {
   background: var(--wf-hover);
 }
 
-.rowHl > td {
+html .rowHl > td {
   background: var(--wf-accent-tint);
 }
 
-.rowSel > td,
-.rowSel:hover > td {
+html .rowSel > td,
+html .rowSel:hover > td {
   background: var(--wf-selected);
 }
 
@@ -773,7 +776,7 @@
   }
 
   /* Two-word headers take two lines rather than lose their end ('PUL…'). */
-  .bedsTable thead th {
+  html .bedsTable thead th {
     white-space: normal;
     overflow-wrap: normal;
     letter-spacing: 0;
@@ -786,5 +789,33 @@
 
   .colOutToday {
     width: 80px;
+  }
+}
+
+/* Batch 3 (one Handover): the Beds tab is one card, "Beds now": three equal tiles and a checking
+   line. 1440 and 820 keep three across with the sub-lines wrapping; a phone stacks them. */
+.bedsNow {
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / 1.4 var(--wf-font);
+}
+
+.bedsNowBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.tiles.tilesThree {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.tilesThree .tileSub {
+  white-space: normal;
+}
+
+@media (max-width: 40rem) {
+  .tiles.tilesThree {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

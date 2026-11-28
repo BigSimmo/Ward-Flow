@@ -46,13 +46,7 @@ describe("people-list triggers", () => {
       movements: [],
     } as JourneyStage;
     render(
-      <StagePipeline
-        stages={[stage]}
-        now={10}
-        accessTarget={100}
-        highlight="stage:placement_requested"
-        onToggle={open}
-      />,
+      <StagePipeline stages={[stage]} now={10} accessTarget={100} selected="placement_requested" onToggle={open} />,
     );
     const button = screen.getByRole("button");
     expect(button).toHaveAttribute("aria-haspopup", "dialog");

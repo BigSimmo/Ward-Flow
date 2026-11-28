@@ -1,3 +1,6 @@
+/* Audit two B21: every table cell rule here starts with `html`, one element more than the kit's
+   `.table td` and `.table th`, so the page's own cell rules win in the production build as in dev,
+   whatever order the two style sheets load in. Order among this file's own rules is unchanged. */
 /*
  * v6 statistics pages: page frame, card grids, native tables, small figure tiles and the unit
  * finder. Tokens only; the wf primitives carry everything else.
@@ -166,18 +169,18 @@
   table-layout: auto;
 }
 
-.table th,
-.table td {
+html .table th,
+html .table td {
   height: 37px;
 }
 
-.table thead th {
+html .table thead th {
   height: 32px;
   background: transparent;
 }
 
-.table tbody th,
-.table tfoot th {
+html .table tbody th,
+html .table tfoot th {
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   letter-spacing: 0;
   text-transform: none;
@@ -190,14 +193,14 @@
  * Emergency Department") pushed the last figure column ("24h+", "Longest stay") out of the card.
  * Up to the 1000px tablet edge the name wraps in full instead, so every figure column shows. */
 @media (max-width: 62.5rem) {
-  .table tbody th,
-  .table tfoot th {
+  html .table tbody th,
+  html .table tfoot th {
     min-width: 10rem;
     white-space: normal;
   }
 }
 
-.table td {
+html .table td {
   max-width: none;
 }
 
@@ -217,13 +220,13 @@
   background: var(--wf-hover);
 }
 
-.table tfoot th,
-.table tfoot td {
+html .table tfoot th,
+html .table tfoot td {
   font-weight: 600;
 }
 
 /* A time or count never truncates; the site name does (device audit 11 Oct 2026). */
-.table td.num {
+html .table td.num {
   overflow: visible;
   text-overflow: clip;
   white-space: nowrap;
@@ -238,7 +241,7 @@
   text-align: right;
 }
 
-.table th.num {
+html .table th.num {
   text-align: right;
 }
 
@@ -814,24 +817,24 @@ a.rowLink:hover {
     width: 100%;
   }
 
-  .tableWrap > table[id="wardPressureTable"] thead th:nth-child(4) {
+  html .tableWrap > table[id="wardPressureTable"] thead th:nth-child(4) {
     width: 6.5rem;
   }
 
-  .tableWrap > table[id="wardPressureTable"] thead th:nth-child(5) {
+  html .tableWrap > table[id="wardPressureTable"] thead th:nth-child(5) {
     width: 5rem;
   }
 
-  .tableWrap > table[id="edPressureTable"] thead th:nth-child(2) {
+  html .tableWrap > table[id="edPressureTable"] thead th:nth-child(2) {
     width: 5.5rem;
   }
 
-  .tableWrap > table[id="edPressureTable"] thead th:nth-child(3) {
+  html .tableWrap > table[id="edPressureTable"] thead th:nth-child(3) {
     width: 6rem;
   }
 
-  .tableWrap > table tbody th,
-  .tableWrap > table tfoot th {
+  html .tableWrap > table tbody th,
+  html .tableWrap > table tfoot th {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -966,5 +969,20 @@ a.rowLink:hover {
 
   .sortTh.num button {
     justify-content: flex-end;
+  }
+}
+
+/* Empty to ready over Admission stages, two thirds wide beside Referrals today (simplification
+   mock-up, 26 Nov 2026), so the three cards end level without stretching the short ones. */
+@media (min-width: 1101px) {
+  .flowCol.flowCol.flowCol {
+    grid-column: span 2;
+  }
+}
+
+/* Two columns (tablet): the stack sits beside Referrals today, never alone on a row of its own. */
+@media (min-width: 901px) and (max-width: 1100px) {
+  .flowCol.flowCol.flowCol {
+    grid-column: auto;
   }
 }

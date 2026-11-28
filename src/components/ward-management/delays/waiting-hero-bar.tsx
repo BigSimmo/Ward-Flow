@@ -1,15 +1,14 @@
 "use client";
 
 /**
- * Waiting redesign, round 4 (Josh, 31 Oct 2026): the table's key line and the blocker groups'
+ * Waiting redesign, round 4 (Josh, 31 Oct 2026): the table's keys and the blocker groups'
  * whose-move tag. The round 4 header bar (next past 8h) is now a hero chip on the page top
  * (page tops, 9 Nov 2026; delays-board.tsx).
  */
 import { SILENT_MINUTES, ownerName, type BoardRow } from "./delays-board-model";
-import { useIsPhone } from "@/components/wf";
-import { TierKey } from "@/components/ward-management/tier-key";
+import { URGENCY_LEVELS } from "@/components/ward-management/ward-model-vocabulary";
+import { TIER_QUALIFIER } from "@/components/ward-management/ward-priority";
 import board from "./delays-board.module.css";
-import waitingKeys from "./waiting.module.css";
 import styles from "./waiting-polish.module.css";
 
 /** Round 4: whose move a blocker group is, as one short tag ("Your move", "Wards' move"). */
@@ -21,35 +20,68 @@ export function moveWord(owner: BoardRow["owner"]): string {
 }
 
 /**
- * Round 4: the table's one key line. The tier key, the wait bar's Active and Quiet key (moved down
- * from the crowded title row). The typed-time caveat line is gone (D-218, Josh 14 Nov 2026).
+ * Simplification mock-up (26 Nov 2026): the tier key and the wait bar's Active and Quiet key, once a
+ * grey row across the top of the table, now sit behind the list head's one ⓘ with the waiting total.
+ * Plain spans only: the tip is itself a span, so no paragraph may sit inside it.
  */
-export function WaitingKeyRow() {
-  const isPhone = useIsPhone();
-  if (isPhone) {
-    return (
-      <div className={`${waitingKeys.keyRow} ${styles.keyRow} ${styles.keyRowPhone}`}>
-        <TierKey compact />
-      </div>
-    );
-  }
+export function WaitingKeys() {
   return (
-    <div className={`${waitingKeys.keyRow} ${styles.keyRow}`}>
-      <TierKey />
-      <span className={`${board.wlegend} ${styles.wlegend}`} aria-hidden="true">
+    <span className={styles.tipKeys}>
+      <span className={styles.tipKeyLine}>
+        {URGENCY_LEVELS.map((tier) => (
+          <span key={tier}>
+            <b>T{tier}</b> {TIER_QUALIFIER[tier]}
+          </span>
+        ))}
+      </span>
+      <span className={`${board.wlegend} ${styles.tipKeyLine}`}>
         <span>
-          <i className={board.lgAct} />
+          <i className={board.lgAct} aria-hidden="true" />
           Active
         </span>
         <span>
-          <i className={board.lgQuiet} />
+          <i className={board.lgQuiet} aria-hidden="true" />
           Quiet
         </span>
         <span>
-          <i className={board.lgQuietLong} />
+          <i className={board.lgQuietLong} aria-hidden="true" />
           {`Quiet ${SILENT_MINUTES / 60}h+`}
         </span>
       </span>
-    </div>
+    </span>
+  );
+}
+
+/**
+ * The same two keys as one quiet line under the whose-move tiles (26 Nov 2026), so "T1 to T3" and
+ * the wait bar's colours are readable without opening the list's ⓘ.
+ */
+export function WaitingKeyStrip() {
+  return (
+    <p className={styles.keyStrip} data-testid="delays-key-strip" aria-label="Keys for the list">
+      <span className={styles.keyStripGroup}>
+        <span className={styles.keyStripHead}>Tier</span>
+        {URGENCY_LEVELS.map((tier) => (
+          <span key={tier}>
+            <b>T{tier}</b> {TIER_QUALIFIER[tier]}
+          </span>
+        ))}
+      </span>
+      <span className={`${board.wlegend} ${styles.keyStripGroup}`}>
+        <span className={styles.keyStripHead}>Wait bar</span>
+        <span>
+          <i className={board.lgAct} aria-hidden="true" />
+          Active
+        </span>
+        <span>
+          <i className={board.lgQuiet} aria-hidden="true" />
+          Quiet
+        </span>
+        <span>
+          <i className={board.lgQuietLong} aria-hidden="true" />
+          {`Quiet ${SILENT_MINUTES / 60}h+`}
+        </span>
+      </span>
+    </p>
   );
 }

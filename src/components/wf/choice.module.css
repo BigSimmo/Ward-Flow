@@ -325,6 +325,17 @@
   color: var(--wf-dim);
 }
 
+/* Audit three #52: a filter at zero is dimmed and cannot be pressed; it keeps its place. */
+html .chip[data-dim="true"] {
+  border-color: var(--wf-line);
+  color: var(--wf-ink-3);
+  cursor: default;
+}
+
+html .chip[data-dim="true"]:active {
+  transform: none;
+}
+
 .chip:focus-visible,
 .chipRemove:focus-visible {
   outline: 2px solid var(--wf-focus-ring);

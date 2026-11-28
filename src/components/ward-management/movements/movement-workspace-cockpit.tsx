@@ -8,6 +8,7 @@
  */
 
 "use client";
+import { ReleasePulledBedSheet } from "@/components/ward-management/release-pulled-bed-sheet";
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { MovementWorkflowActions } from "./movement-workflow-actions";
 import {
@@ -38,7 +39,6 @@ import {
 } from "lucide-react";
 
 import { ContextualBackLink } from "@/components/contextual-back-link";
-import { Dialog } from "@/components/wf";
 import { WardChip, type WardChipLevel } from "@/components/ward-management/ward-chip";
 import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
 import {
@@ -100,7 +100,7 @@ import {
   restrictionNotice,
   stageCopy,
 } from "@/components/ward-management/ward-derivations";
-import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { examinationOutcomeShort, legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
@@ -1137,7 +1137,6 @@ export function MovementWorkspaceCockpit({
     // the holding ward only when that ward is one of the desk's own, and otherwise is not offered
     // the bed's release.
     const holdingUnitId = role === "ward" ? deskActingWard(deskAccess, movement.acceptedUnitId) : null;
-    const holdingWard = holdingUnitId ? { actingUnitId: holdingUnitId } : {};
     const bedElsewhere = role === "ward" && holdingUnitId === null;
     const sendingUnitId =
       (movement.referralId
@@ -1165,28 +1164,24 @@ export function MovementWorkspaceCockpit({
 
     return (
       <div className={styles.panelCard}>
-        <Dialog
-          open={releaseConfirm !== null}
+        {/* Simplification R1 (mock-up): the one shared "Release pulled bed" sheet. */}
+        <ReleasePulledBedSheet
+          target={
+            releaseConfirm === null
+              ? undefined
+              : {
+                  movementId: movement.id,
+                  kind: releaseConfirm,
+                  displayName: releaseWho.formalName,
+                  umrn: releaseWho.umrn,
+                  context: `Bed pulled at ${releaseWardName}.`,
+                }
+          }
+          role={role === "ward" ? "ward" : routeRole}
+          actingUnitId={holdingUnitId ?? undefined}
           onClose={() => setReleaseConfirm(null)}
-          size="sm"
-          title="Release pulled bed?"
-          description={`The bed pulled at ${releaseWardName} for ${releaseWho.formalName} is offered again${
-            releaseConfirm === "diverted" ? " and the diverted journey is closed. This cannot be undone" : ""
-          }.`}
-          secondary={[{ label: "Keep as is", onAction: () => setReleaseConfirm(null) }]}
-          primary={{
-            label: "Release pulled bed",
-            onAction: () => {
-              const kind = releaseConfirm;
-              setReleaseConfirm(null);
-              if (kind === "held") raise("RELEASE_HELD_BED", { ...holdingWard, movementId: movement.id });
-              else if (kind === "diverted") raise("RELEASE_DIVERTED_BED", { ...holdingWard, movementId: movement.id });
-            },
-          }}
-          data-testid="ward-console-release-bed-confirm"
-        >
-          <p data-testid="ward-console-release-bed-identity">Check: {patientIdentityLine(releaseWho)}</p>
-        </Dialog>
+          testId="ward-console-release-bed-sheet"
+        />
         <div className={styles.panelCardHeader}>
           <div className={styles.panelTitleGroup}>
             <Activity className={styles.readinessCardIcon} size={18} aria-hidden="true" />

@@ -66,10 +66,9 @@ export function BedClosureControls({
   const reasonItems: MenuItem[] = [
     { kind: "heading", id: "why", label: CLOSE_BED_QUESTION },
     ...WARD_CLOSURE_REASONS.map((entry) => ({ id: entry.id, label: entry.label, onSelect: () => closeWith(entry.id) })),
+    // Audit four item 35: no Cancel row. Escape or a press outside closes the menu, and focus goes
+    // back to "Close this bed".
     { id: "not-given", label: "Not given", onSelect: () => closeWith("") },
-    { kind: "separator", id: "cancel-rule" },
-    // Cancel only closes the menu; focus goes back to "Close this bed".
-    { id: "cancel", label: "Cancel", onSelect: () => {} },
   ];
   return (
     <>

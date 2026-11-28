@@ -28,6 +28,7 @@ import { useCanOpenHref, useDeskHomeHref } from "@/components/ward-management/sh
 import { openWardDrawer } from "@/components/ward-management/shell/ward-drawer-bus";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
+import { useIsPhone } from "@/components/wf";
 import { QUICK_BAR, type QuickControl } from "./ward-quick-bar-spec";
 import styles from "./ward-quick-bar.module.css";
 
@@ -78,6 +79,8 @@ function press(control: QuickControl, button: HTMLElement) {
   else if (control.kind === "tool") requestToolsTool(control.tool, button);
 }
 
+const HANDOVER_HREF = "/bedchart/handover";
+
 /** The chip row in the home's hero, under the act now row. */
 function QuickChipRow({
   controls,
@@ -86,6 +89,12 @@ function QuickChipRow({
   controls: readonly QuickControl[];
   unconfirmed: number | undefined;
 }) {
+  // A27: with the rail beside Home, its "Handover in N h" row is the one Handover door. The chip stays
+  // on a phone, where the countdown sits behind More, not beside Home.
+  const isPhone = useIsPhone();
+  const shown = isPhone
+    ? controls
+    : controls.filter((control) => !(control.kind === "link" && control.href === HANDOVER_HREF));
   return (
     <nav
       className={styles.bar}
@@ -96,7 +105,7 @@ function QuickChipRow({
       data-print-hide
     >
       <ul className={styles.list}>
-        {controls.map((control) => {
+        {shown.map((control) => {
           const Icon = controlIcon(control);
           const count = control.kind === "tool" && control.tool === "quick-actions" ? unconfirmed : undefined;
           const body = (

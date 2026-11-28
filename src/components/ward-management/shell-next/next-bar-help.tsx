@@ -24,6 +24,9 @@ export function WardBarHelpButton() {
       onClick={help.open}
     >
       <CircleHelp className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
+      {help.isNew ? (
+        <span className={`${styles.unread} ${polish.helpNewDot}`} aria-hidden="true" data-testid="ward-bar-help-new" />
+      ) : null}
     </button>
   );
 }

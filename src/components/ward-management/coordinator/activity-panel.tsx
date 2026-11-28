@@ -399,10 +399,10 @@ function FigureChecks({ checks }: { checks: readonly WardReconciliationCheck[] }
   );
 }
 
-/** "Since your review at 09:42", or, before a review this shift, "Since last night at 23:00" (item 11). */
+/** Audit three #35: one verb, Seen, as the Since sheet. "Since you marked seen at 09:42", or, before a review this shift, "Since last night at 23:00" (item 11). */
 function changesSinceLabel(review: Review, now: Instant): string {
   return review.reviewedAt !== undefined
-    ? `Since your review at ${formatInstantWithDay(review.reviewedAt, now)}`
+    ? `Since you marked seen at ${formatInstantWithDay(review.reviewedAt, now)}`
     : shiftLookLabel(review.windowStart, now);
 }
 
@@ -464,7 +464,7 @@ function ChangeRow({ line, now, links }: { line: ChangeLine; now: Instant; links
       <span className={styles.rowWhat}>
         {line.text}
         {line.alsoInAlerts ? (
-          <span className={styles.alertTag} title="Reviewing it here does not acknowledge the alert">
+          <span className={styles.alertTag} title="Marking it seen here does not acknowledge the alert">
             Also in Alerts
           </span>
         ) : null}
@@ -489,7 +489,7 @@ function ReviewFoot({ review, now }: { review: Review; now: Instant }) {
     <div className={styles.reviewFoot}>
       {review.lastReviewed ? (
         <p className={styles.reviewed} role="status">
-          {plural(review.lastReviewed.count, "change", "changes")} to synthetic records reviewed at{" "}
+          {plural(review.lastReviewed.count, "change", "changes")} to synthetic records marked seen at{" "}
           {formatInstantWithDay(review.lastReviewed.at, now)}
           <button type="button" className={styles.textButton} onClick={review.undo}>
             Undo
@@ -499,7 +499,7 @@ function ReviewFoot({ review, now }: { review: Review; now: Instant }) {
       {count > 0 ? (
         <>
           <Button variant="pri" onClick={review.markReviewed}>
-            Mark these {count} reviewed
+            Mark these {count} seen
           </Button>
           <p className={styles.reviewNote}>
             <button type="button" className={styles.textButton} onClick={copyHandover}>

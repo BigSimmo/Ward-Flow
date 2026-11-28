@@ -6,11 +6,10 @@
 // tick marks the end of the tier's window. The drawer head carries the pager; it replaced the panel's footer row (Summary, Next)
 // with one compact row under the header: previous and next with "n of N", then Summary and Patient.
 
-import type { ReactNode } from "react";
 import Link from "next/link";
-import { BedSingle, Ellipsis, Clock3, ListOrdered, Lock, TriangleAlert } from "lucide-react";
+import { BedSingle, Clock3, Lock, TriangleAlert } from "lucide-react";
 
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral } from "@/components/ward-management/ward-model";
 import { referralClocks } from "@/components/ward-management/ward-referrals";
 import {
@@ -22,38 +21,13 @@ import { demographicLabel } from "./referral-board-model";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
-import { Button, Icon, Menu, StatusGlyph, buttonClass, durMinutes } from "@/components/wf";
-import { BED_MEETING_REFERRALS_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
-import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
+import { Button, StatusGlyph, durMinutes } from "@/components/wf";
 
 import s from "./referral-panel.module.css";
 
 /** The tier's own window, or the any-tier one if that is shorter (Josh's defaults, not legal limits). */
 function decisionWindow(referral: Referral): number {
   return Math.min(OVERDUE_AFTER_MINUTES_BY_TIER[referral.urgency], OVERDUE_AFTER_ANY_TIER_MINUTES);
-}
-
-/** Review fix 8: "3 days ago" rather than "07:42, 3 days ago"; today keeps its clock time. */
-function shortWhen(at: Instant, now: Instant): string {
-  const words = formatInstantWithDay(at, now);
-  const comma = words.indexOf(", ");
-  return comma === -1 ? words : words.slice(comma + 2);
-}
-
-/**
- * Drawer review (6 Nov 2026): only the figures take Geist Mono. A whole phrase in mono read as
- * "Sent 3  days  ago", its wide spaces looking doubled.
- */
-function monoFigures(words: string, mono: string | undefined): ReactNode {
-  return words.split(/(\d[\d:.]*)/).map((part, index) =>
-    index % 2 === 1 ? (
-      <span key={index} className={mono}>
-        {part}
-      </span>
-    ) : (
-      part
-    ),
-  );
 }
 
 /** A small pulsing dot: the time beside it is still counting. Still under reduced motion. */
@@ -117,17 +91,8 @@ export function LiveDecisionClock({ referral, now }: { referral: Referral; now: 
         <i style={{ width: `${used}%` }} />
         <span className={s.clockDue} style={{ left: `${Math.round((window / scale) * 100)}%` }} />
       </div>
-      <div className={s.clockFoot}>
-        <span>Sent {monoFigures(shortWhen(referral.raisedAt, now), s.mono)}</span>
-        <span>
-          {running ? (
-            <>
-              Live · <span className={s.mono}>{formatInstant(now)}</span>
-            </>
-          ) : null}
-        </span>
-        <span>Due {monoFigures(shortWhen(dueAt, now), s.mono)}</span>
-      </div>
+      {/* Audit three #8: waiting and overdue are said once, on the bar. The sent time is in the
+          title and the Timeline tab. */}
       {/* Smart features idea 3: who has this in hand. A courtesy note; the clock keeps running. */}
       <ReferralWorkedOn referral={referral} />
     </div>
@@ -135,20 +100,11 @@ export function LiveDecisionClock({ referral, now }: { referral: Referral; now: 
 }
 
 /**
- * Fork of HeroTools (referral-board-parts.tsx). Changed: the bed meeting button carries the number
- * of referrals waiting in the header's service. R5 fold (Josh, 3 Nov 2026): it opens the bed
- * meeting agenda at its Referrals list, where the meeting's referrals now live, in place of a
- * separate sheet.
+ * Fork of HeroTools (referral-board-parts.tsx). MU1 (Josh, 5 Nov 2026): Next overdue is the hero's one
+ * button. Simplification 26 Nov 2026 (Referrals plan): the bed meeting agenda is a quick-link chip
+ * again, first in the chip row (`MeetingPill`), as on the coordinator's top.
  */
-export function HeroTools({
-  overdueCount,
-  meetingCount,
-  onNextOverdue,
-}: {
-  overdueCount: number;
-  meetingCount: number;
-  onNextOverdue: () => void;
-}) {
+export function HeroTools({ overdueCount, onNextOverdue }: { overdueCount: number; onNextOverdue: () => void }) {
   return (
     <div className={s.heroTools}>
       <Button
@@ -163,43 +119,7 @@ export function HeroTools({
       >
         Next overdue
       </Button>
-      <HeroMoreMenu meetingCount={meetingCount} />
     </div>
-  );
-}
-
-/**
- * MU1 (Josh, 5 Nov 2026): Next overdue is the hero's one button; the bed meeting agenda moves under
- * "...". Optional router, so the board also renders outside the app router (its tests).
- */
-function HeroMoreMenu({ meetingCount }: { meetingCount: number }) {
-  const router = useOptionalRouter();
-  return (
-    <Menu
-      label="More referral actions"
-      align="end"
-      items={[
-        {
-          id: "meeting",
-          label: "Bed meeting agenda",
-          icon: ListOrdered,
-          meta: meetingCount > 0 ? String(meetingCount) : undefined,
-          onSelect: () =>
-            router ? router.push(BED_MEETING_REFERRALS_HREF) : window.location.assign(BED_MEETING_REFERRALS_HREF),
-        },
-      ]}
-      trigger={(props) => (
-        <button
-          type="button"
-          {...props}
-          className={buttonClass({ variant: "onHero", size: "sm" })}
-          data-testid="ward-referral-meeting"
-        >
-          <Icon icon={Ellipsis} size={16} />
-          <span className="sr-only">More referral actions</span>
-        </button>
-      )}
-    />
   );
 }
 

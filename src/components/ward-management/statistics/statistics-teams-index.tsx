@@ -1,13 +1,15 @@
 "use client";
 
+import { BROWSE_ROWS, LeadsBrowse, useBrowseEmbedded } from "./statistics-browse-slot";
 import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight, Search } from "lucide-react";
 
 import {
-  HeroStat,
+  HeroFigures,
   PhoneListRow,
   Segmented,
+  ShowMoreRow,
   TextInput,
   buttonClass,
   cx,
@@ -190,6 +192,9 @@ function TeamsIndexView({
   const section = statisticsSectionById("community");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'community' section");
   const isPhone = useIsPhone();
+  // Network's Browse card, Teams segment: Teams by service leads, the list stops at eight rows.
+  const embedded = useBrowseEmbedded();
+  const [allRows, setAllRows] = useState(false);
   const [phoneView, setPhoneView] = useState<"active" | "all">("active");
   const [phoneQuery, setPhoneQuery] = useState("");
   const [phoneShowAll, setPhoneShowAll] = useState(false);
@@ -248,23 +253,29 @@ function TeamsIndexView({
         title: `${shown(inBedTotal)} team ${plural(inBedTotal, "patient", "patients")} in a bed`,
         sub: `${shown(noTeamInBed)} more in a bed with no team named`,
         stats: (
-          <>
-            <HeroStat value={shown(withDateTotal)} label="With a date" />
-            <HeroStat value={activeCount} label="Teams that have someone in a bed" />
-            <HeroStat value={shown(dueOutWeekTotal)} label="Discharges due within 7 days" />
-          </>
+          <HeroFigures
+            label="Team figures"
+            items={[
+              { id: "with-date", value: shown(withDateTotal), label: "with a date" },
+              { id: "active", value: activeCount, label: "teams that have someone in a bed" },
+              { id: "due", value: shown(dueOutWeekTotal), label: "discharges due within 7 days" },
+            ]}
+          />
         ),
       }}
       stats={
-        <>
-          <HeroStat value={shown(inBedTotal)} label="Team patients in a bed" />
-          <HeroStat value={shown(withDateTotal)} label="With a discharge date" />
-          <HeroStat value={activeCount} label="Teams that have someone in a bed" />
-          <HeroStat value={shown(noTeamInBed)} label="In a bed, no team named" />
-        </>
+        <HeroFigures
+          label="Team figures"
+          items={[
+            { id: "in-bed", value: shown(inBedTotal), label: "team patients in a bed" },
+            { id: "with-date", value: shown(withDateTotal), label: "with a discharge date" },
+            { id: "active", value: activeCount, label: "teams that have someone in a bed" },
+            { id: "no-team", value: shown(noTeamInBed), label: "in a bed, no team named" },
+          ]}
+        />
       }
     >
-      {isPhone ? (
+      {isPhone && !embedded ? (
         <PhoneBody testId="ward-statistics-teams-phone">
           <TextInput
             type="search"
@@ -339,55 +350,60 @@ function TeamsIndexView({
         </PhoneBody>
       ) : (
         <>
-          <StatCard
-            id="by-service"
-            className={index.anchorTarget}
-            title="Teams by service"
-            meta={`${teams.length} ${plural(teams.length, "team", "teams")}`}
-            data-testid="ward-statistics-teams-in-bed"
-          >
-            <Strip label="Teams by service" cols={4}>
-              {tileGroups.map((group) => {
-                // one team with no count makes the service figure unknown, never a partial sum or a nought.
-                const total = (pick: (entry: TeamIndexRow) => StatisticsCount | null) => {
-                  const counts = group.teams.map(pick);
-                  return counts.some((value) => value === null)
-                    ? null
-                    : sumStatisticsCounts(counts as StatisticsCount[]);
-                };
-                const inBed = total((entry) => entry.inBed);
-                const withDate = total((entry) => entry.withDate);
-                const busy = group.teams.filter((entry) => positive(entry.inBed));
-                const nobody = exact(inBed) === 0;
-                return (
-                  <Tile
-                    key={group.key}
-                    muted={nobody}
-                    title={
-                      <span className={redesign.nameSub}>
-                        <ServiceDot service={group.service} />
-                        {group.name}
-                      </span>
-                    }
-                    now={<Now>{`${group.teams.length} ${plural(group.teams.length, "team", "teams")}`}</Now>}
-                    fig={shown(inBed)}
-                    unit="in a bed"
-                    sub={
-                      nobody
-                        ? "No team patients in a bed here"
-                        : [`${shown(withDate)} with a discharge date`, busy.map((entry) => entry.team.name).join(", ")]
-                            .filter(Boolean)
-                            .join(" · ")
-                    }
-                  />
-                );
-              })}
-            </Strip>
-            <Foot how={["A person counts for a team only when their referral named it."]}>
-              {positive(noTeamInBed) ? <Glyph tone="warning" /> : null} <b>{shown(noTeamInBed)}</b> people in a bed have
-              no team named
-            </Foot>
-          </StatCard>
+          <LeadsBrowse>
+            <StatCard
+              id="by-service"
+              className={index.anchorTarget}
+              title="Teams by service"
+              meta={`${teams.length} ${plural(teams.length, "team", "teams")}`}
+              data-testid="ward-statistics-teams-in-bed"
+            >
+              <Strip label="Teams by service" cols={4}>
+                {tileGroups.map((group) => {
+                  // one team with no count makes the service figure unknown, never a partial sum or a nought.
+                  const total = (pick: (entry: TeamIndexRow) => StatisticsCount | null) => {
+                    const counts = group.teams.map(pick);
+                    return counts.some((value) => value === null)
+                      ? null
+                      : sumStatisticsCounts(counts as StatisticsCount[]);
+                  };
+                  const inBed = total((entry) => entry.inBed);
+                  const withDate = total((entry) => entry.withDate);
+                  const busy = group.teams.filter((entry) => positive(entry.inBed));
+                  const nobody = exact(inBed) === 0;
+                  return (
+                    <Tile
+                      key={group.key}
+                      muted={nobody}
+                      title={
+                        <span className={redesign.nameSub}>
+                          <ServiceDot service={group.service} />
+                          {group.name}
+                        </span>
+                      }
+                      now={<Now>{`${group.teams.length} ${plural(group.teams.length, "team", "teams")}`}</Now>}
+                      fig={shown(inBed)}
+                      unit="in a bed"
+                      sub={
+                        nobody
+                          ? "No team patients in a bed here"
+                          : [
+                              `${shown(withDate)} with a discharge date`,
+                              busy.map((entry) => entry.team.name).join(", "),
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")
+                      }
+                    />
+                  );
+                })}
+              </Strip>
+              <Foot how={["A person counts for a team only when their referral named it."]}>
+                {positive(noTeamInBed) ? <Glyph tone="warning" /> : null} <b>{shown(noTeamInBed)}</b> people in a bed
+                have no team named
+              </Foot>
+            </StatCard>
+          </LeadsBrowse>
 
           <StatCard
             id="all-teams"
@@ -427,7 +443,7 @@ function TeamsIndexView({
                     </tr>
                   </thead>
                   <tbody>
-                    {listed.map((entry) => {
+                    {(embedded && !allRows ? listed.slice(0, BROWSE_ROWS) : listed).map((entry) => {
                       const num = (count: StatisticsCount | null) =>
                         cx(redesign.r, tableClasses.num, exact(count) !== null && exact(count) === 0 && redesign.zero);
                       return (
@@ -454,6 +470,11 @@ function TeamsIndexView({
                 </table>
               </div>
             )}
+            {embedded && listed.length > BROWSE_ROWS ? (
+              <ShowMoreRow expanded={allRows} onClick={() => setAllRows((value) => !value)}>
+                {allRows ? "Show fewer" : `Show all ${listed.length}`}
+              </ShowMoreRow>
+            ) : null}
             <Foot
               link={
                 emptyTeams > 0 || unknown > 0 ? (

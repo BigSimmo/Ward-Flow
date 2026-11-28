@@ -41,6 +41,7 @@ export function ReferralCoordinatorTop({
   title,
   titleMeta,
   overdueCount,
+  oldest,
   overdueHighlighted,
   onOverdueFigure,
   nextOverdue,
@@ -68,6 +69,8 @@ export function ReferralCoordinatorTop({
   /** "Oldest 3d 3h · decided in 4h 30m (median)", worded by the board. */
   titleMeta: ReactNode;
   overdueCount: number;
+  /** Desktop: the oldest wait since referral, as the hero's second figure (the line then says the median). */
+  oldest?: string;
   overdueHighlighted: boolean;
   onOverdueFigure: () => void;
   /** The referral Next overdue opens: how long overdue, and who (named on a desktop). */
@@ -147,14 +150,24 @@ export function ReferralCoordinatorTop({
                   onClick: overdueCount > 0 || overdueHighlighted ? onOverdueFigure : undefined,
                   testId: "ward-referral-figure-overdue",
                 },
-                {
-                  id: "beds",
-                  value: beds.total,
-                  label: "Beds ready",
-                  ...(isPhone ? { onClick: onBeds } : { href: "/bedchart/hub" }),
-                  linkTestId: isPhone ? "ward-referral-phone-beds" : undefined,
-                  testId: "ward-referral-figure-beds",
-                },
+                // Simplification 26 Nov 2026 (plan flag 3): one figure looked thin beside the act card,
+                // so the oldest wait moves out of the line under the title into a second figure.
+                ...(!isPhone && oldest !== undefined
+                  ? [{ id: "oldest", value: oldest, label: "Longest wait", testId: "ward-referral-figure-oldest" }]
+                  : []),
+                // Desktop: the Beds ready band below carries the same total with type and stale age.
+                ...(isPhone
+                  ? [
+                      {
+                        id: "beds",
+                        value: beds.total,
+                        label: "Beds ready",
+                        onClick: onBeds,
+                        linkTestId: "ward-referral-phone-beds",
+                        testId: "ward-referral-figure-beds",
+                      },
+                    ]
+                  : []),
               ]}
             />
           }
@@ -193,7 +206,8 @@ export function ReferralCoordinatorTop({
               )}
               <HeroBand
                 title="Beds ready"
-                aside={updated === undefined ? undefined : `updated ${durMinutes(updated)} ago`}
+                // Audit three #57: the stamp says whose count is old, so it is not read against Capacity's time.
+                aside={updated === undefined ? undefined : `oldest ward count confirmed ${durMinutes(updated)} ago`}
                 testId="ward-referral-beds-ready"
                 cells={[
                   ...beds.cells.map((cell) => ({ id: cell.label, label: cell.label, value: cell.value })),

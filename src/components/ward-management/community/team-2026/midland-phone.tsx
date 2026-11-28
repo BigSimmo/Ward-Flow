@@ -19,7 +19,7 @@ import { ReferralPage, useAnswer } from "./team-referrals";
 import { openReferrals, useMidlandDecisions } from "./midland-decisions";
 import { useRegisterWardBarPlaceSwitch } from "@/components/ward-management/shell/ward-bar-place-switch";
 import p from "./midland-phone.module.css";
-import { MIDLAND_ACT_NOW_ATTR, MidlandTop } from "./midland-top";
+import { MIDLAND_ACT_NOW_ATTR, MIDLAND_ACT_NOW_STEP_ATTR, MidlandTop } from "./midland-top";
 
 const f = DEMO_FIGURES;
 const SHOWN = 8;
@@ -49,7 +49,7 @@ function GroupHead({
   title: string;
   hint?: string;
   danger?: boolean;
-  /** The act-now group: Show act now scrolls to and focuses it. */
+  /** The act-now group: Open next presses the first row, and Show act now scrolled to and focuses it. */
   actNow?: boolean;
 }) {
   return (
@@ -193,6 +193,8 @@ function HomeSection({
               key={r.id}
               as="li"
               actNow={r.act}
+              // Open next presses this row's one action, its step (audit four #56).
+              {...{ [MIDLAND_ACT_NOW_STEP_ATTR]: "" }}
               leading={<StatusGlyph tone={r.act ? "danger" : "warning"} size={12} />}
               name={r.what}
               meta={

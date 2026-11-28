@@ -1,0 +1,8 @@
+/* UMRN text (audit two #81, K30): mono, tabular, ink-2, the surrounding size. Zero specificity, so a
+   page porting its own UMRN class onto this part keeps its pixels while it moves over. */
+:where(.umrn) {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}

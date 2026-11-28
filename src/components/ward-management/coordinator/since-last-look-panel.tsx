@@ -293,7 +293,7 @@ function closingLoopGroups(changes: ChangesSinceLastLook): SinceGroup[] {
       key: "discharge-date-moved",
       tone: "info",
       title: plural(moved.length, "discharge date moved", "discharge dates moved"),
-      detail: wards(moved),
+      // Audit three #7: the ward rows under the title name the wards, so no detail line repeats them.
       links: dischargeMovedLinks(changes),
     });
   }

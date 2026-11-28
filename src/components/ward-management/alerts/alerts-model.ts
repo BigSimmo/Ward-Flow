@@ -321,7 +321,7 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
   if (isAcceptedPullRow(item.id)) return { kind: "link", label: "Pull the bed", href: item.href ?? "/bedchart/alerts" };
   switch (alertKindOf(item.id)) {
     case "awol":
-      return { kind: "link", label: "Open patient", href: item.href ?? patientHref };
+      return { kind: "link", label: "Patient page", href: item.href ?? patientHref };
     case "legal":
       return { kind: "link", label: "Open forms", href: "/bedchart/legal-forms" };
     case "declines":
@@ -374,7 +374,7 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
       if (item.id.includes("transport-booked")) {
         return { kind: "link", label: "Book transport", href: ownMovementHref };
       }
-      return { kind: "link", label: "Open patient", href: patientHref };
+      return { kind: "link", label: "Patient page", href: patientHref };
   }
 }
 
@@ -403,8 +403,7 @@ export function byOldest(a: { at?: Instant }, b: { at?: Instant }): number {
  * running targets after the waiting rows. By owner puts you first, then the other owners A to Z,
  * with snoozed rows after the active ones.
  */
-export function alertsOrderLine(view: "urgency" | "lanes" | "owner"): string {
-  if (view === "lanes") return "Oldest first in each lane. Running targets after waiting.";
+export function alertsOrderLine(view: "urgency" | "owner"): string {
   if (view === "owner") return "You first, then A to Z by owner. Oldest first in each, snoozed last.";
   return "Act now first, then waiting. Oldest first in each.";
 }

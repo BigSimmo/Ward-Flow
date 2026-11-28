@@ -75,8 +75,8 @@ function arriveReasonFor(movement: Movement, unit: Unit): string | undefined {
   return notNeeded
     ? refusalLine("The bed is not pulled yet", "Pull the bed first")
     : liveJob
-      ? refusalLine("Not collected yet", "Confirm arrival once transport has collected them")
-      : refusalLine("No transport is booked", "Book transport, or record that none is needed");
+      ? refusalLine("Not collected yet", "Record arrival once transport has collected them")
+      : refusalLine("No transport is booked", "Record the transport booking, or record that none is needed");
 }
 
 const bedWord = (bed: BedItem | undefined) => (bed ? `Bed ${String(bed.bedNumber).padStart(2, "0")}` : undefined);

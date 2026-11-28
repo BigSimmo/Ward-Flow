@@ -131,7 +131,7 @@ export function WardBoardWorkBand({
             aria-expanded={shiftExpanded}
             onClick={() => setShiftExpanded((open) => !open)}
           >
-            {shiftExpanded ? "Show fewer" : `Show ${shiftTiles.length - 3} more`}
+            {shiftExpanded ? "Show fewer" : `Show all ${shiftTiles.length}`}
           </button>
         ) : null}
         {blockerDialogItem ? (

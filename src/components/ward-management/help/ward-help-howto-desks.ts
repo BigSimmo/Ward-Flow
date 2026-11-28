@@ -66,7 +66,7 @@ export const DESK_JOBS: readonly HowTo[] = [
     title: "Record arrival at the ward",
     keywords: "arrived delivered handed over drop off dropped destination officer job",
     answer:
-      "Open the job and press Mark arrived at ward (Arrived at ward in the job's row), then Record arrival to confirm. The message after it offers Undo for a few seconds. The job moves to History, Arrived today, and the receiving ward then confirms the arrival.",
+      "Open the job and press Mark arrived at ward (Arrived at ward in the job's row), then Record arrival to confirm. The message after it offers Undo until the time shown. The job moves to History, Arrived today, and the receiving ward then confirms the arrival.",
     desks: ["officer"],
     acts: ["PATIENT_ARRIVED"],
     go: "home",
@@ -93,7 +93,7 @@ export const DESK_JOBS: readonly HowTo[] = [
       {
         target: { sel: '[data-testid="ward-officer-toast-undo"]' },
         title: "Undo",
-        body: "In the message at the foot for a few seconds, if you pressed it by mistake.",
+        body: "In the message at the foot, until the time shown, if you pressed it by mistake.",
       },
       {
         target: { sel: "#ward-officer-jobs-tab-history" },
@@ -116,7 +116,7 @@ export const DESK_JOBS: readonly HowTo[] = [
       {
         target: { sel: '[data-testid="ward-officer-toast-undo"]' },
         title: "Undo",
-        body: "Shows in the message just after you record a step, then goes after a few seconds.",
+        body: "Shows in the message just after you record a step, until the time shown.",
       },
       {
         target: { sel: '[data-testid^="ward-officer-stepper-"]' },
@@ -306,13 +306,13 @@ export const DESK_JOBS: readonly HowTo[] = [
     title: "Copy the transport handover",
     keywords: "copy handover end of shift summary open jobs paste officer",
     answer:
-      "Press Copy handover, in the actions under the figures at the top. It copies a plain text summary of every open job, starting with a line that says the records are synthetic. Paste it where your handover goes.",
+      "Press Copy for handover, in the actions under the figures at the top. It copies a plain text summary of every open job, starting with a line that says the records are synthetic. Paste it where your handover goes.",
     desks: ["officer"],
     go: "home",
     showMe: [
       {
-        target: { sel: "#main-content button", text: "Copy handover" },
-        title: "Copy handover",
+        target: { sel: "#main-content button", text: "Copy for handover" },
+        title: "Copy for handover",
         body: "Copies each open job's route, provider, ETA and forms, ready to paste.",
       },
       {
@@ -366,7 +366,7 @@ export const DESK_JOBS: readonly HowTo[] = [
         device: "desk",
         target: { sel: '[data-testid="ward-capacity-executive-total"]' },
         title: "Totals",
-        body: "The foot of the table adds up every ward, including those under Show more.",
+        body: "The foot of the table adds up every ward, including those under Show all.",
       },
       {
         device: "phone",
@@ -391,7 +391,7 @@ export const DESK_JOBS: readonly HowTo[] = [
         device: "desk",
         target: { sel: '[data-testid="statistics-compare-ward-chart"]' },
         title: "Ward comparison",
-        body: "Each ward against the mean of wards. Choose the measure, Chart or Table, and filter by name or group.",
+        body: "Each ward against the mean of wards. Choose the measure, Graph or Table, and filter by name or group.",
       },
       {
         device: "desk",
@@ -451,7 +451,7 @@ export const DESK_JOBS: readonly HowTo[] = [
     title: "Read the weekly report",
     keywords: "weekly report week pilot measures operations print summary",
     answer:
-      "Open Statistics, then Weekly. Choose the week, then read Pilot measures (the four agreed measures; the two counted outside BedChart say so), Where the time goes, Supporting figures and Pressure this week. How this is counted explains each one. Print prints the report.",
+      "Open Statistics, then Weekly. Choose the week, then read Pilot measures (the four agreed measures; the two counted outside BedChart say so), Where the time goes, Supporting figures and the pressure figures (in the band on a computer, Pressure this week on a phone). How this is counted explains each one. Print prints the report.",
     desks: ["executive", "coordinator"],
     go: "statistics",
     showMe: [
@@ -485,9 +485,10 @@ export const DESK_JOBS: readonly HowTo[] = [
         body: "Figures that are not agreed measures, each with its rate.",
       },
       {
-        target: { sel: '[aria-labelledby="rd-pressure-week"]' },
+        // Audit two #98: a computer shows these four as the band's figures; a phone keeps the card.
+        target: [{ sel: '[aria-labelledby="rd-pressure-week"]' }, { sel: "#main-content section[aria-labelledby]" }],
         title: "Pressure this week",
-        body: "ED waits, out of area, delayed discharge and recorded occupied bed time.",
+        body: "ED waits, out of area, delayed discharge and recorded occupied bed time. On a computer they are the band's figures.",
       },
       {
         target: { sel: '[aria-labelledby="rd-decisions"]' },
@@ -583,15 +584,12 @@ export const DESK_JOBS: readonly HowTo[] = [
     title: "See who opened a record",
     keywords: "access log audit who looked opened viewed record privacy admin",
     answer:
-      "Settings, Access, Access log lists record openings by desks in your place, newest first. Records show by id only. Type a record id or account in Find to narrow it, or press Break glass to show only break glass openings.",
+      "Governance, Audit trail, Access log lists record openings by desks in your place, newest first. Records show by id only. Type a record id or account in Find to narrow it, or press Break glass to show only break glass openings.",
     desks: ["admin"],
-    go: "settings#access",
+    go: "governance?tab=audit",
     showMe: [
       {
-        target: [
-          { sel: '[data-testid="ward-access-log"]' },
-          { sel: '[data-testid="ward-settings-phone-area-access"]' },
-        ],
+        target: [{ sel: '[data-testid="ward-access-log"]' }, { sel: '[data-testid="ward-governance-phone"]' }],
         title: "Access log",
         body: "Find a record id or account to narrow the list.",
       },
@@ -632,7 +630,7 @@ export const DESK_JOBS: readonly HowTo[] = [
       },
       {
         target: { sel: '[data-testid="ward-governance-review-next"]' },
-        title: "Review next",
+        title: "Open newest",
         body: "Opens the newest event waiting for review.",
       },
       {
@@ -674,7 +672,7 @@ export const DESK_JOBS: readonly HowTo[] = [
     title: "Close a bed or a ward to admissions",
     keywords: "close bed ward closed admissions shut reopen out of action maintenance",
     answer:
-      "On Capacity, open the ward, then press Closures at the foot of its panel. To close a bed, choose a bed nobody is in and why, then Close bed. To close the ward, choose a reason under Close the whole ward to admissions and confirm. Reopen from Closures when ready.",
+      "On Capacity, open the ward, then press Close a bed or ward at the foot of its panel. To close a bed, choose a bed nobody is in and why, then Close bed. To close the ward, choose a reason under Close the whole ward to admissions and confirm. When ready, press Reopen ward in the same place.",
     desks: ["bed_manager", "coordinator"],
     acts: ["SET_BED_CLOSED", "CLOSE_WARD_TO_ADMISSIONS"],
     go: "capacity",
@@ -685,8 +683,8 @@ export const DESK_JOBS: readonly HowTo[] = [
         body: "Its panel opens with the ward's beds and discharges.",
       },
       {
-        target: { sel: "button", text: "Closures" },
-        title: "Closures",
+        target: { sel: "button", text: "Close a bed or ward" },
+        title: "Close a bed or ward",
         body: "The quiet last button at the foot. A last resort.",
       },
       {
@@ -1142,7 +1140,7 @@ export const DESK_JOBS: readonly HowTo[] = [
     title: "Record medical clearance",
     keywords: "medically cleared clearance fit medical review ed",
     answer:
-      "Under Lists, Awaiting review, press View referral on the new referral, then Record medically cleared or Record not medically cleared. On a phone it is Lists, then Review. It records what the team found, with the time, beside Medically cleared.",
+      "Under Lists, Awaiting review, press Show referral (Open referral in the inbox) on the new referral, then Record medically cleared or Record not medically cleared. On a phone it is Lists, then Review. It records what the team found, with the time, beside Medically cleared.",
     desks: ["ed"],
     acts: ["RECORD_MEDICAL_CLEARANCE"],
     go: "home",
@@ -1154,11 +1152,11 @@ export const DESK_JOBS: readonly HowTo[] = [
       },
       {
         target: [
-          { sel: `${ED_LISTS} button`, text: "View referral" },
-          { sel: '[data-testid="ward-ed-inbox"] button', text: "View referral" },
+          { sel: `${ED_LISTS} button`, text: "Show referral" },
+          { sel: '[data-testid="ward-ed-inbox"] button', text: "Open referral" },
         ],
-        title: "View referral",
-        body: "Opens the referral, with Medically cleared and the buttons to record it.",
+        title: "Show referral",
+        body: "Opens the referral in place, with Medically cleared and the buttons to record it.",
       },
       {
         target: [

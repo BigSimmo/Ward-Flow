@@ -889,60 +889,6 @@
 
 /* Phone (v10 bed sheet): one scrolling sheet, no tabs. Only rendered on phone. */
 @media (max-width: 46.4375rem) {
-  .phoneSheet {
-    top: auto;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100vw;
-    height: auto;
-    max-height: calc(100dvh - 48px);
-    border: 1px solid var(--wf-line-2);
-    border-bottom: 0;
-    border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
-    background: var(--wf-glass-thick);
-    transform: translateY(0);
-  }
-
-  .phoneSheet .grab {
-    display: block;
-    flex-shrink: 0;
-    width: 36px;
-    height: 4px;
-    margin: 8px auto 0;
-    border-radius: var(--wf-r-pill);
-    background: var(--wf-line-3);
-  }
-
-  .phoneHead {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--wf-s-2);
-    padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-3) var(--wf-s-4);
-    border-bottom: 1px solid var(--wf-line);
-    flex-shrink: 0;
-  }
-
-  .phoneHead .drawerHeading {
-    gap: 2px;
-    padding-top: var(--wf-s-1);
-  }
-
-  .phoneTitle {
-    margin: 0;
-    overflow: hidden;
-    color: var(--wf-ink-1);
-    font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
-    overflow-wrap: anywhere;
-  }
-
-  .phoneBody {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
-  }
-
   .phoneFacts {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -985,12 +931,6 @@
     text-transform: uppercase;
   }
 
-  /* WH4 polish: the status pill sits under the name with a little air. */
-  .phonePill {
-    align-self: flex-start;
-    margin-top: var(--wf-s-1);
-  }
-
   .phoneKv {
     display: grid;
     grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr);
@@ -1019,11 +959,11 @@
     font-size: var(--wf-fs-16);
   }
 
-  .phoneSheet .editor {
+  .phoneBody .editor {
     padding: var(--wf-s-2) 0 0;
   }
 
-  .phoneSheet .timeline {
+  .phoneBody .timeline {
     padding: 0;
   }
 
@@ -1043,33 +983,24 @@
   .phoneMore > :global(*) {
     min-height: var(--spacing-tap, 3rem);
   }
+}
 
-  .phoneFoot {
-    display: flex;
-    gap: var(--wf-s-2);
-    padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
-    border-top: 1px solid var(--wf-line-2);
-    background: var(--wf-glass-thick);
-    flex-shrink: 0;
-  }
+/* Audit four #98: the phone bed record is the kit PanelDrawer. Its scroll carries no padding of its
+   own, so the body takes the old phone sheet's inset; the foot's steps keep a 44px thumb target, as
+   the ED preview foot does at 390. */
+.phoneBody {
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+}
 
-  .phoneFoot > :global(*) {
-    flex: 1 1 0;
-    min-width: 0;
+@media (max-width: 46.4375rem) {
+  .bandActions :is(a, button) {
+    min-height: 44px;
   }
 }
 
-/* Print: the phone bed sheet is height-bounded with a scrolling body on screen; on paper it grows
-   to its content so no detail is clipped. */
+/* Print: the phone bed record's body scrolls on screen; on paper it grows to its content so no
+   detail is clipped. */
 @media print {
-  .phoneSheet {
-    position: static;
-    max-height: none;
-    height: auto;
-    overflow: visible;
-    transform: none;
-  }
-
   .phoneBody {
     min-height: auto;
     overflow: visible;
@@ -1105,24 +1036,6 @@
 
 .actionsPhone :global(button) {
   width: 100%;
-}
-
-/* The phone sheet's close: the kit sheet's 36 px face, with an invisible hit area for the thumb. */
-.phoneClose.phoneClose {
-  position: relative;
-  flex: none;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
-  border-radius: var(--wf-r-tag);
-  color: var(--wf-ink-2);
-}
-
-.phoneClose::after {
-  content: "";
-  position: absolute;
-  inset: -6px;
 }
 
 /* Redesign (preview): why the person has not left yet, from what the ward recorded. */
@@ -1192,8 +1105,7 @@
     flex-shrink: 0;
   }
 
-  .drawerBody,
-  .phoneBody {
+  .drawerBody {
     flex: 1 0 auto;
     min-height: auto;
     overflow: visible;
@@ -1263,6 +1175,24 @@
   justify-content: center;
 }
 
+.bandRow > .bandLead {
+  flex-grow: 2;
+}
+
+/* Audit two #7: a ready bed's foot. The quiet link left in ink-2, the one filled step right. */
+.bandSplit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.bandLink.bandLink {
+  color: var(--wf-ink-2);
+}
+
 /* A quiet text button that opens a folded choice. */
 .quiet.quiet {
   align-self: flex-start;
@@ -1300,5 +1230,57 @@
 @media (max-width: 46.4375rem) {
   .choice :global([role="group"] > button) {
     min-height: 40px;
+  }
+}
+
+/* Simplification 26 Nov 2026 (area 3, item 3): the Bed board's ward diagnosis and clinically ready
+   controls, reused as they are, sit to the drawer's own control widths and heights. */
+.boardTool select {
+  width: 100%;
+  min-height: 36px;
+}
+
+.boardTool button {
+  min-height: 36px;
+  font-size: var(--wf-fs-14);
+}
+
+/* One bed record (batch 3, A): the Bed board's transport question, under Going to. */
+.transportRow {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin-top: var(--wf-s-2);
+}
+
+/* States review 01 (27 Nov 2026): the change level control and the board tools sit flush with the
+   facts grid and the cards around them, not inset a second time. In the hero the card's own 16px
+   padding is the space under the button. */
+html .hero > .cardInner {
+  padding: 0;
+}
+
+html .phoneBody > .cardInner {
+  padding-inline: 0;
+}
+
+/* States review B, b-ward-leaving-tab (27 Nov 2026): a disabled foot step's lock line no longer
+   stretches More beside it. On a wider screen the kit's reason wrapper gives its button and line to
+   the row, so the buttons share one height and the line runs under both. */
+@media (min-width: 46.5rem) {
+  html .bandRow > :has(> [data-wf-reason]) {
+    display: contents;
+  }
+
+  html .bandRow > :has(> [data-wf-reason]) > button {
+    flex: 1 1 0;
+    min-width: max-content;
+    justify-content: center;
+  }
+
+  html .bandRow [data-wf-reason] {
+    order: 1;
+    flex: 1 1 100%;
+    min-width: 0;
+    justify-content: flex-end;
   }
 }

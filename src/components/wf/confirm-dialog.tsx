@@ -10,7 +10,8 @@ import type { Dialog } from "./dialog";
  * (the unsaved-changes guard) asks through `requestConfirm`.
  *
  * - The question is the caller's words, shown word for word as the description. The title is short.
- * - Focus starts on the safe choice ("Keep editing"); Escape and a press outside keep. No close cross.
+ * - Focus starts on the safe choice ("Cancel" by default; "Keep editing" on a discard guard); Escape
+ *   and a press outside keep. No close cross.
  * - Nothing is pre-selected and nothing happens until a choice is pressed.
  * - With no host mounted (a test, or a page outside the app frame) it falls back to the browser's
  *   own confirm box, so a guard never silently lets a change go.
@@ -27,7 +28,10 @@ export type ConfirmRequest = {
   message: string;
   /** The choice that lets the change go, for example "Leave without saving" or "Discard". */
   confirmLabel: string;
-  /** The safe choice. "Keep editing" by default. */
+  /**
+   * The safe choice. "Cancel" by default (audit two #37): a discard guard passes "Keep editing", an
+   * offer "Not now". The accept label names the step, never "Yes" or "Confirm".
+   */
   cancelLabel?: string;
   /** The confirm button's tone. "danger" by default; "default" when confirming loses nothing. */
   confirmTone?: "default" | "danger";
@@ -139,7 +143,7 @@ export function ConfirmHost({
       role="alertdialog"
       // Escape and a press outside keep the work. No close cross: it would be a second "keep" answer.
       closable={false}
-      secondary={[{ label: request?.cancelLabel ?? "Keep editing", onAction: () => answer(false), autoFocus: true }]}
+      secondary={[{ label: request?.cancelLabel ?? "Cancel", onAction: () => answer(false), autoFocus: true }]}
       primary={{
         label: request?.confirmLabel ?? "",
         onAction: () => answer(true),

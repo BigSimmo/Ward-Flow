@@ -145,7 +145,7 @@ To decline, choose a reason:
 ### From accepted to arrived
 
 - **"Pull the bed"** pulls a bed for an accepted patient. It stays theirs until they arrive or it is released, within the pull time limit.
-- **"Book transport"** records the transport job. If no transport is needed, record that instead.
+- **"Record transport booking"** records the transport job. If no transport is needed, record that instead.
   The ED screen then stops warning that transport is not booked.
 - **"Release the pulled bed"** gives the bed back. It is hidden while transport is booked. Cancel the
   transport first.

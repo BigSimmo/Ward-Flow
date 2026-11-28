@@ -149,7 +149,7 @@ function DeskSearch(props: WardGlobalSearchProps) {
       <SearchField
         fieldRef={fieldRef}
         label={props.label ?? "Search"}
-        placeholder={props.placeholder ?? "Search people and movements…"}
+        placeholder={props.placeholder ?? "Search people and movements"}
         scope={props.scope}
         onChange={(value) => {
           setDraft(value);

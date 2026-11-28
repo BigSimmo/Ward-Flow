@@ -145,6 +145,7 @@ select.ctl {
   gap: 6px;
 }
 .where svg {
+  flex-shrink: 0;
   color: var(--wf-ink-3);
 }
 
@@ -526,6 +527,19 @@ select.ctl {
 .table td .sub {
   white-space: nowrap;
 }
+/* Audit four #4: Where now and Next give way, so the caseload table fits its card and each row's
+   Open button stays whole instead of the table scrolling sideways. */
+.caseTable td:nth-child(5),
+.caseTable td:nth-child(7),
+.caseTable td:nth-child(5) .sub,
+.caseTable td:nth-child(7) .sub {
+  white-space: normal;
+}
+.caseTable td:nth-child(5),
+.caseTable td:nth-child(7) {
+  min-width: 7rem;
+  max-width: 11rem;
+}
 .three {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -604,12 +618,17 @@ select.ctl {
   font: 600 var(--wf-fs-14) / 20px var(--wf-font);
   color: var(--wf-ink-1);
 }
+/* Final r10 F9: the second line wraps to a second line where the row is narrow (1280 with the
+   rail), not cut to "left RGH Adult Se…"; two lines at most. */
 .lrDetail {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   font: 400 var(--wf-fs-13) / 18px var(--wf-font);
   color: var(--wf-ink-2);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
 }
 .lrDetail b {
   font-weight: 500;
@@ -1471,5 +1490,55 @@ select.ctl {
   .refPage .isbar > div {
     grid-template-columns: minmax(0, 1fr);
     gap: 4px;
+  }
+}
+
+/* r10 (final-b1 #9, 820): the caseload table no longer squeezes. Legal folds under the client (one
+   quiet line), so Where now holds its ward on one or two lines and Last seen keeps its words. */
+.legalFold,
+.psychFold {
+  display: none;
+}
+
+@media (min-width: 46.5rem) and (max-width: 64rem) {
+  .caseTable .legalCol {
+    display: none;
+  }
+
+  .caseTable .legalFold {
+    display: block;
+    margin-top: 2px;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+  }
+
+  .caseTable th {
+    white-space: nowrap;
+  }
+
+  /* fix-5: the psychiatrist folds under the case manager (same quiet line as Legal), which frees the
+     width the table lacked, so Next is never cut at the card edge. Where now breaks between words
+     only ("Graylands Adult / Secure"), never inside one. */
+  .caseTable .psychCol {
+    display: none;
+  }
+
+  .caseTable .psychFold {
+    display: block;
+    margin-top: 2px;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-12);
+    white-space: normal;
+  }
+
+  /* Under a named case manager the line starts under the name, not the avatar (24px + 8px gap). */
+  .caseTable .cm + .psychFold {
+    padding-inline-start: 32px;
+  }
+
+  .caseTable td:nth-child(5),
+  .caseTable td:nth-child(5) * {
+    overflow-wrap: normal;
+    word-break: normal;
   }
 }

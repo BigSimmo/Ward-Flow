@@ -307,6 +307,11 @@ export type TransportBookingFormProps = {
   note?: ReactNode;
   onSubmit: (booking: TransportBookingSubmission) => void;
   onCancel?: () => void;
+  /**
+   * Audit three #37: the screen's provider list beside the form is the one picker (its rows carry
+   * `data-provider-pick`), so the form leaves out its own "Who is collecting" drop-down.
+   */
+  providerPickedBeside?: boolean;
 };
 
 export function TransportBookingForm({
@@ -324,6 +329,7 @@ export function TransportBookingForm({
   note,
   onSubmit,
   onCancel,
+  providerPickedBeside = false,
 }: TransportBookingFormProps) {
   const tid = (part: TransportBookingPart, option?: string) => transportBookingTestId(testIds, part, option);
   // DOM ids follow the test ids, which are unique per movement on every screen.
@@ -389,6 +395,10 @@ export function TransportBookingForm({
   const unavailable = blocked !== undefined || submission === undefined || pending;
 
   const goToPart = (part: TransportBookingPart) => {
+    if (part === "provider" && providerPickedBeside) {
+      document.querySelector<HTMLElement>("[data-provider-pick]")?.focus();
+      return;
+    }
     const field = document.querySelector<HTMLElement>(`[data-testid="${tid(part)}"]`);
     (field?.matches("fieldset") ? field.querySelector<HTMLElement>("input") : field)?.focus();
   };
@@ -425,8 +435,9 @@ export function TransportBookingForm({
             Every required answer given. Check them, then save.
           </p>
         )}
-        {/* W32 (Josh's card 3, 5 Nov 2026): the estimated time warns, never blocks. */}
-        {warningNames.length > 0 ? (
+        {/* W32 (Josh's card 3, 5 Nov 2026): the estimated time warns, never blocks. Audit three #37:
+            one status line at a time, so it shows once the required answers are given. */}
+        {warningNames.length > 0 && leftNames.length === 0 ? (
           <p className={styles.left} data-testid={`${tid("left")}-warnings`}>
             <span>
               <StatusGlyph tone="warning" size={9} /> Not recorded: {warningNames.join(", ")}. You can still save.
@@ -436,27 +447,29 @@ export function TransportBookingForm({
       </div>
 
       {/* The person is named by the screen around the form (popup title, sheet or panel). */}
-      <Field label="Who is collecting" id={did("provider")}>
-        <Select
-          data-testid={tid("provider")}
-          disabled={pending}
-          value={answers.provider ?? ""}
-          onChange={(event) => {
-            const next = event.target.value;
-            set({
-              provider: BOOKABLE_TRANSPORT_PROVIDERS.includes(next as TravelMode) ? (next as TravelMode) : undefined,
-            });
-          }}
-        >
-          {/* Nobody chosen, first and selected: never a provider standing in for a choice not made. */}
-          <option value="">Not chosen</option>
-          {BOOKABLE_TRANSPORT_PROVIDERS.map((provider) => (
-            <option key={provider} value={provider}>
-              {provider}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      {providerPickedBeside ? null : (
+        <Field label="Who is collecting" id={did("provider")}>
+          <Select
+            data-testid={tid("provider")}
+            disabled={pending}
+            value={answers.provider ?? ""}
+            onChange={(event) => {
+              const next = event.target.value;
+              set({
+                provider: BOOKABLE_TRANSPORT_PROVIDERS.includes(next as TravelMode) ? (next as TravelMode) : undefined,
+              });
+            }}
+          >
+            {/* Nobody chosen, first and selected: never a provider standing in for a choice not made. */}
+            <option value="">Not chosen</option>
+            {BOOKABLE_TRANSPORT_PROVIDERS.map((provider) => (
+              <option key={provider} value={provider}>
+                {provider}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
 
       {/* The box never blocks Save: a ward escort or family has no dispatch call, and a dispatched
           service may give its number later (CAD to follow, Josh, 27 Oct 2026). */}
@@ -683,7 +696,7 @@ export function TransportBookingForm({
             onSubmit(submission);
           }}
         >
-          Save transport booking
+          Record booking
         </Button>
         {blocked ? (
           <span id={`${did("confirm")}-blocked`} className="sr-only">

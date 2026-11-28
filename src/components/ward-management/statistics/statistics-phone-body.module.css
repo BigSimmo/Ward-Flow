@@ -636,3 +636,10 @@
   min-height: 32px;
   padding-block: var(--wf-s-2) 0;
 }
+
+/* B2 (audit two): the triage category as plain words ("ATS 3"), not a tier-like pill. */
+.ats {
+  font: 600 var(--wf-fs-12) / 16px var(--wf-mono);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}

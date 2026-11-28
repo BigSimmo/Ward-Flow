@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { ChevronDown, ChevronRight, Search } from "lucide-react";
 
-import { Button, Card, CardHead, FilterChip, durMinutes } from "@/components/wf";
+import { Button, Card, CardHead, FilterChip, durMinutes, useIsPhone } from "@/components/wf";
 import {
   BedSquares,
   BedSquaresKey,
@@ -30,13 +30,14 @@ import { heldUpByTomorrow } from "./capacity-held-up-rail";
 import { tonightIntakeWindowList } from "./ward-intake-window-list";
 import styles from "./capacity-page.module.css";
 
-export type Highlight = "any" | "locked" | "open" | "stale";
+// Area 3 item 17 (mock-up, 26 Nov 2026): Locked ready and Open ready are gone. The hero's bed-type
+// band says the same per bed type and each cell opens who is waiting; the bed map key stays at the
+// map's top, so a held bed never reads as ready.
+export type Highlight = "any" | "stale";
 
 const HIGHLIGHTS: readonly { id: Highlight; label: string; test: (row: NetworkWardRow, fresh: boolean) => boolean }[] =
   [
-    { id: "any", label: "Any ready", test: (row) => row.ready > 0 },
-    { id: "locked", label: "Locked ready", test: (row) => row.lockedReady > 0 },
-    { id: "open", label: "Open ready", test: (row) => row.ready - row.lockedReady > 0 },
+    { id: "any", label: "Has ready", test: (row) => row.ready > 0 },
     { id: "stale", label: "Count old", test: (_row, fresh) => !fresh },
   ];
 
@@ -50,7 +51,7 @@ const OPEN_FIRST = 2;
 
 /**
  * The bed map's highlight chips: each lights the wards it matches and dims the rest; none hides a
- * ward. In the map's title row on a phone; beside the page tabs on wider screens.
+ * ward. Under the map's title on a phone; in the map's head beside Find a bed on wider screens.
  */
 export function BedMapHighlights({
   model,
@@ -63,6 +64,7 @@ export function BedMapHighlights({
   onHighlight: (highlight: Highlight | null) => void;
   className?: string;
 }) {
+  const isPhone = useIsPhone();
   const { networkRows, now } = model;
   const wardsMatching = (entry: (typeof HIGHLIGHTS)[number]) =>
     networkRows.filter((row) => entry.test(row, isConfirmationFresh(row.unit, now))).length;
@@ -72,11 +74,20 @@ export function BedMapHighlights({
         // Wave 4 (D-191): the label and a mono count of wards. The noun is shown as well (Josh,
         // 16 Nov 2026: "Any ready 19 wards"), so the count never reads as the hero's beds.
         const wards = wardsMatching(entry);
+        // Controls 16 (Josh): a zero chip is hidden on a phone, dimmed on desktop (FilterChip dims on
+        // count 0). A pressed chip never hides.
+        if (isPhone && wards === 0 && highlight !== entry.id) return null;
         return (
           <FilterChip
             key={entry.id}
             pressed={highlight === entry.id}
-            onPressedChange={(pressed) => onHighlight(pressed ? entry.id : null)}
+            // Audit three #52: a chip at zero wards is dimmed and cannot be pressed on.
+            unavailable={wards === 0 && highlight !== entry.id}
+            onPressedChange={(pressed) => {
+              if (wards === 0 && pressed) return;
+              onHighlight(pressed ? entry.id : null);
+            }}
+            className={wards === 0 && highlight !== entry.id ? styles.chipZero : undefined}
           >
             <span className={styles.chipWords}>
               {entry.label} <b className={styles.chipN}>{wards}</b>{" "}
@@ -112,6 +123,7 @@ export function BedMapCards({
   /** Phone: only the first two services start open. A tablet or desktop opens every service. */
   foldLater?: boolean;
 }) {
+  const isPhone = useIsPhone();
   const { mapGroups, networkRows, now } = model;
   // A model built without releases (a test's slice of it) draws no discharge squares.
   const bedReleases: readonly BedRelease[] = model.bedReleases ?? [];
@@ -161,11 +173,22 @@ export function BedMapCards({
   return (
     <Card aria-labelledby="capacity-map-title" className={styles.mapCard} id="capacity-bed-map">
       {/* Wave 4 (D-191): Find a bed sits in the map's head (it left the hero); the Grid and Rows
-          switch is gone, as the Wards tab is the table. */}
+          switch is gone: the Wards tab is the ward directory, with its own table (area 3 item 1). */}
       <CardHead
         id="capacity-map-title"
         title="Bed map"
         meta={`${wardCount} ${wardCount === 1 ? "ward" : "wards"} · counts as at ${formatInstant(now)}`}
+        // Audit three #17: on a tablet or computer the highlight chips sit in the head, beside Find a bed.
+        aside={
+          highlightsInCard && !isPhone ? (
+            <BedMapHighlights
+              className={styles.headHighlights}
+              model={model}
+              highlight={highlight}
+              onHighlight={onHighlight}
+            />
+          ) : undefined
+        }
         action={
           findBed ? (
             <Button
@@ -180,7 +203,7 @@ export function BedMapCards({
           ) : undefined
         }
       />
-      {highlightsInCard ? (
+      {highlightsInCard && isPhone ? (
         <BedMapHighlights className={styles.highlights} model={model} highlight={highlight} onHighlight={onHighlight} />
       ) : null}
       {/* The key sits at the top of the map, not the foot (wave 4, notes item 5). */}

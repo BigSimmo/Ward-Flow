@@ -1,3 +1,6 @@
+/* Audit two B21: every table cell rule here starts with `html`, one element more than the kit's
+   `.table td` and `.table th`, so the page's own cell rules win in the production build as in dev,
+   whatever order the two style sheets load in. Order among this file's own rules is unchanged. */
 /*
  * Out of area, option A (9 Oct 2026). Layout and small text roles only: the hero, cards, inputs,
  * tabs, segmented controls, sheets and the table come from the wf primitives. Tokens only.
@@ -253,13 +256,25 @@
   min-width: 0;
 }
 
-/* The overview cards sit in a row under the register, each its own height. */
+/* The overview cards under the register: one even row, however many show (Ready steps aside while
+   Date passed is on), each the row's height, so no card sits alone on a second line. They stack below
+   the content stack point. */
 .side {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  display: flex;
   gap: var(--wf-s-3);
-  align-items: start;
+  align-items: stretch;
   min-width: 0;
+}
+
+.side > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 56.25rem) {
+  .side {
+    flex-direction: column;
+  }
 }
 
 .registerCard,
@@ -352,7 +367,7 @@
   table-layout: fixed;
 }
 
-.table thead th {
+html .table thead th {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -360,7 +375,7 @@
   vertical-align: middle;
 }
 
-.table td {
+html .table td {
   height: 52px;
   vertical-align: middle;
 }
@@ -368,7 +383,7 @@
 /* Home region and current placement answer different questions. Keep both labels readable
    rather than hiding the end of a ward or region name behind an ellipsis. */
 .table .two > .cellText,
-.table td:nth-child(3) .two > span {
+html .table td:nth-child(3) .two > span {
   overflow: visible;
   white-space: normal;
   overflow-wrap: anywhere;
@@ -383,8 +398,8 @@
 
 /* Device sweep (24 Oct 2026): the name, the discharge reason and the travel time wrap to a second
    line rather than cut ("Alaric Ferrowm…", "Awaiting accom…", "3 hours or m…") at 1024 to 1440. */
-.table td:first-child .two > b,
-.table td:nth-child(4) .two > span:last-child {
+html .table td:first-child .two > b,
+html .table td:nth-child(4) .two > span:last-child {
   overflow: visible;
   white-space: normal;
 }
@@ -427,8 +442,8 @@
 }
 
 /* v10 dim: rows a highlight does not match recede by colour; no tinted fill on the match. */
-.row[data-dim="true"] td,
-.row[data-dim="true"] td * {
+html .row[data-dim="true"] td,
+html .row[data-dim="true"] td * {
   color: var(--wf-dim);
 }
 
@@ -475,20 +490,9 @@
 
 /* Table polish (Nov 2026): days away right-aligned so 4 and 61 line up. Scoped to the table: the
  * shared WardTable `.table th, .table td { text-align: left }` beats a bare class. */
-.table th.daysHead,
-.table td.away {
+html .table th.daysHead,
+html .table td.away {
   text-align: right;
-}
-
-.footNote {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-}
-
-.footNote b {
-  color: var(--wf-ink-1);
-  font-family: var(--wf-mono);
 }
 
 .historyRow {
@@ -1951,4 +1955,16 @@ fieldset.formRow {
   .screen :global([data-testid="ward-out-of-area-days-away"]) > ul > li {
     flex: 1 1 0;
   }
+}
+
+/* Audit three #68: the one empty state when nobody is away, in place of the register and its cards. */
+.emptyCard {
+  padding: var(--space-6) var(--space-4);
+}
+
+/* Gate r10 FIX 7: the History tab's card head, the kit card-head title. */
+.toolbarTitle {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
 }

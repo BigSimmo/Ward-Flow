@@ -1,6 +1,7 @@
 "use client";
 
 import { FilePen } from "lucide-react";
+import { agoText } from "@/components/ward-management/ward-ago-text";
 import { useEffect, useState } from "react";
 
 import { useSettingsDeskProfile } from "@/components/ward-management/settings/settings-desk-profile";
@@ -22,11 +23,8 @@ import styles from "./settings-drafts-card.module.css";
 
 /** Wall-clock age, not the demo clock: a draft is kept in real time in this tab. */
 function savedAgo(savedAt: number): string {
-  const minutes = Math.max(0, Math.round((Date.now() - savedAt) / 60_000));
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.floor(minutes / 60);
-  return `${hours} h ago`;
+  // Audit two #23: the one shared ago helper.
+  return agoText(Math.max(0, Math.round((Date.now() - savedAt) / 60_000)));
 }
 
 /**

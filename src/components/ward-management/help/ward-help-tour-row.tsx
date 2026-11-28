@@ -6,8 +6,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Check, Compass } from "lucide-react";
 
-import { Button } from "@/components/wf";
-
 import { readTourStep, type WardTourRole } from "./ward-help-store";
 import { tourChapters, useTourDevice } from "./ward-tour-device";
 import { useTourFacts } from "./ward-tour-facts";
@@ -53,9 +51,11 @@ export function TourRow({ role, onTour }: { role: WardTourRole; onTour: () => vo
             {at > 0 ? `Stopped at ${at + 1} of ${total}` : `${total} short steps`} · about {minutes} min
           </span>
         </div>
-        <Button variant="sec" onClick={onTour} data-testid="ward-help-view-tour">
-          {at > 0 ? "Resume" : "Start"}
-        </Button>
+        {/* Audit three #2 (Josh, 28 Nov 2026): Help has one filled Start, Show me around this screen
+            (D-248). The desk tour starts from a quiet link in the same place. */}
+        <button type="button" className={s.tourLink} onClick={onTour} data-testid="ward-help-view-tour">
+          {at > 0 ? "Resume tour" : "Start tour"}
+        </button>
       </div>
       <ol className={s.tourChapters} aria-label="Chapters" data-testid="ward-help-tour-chapters">
         {chapters.map((span) => {

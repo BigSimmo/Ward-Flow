@@ -66,7 +66,7 @@ export function SettingRow({
 }
 
 /** "Home, ED, Movements" reads "Shown on Home, ED and Movements". */
-function shownOn(pages: string): string {
+export function shownOn(pages: string): string {
   const list = pages
     .split(",")
     .map((page) => page.trim())

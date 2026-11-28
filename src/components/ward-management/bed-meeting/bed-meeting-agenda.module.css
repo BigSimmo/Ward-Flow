@@ -392,6 +392,13 @@
   gap: var(--wf-s-2);
 }
 
+/* States B review: in the phone sheet the kit chip row slides sideways and cut "Referred…" at the
+   edge; the facets wrap onto more rows, as in the desktop popover. html wins over the kit's phone rule. */
+html .groupFacet > [role="group"] {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
 .groupHead {
   font-size: var(--wf-fs-12);
   font-weight: 600;
@@ -527,7 +534,7 @@
   --wf-folder-gap: var(--wf-s-4);
 }
 
-/* On the slate the Filter chip sits in the chip row, beside Find anyone and Referrals. */
+/* On the slate the Filter chip sits in the chip row, beside Find anyone. */
 .groupFilterOnHero {
   margin-inline-start: 0;
 }

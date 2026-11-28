@@ -5,18 +5,30 @@
 // list (`RECORD_ED_PRESENTATION`); the Form dropdown records the form with its written time left blank
 // (`RECORD_LEGAL_FORM_CODE`). The time is typed on the Forms page and is never defaulted to now.
 import { ChevronDown, Plus } from "lucide-react";
-import { useId, useState, type ReactNode } from "react";
-import { Button, Dialog, Menu, Popover, StatusGlyph, type MenuItem, type WfTone } from "@/components/wf";
+import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
+import { useId, useState, type ComponentProps, type ReactNode } from "react";
+import { Button, Menu, Popover, StatusGlyph, type MenuItem, type WfTone } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { formTitleForCode } from "@/lib/form-register";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edClearanceTime } from "./ed-clearance-time";
 import { ED_PRESENTATION_CHOICES, type EdPresentation } from "./ed-presentation";
+import type { Movement } from "@/components/ward-management/ward-model";
+import type { RecordFormSheet as RecordFormSheetType } from "@/components/ward-management/legal-forms/legal-forms-sheets";
 import type { EdStepEvent } from "./ed-screen-model";
 import handover from "./ed-handover.module.css";
 
 /** Q120: shown under a recorded form until the time written on it is typed on the Forms page. */
+// The Forms page's own sheet, loaded when a form is first chosen so the table's first paint stays light.
+const RecordFormSheet = dynamic(
+  withLoadRetry(() =>
+    import("@/components/ward-management/legal-forms/legal-forms-sheets").then((m) => m.RecordFormSheet),
+  ),
+  { loading: () => null },
+);
+
 const WRITTEN_TIME_NOT_ENTERED = "Written time not entered";
 /** The same note as it shows under the chip; the chip's own name carries the full words. */
 const TIME_NOT_ENTERED_SHORT = "Time not entered";
@@ -99,11 +111,14 @@ export function FormCell({
   writtenTimeEntered,
   emptyWords,
   now,
-  record,
+  movement,
+  onSaveWritten,
   expiryWords,
   children,
 }: {
   movementId: string;
+  /** The row's movement: the Record a form sheet lists it as the one patient to record against. */
+  movement: Movement;
   patientName: string;
   umrn: string;
   /** The bay as a whole phrase ("Bay not recorded" while no ED bay is recorded, B3/D-21). */
@@ -114,7 +129,8 @@ export function FormCell({
   /** "None" for a voluntary patient, "Not recorded" for anyone else (CS-14). */
   emptyWords: string;
   now: Instant;
-  record: (event: EdStepEvent) => void;
+  /** Saves the form and its written time (the Forms page's sheet, audit two #94). */
+  onSaveWritten: ComponentProps<typeof RecordFormSheetType>["onSaveForm"];
   /**
    * H11 (Josh, 3 Nov 2026): the typed expiry's full wording, word for word. The row shows the short
    * line (`children`); these words are the button's description and head the menu it opens.
@@ -123,6 +139,8 @@ export function FormCell({
   /** The record's own sub-line (the short typed expiry). */
   children?: ReactNode;
 }) {
+  // Audit two #94: choosing a form opens the Forms page's "Record a form" sheet, with the code chosen,
+  // so the form and the time written on it are recorded together.
   const [pending, setPending] = useState<string | null>(null);
   const expiryId = useId();
   const timeMissing = recordCode !== undefined && !writtenTimeEntered;
@@ -149,11 +167,6 @@ export function FormCell({
       },
     })),
   ];
-  const confirm = () => {
-    if (!pending) return;
-    record({ type: "RECORD_LEGAL_FORM_CODE", role: "ed", now, movementId, formCode: pending });
-    setPending(null);
-  };
   return (
     <>
       <Menu
@@ -189,29 +202,21 @@ export function FormCell({
         </span>
       ) : null}
       {children}
-      <Dialog
-        open={pending !== null}
-        onClose={() => setPending(null)}
-        role="alertdialog"
-        size="sm"
-        title={pending ? `Set Form ${pending} for ${patientName}?` : ""}
-        description={`${umrn} · ${bay}`}
-        secondary={[{ label: "Cancel", onAction: () => setPending(null) }]}
-        primary={{ label: pending ? `Set Form ${pending}` : "Set form", onAction: confirm }}
-      >
-        {pending ? (
-          <p className={handover.formConfirm}>
-            <b>Form {pending}</b> {formTitleForCode(pending)}.
-            {recordCode ? (
-              <>
-                {" "}
-                Replaces <b>Form {recordCode}</b>.
-              </>
-            ) : null}{" "}
-            Add the time written on the form on the Forms page.
-          </p>
-        ) : null}
-      </Dialog>
+      {pending !== null ? (
+        <RecordFormSheet
+          open
+          portal
+          onClose={() => setPending(null)}
+          draft={{ form: pending, movement: movementId }}
+          onDraft={(next) => setPending(next.form === "" ? null : next.form)}
+          openMovements={[movement]}
+          labelOf={() => `${patientName} · ${umrn} · ${bay}`}
+          now={now}
+          targetMovement={movementId}
+          onSaveForm={onSaveWritten}
+          replacesNote={recordCode && recordCode !== pending ? `Replaces Form ${recordCode}.` : undefined}
+        />
+      ) : null}
     </>
   );
 }

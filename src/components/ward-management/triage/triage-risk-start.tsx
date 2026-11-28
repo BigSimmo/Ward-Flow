@@ -32,6 +32,7 @@ import {
   LiveChip,
   Menu,
   PanelDrawer,
+  type DrawerPagerProps,
   PillTabs,
   SearchField,
   ShowMoreRow,
@@ -40,7 +41,6 @@ import {
   folderTabClasses,
   foldHidden,
   foldLimit,
-  useIsPhone,
 } from "@/components/wf";
 import { WARD_ADD_PERSON_HREF } from "@/components/ward-management/ward-nav";
 import { splitDuration } from "@/components/ward-management/ward-clock";
@@ -148,10 +148,13 @@ function PersonRow({ person, onChoose }: { person: TriagePerson; onChoose: () =>
 function QueueRow({
   row,
   place,
+  first,
   onChoose,
   onOpenReferral,
 }: {
   row: AwaitingTriage;
+  /** The first row's Start triage is the one filled button; the rest are secondary (#40). */
+  first: boolean;
   /** Where the referral sits in the queue as sorted, from 1. */
   place: number;
   onChoose: () => void;
@@ -184,7 +187,6 @@ function QueueRow({
       ) : null}
       <div className={styles.rowActions}>
         <Button
-          size="sm"
           variant="ghost"
           icon={FileText}
           onClick={onOpenReferral}
@@ -192,11 +194,10 @@ function QueueRow({
           aria-label={`Referral details for ${row.name}`}
           data-testid="triage-start-referral-open"
         >
-          Referral
+          Details
         </Button>
         <Button
-          size="sm"
-          variant="tint"
+          variant={first ? "pri" : "sec"}
           onClick={onChoose}
           aria-label={`Start triage for ${row.name}`}
           data-testid="triage-start-person"
@@ -292,10 +293,12 @@ function ReferralDrawer({
   row,
   onClose,
   onChoose,
+  pager,
 }: {
   row: AwaitingTriage | null;
   onClose: () => void;
   onChoose: (person: TriagePerson) => void;
+  pager?: DrawerPagerProps;
 }) {
   const referral = row?.referral;
   const facts: [string, string][] = referral
@@ -316,6 +319,7 @@ function ReferralDrawer({
       eyebrow="Referral"
       title={row ? <FormalName name={row.name} /> : ""}
       subtitle={row ? `${row.meta} · UMRN ${row.umrn}` : undefined}
+      pager={pager}
       testId="triage-start-referral-drawer"
       bodyClassName={styles.drawerBody}
       foot={
@@ -334,7 +338,6 @@ function ReferralDrawer({
           </div>
         ))}
       </dl>
-      <p className={styles.quiet}>From the synthetic referral. Fix errors at the source.</p>
     </PanelDrawer>
   );
 }
@@ -348,7 +351,6 @@ export function TriageStart({ onChoose }: { onChoose: (person: TriagePerson) => 
   const [openKey, setOpenKey] = useState<string | null>(null);
   const matches = useMemo(() => searchTriagePeople(people, query), [people, query]);
   const searching = query.trim().length > 0;
-  const isPhone = useIsPhone();
   const headingId = useId();
   const queueId = useId();
 
@@ -364,6 +366,20 @@ export function TriageStart({ onChoose }: { onChoose: (person: TriagePerson) => 
   const hidden = foldHidden(queue.length, QUEUE_LIMIT);
   const shown = showAll ? queue : queue.slice(0, limit);
   const openRow = openKey ? (awaiting.find((row) => rowKey(row) === openKey) ?? null) : null;
+  // Audit four #31: the kit pager steps through the queue as sorted and filtered, past the fold too.
+  const openIndex = openRow ? queue.findIndex((row) => rowKey(row) === rowKey(openRow)) : -1;
+  const openPager: DrawerPagerProps | undefined =
+    openRow && queue.length > 1 && openIndex >= 0
+      ? {
+          index: openIndex,
+          total: queue.length,
+          noun: "referral",
+          onStep: (delta) => {
+            const next = queue[(openIndex + delta + queue.length) % queue.length];
+            if (next) setOpenKey(rowKey(next));
+          },
+        }
+      : undefined;
   // The calm act row's referral: the longest waiting, whatever the tab or sort.
   const oldest = sortTriageQueue(awaiting, "wait")[0];
 
@@ -385,7 +401,7 @@ export function TriageStart({ onChoose }: { onChoose: (person: TriagePerson) => 
               id="triage-start-search"
               className={styles.search}
               label="Search by name, UMRN or date of birth"
-              placeholder={isPhone ? "Name, UMRN or DOB" : "Surname, given name, UMRN or DOB"}
+              placeholder="Name, UMRN or DOB"
               value={query}
               onValueChange={setQuery}
             />
@@ -505,6 +521,7 @@ export function TriageStart({ onChoose }: { onChoose: (person: TriagePerson) => 
                         key={rowKey(row)}
                         row={row}
                         place={index + 1}
+                        first={index === 0}
                         onChoose={() => onChoose(row)}
                         onOpenReferral={() => setOpenKey(rowKey(row))}
                       />
@@ -515,6 +532,7 @@ export function TriageStart({ onChoose }: { onChoose: (person: TriagePerson) => 
                       {showAll ? "Show fewer" : `Show all (${queue.length})`}
                     </ShowMoreRow>
                   ) : null}
+                  <p className={styles.queueNote}>From the synthetic referrals. Fix errors at the source.</p>
                 </>
               ) : (
                 <p className={styles.sideEmpty}>No referral is waiting for a triage.</p>
@@ -527,7 +545,7 @@ export function TriageStart({ onChoose }: { onChoose: (person: TriagePerson) => 
       <p className={styles.footNote}>
         BedChart prototype. Synthetic people only. Not validated clinical decision support.
       </p>
-      <ReferralDrawer row={openRow} onClose={() => setOpenKey(null)} onChoose={onChoose} />
+      <ReferralDrawer row={openRow} onClose={() => setOpenKey(null)} onChoose={onChoose} pager={openPager} />
     </main>
   );
 }

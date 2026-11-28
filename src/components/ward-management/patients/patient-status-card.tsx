@@ -366,7 +366,7 @@ function transportCell(
     action: ready
       ? {
           kind: "button",
-          label: "Log booking",
+          label: "Record booking",
           icon: Ambulance,
           onClick: () => {
             onBook();
@@ -375,7 +375,7 @@ function transportCell(
         }
       : // UX review 24 Oct 2026: the Bed cell already holds Ask wards or Pull the bed, so this cell
         // keeps its own action, greyed with the reason, rather than repeating the bed's.
-        { kind: "unavailable", label: "Log booking", reason: `Needs ${waitingFor}` },
+        { kind: "unavailable", label: "Record booking", reason: `Needs ${waitingFor}` },
   };
 }
 
@@ -786,14 +786,14 @@ function statusFor(
             : movement.stage === "handover_ready"
               ? {
                   kind: "button",
-                  label: "Log booking",
+                  label: "Record booking",
                   icon: Ambulance,
                   onClick: () => {
                     ctx.onBookTransport();
                   },
                   event: "BOOK_TRANSPORT",
                 }
-              : { kind: "unavailable", label: "Log booking", reason: "Not available at this stage" },
+              : { kind: "unavailable", label: "Record booking", reason: "Not available at this stage" },
         },
         {
           key: "arrival",

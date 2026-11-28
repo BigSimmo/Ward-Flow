@@ -116,7 +116,15 @@
 }
 
 .status[data-pending] {
-  color: var(--wf-warning-ink, var(--wf-ink-1));
+  /* Gate r10 F5: the amber tag sits at the right inset; it spans the action column when the row
+     has no button left (a handed row with one desk). */
+  justify-self: end;
+  text-align: end;
+  color: var(--wf-ink-1);
+}
+
+.status[data-pending]:last-child {
+  grid-column: 2 / -1;
 }
 
 /* Narrow: what and who on the first line, the status underneath, the action on the right. */
@@ -142,7 +150,21 @@
     grid-area: status;
   }
 
+  .status[data-pending],
+  .status[data-pending]:last-child {
+    grid-area: status;
+    justify-self: start;
+    text-align: start;
+  }
+
   .row > :last-child:not(.status):not(.what) {
     grid-area: act;
   }
+}
+
+/* The handed tag may wrap on a narrow row rather than clip its words. */
+.pendingPill {
+  white-space: normal;
+  line-height: 16px;
+  text-align: start;
 }

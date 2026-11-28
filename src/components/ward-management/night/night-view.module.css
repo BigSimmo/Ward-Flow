@@ -8,11 +8,21 @@
   padding: var(--wf-s-4) var(--wf-s-6) var(--wf-s-6);
 }
 
+/* Audit two #70: four cards sit two by two wherever two fit (a third column would leave one card alone
+   on a second row), one column on a phone. Each card keeps its own height; the heads start level. */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
   gap: var(--wf-s-4);
   align-items: start;
+}
+
+/* Design review (27 Nov 2026): on a wide desk (1440) two by two left a tall hole beside the long
+   Beds ready now list, so the r7 three-column first row comes back there. */
+@media (min-width: 90rem) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  }
 }
 
 .rows {
@@ -87,18 +97,12 @@ a.rowTitle {
   text-underline-offset: 2px;
 }
 
-.cardFoot,
-.notRecorded {
+.cardFoot {
   margin: 0;
   padding: var(--wf-s-3) var(--wf-s-4);
   border-top: 1px solid var(--wf-line);
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-13) / 18px var(--wf-font);
-}
-
-.notRecorded {
-  border-top: 0;
-  color: var(--wf-ink-2);
 }
 
 @media (max-width: 46.4375rem) {

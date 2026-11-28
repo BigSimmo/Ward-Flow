@@ -1,6 +1,6 @@
 # Ward Flow design system
 
-_Updated 2026-11-13 - shared design parts from D-192 (neutral service tags, count windows, Undo, synthetic mark, button reasons, fields and choice rows); Documentation owns._
+_Updated 2026-11-28 - one confirm-or-undo, reason, menu and drawer rules from audit four (D-278); 2026-11-13 - shared design parts from D-192 (neutral service tags, count windows, Undo, synthetic mark, button reasons, fields and choice rows); Documentation owns._
 
 The one design standard for every Ward Flow screen, mock-up and build, written on 2 Nov 2026 from everything the screen builds and reviews taught us. It is drawn from the [master design](https://claude.ai/artifact/91BETDiimnJVbyeCb2sxcK), not from the running app on `main`. The master also shows this page as its **Design system** tab.
 
@@ -197,6 +197,14 @@ Use Lucide's current names, never the old aliases: `TriangleAlert` not `AlertTri
 
 **Pop-ups and side panels.** The name, a small status tag beside it, one quiet context line. Close takes focus; no second Back link. Open on a short Summary; long lists go behind tabs with counts. Facts are label and value pairs, three to five per titled group. Notes are one compact list with icons. Actions pinned at the foot, one filled. Documents are chips that open a marked synthetic preview. Forms open blank. Tab stays inside an open panel (Q300). On short screens the header scrolls and the footer unpins (Q288).
 
+**One confirm-or-undo rule (audit four item 32, Josh, 28 Nov 2026).** An act that can be undone and touches only that record is one tap with Undo. An act that notifies someone, cannot be taken back, removes access or leaves the screen asks first. A choice (destination, reason, time) is one menu or tap list that commits. Confirms kept by ruling stay: Record arrival, Mark absent, Mark at an ED, and Accept and Decline on a referral. Surfaces that change: the two builds of the arrival confirm (item 45) and the weekend bulk tick (item 16). Guards: D-263 (Mark absent asks first) and the D-187 Undo window.
+
+**One way to pick a reason (audit four item 34).** Up to about eight fixed options is a menu or tap list that commits and shows Undo. A time or free text is a small dialog. The one screen that changed is the urgent flag (item 5). Snooze keeps its dialog where it takes an optional reason (A3-71). The Close this bed menu (D-263) is the model, and Decline keeps its confirm (A3-70).
+
+**One menu pattern (audit four item 33).** Kit Menu only. Rare actions on one record are "More". Outputs are "Share" where there are two or more. Icon-only dots only in dense table rows. A menu of one is that item. No Cancel item. Popover only for read-only glances. Built under this item: the inbox Snooze pop-up (its hand-built rows become kit menu rows), the ED actions list (the kit look; it keeps its own component because it holds inline confirms) and the three tab overflow menus (one name: "More"). The alert drawer's Snooze dialog stays a dialog, because it takes a time and an optional reason. Guards: D-192 item 5 (disabled actions keep their reason); D-98 item 3 (the Waiting ED board pop-up is a glance and stays; the Coordinator pop-up is now a "More" menu, D-280).
+
+**One drawer pattern (audit four item 98).** Records (a person, a job, a bed, an event) use the kit PanelDrawer at every width. Short single decisions are a Dialog. Lists and glances are a Sheet with no foot. Foot rule: line one is the one filled step. Line two holds up to three quiet links, with Patient page among them where the record is a person, and at most one More. Pager and close sit in the head (item 31: one "3 of 12" pager). Drawers moved under this item: Referral summary, ED preview, Legal forms, On-call and the two Ward referral drawers. Built under their own items: Sign off (item 37) and the Movement drawer foot (item 5). The phone bed record needs a kit change first, so it waits. Josh, 28 Nov 2026 8:48 PM AWST: Referral summary, Legal forms and On-call move to the one pattern in the build.
+
 **Graphs, grids and beds.** Heat-map cells show the number alone, shade deepening, empty days a faint dot, days after tomorrow hatched, two-line day heads with today in accent. Bed pictures read "1 ready of 20 beds", a bed-type tag, squares on one line, a note line only when needed. One timeline per record with a live Now point.
 
 **Home: Needs you and Flow (Q340-Q345, #1324, 3 Nov).** One navigation row: **Needs you | Flow** as the raised switch, a rule, then the Flow stages as lighter trackless tabs with counts (All, No ward yet, Bed agreed, Ready to move, Moving; first tab renamed by D-220), red when someone in that stage is late. A stage tab opens Flow at that stage. Flow groups open movements by stage, oldest first, five rows per stage then "Show all N". Needs you holds act now, beds to pull and referrals to decide; a waiting alert is a mark on the patient's Flow row, not a second row. Later today sits in the right column on desktop and is a third tab on a phone. On a phone the row pins under the header. Use this one-row pattern for any page that pairs an action list with a staged list.
@@ -239,6 +247,8 @@ One word for each thing (the full list and the banned phrases are in [word-list.
 | Later today                                    | Planned                                                                             |
 | No ward yet, Bed agreed, Ready to move, Moving | other stage names; the detailed steps are sub-labels only (Josh, 5 Nov 2026; D-220) |
 | Nobody                                         | No one (empty lines; a whole sentence ends with a full stop)                        |
+| Similar names                                  | read alike, Look-alike names, Name check (D-281)                                    |
+| Record discharge                               | Record that they have left, Confirm discharge (D-282)                               |
 
 States: empty pages say what is empty without a Clear button ("No patients yet."). Offline: "You're offline. Tap again once you're back online." Slow: "Still loading. Check the connection." with Reload after about 15 seconds.
 

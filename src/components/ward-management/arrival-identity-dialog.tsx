@@ -44,7 +44,7 @@ export function ArrivalIdentityDialog({
   onConfirm: () => void;
   onClose: () => void;
   testId?: string;
-  /** Why Confirm arrival cannot be pressed yet, drawn under it; left out, it can. */
+  /** Why Record arrival cannot be pressed yet, drawn under it; left out, it can. */
   confirmDisabledReason?: string;
   /** A field the arrival needs before it is recorded (D-223: a reason for an old bed count). */
   children?: ReactNode;
@@ -58,11 +58,12 @@ export function ArrivalIdentityDialog({
       open={open}
       onClose={onClose}
       size="sm"
-      title={`Confirm arrival at ${wardName}`}
-      description="Check the wristband matches before you record the arrival."
-      secondary={[{ label: "Cancel", onAction: onClose }]}
+      // Audit four #45: one arrival confirm on every desk, Josh's wording of 26 Nov 2026.
+      title="Record arrival at the ward?"
+      description={`Check the wristband matches before you record the arrival at ${wardName}.`}
+      secondary={[{ label: "Not yet", onAction: onClose }]}
       primary={{
-        label: "Confirm arrival",
+        label: "Record arrival",
         onAction: onConfirm,
         ...(confirmDisabledReason ? { disabledReason: confirmDisabledReason } : {}),
       }}

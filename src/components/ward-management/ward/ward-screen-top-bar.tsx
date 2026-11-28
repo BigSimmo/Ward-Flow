@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { type WardHeroTopInput, wardHeroTopParts } from "./ward-hero-top-parts";
-import { Bed, Check, Presentation, Send, Zap } from "lucide-react";
+import { Bed, Check, Presentation, Zap } from "lucide-react";
 import { plural } from "@/components/ward-management/ward-plural";
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import Link from "next/link";
@@ -24,6 +24,7 @@ import {
   SrOnly,
 } from "@/components/wf";
 import { WardPhoneFind } from "./ward-phone-find";
+import { WardSinceYesterday } from "./ward-since-yesterday";
 import styles from "./ward.module.css";
 import pageTop from "../page-top-hero.module.css";
 import noticesSheet from "./ward-notices-sheet.module.css";
@@ -35,7 +36,6 @@ import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction }
 import type { CapacityRefreshRequest, Movement, Notice, Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
 import type { RoleGate } from "@/components/ward-management/ward-role-gate";
-import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import type { WardScreenBed } from "./ward-screen-derivations";
 
 /** The ward card and top action bar, drawn from the ward screen's own state. */
@@ -154,11 +154,6 @@ export function WardScreenTopBar({
   setBedQuery,
   activeTab,
   tvViewsOn,
-  handleRaiseWardReferral,
-  raisedReferral,
-  selectedBed,
-  fullWardReferralHref,
-  bedsList,
 }: WardScreenTopBarProps) {
   // Opted out of the React Compiler: before the 18 Oct 2026 file split this code ran unmemoised
   // inside WardScreen, which the compiler skips. Memoising it changed nothing visible but added
@@ -170,19 +165,11 @@ export function WardScreenTopBar({
   const position = `${plural(states.ready, "bed", "beds")} ready, ${states.occupied} occupied`;
   const shift = splitShift(heroTitle);
   const { wardFigures, wardAct } = wardHeroTopParts(wardHeroTop);
-  const updates = useSinceLastLookReview(`ward:${unit.id}`);
+  const updates = useSinceLastLookReview(`ward:${unit.id}`, <WardSinceYesterday unitId={unit.id} />);
   // Feature 10 and 32 (9 Nov 2026): Staff needed and the ward's contact card, as quick chips; an open
   // staff request's tag sits under the band.
   const staffContact = useWardStaffContact({ unit, now, isPhone });
   const [switchOpen, setSwitchOpen] = useState(false);
-  // INV-CM (14 Nov 2026): the full referral form shows only for a desk that may open a new
-  // referral; the site bed manager's opened "Not part of your role".
-  const canOpen = useCanOpenHref();
-  const referralFormHref =
-    (raisedReferral && raisedReferral.bed === selectedBed ? raisedReferral.href : null) ??
-    fullWardReferralHref(
-      selectedBed !== null ? bedsList.find((b) => b.bedNumber === selectedBed)?.patientInfo?.patient?.id : undefined,
-    );
   // The confirm dialog returns focus to its opener, and to the Confirm numbers chip when the opener
   // is gone. The chip is drawn by the shared hero parts, so it is found by its test id.
   useEffect(() => {
@@ -233,7 +220,7 @@ export function WardScreenTopBar({
           <div className={styles.tabTools} role="toolbar" aria-label="Ward actions">
             {/* Josh, 4 Nov 2026: the find box is the search icon that opens in place, so the tab row
                   keeps its room (page tops: at every desktop width). */}
-            <WardPhoneFind value={bedQuery} onChange={findBed} />
+            <WardPhoneFind value={bedQuery} onChange={findBed} iconClassName={folderTabClasses.more} />
             {/* This ward's own TV screen, behind the `bed-meeting-tv` flag. Desktop only. */}
             {tvViewsOn ? (
               <Link
@@ -242,18 +229,7 @@ export function WardScreenTopBar({
                 data-testid="ward-open-tv"
               >
                 <Presentation strokeWidth={1.75} size={16} aria-hidden="true" />
-                On TV
-              </Link>
-            ) : null}
-            {canOpen(referralFormHref) ? (
-              <Link
-                className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide}`}
-                href={referralFormHref}
-                data-testid="ward-open-full-referral-form-link"
-                aria-label="Open the full referral form"
-              >
-                {/* Usability audit 24 Oct 2026: the longer label was cut off at 1280 px. */}
-                Referral form
+                Open on TV
               </Link>
             ) : null}
             {/* Approved 31 Oct 2026: Notices, Shift brief and Handover sit in the More menu. */}
@@ -306,8 +282,9 @@ export function WardScreenTopBar({
                   },
                   {
                     id: "updates",
-                    // The since-you-last-looked review, as the old "1 update since 10:27" pill.
-                    label: "Updates",
+                    // Audit two #89: the since-you-last-looked review says what it is; it opens the one
+                    // "Since HH:MM" sheet, with Since yesterday as a group inside.
+                    label: "Since you looked",
                     icon: <Zap strokeWidth={1.75} aria-hidden="true" />,
                     count: updates.count > 0 ? updates.count : undefined,
                     countLabel: `${updates.count === 1 ? "update" : "updates"} since ${formatInstantWithDay(updates.since, now)}`,
@@ -315,19 +292,8 @@ export function WardScreenTopBar({
                     testId: "ward-updates",
                   },
                   ...staffContact.chips,
-                  // D-116 and D-159: the New referral chip is phone-only. Off the phone the bar's New
-                  // menu is the one way in, so the ward top does not repeat it.
-                  ...(isPhone && raiseReferralGate.allowed
-                    ? [
-                        {
-                          id: "referral",
-                          label: "New referral",
-                          icon: <Send strokeWidth={1.75} aria-hidden="true" />,
-                          onClick: () => handleRaiseWardReferral(),
-                          testId: "ward-new-referral",
-                        },
-                      ]
-                    : []),
+                  // Simplification 26 Nov 2026 (item 5): header New is the one way to a new referral;
+                  // the bed drawer keeps "Raise ward referral" for the bed's context.
                   ...(wardSwitch
                     ? [
                         {

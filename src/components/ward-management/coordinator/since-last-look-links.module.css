@@ -20,3 +20,69 @@
   outline-offset: 2px;
   border-radius: 2px;
 }
+
+/* Audit three #7: moved discharge dates as one row per ward with a count; a row opens to its records. */
+.wards {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wards .links {
+  margin: 2px 0 var(--space-1) var(--space-5);
+}
+
+.wardRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  width: 100%;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+  text-align: start;
+  cursor: pointer;
+}
+
+.wardRow:hover .wardName {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.wardRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.wardCaret {
+  flex: none;
+  color: var(--wf-ink-3);
+  transition: transform 120ms ease;
+}
+
+.wardRow[aria-expanded="true"] .wardCaret {
+  transform: rotate(90deg);
+}
+
+.wardName {
+  min-width: 0;
+}
+
+.wardCount {
+  margin-inline-start: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wardCaret {
+    transition: none;
+  }
+}

@@ -24,6 +24,16 @@
   text-decoration: none;
 }
 
+/* Audit two #124: in Governance the link is a button that opens the Audit trail's Access log. */
+button.accessLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 .accessLink:hover {
   text-decoration: underline;
 }
@@ -44,5 +54,28 @@
     content: "";
     position: absolute;
     inset: -14px -4px;
+  }
+}
+
+/* Audit four #100: the Review tab's list has no Review column, so its five tracks share the width
+   (By takes what Review held, which also stops the By cell running to five lines at 820; #95). */
+.noReview.noReview {
+  grid-template-columns: 4.5rem minmax(8rem, 1.5fr) minmax(7rem, 1.1fr) minmax(8rem, 1.1fr) 10.5rem;
+  min-width: 38rem;
+}
+
+/* Audit four #95 (r10): under the role the place reads as its short code on a tablet, so a full
+   hospital and department name no longer runs the By cell to three lines. */
+.placeCode.placeCode {
+  display: none;
+}
+
+@media (min-width: 46.5rem) and (max-width: 64rem) {
+  .placeFull.placeFull {
+    display: none;
+  }
+
+  .placeCode.placeCode {
+    display: block;
   }
 }

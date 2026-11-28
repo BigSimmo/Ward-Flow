@@ -267,7 +267,7 @@ function WardClosureControls({
                   ...(reopenAfter !== "" ? { until: at + Number(reopenAfter) * 60 } : {}),
                 },
                 {
-                  success: `${unit.name} closed to admissions: ${wardClosureReasonLabel(reason)}.`,
+                  success: `${unit.name} closed to admissions: ${wardClosureReasonLabel(reason)}`,
                   refusalShownInline: true,
                   onRefused: (why) => setRefusedWords(refusalReasonText(why).replace(/\.$/, "")),
                 },
@@ -347,7 +347,7 @@ function WardClosureControls({
                 unitId: unit.id,
                 ...(actingUnitId !== undefined ? { actingUnitId } : {}),
               },
-              { success: `${unit.name} reopened to admissions.` },
+              { success: `${unit.name} reopened to admissions` },
             );
           },
         }}

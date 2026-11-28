@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { StatisticsWardsIndexScreen } from "@/components/ward-management/statistics/statistics-wards-index";
+import { StatisticsIndexRoute } from "@/components/ward-management/statistics/statistics-index-route";
 
 export const metadata: Metadata = {
   title: "All wards — Statistics — BedChart",
@@ -13,5 +13,5 @@ export const metadata: Metadata = {
  * prototype appears here without a change to this file.
  */
 export default function WardStatisticsWardsPage() {
-  return <StatisticsWardsIndexScreen />;
+  return <StatisticsIndexRoute segment="wards" />;
 }

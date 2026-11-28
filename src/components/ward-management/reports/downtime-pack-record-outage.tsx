@@ -11,6 +11,7 @@ import {
   Segmented,
   SrOnly,
   StateLine,
+  cx,
   TimeField,
   useOptionalToast,
 } from "@/components/wf";
@@ -138,7 +139,7 @@ export function DowntimeRecordOutage({ now, onDone }: { now: Instant; onDone: ()
                 to<SrOnly> (when it came back)</SrOnly>
               </>
             }
-            className={styles.timeField}
+            className={cx(styles.timeField, styles.toField)}
           >
             <TimeField
               value={toTime}
@@ -150,10 +151,17 @@ export function DowntimeRecordOutage({ now, onDone }: { now: Instant; onDone: ()
             />
           </Field>
           <div className={styles.saveCell}>
+            {/* Audit four #85: a quiet way out of a form opened by mistake. */}
+            <Button variant="ghost" size="sm" onClick={onDone} data-testid="ward-downtime-outage-cancel">
+              Cancel
+            </Button>
             <Button
               variant="pri"
               size="sm"
               disabledReason={reason ?? (form.pending ? "Saving the outage." : undefined)}
+              // Gate r10 FIX 4/5: the reason is drawn once, in the quiet line under the row, so Cancel
+              // and Save stay level on the field line.
+              reasonDisplay="page"
               onClick={save}
               data-testid="ward-downtime-outage-save"
             >
@@ -161,7 +169,11 @@ export function DowntimeRecordOutage({ now, onDone }: { now: Instant; onDone: ()
             </Button>
           </div>
         </div>
-        <p className={styles.recordHint}>Pick the day it started. Nothing is filled in for you.</p>
+        <p className={styles.recordHint}>
+          {reason ?? (form.pending ? "Saving the outage." : null)}
+          {reason || form.pending ? " " : null}
+          Pick the day it started. Nothing is filled in for you.
+        </p>
         {shownProblem ? (
           <StateLine
             kind="error"

@@ -30,16 +30,14 @@ import {
 } from "@/components/ward-management/ward-chrome-role";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
-import { activeTaskItems } from "@/components/ward-management/ward-act-now-items";
-import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
-import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-awaiting-pull";
-import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 
 import { isPhoneViewport, subscribeWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import {
   BED_FINDER_MENU_ID as BED_FINDER_ID,
+  findHolds,
+  foldLoneWhere,
   isActiveRailEntry,
   railEntries,
   type RailEntry,
@@ -62,13 +60,13 @@ import dockStyles from "@/components/ward-management/shell-next/next-phone-dock.
  * the set 10 "Rise" plus). PHONE ONLY: the bar mounts it, and the rail's own sheet stays the menu
  * above 48rem, so desktop is unchanged.
  *
- * A tall bottom sheet: who you are working as, a page filter, what needs you, your other places,
+ * A tall bottom sheet: who you are working as, your other places,
  * then every page in the rail's own groups, and More. Nothing is listed twice. Every figure is the
  * rail's own `wardNavCounts` or the shared act-now list, never typed here.
  *
  * Device audit option A (Josh, 11 Oct 2026): the dock (two places for the role, a raised + that
  * rises out of the dock's curved edge, Tasks and Activity) sits on every phone page, not in the
- * Menu's foot. Needs you holds only what is act-now or overdue.
+ * Menu's foot. Act-now and overdue work is Alerts' and the dock's badges, not a Menu group.
  */
 
 /** A page in the dock: a rail entry id and what the role calls it there. */
@@ -160,10 +158,6 @@ const ADMIN_DOCK: { readonly left: readonly DockPage[]; readonly right: readonly
   right: [{ kind: "activity" }],
 };
 
-/** Counted pages that are work waiting on someone. Capacity counts free beds, so it is not here. */
-/** Pages whose count joins Needs you, only while it is urgent (overdue). */
-const OVERDUE_NEED_IDS = ["delays", "discharges"] as const;
-
 export type WardPhoneMenuProps = {
   /** The bar's Menu button, where focus returns when the menu closes. */
   returnFocusRef: RefObject<HTMLButtonElement | null>;
@@ -226,28 +220,30 @@ function phoneMenuModel(
   });
   const dock = unique.slice(0, dockSlots.left.length).flatMap(resolve);
   const dockRight = unique.slice(dockSlots.left.length).flatMap(resolve);
-  const needs = strictNeeds(byId, counts);
-  // Nothing twice: a page in the dock or under Needs you leaves its group, and New referral is the +.
+  // Nothing twice: a page in the dock leaves its group, and New referral is the +.
   const shown = new Set([
     "referral-intake",
     ...[...dock, ...dockRight].flatMap((slot) => (slot.kind === "page" ? [slot.entry.id] : [])),
     ...([...dock, ...dockRight].some((slot) => slot.kind === "alerts") ? ["alerts"] : []),
     ...([...dock, ...dockRight].some((slot) => slot.kind === "bed-finder") ? [BED_FINDER_ID] : []),
-    ...needs.flatMap((need) => (need.entryId ? [need.entryId] : [])),
   ]);
   // B1 (Josh, 19 Oct 2026): the role's own menu first, then everything else in the rail's groups.
   // ROLE BRANCH (admin): Governance leads the access admin's own menu, as on the rail.
   const main = menu.main.filter((item) => !shown.has(item.id));
-  const groups = [
-    { label: roleLabel, entries: main },
-    ...menu.more.map((group) => ({ ...group, entries: group.entries.filter((entry) => !shown.has(entry.id)) })),
-  ].filter((group) => group.entries.length > 0);
+  const groups = foldLoneWhere(
+    [
+      { label: roleLabel, entries: main },
+      ...menu.more.map((group) => ({
+        ...group,
+        entries: group.entries.filter((entry) => !shown.has(entry.id) && !findHolds(role, entry.id)),
+      })),
+    ].filter((group) => group.entries.length > 0),
+  );
   return {
     entries,
     byId,
     dock,
     dockRight,
-    needs,
     groups,
     dockStandard: standard.map(slotKey),
     // Each spot's key, or null where the desk cannot open that spot now (it is not drawn).
@@ -318,82 +314,6 @@ function dockOptions(
     } else if (slot.kind === "bed-finder") add(slot, slot.label, "More");
   }
   return { options, slotFor };
-}
-
-/**
- * Needs you (device audit option A, 11 Oct 2026) holds only what is act-now or overdue. The first
- * row is the act-now tasks: the same red rows Tasks leads with (`activeActNowItems`), which the
- * notifier and phone push also read. Home's "Overdue" counts queue referrals past their wait, a
- * different thing, so this row keeps its own noun. Then Waiting's severe causes (its count's `need`,
- * so Waiting also keeps its own row and badge) and Discharges while its count is urgent. Movements'
- * "still open" and Referrals' "awaiting a decision" stay in their groups.
- */
-export type NeedRow = {
-  id: string;
-  /** The rail entry this row stands for, so it leaves its group. */
-  entryId?: string;
-  label: string;
-  meta: string;
-  count: number;
-  /** A page to open, or the Tasks drawer when absent. */
-  href?: string;
-  icon: typeof Plus;
-  actNow: boolean;
-};
-
-function strictNeeds(byId: ReadonlyMap<string, RailEntry>, counts: CountMap): NeedRow[] {
-  const rows: NeedRow[] = [];
-  for (const id of OVERDUE_NEED_IDS) {
-    const entry = byId.get(id);
-    const count = countIn(counts, id);
-    // A badge that leads with its screen's own figure carries the act-on figure as `need`
-    // (Waiting: the severe causes); otherwise the badge itself is the figure while it is urgent.
-    const need = count?.need ?? (count?.urgent ? count : undefined);
-    if (entry && need && need.value > 0) {
-      rows.push({
-        id,
-        // A `need` is a different figure from the badge, so the page keeps its own row and badge.
-        entryId: count?.need ? undefined : id,
-        // Audit 6 (Josh, 20 Oct 2026): Waiting's severe causes are "At a time limit", so the menu
-        // no longer shows two rows called Waiting with different numbers.
-        label: id === "delays" && count?.need ? "At a time limit" : entry.label,
-        meta: id === "delays" && count?.need ? "in Waiting, or with nowhere to go" : need.noun,
-        count: need.value,
-        // shell-9: Delays opens filtered to the severe causes this row counts.
-        href: id === "delays" ? `${entry.href}?show=severe` : entry.href,
-        icon: entry.icon,
-        actNow: false,
-      });
-    }
-  }
-  return rows;
-}
-
-function actNowNeed(actNow: number, oneAlertsQueue: boolean): NeedRow[] {
-  if (actNow <= 0) return [];
-  // One Alerts queue: the row names Alerts and opens the Alerts screen, as the dock tab does.
-  return oneAlertsQueue
-    ? [
-        {
-          id: "act-now",
-          label: "Act-now alerts",
-          meta: "red rows in Alerts",
-          count: actNow,
-          href: WARD_ALERTS_HREF,
-          icon: Bell,
-          actNow: true,
-        },
-      ]
-    : [
-        {
-          id: "act-now",
-          label: "Act-now alerts",
-          meta: "red rows in Alerts",
-          count: actNow,
-          icon: Bell,
-          actNow: true,
-        },
-      ];
 }
 
 function announceGo(pathname: string, entry: RailEntry) {
@@ -837,7 +757,8 @@ export function NextPhoneMenu({
   // ROLE BRANCH (bed_manager): the dock's and menu's counts are the desk's own place's (`preview-nav-counts.ts`).
   const { counts, shellRole } = useNextNavCounts();
   const deskRoleLabel = useDeskRoleLabel(shellRole);
-  const accessAdmin = useEffectiveWardAccess().role === "admin";
+  const accessRole = useEffectiveWardAccess().role;
+  const accessAdmin = accessRole === "admin";
   const [open, setOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -850,7 +771,6 @@ export function NextPhoneMenu({
   // its chunk straight away instead of when the browser is idle.
   const [sheetsMounted, setSheetsMounted] = useState(false);
   if (!sheetsMounted && (open || createOpen || switcherOpen || barOpen)) setSheetsMounted(true);
-  const [query, setQuery] = useState("");
   // DR-08: Create returns focus to the dock's + that opened it, not to Menu. Cleared when Menu opens,
   // so the Menu sheet still returns to Menu.
   const createOpenerRef = useRef<HTMLElement | null>(null);
@@ -862,7 +782,6 @@ export function NextPhoneMenu({
       subscribeWardMenu(() => {
         // The rail's own sheet answers above 48rem.
         if (!isPhoneViewport()) return;
-        setQuery("");
         createOpenerRef.current = null;
         setOpen(true);
         announceToWardShell("Menu opened.");
@@ -880,11 +799,9 @@ export function NextPhoneMenu({
   const dockDesk: DockDesk = accessAdmin ? "admin" : dockRole;
   const dockChosen = useDockChoices()[dockDesk];
   const {
-    entries,
     byId,
     dock,
     dockRight,
-    needs: overdueNeeds,
     groups,
     dockStandard,
     dockKeys,
@@ -896,90 +813,26 @@ export function NextPhoneMenu({
   useEffect(() => {
     onDockOwnsPageChange?.(dockOwnsPage);
   }, [dockOwnsPage, onDockOwnsPageChange]);
-  // Act-now tasks are the signed-in person's, gated as the bar's Tasks list is (`shellRole`).
-  const {
-    movements,
-    units,
-    configuration,
-    inboxSnoozes,
-    leaveBeds,
-    admissions,
-    patients,
-    referrals,
-    supportNotifications,
-    plannedAdmissions,
-    broadcastAlerts,
-    now: flowNow,
-  } = useWardFlowSelect(
-    "movements",
-    "units",
-    "configuration",
-    "inboxSnoozes",
-    "leaveBeds",
-    "admissions",
-    "patients",
-    "referrals",
-    "supportNotifications",
-    "plannedAdmissions",
-    "broadcastAlerts",
-    "now",
-  );
-  // `useWardFlowSelect` returns a new object each render, so the memo lists the fields it reads, not
-  // that object: typing in the menu search must not recount the act-now tasks.
-  const actNowCount = useMemo(
-    () =>
-      wardTasksAreActionableForRole(shellRole)
-        ? // Q260: Act now as Home and Alerts count it, accepted referrals awaiting a bed pull included.
-          alertsNowFigures(
-            activeTaskItems(
-              {
-                movements,
-                units,
-                configuration,
-                inboxSnoozes,
-                leaveBeds,
-                admissions,
-                patients,
-                referrals,
-                supportNotifications,
-                plannedAdmissions,
-                broadcastAlerts,
-                // The bar's shape exactly, so this reuses the bar's task list instead of building its own
-                // on every page load (F-11). The wording setting changes no act-now row.
-                stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
-              },
-              flowNow,
-            ),
-            acceptedReferralsAwaitingPull(referrals, units, movements).length,
-          ).actNow
-        : 0,
-    [
-      shellRole,
-      movements,
-      units,
-      configuration,
-      inboxSnoozes,
-      leaveBeds,
-      admissions,
-      patients,
-      referrals,
-      supportNotifications,
-      plannedAdmissions,
-      broadcastAlerts,
-      flowNow,
-    ],
-  );
   // One Alerts queue only for the bed coordinator's desk (whose list it is, as the act-now count
   // above) when its role may open the Alerts screen. Others keep the Tasks drawer.
   const oneAlertsQueue =
     wardTasksAreActionableForRole(shellRole) &&
     accessNav([{ id: "alerts", href: WARD_ALERTS_HREF, label: "Alerts" }]).length > 0;
-  const needs = [...actNowNeed(actNowCount, oneAlertsQueue), ...overdueNeeds];
   // Nothing twice: with one Alerts queue the dock always carries Alerts, so it leaves its group.
+  // Audit four #67 (locked A27, 26 Nov 2026): the Menu's top carries the Handover countdown pill,
+  // which is the door to Handover, so the list does not repeat a Handover row beside it. Executive
+  // and access admin have no pill (no shift), so theirs keeps the row if their table has one.
+  const pillIsHandoverDoor = accessRole !== "executive" && accessRole !== "admin";
+  const dropAlerts = oneAlertsQueue && [...dock, ...dockRight].some((slot) => slot.kind === "queue");
   const menuGroups =
-    oneAlertsQueue && [...dock, ...dockRight].some((slot) => slot.kind === "queue")
+    dropAlerts || pillIsHandoverDoor
       ? groups
-          .map((group) => ({ ...group, entries: group.entries.filter((entry) => entry.id !== "alerts") }))
+          .map((group) => ({
+            ...group,
+            entries: group.entries.filter(
+              (entry) => !(dropAlerts && entry.id === "alerts") && !(pillIsHandoverDoor && entry.id === "handover"),
+            ),
+          }))
           .filter((group) => group.entries.length > 0)
       : groups;
 
@@ -1019,15 +872,11 @@ export function NextPhoneMenu({
         <PhoneMenuSheets
           open={open}
           onClose={close}
-          query={query}
-          onQuery={setQuery}
           returnFocusRef={sheetReturnRef}
           shellRole={shellRole}
           pathname={pathname}
           counts={counts}
-          entries={entries}
           byId={byId}
-          needs={needs}
           groups={menuGroups}
           onGo={go}
           onRefer={refer}

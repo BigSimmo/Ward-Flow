@@ -8,7 +8,6 @@ import {
   Card,
   CardBody,
   CardHead,
-  FilterChip,
   Hero,
   HeroFigures,
   HeroTop,
@@ -97,8 +96,9 @@ export function LeaveScreen() {
   const now = useWardFlowClock();
   const access = useEffectiveWardAccess();
   const canOpenHref = useCanOpenHref();
-  // One list filter at a time: overdue or absent, or away over 24 hours (R-BEDS-7).
-  const [filter, setFilter] = useState<"all" | "needs_action" | "over_24h">("all");
+  // One list filter at a time, chosen by pressing a hero figure (audit two #69): on leave, due back
+  // today, overdue or absent (the red figure), or away over 24 hours (R-BEDS-7). Pressing again clears.
+  const [filter, setFilter] = useState<"all" | "on_leave" | "due_today" | "needs_action" | "over_24h">("all");
   const needsActionOnly = filter === "needs_action";
   const isPhone = useIsPhone();
   const [showAll, setShowAll] = useState(false);
@@ -135,10 +135,22 @@ export function LeaveScreen() {
   }, [leaveBeds, units, admissions, bedReleases, movements, referrals, now, access]);
   const needsAction = rows.filter((row) => row.status === "absent" || row.status === "overdue");
   const over24h = rows.filter((row) => row.over24h);
-  const shown = needsActionOnly ? needsAction : filter === "over_24h" ? over24h : rows;
-  const dueToday = rows.filter((row) => row.status === "due_today").length;
+  const dueTodayRows = rows.filter((row) => row.status === "due_today");
   // Someone absent without leave is not "on leave"; they are counted under "overdue or absent".
-  const onLeave = rows.filter((row) => row.status !== "absent").length;
+  const onLeaveRows = rows.filter((row) => row.status !== "absent");
+  const dueToday = dueTodayRows.length;
+  const onLeave = onLeaveRows.length;
+  const shown =
+    filter === "needs_action"
+      ? needsAction
+      : filter === "over_24h"
+        ? over24h
+        : filter === "due_today"
+          ? dueTodayRows
+          : filter === "on_leave"
+            ? onLeaveRows
+            : rows;
+  const toggle = (next: typeof filter) => setFilter((current) => (current === next ? "all" : next));
   const hidden = showAll ? 0 : foldHidden(shown.length, LEAVE_ROWS);
   const visible = hidden > 0 ? shown.slice(0, foldLimit(shown.length, LEAVE_ROWS)) : shown;
   return (
@@ -148,8 +160,7 @@ export function LeaveScreen() {
         testId="ward-leave-hero"
         className={pageTopStyles.hero}
         title="People on leave"
-        // 16 Nov walk: how fresh the list is, in the hero's quiet meta line.
-        titleMeta={`Updated ${formatInstant(now)}`}
+        // Audit two #22 and #71: no "Updated hh:mm" stamp; the live chip beside it shows the time.
         aside={<LiveChip state="live" onHero age={formatInstant(now)} />}
       >
         <HeroTop
@@ -158,15 +169,45 @@ export function LeaveScreen() {
             <HeroFigures
               label="Leave figures"
               items={[
-                { id: "on", value: onLeave, label: "on leave", testId: "ward-leave-figure-on" },
-                { id: "today", value: dueToday, label: "due back today", testId: "ward-leave-figure-today" },
+                {
+                  id: "on",
+                  value: onLeave,
+                  label: "on leave",
+                  onClick: () => toggle("on_leave"),
+                  pressed: filter === "on_leave",
+                  testId: "ward-leave-figure-on",
+                  linkTestId: "ward-leave-figure-on-filter",
+                },
+                {
+                  id: "today",
+                  value: dueToday,
+                  label: "due back today",
+                  onClick: () => toggle("due_today"),
+                  pressed: filter === "due_today",
+                  testId: "ward-leave-figure-today",
+                  linkTestId: "ward-leave-figure-today-filter",
+                },
                 {
                   id: "act",
                   value: needsAction.length,
                   label: "overdue or absent",
                   // Red only when someone is missing or overdue back: act now.
                   tone: needsAction.length > 0 ? "danger" : undefined,
+                  // The figure is the list's filter (as on Out of area); it replaced the card's own chip.
+                  onClick: () => toggle("needs_action"),
+                  pressed: needsActionOnly,
                   testId: "ward-leave-figure-act",
+                  linkTestId: "ward-leave-figure-act-filter",
+                },
+                {
+                  // R-BEDS-7: the fourth figure, the signed leave prompt's hours; it was the card's own chip.
+                  id: "over",
+                  value: over24h.length,
+                  label: `over ${OPEN_WARNING_HOURS} h`,
+                  onClick: () => toggle("over_24h"),
+                  pressed: filter === "over_24h",
+                  testId: "ward-leave-figure-over",
+                  linkTestId: "ward-leave-figure-over-filter",
                 },
               ]}
             />
@@ -179,33 +220,21 @@ export function LeaveScreen() {
           ? "Overdue or absent only"
           : filter === "over_24h"
             ? `Over ${OPEN_WARNING_HOURS} h only`
-            : "Everyone on leave"}{" "}
+            : filter === "due_today"
+              ? "Due back today only"
+              : "Everyone on leave"}{" "}
         · As at {formatSheetMoment(now, dayZero, { includeYearAndZone: true, zone })} · Identifiers may be included
       </p>
       <Card aria-labelledby="ward-leave-list" className={styles.listCard}>
         <CardHead
           id="ward-leave-list"
+          // Design review (27 Nov 2026): the card keeps its visible title, so its head is not a band
+          // holding only Print.
           title="On leave"
           action={
             // Print sits with the list it prints, as on Legal forms and Movements, so the page title
             // keeps its own line height. On a phone the printer alone keeps the head on one line.
-            <>
-              <FilterChip
-                pressed={needsActionOnly}
-                onPressedChange={(pressed) => setFilter(pressed ? "needs_action" : "all")}
-                count={needsAction.length}
-              >
-                Overdue or absent
-              </FilterChip>
-              <FilterChip
-                pressed={filter === "over_24h"}
-                onPressedChange={(pressed) => setFilter(pressed ? "over_24h" : "all")}
-                count={over24h.length}
-              >
-                Over {OPEN_WARNING_HOURS} h
-              </FilterChip>
-              <ListPrintButton iconOnly={isPhone} disabled={shown.length === 0} testId="ward-leave-print" />
-            </>
+            <ListPrintButton iconOnly={isPhone} disabled={shown.length === 0} testId="ward-leave-print" />
           }
         />
         <CardBody flush>
@@ -215,7 +244,9 @@ export function LeaveScreen() {
                 ? "Nobody is overdue or absent."
                 : filter === "over_24h"
                   ? `Nobody has been away over ${OPEN_WARNING_HOURS} h.`
-                  : "Nobody is on leave."}
+                  : filter === "due_today"
+                    ? "Nobody is due back today."
+                    : "Nobody is on leave."}
             </p>
           ) : (
             <div className={styles.scroll}>
@@ -297,9 +328,12 @@ export function LeaveScreen() {
           )}
           {foldHidden(shown.length, LEAVE_ROWS) > 0 ? (
             <div data-print-hide>
-              <ShowMoreRow onClick={() => setShowAll((open) => !open)} expanded={showAll} controls="ward-leave-table">
-                {showAll ? "Show fewer" : `Show ${hidden} more`}
-              </ShowMoreRow>
+              <ShowMoreRow
+                onClick={() => setShowAll((open) => !open)}
+                expanded={showAll}
+                controls="ward-leave-table"
+                total={shown.length}
+              />
             </div>
           ) : null}
         </CardBody>

@@ -7,7 +7,7 @@
 // transport list. Nothing is chosen until the person answers; someone who did not return is not
 // on site, so it is never asked for them.
 import { useState } from "react";
-import { Field, Segmented, Select } from "@/components/wf";
+import { Button, Field, Menu, Segmented, Select } from "@/components/wf";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
 import type { BedRelease } from "@/components/ward-management/ward-model-bed-release";
 import {
@@ -34,7 +34,7 @@ export function useDischargeDepartureField(
 ) {
   const [answer, setAnswer] = useState<{ releaseId: string; waiting: boolean } | null>(null);
   const { admissions } = useWardFlowSelect("admissions");
-  if (!release) return { field: null, unanswered: false, awaitingTransport: false };
+  if (!release) return { field: null, unanswered: false, awaitingTransport: false, asksFor: () => false };
   // The same reading as the ward board and the reducer: the stay's own hold-up counts too.
   const stay = admissions.find((admission) => admission.id === release.admissionId);
   const pending = stay ? transportPendingFor(stay, [release]) : releaseTransportPending(release);
@@ -78,5 +78,64 @@ export function useDischargeDepartureField(
     field,
     unanswered: destination === "" || (asks && waiting === undefined),
     awaitingTransport: waiting === true,
+    /** Audit three #32: whether choosing `next` would still leave the transport question to answer. */
+    asksFor: (next: LeavingDestination) => pending && leftWardAllowedFor(next),
   };
+}
+
+/**
+ * The drawer's Record discharge. With no destination it asks where in place (Audit three #32);
+ * choosing one records it with Undo, unless the transport question is still to answer in the body.
+ * With a destination it is a plain button, disabled with its reason until the transport answer is in.
+ */
+export function DischargeRecordDeparture({
+  variant,
+  destination,
+  departure,
+  onChoose,
+  onRecord,
+}: {
+  variant: "pri" | "sec";
+  destination: LeavingDestination | "";
+  departure: Pick<ReturnType<typeof useDischargeDepartureField>, "unanswered" | "awaitingTransport" | "asksFor">;
+  onChoose: (destination: LeavingDestination) => void;
+  onRecord: (destination: LeavingDestination, awaitingTransport: boolean) => void;
+}) {
+  const className = variant === "pri" ? pageStyles.drawerPrimary : undefined;
+  if (destination === "") {
+    return (
+      <Menu
+        label="Where are they going?"
+        align="end"
+        items={[
+          { kind: "heading", id: "where", label: "Where are they going? Nothing is recorded until you choose." },
+          ...LEAVING_DESTINATIONS.map((option) => ({
+            id: option.id,
+            label: option.label,
+            onSelect: () => onChoose(option.id),
+          })),
+        ]}
+        trigger={(props) => (
+          <Button {...props} variant={variant} className={className} data-testid="ward-discharge-record-departure">
+            Record discharge
+          </Button>
+        )}
+      />
+    );
+  }
+  return (
+    <Button
+      variant={variant}
+      className={className}
+      data-testid="ward-discharge-record-departure"
+      // #84: the kit disabled button and its reason, not a browser-disabled one.
+      disabledReason={departure.unanswered ? "Say if their transport has come" : undefined}
+      onClick={() => {
+        if (departure.unanswered) return;
+        onRecord(destination, departure.awaitingTransport);
+      }}
+    >
+      Record discharge
+    </Button>
+  );
 }

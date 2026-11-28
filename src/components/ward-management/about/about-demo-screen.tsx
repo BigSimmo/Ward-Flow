@@ -1,19 +1,8 @@
 "use client";
 
-import { Check, Info, Lock, LogOut, MessageCircle, Minus, Users } from "lucide-react";
+import { Check, Info, Lock, LogOut, Minus } from "lucide-react";
 
-import {
-  Badge,
-  Button,
-  Card,
-  CardHead,
-  Count,
-  Hero,
-  HeroAct,
-  HeroFigures,
-  HeroQuickChips,
-  HeroTop,
-} from "@/components/wf";
+import { Badge, Button, Card, CardHead, Count, Hero, HeroAct, HeroFigures, HeroTop } from "@/components/wf";
 import { useContext } from "react";
 
 import { useCanLeaveDemo, useLeaveDemo } from "@/components/ward-management/shell/leave-demo";
@@ -141,13 +130,6 @@ const KEPT: readonly Row[] = [
     sub: "Code and icons only, never pages or records.",
     meta: "This device",
   },
-  {
-    id: "pass",
-    title: "Demo pass",
-    sub: "Signed. Holds neither the code nor your name.",
-    meta: "8 hours",
-    figure: true,
-  },
   { id: "door", title: "Door marker", sub: "Says this site asks for a code.", meta: "30 days", figure: true },
 ];
 
@@ -207,8 +189,8 @@ export function AboutDemoScreen() {
     <main id="main-content" className={styles.main} data-testid="ward-about-demo">
       <Hero
         level={1}
-        title={signedIn ? "About BedChart" : "About this demo"}
-        titleMeta="Synthetic data only · Not for clinical use"
+        // Audit four #51 and #52: the title is the answer; the banner already says "not for clinical use".
+        title="Synthetic data only"
       >
         <HeroTop
           quickBar={false}
@@ -217,8 +199,6 @@ export function AboutDemoScreen() {
               label={signedIn ? "BedChart" : "This demo"}
               testId="about-figures"
               items={[
-                { id: "patients", value: 0, label: "real patients", testId: "about-figure-patients" },
-                { id: "outside", value: 0, label: "outside sites", testId: "about-figure-outside" },
                 signedIn
                   ? { id: "pass", value: SESSION_HOURS, unit: "h", label: "sign-in limit", testId: "about-figure-pass" }
                   : { id: "pass", value: 8, unit: "h", label: "demo pass", testId: "about-figure-pass" },
@@ -238,72 +218,62 @@ export function AboutDemoScreen() {
               }
             />
           }
-          chips={
-            <HeroQuickChips
-              label="On this page"
-              items={[
-                { id: "what", label: "What this is", icon: <Info size={14} aria-hidden="true" />, href: "#about-what" },
-                { id: "data", label: "The data", icon: <Users size={14} aria-hidden="true" />, href: "#about-data" },
-                {
-                  id: "privacy",
-                  label: "Your privacy",
-                  icon: <Lock size={14} aria-hidden="true" />,
-                  href: "#about-privacy",
-                },
-                { id: "leave", label: "Leaving", icon: <LogOut size={14} aria-hidden="true" />, href: "#about-leave" },
-              ]}
-            />
-          }
         />
       </Hero>
 
+      {/* Each card holds a pair side by side, so no column runs longer than its neighbour: what this is
+          beside the invented data, kept beside sent, and the two steps for leaving. */}
       <div className={styles.layout}>
-        <div className={styles.column}>
-          <Card aria-labelledby="about-what-title" data-testid="about-what" id="about-what">
-            <CardHead iconPlain icon={Info} id="about-what-title" title="What this is" />
-            <p className={styles.lead}>
-              BedChart is a prototype for coordinating psychiatric beds across Western Australia: who needs a bed, where
-              one is free, and what is holding each move up. Nothing on screen should guide anyone&apos;s care.
-            </p>
-            <div className={styles.isGrid}>
-              <div>
-                <h3 className={styles.capsLabel}>It is</h3>
-                <ul className={styles.isList}>
-                  {isLines.map((line) => (
-                    <li key={line}>
-                      <Check size={14} aria-hidden="true" className={styles.isGlyph} />
-                      {line}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h3 className={styles.capsLabel}>It is not</h3>
-                <ul className={styles.isList} data-testid="about-is-not">
-                  {IS_NOT.map((line) => (
-                    <li key={line}>
-                      <Minus size={14} aria-hidden="true" className={styles.isNotGlyph} />
-                      {line}
-                    </li>
-                  ))}
-                </ul>
+        <Card aria-labelledby="about-what-title" data-testid="about-what" id="about-what">
+          <CardHead iconPlain icon={Info} id="about-what-title" title="What this is" />
+          <div className={styles.pair}>
+            <div>
+              <p className={styles.lead}>
+                BedChart is a prototype for coordinating psychiatric beds across Western Australia: who needs a bed,
+                where one is free, and what is holding each move up. Nothing on screen should guide anyone&apos;s care.
+              </p>
+              <div className={styles.isGrid}>
+                <div>
+                  <h3 className={styles.capsLabel}>It is</h3>
+                  <ul className={styles.isList}>
+                    {isLines.map((line) => (
+                      <li key={line}>
+                        <Check size={14} aria-hidden="true" className={styles.isGlyph} />
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h3 className={styles.capsLabel}>It is not</h3>
+                  <ul className={styles.isList} data-testid="about-is-not">
+                    {IS_NOT.map((line) => (
+                      <li key={line}>
+                        <Minus size={14} aria-hidden="true" className={styles.isNotGlyph} />
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
-          </Card>
+            {/* Was its own card, "The data is invented". */}
+            <section aria-labelledby="about-data-title" data-testid="about-data" id="about-data">
+              <GroupHead id="about-data-title" label="The data is invented" count={DATA.length} />
+              <Rows rows={DATA} testId="about-data-rows" />
+            </section>
+          </div>
+        </Card>
 
-          <Card aria-labelledby="about-data-title" data-testid="about-data" id="about-data">
-            <CardHead iconPlain icon={Users} id="about-data-title" title="The data is invented" />
-            <Rows rows={DATA} testId="about-data-rows" />
-          </Card>
-
-          <Card aria-labelledby="about-privacy-title" data-testid="about-privacy" id="about-privacy">
-            <CardHead
-              iconPlain
-              icon={Lock}
-              id="about-privacy-title"
-              title="Your privacy"
-              meta={`Checked against the app's code, ${signedIn ? "14" : "13"} Nov 2026`}
-            />
+        <Card aria-labelledby="about-privacy-title" data-testid="about-privacy" id="about-privacy">
+          <CardHead
+            iconPlain
+            icon={Lock}
+            id="about-privacy-title"
+            title="Your privacy"
+            meta={`Checked against the app's code, ${signedIn ? "14" : "13"} Nov 2026`}
+          />
+          <div className={styles.pair}>
             <section aria-labelledby="about-kept-title" data-testid="about-kept">
               <GroupHead id="about-kept-title" label="Kept in this browser" count={kept.length} />
               <Rows rows={kept} testId="about-kept-facts" />
@@ -312,51 +282,41 @@ export function AboutDemoScreen() {
               <GroupHead id="about-sent-title" label="Sent from this browser" count={sent.length} />
               <Rows rows={sent} testId="about-sent-facts" />
             </section>
-          </Card>
-        </div>
+          </div>
+        </Card>
 
-        <aside className={styles.rail} aria-label="Leaving and questions">
-          <Card aria-labelledby="about-leave-title" data-testid="about-leave" id="about-leave">
-            <CardHead iconPlain icon={LogOut} id="about-leave-title" title="Leaving" />
-            <ol className={styles.steps}>
-              <li>
-                <span className={styles.stepNo}>1</span>
-                <span className={styles.rowMain}>
-                  <span className={styles.rowTitle}>{signedIn ? "Sign out" : "Leave the demo"}</span>
-                  <span className={styles.rowSub}>
-                    {signedIn
-                      ? "Ends your sign-in in this tab. Your saved changes stay on the shared workspace."
-                      : "Clears the demo, your pins and reminders, and ends your pass."}
-                  </span>
+        <Card aria-labelledby="about-leave-title" data-testid="about-leave" id="about-leave">
+          <CardHead iconPlain icon={LogOut} id="about-leave-title" title="Leaving" />
+          <ol className={styles.steps}>
+            <li>
+              <span className={styles.stepNo}>1</span>
+              <span className={styles.rowMain}>
+                <span className={styles.rowTitle}>{signedIn ? "Sign out" : "Leave the demo"}</span>
+                <span className={styles.rowSub}>
+                  {signedIn
+                    ? "Ends your sign-in in this tab. Your saved changes stay on the shared workspace."
+                    : "Clears the demo, your pins and reminders, and ends your pass."}
                 </span>
-              </li>
-              <li>
-                <span className={styles.stepNo}>2</span>
-                <span className={styles.rowMain}>
-                  <span className={styles.rowTitle}>Clear this site&apos;s data</span>
-                  <span className={styles.rowSub}>
-                    Optional. In your browser settings, to remove display settings and offline files too.
-                  </span>
+              </span>
+            </li>
+            <li>
+              <span className={styles.stepNo}>2</span>
+              <span className={styles.rowMain}>
+                <span className={styles.rowTitle}>Clear this site&apos;s data</span>
+                <span className={styles.rowSub}>
+                  Optional. In your browser settings, to remove display settings and offline files too.
                 </span>
-              </li>
-            </ol>
-            {canLeave ? (
-              <div className={styles.foot}>
-                <Button icon={LogOut} onClick={leave} data-testid="about-leave-demo">
-                  Leave the demo
-                </Button>
-              </div>
-            ) : null}
-          </Card>
-
-          <Card aria-labelledby="about-questions-title" data-testid="about-questions">
-            <CardHead iconPlain icon={MessageCircle} id="about-questions-title" title="Questions" />
-            <p className={styles.lead}>Ask the person who showed you this demo.</p>
-            <p className={styles.quietFoot}>
-              Screens may be shown on a shared display. Everything on them is invented.
-            </p>
-          </Card>
-        </aside>
+              </span>
+            </li>
+          </ol>
+          {canLeave ? (
+            <div className={styles.foot}>
+              <Button icon={LogOut} onClick={leave} data-testid="about-leave-demo">
+                Leave the demo
+              </Button>
+            </div>
+          ) : null}
+        </Card>
       </div>
 
       <WardPrototypeFooter testId="about-footer" />

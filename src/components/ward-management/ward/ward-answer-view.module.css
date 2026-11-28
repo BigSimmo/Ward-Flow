@@ -708,6 +708,16 @@
   transform: scale(1.02);
 }
 
+/* Controls document 13 (26 Nov 2026): with no request open the squares are plain figures. */
+span.bedCell.vacant {
+  cursor: default;
+  transition: none;
+}
+
+span.bedCell.vacant:hover {
+  transform: none;
+}
+
 .bedNum {
   font-family: var(--mono);
   font-weight: 700;
@@ -812,6 +822,17 @@
   padding: 1rem 1.125rem;
   display: grid;
   gap: 0.75rem;
+}
+
+/* Gate r10 (2 upgrade 3): with nothing recorded the card shows the kit empty state, centred in the
+   height the row gives it. */
+.historyPanelBody:has(> .historyEmpty) {
+  flex: 1 1 auto;
+  align-content: center;
+}
+
+.historyEmpty {
+  justify-content: center;
 }
 
 .historyList {
@@ -1464,7 +1485,8 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--wf-s-3);
-    align-items: start;
+    /* Gate r10 (2 upgrade 3): the three cards share one height, so the row has a level bottom edge. */
+    align-items: stretch;
     /* A4 (device sweep, 24 Oct 2026): the three cards span the page as Bed request does above
        them; the column's start alignment had shrunk the row to its content. */
     align-self: stretch;
@@ -2669,9 +2691,11 @@ details[open] > summary > .phoneFoldChevron {
   background: var(--wf-hatch), var(--wf-surface);
 }
 
+/* Gate r10 (2 FIX 1): closed reads as the Ward grid's closed bed, a sunken neutral with a dashed edge,
+   so it can never be taken for an occupied bed. */
 .cell.cell.fillClosed {
-  border: 1px solid var(--wf-line);
-  background: var(--wf-data-closed);
+  border: 1px dashed var(--wf-line-ctl);
+  background: var(--wf-track);
 }
 
 /* D-179 item 8: empty but still being made ready, so not Ready. Hollow, edged in the ready colour. */
@@ -2681,9 +2705,13 @@ details[open] > summary > .phoneFoldChevron {
   background: var(--wf-surface);
 }
 
+/* Audit four 91: occupied beds take the In use colour the Capacity bed strips use, as a quiet tint
+   so the ready beds (a success tint) still stand out. */
+/* Gate r10 (2 FIX 1, flip of call 91): at 32% it landed on the Closed colour; at 58% it reads as the
+   In use square on the Capacity strips. */
 .cell.cell.fillOccupied {
-  border: 1px solid var(--wf-line);
-  background: var(--wf-surface-2);
+  border: 1px solid color-mix(in srgb, var(--wf-data-1) 70%, var(--wf-surface));
+  background: color-mix(in srgb, var(--wf-data-1) 58%, var(--wf-surface));
 }
 
 .cell.cell > span:first-child {
@@ -2700,11 +2728,11 @@ details[open] > summary > .phoneFoldChevron {
 }
 
 .cell.cell.fillClosed > span:first-child {
-  color: var(--wf-ink-1);
+  color: var(--wf-ink-3);
 }
 
 .cell.cell.fillOccupied > span:first-child {
-  color: var(--wf-ink-3);
+  color: var(--wf-ink-1);
 }
 
 /* The census key: a swatch per state with its count. */
@@ -2751,11 +2779,66 @@ details[open] > summary > .phoneFoldChevron {
 }
 
 .swatch.fillClosed {
-  border: 1px solid var(--wf-line);
-  background: var(--wf-data-closed);
+  border: 1px dashed var(--wf-line-ctl);
+  background: var(--wf-track);
 }
 
 .swatch.fillOccupied {
-  border: 1px solid var(--wf-line);
-  background: var(--wf-surface-2);
+  border: 1px solid color-mix(in srgb, var(--wf-data-1) 70%, var(--wf-surface));
+  background: color-mix(in srgb, var(--wf-data-1) 58%, var(--wf-surface));
+}
+
+/* Simplification 26 Nov 2026 (area 3, item 2): the answer drawn inside the Ward page's Referrals tab.
+   The page already pads, heads and foots it, so the view keeps only its request panel. */
+.answerScreen[data-embedded="true"] {
+  gap: var(--wf-s-3);
+  padding-bottom: 0;
+}
+
+.answerScreen[data-embedded="true"] .workspace {
+  padding: 0;
+}
+
+.answerScreen[data-embedded="true"] .answerGrid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.embeddedHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  min-width: 0;
+}
+
+.embeddedTitle {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  font-weight: 600;
+}
+
+.embeddedHead .heroNavPos {
+  color: var(--wf-ink-2);
+}
+
+.embeddedHead .heroNavPos b {
+  color: var(--wf-ink-1);
+}
+
+/* Audit two #60: the pager in the referral panel's head. Two ghost icon buttons either side of
+   "2 of 5", on the head's row beside the title. */
+.panelNav {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  margin-left: auto;
+}
+
+.panelNav .heroNavPos {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  font-variant-numeric: tabular-nums;
 }

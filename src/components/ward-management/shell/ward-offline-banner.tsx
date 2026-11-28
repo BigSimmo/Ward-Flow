@@ -131,11 +131,12 @@ function WardOfflineNotice() {
       data-wf-offline-note=""
       style={fullscreenElement ? FULLSCREEN_PLACEMENT : undefined}
     >
-      {"You're offline. You can keep working, but shared updates stop until the connection returns. "}
+      {/* Audit four #84 (28 Nov 2026): shorter, and the pack's time stays (the safety fact, D-72). */}
+      {"You're offline. You can keep working. Other people's changes will not show until you are back online. "}
       <span className={styles.bannerPack}>
         {lastPackAt === null
-          ? "If it stops, use the latest printed or saved downtime pack."
-          : `If it stops, use the downtime pack taken at ${formatInstantWithDay(lastPackAt, now)}, printed or saved as a PDF.`}
+          ? "If BedChart stops, use the latest downtime pack printed or saved."
+          : `If BedChart stops, use the downtime pack printed or saved at ${formatInstantWithDay(lastPackAt, now)}.`}
       </span>
     </p>
   );

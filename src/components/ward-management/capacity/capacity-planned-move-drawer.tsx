@@ -3,18 +3,21 @@
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
-import { CalendarCheck, FileText, Pencil, X } from "lucide-react";
+import { CalendarCheck, Ellipsis, FileText, Pencil, X } from "lucide-react";
 
 import {
   Button,
   DrawerFacts,
   DrawerFootRow,
+  Menu,
   PanelDrawer,
   StatusGlyph,
   StatusPill,
   buttonClass,
   cx,
   durMinutes,
+  type DrawerPagerProps,
+  type MenuItem,
 } from "@/components/wf";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import {
@@ -62,7 +65,10 @@ export function PlannedMoveDrawer({
   ready,
   preparing,
   onClose,
+  pager,
 }: {
+  /** Audit three #34: the list pager in the drawer head. */
+  pager?: DrawerPagerProps;
   planned: PlannedAdmission | null;
   now: Instant;
   api: PlannedListApi;
@@ -118,6 +124,7 @@ export function PlannedMoveDrawer({
       subtitle={`${PLANNED_ADMISSION_REASON_LABELS[planned.reason]} · ${planned.ageBand}`}
       tag={<StatusPill>Planned</StatusPill>}
       testId="capacity-planned-detail"
+      pager={pager}
       foot={
         <>
           {arrived && dueToday ? (
@@ -136,24 +143,35 @@ export function PlannedMoveDrawer({
             {recordHref && canOpen(recordHref) ? (
               <Link href={recordHref} className={buttonClass({ variant: lead === "record" ? "pri" : "sec" })}>
                 <FileText strokeWidth={1.75} size={14} aria-hidden="true" />
-                Patient record
+                Patient page
               </Link>
             ) : null}
             <WardPeekButton
               unitId={planned.unitId}
               href={boardHref}
-              label="Ward board"
+              label="Open ward"
               variant={lead === "board" ? "pri" : "sec"}
             />
-            {change ? (
-              <Button variant="sec" icon={Pencil} onClick={change}>
-                Change booking
-              </Button>
-            ) : null}
-            {cancel ? (
-              <Button variant="sec" icon={X} onClick={cancel}>
-                Cancel booking
-              </Button>
+            {/* Audit three #3 (Josh, 28 Nov 2026): Change and Cancel booking sit behind the foot's More
+                menu, as on the alert drawer, so Cancel never touches the filled Record arrival. */}
+            {change || cancel ? (
+              <Menu
+                label={`More actions for ${api.whoText(planned)}`}
+                align="end"
+                items={
+                  [
+                    ...(change ? [{ id: "change", label: "Change booking", icon: Pencil, onSelect: change }] : []),
+                    ...(cancel
+                      ? [{ id: "cancel", label: "Cancel booking", icon: X, tone: "danger" as const, onSelect: cancel }]
+                      : []),
+                  ] satisfies MenuItem[]
+                }
+                trigger={(props) => (
+                  <Button {...props} variant="ghost" icon={Ellipsis} data-testid="capacity-planned-more">
+                    More
+                  </Button>
+                )}
+              />
             ) : null}
           </DrawerFootRow>
         </>
@@ -218,19 +236,11 @@ export function PlannedMoveDrawer({
           </div>
         </section>
 
-        {late ? (
-          <p className={cx(styles.pmNote, styles.warnInk)}>
-            <StatusGlyph tone="warning" size={9} /> Not arrived. Record the arrival, change the time or cancel.
-          </p>
-        ) : null}
-
         <h3 className={styles.pmSectionHead}>Booking</h3>
       </div>
       <DrawerFacts
         items={[
           { label: "Legal status", value: planned.legalStatus },
-          { label: "Expected stay", value: `${planned.expectedStayDays} days` },
-          { label: "Age group", value: planned.ageBand },
           { label: "Recorded sex", value: planned.sex },
           {
             label: "Changes",
@@ -303,18 +313,25 @@ export function StepDownDrawer({
             </span>
           </p>
           <DrawerFootRow>
-            {recordHref && canOpen(recordHref) ? (
-              <Link href={recordHref} className={buttonClass({ variant: "pri" })}>
-                <FileText strokeWidth={1.75} size={14} aria-hidden="true" />
-                Patient record
-              </Link>
-            ) : null}
+            {/* Audit two #35 (O19): Ask wards is the one filled button. The Waiting board has no way in for
+                a ward person, so it opens the patient page, where Ask wards (the destination row) lives.
+                Open ward is the quiet step on the left; a desk that cannot open the patient page keeps
+                Open ward as the filled one. */}
             <WardPeekButton
               unitId={row.fromUnit.id}
               href={boardHref}
-              label="Ward board"
+              label="Open ward"
               variant={recordHref && canOpen(recordHref) ? "sec" : "pri"}
             />
+            {recordHref && canOpen(recordHref) ? (
+              <Link
+                href={recordHref}
+                className={buttonClass({ variant: "pri" })}
+                data-testid="capacity-step-down-ask-wards"
+              >
+                Ask wards
+              </Link>
+            ) : null}
           </DrawerFootRow>
         </>
       }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { RedirectToFind } from "@/components/ward-management/hub/find-redirect";
 import { CommunityIndex } from "@/components/ward-management/community/community-index";
 
 export const metadata: Metadata = {
@@ -14,5 +15,9 @@ export const metadata: Metadata = {
  * `/bedchart/community/[teamId]`.
  */
 export default function PlacesCatchmentsPage() {
-  return <CommunityIndex inPlaces />;
+  return (
+    <RedirectToFind tab="suburbs">
+      <CommunityIndex inPlaces />
+    </RedirectToFind>
+  );
 }

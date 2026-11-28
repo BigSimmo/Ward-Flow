@@ -30,3 +30,22 @@
   margin-inline: var(--wf-s-1);
   color: var(--wf-ink-3);
 }
+
+/* Inside the ⓘ tip (audit two #77): one tier to a line, the code first. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+}
+
+.line {
+  display: flex;
+  gap: var(--wf-s-2);
+  align-items: baseline;
+}
+
+/* The tip draws its own ink (light on dark, dark on light in the dark theme): the code keeps its
+   weight and takes the tip's ink. */
+.stack .code {
+  color: inherit;
+}

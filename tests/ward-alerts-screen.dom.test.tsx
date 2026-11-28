@@ -343,7 +343,8 @@ describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => 
       expect(next).toHaveAccessibleName("Next alert");
       expect(hero.getAllByRole("button", { name: "Next alert" })).toHaveLength(1);
       const broadcast = hero.getByTestId("ward-alerts-broadcast");
-      expect(broadcast).toHaveTextContent("Broadcast alert");
+      // Review (390): Broadcast sits icon only at the act row's end, named in words.
+      expect(broadcast).toHaveAccessibleName("Broadcast alert");
       expect(broadcast.className).not.toBe(next.className);
       // 16 Nov walk: the hero's quiet meta line says how fresh the list is, on the am/pm clock.
       expect(screen.getByTestId("ward-alerts-hero")).toHaveTextContent(/Updated \d{1,2}:\d{2} [ap]m/u);
@@ -354,8 +355,8 @@ describe("Alerts phone hero (remaining-pages audit ops-14, 13 Oct 2026)", () => 
 });
 
 describe("Alerts phone Act now filter (page tops, 9 Nov 2026)", () => {
-  // The phone's filter row leaves out Act now, so the top's Act now figure is the way to show only it.
-  it("the Act now figure turns the Act now filter on and off", () => {
+  // #48: the phone's filter row has Act now with the others, so the top's Act now figure is a plain number.
+  it("the Act now chip turns the Act now filter on and off", () => {
     vi.stubGlobal(
       "matchMedia",
       vi.fn((query: string) => ({
@@ -367,14 +368,13 @@ describe("Alerts phone Act now filter (page tops, 9 Nov 2026)", () => {
     );
     try {
       renderScreen();
-      const figure = within(screen.getByTestId("ward-alerts-figure-act")).getByRole("button", {
-        name: /^\d+ act now$/u,
-      });
-      expect(figure).toHaveAttribute("aria-pressed", "false");
-      fireEvent.click(figure);
-      expect(figure).toHaveAttribute("aria-pressed", "true");
-      fireEvent.click(figure);
-      expect(figure).toHaveAttribute("aria-pressed", "false");
+      expect(within(screen.getByTestId("ward-alerts-figure-act")).queryByRole("button")).toBeNull();
+      const chip = within(screen.getByTestId("ward-alerts-filters")).getByRole("button", { name: /^Act now/u });
+      expect(chip).toHaveAttribute("aria-pressed", "false");
+      fireEvent.click(chip);
+      expect(chip).toHaveAttribute("aria-pressed", "true");
+      fireEvent.click(chip);
+      expect(chip).toHaveAttribute("aria-pressed", "false");
     } finally {
       vi.unstubAllGlobals();
     }

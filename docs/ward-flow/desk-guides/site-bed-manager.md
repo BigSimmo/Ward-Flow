@@ -14,7 +14,7 @@ are under **Menu**.
 
 ## Jobs you do most
 
-1. **Check beds.** Check each ward's bed figures. The page shows who confirmed each figure. If
+1. **Check counts.** Check each ward's bed figures. The page shows who confirmed each figure. If
    one looks out of date, ask the coordinator to use **Request ward update**; only the
    coordinator can send it.
 2. **Bed releases.** Flag, confirm or block a bed that is due to come free, from the ward page.

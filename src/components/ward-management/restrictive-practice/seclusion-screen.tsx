@@ -14,7 +14,7 @@ import {
   DisabledReason,
   Field,
   Hero,
-  HeroStat,
+  HeroFigures,
   Select,
   SrOnly,
   StatusGlyph,
@@ -200,41 +200,52 @@ export function SeclusionScreen() {
         title="Seclusion, restraint and incidents"
         titleMeta={titleMeta}
         stats={
-          // QA (31 Oct 2026): the figures wrap onto a second line rather than clip a label when the
-          // title leaves them too little room (a 1024px laptop). Phone and tablet keep the kit layout.
-          <div className={styles.heroStats}>
-            {own
-              ? // One ward: what is in use on it; the room's state opens the record.
-                [
-                  <HeroStat
-                    key="seclusion"
-                    value={own.row.inUse.filter((episode) => episode.practice === "seclusion").length}
-                    label="Seclusion in use"
-                    tone={own.row.inUse.some((episode) => episode.practice === "seclusion") ? "danger" : undefined}
-                  />,
-                  <HeroStat
-                    key="restraint"
-                    value={restraint}
-                    label="Restraint in use"
-                    tone={restraint > 0 ? "danger" : undefined}
-                  />,
-                  <HeroStat key="incidents" value={own.row.incidents} label="Incidents, last day" />,
-                ]
-              : ROOM_STATES.map((entry) => (
-                  <HeroStat
-                    key={entry.id}
-                    value={counts[entry.id]}
+          // #109 (audit two): the kit's equal-column figures, with the same figures as before.
+          <HeroFigures
+            label="Seclusion figures"
+            items={
+              own
+                ? // One ward: what is in use on it; the room's state opens the record.
+                  [
+                    {
+                      id: "seclusion",
+                      value: own.row.inUse.filter((episode) => episode.practice === "seclusion").length,
+                      label: "Seclusion in use",
+                      tone: own.row.inUse.some((episode) => episode.practice === "seclusion")
+                        ? ("danger" as const)
+                        : undefined,
+                    },
+                    {
+                      id: "restraint",
+                      value: restraint,
+                      label: "Restraint in use",
+                      tone: restraint > 0 ? ("danger" as const) : undefined,
+                    },
+                    { id: "incidents", value: own.row.incidents, label: "Incidents, last day" },
+                  ]
+                : ROOM_STATES.map((entry) => ({
+                    id: entry.id,
+                    value: counts[entry.id],
                     // Short labels that stay on one line; "Seclusion rooms" is spoken before each.
-                    label={
+                    label: (
                       <>
                         <SrOnly>Seclusion rooms </SrOnly>
                         {entry.label}
                       </>
-                    }
-                    tone={counts[entry.id] > 0 && entry.id !== "not_recorded" ? entry.tone : undefined}
-                  />
-                ))}
-          </div>
+                    ),
+                    tone:
+                      counts[entry.id] > 0 && entry.id !== "not_recorded"
+                        ? entry.tone === "danger"
+                          ? ("danger" as const)
+                          : entry.tone === "warning"
+                            ? ("warning" as const)
+                            : entry.tone === "success"
+                              ? ("ok" as const)
+                              : undefined
+                        : undefined,
+                  }))
+            }
+          />
         }
       />
 

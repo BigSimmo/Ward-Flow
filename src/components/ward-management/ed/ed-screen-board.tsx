@@ -5,9 +5,8 @@
 // 15 Oct 2026).
 import { Maximize2, Minimize } from "lucide-react";
 import type { ReactNode } from "react";
-import { PortraitRail, SearchField, Segmented, FullScreenFrame, FullScreenMarkSlot } from "@/components/wf";
+import { SearchField, Segmented, FullScreenFrame, FullScreenMarkSlot } from "@/components/wf";
 import { EdBoardChips } from "./ed-board-chips";
-import { EdNeedsYou } from "./ed-needs-you";
 import { renderEdBoardRow } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
 import styles from "./ed.module.css";
@@ -22,10 +21,6 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
     boardTable,
     isPhone,
     isTabletPortrait,
-    needsRailSlides,
-    needsYouItems,
-    needsRailOpen,
-    setNeedsRailOpen,
     fullscreenBoard,
     setFullscreenBoard,
     patients,
@@ -56,45 +51,38 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
         <h2>ED psychiatry</h2>
         <div className={styles.phActions}>
           <FullScreenMarkSlot />
-          <button
-            type="button"
-            className={styles.fullscreenToggleBtn}
-            onClick={() => setFullscreenBoard((prev) => !prev)}
-            aria-label={
-              boardTable
-                ? fullscreenBoard
-                  ? "Exit handover view"
-                  : "Handover view, full width"
-                : fullscreenBoard
-                  ? "Exit larger screen mode"
-                  : "Larger screen mode"
-            }
-            title={fullscreenBoard ? "Exit larger screen mode (Esc)" : "Expand board to larger screen mode"}
-          >
-            {fullscreenBoard ? (
-              <Minimize className={styles.expandIcon} size={14} strokeWidth={1.75} aria-hidden="true" />
-            ) : (
-              <Maximize2 className={styles.expandIcon} size={14} strokeWidth={1.75} aria-hidden="true" />
-            )}
-            <span>
-              {boardTable
-                ? fullscreenBoard
-                  ? "Exit handover view"
-                  : "Handover view"
-                : fullscreenBoard
-                  ? "Exit larger screen"
-                  : "Larger screen mode"}
-            </span>
-          </button>
-          {boardTable && needsRailSlides ? (
-            <PortraitRail
-              title="My list"
-              summary={String(needsYouItems.length)}
-              open={needsRailOpen}
-              onOpenChange={setNeedsRailOpen}
+          {/* Audit four 64: one Enlarge, on the tab row. This head control stays only as the way back out. */}
+          {fullscreenBoard ? (
+            <button
+              type="button"
+              className={styles.fullscreenToggleBtn}
+              onClick={() => setFullscreenBoard((prev) => !prev)}
+              aria-label={
+                boardTable
+                  ? fullscreenBoard
+                    ? "Exit handover view"
+                    : "Handover view, full width"
+                  : fullscreenBoard
+                    ? "Exit larger screen mode"
+                    : "Larger screen mode"
+              }
+              title={fullscreenBoard ? "Exit larger screen mode (Esc)" : "Expand board to larger screen mode"}
             >
-              <EdNeedsYou items={needsYouItems} framed={false} />
-            </PortraitRail>
+              {fullscreenBoard ? (
+                <Minimize className={styles.expandIcon} size={14} strokeWidth={1.75} aria-hidden="true" />
+              ) : (
+                <Maximize2 className={styles.expandIcon} size={14} strokeWidth={1.75} aria-hidden="true" />
+              )}
+              <span>
+                {boardTable
+                  ? fullscreenBoard
+                    ? "Exit handover view"
+                    : "Handover view"
+                  : fullscreenBoard
+                    ? "Exit larger screen"
+                    : "Larger screen mode"}
+              </span>
+            </button>
           ) : null}
           <span className={styles.count}>
             <b>{patients.length}</b> {patients.length === 1 ? "person" : "people"}
@@ -139,8 +127,12 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
           {hasBoardDrafts ? "Unsaved changes · This screen only" : null}
         </span>
         <span className={styles.boardResult} role="status">
-          <span className={styles.boardHint}>Filters highlight, everyone stays</span> <b>{boardMatchCount}</b> of{" "}
-          {patients.length} match<span className="sr-only"> · Synthetic data</span>
+          {boardMatchCount !== patients.length ? (
+            <>
+              <span className={styles.boardHint}>Filters highlight, everyone stays</span>{" "}
+            </>
+          ) : null}
+          <b>{boardMatchCount}</b> of {patients.length} match<span className="sr-only"> · Synthetic data</span>
         </span>
       </div>
       {sentForBed.length > 0 ? (
@@ -176,7 +168,7 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
             const a2Rows = visiblePatients.map(renderBoardRow);
             const columns = isTabletPortrait
               ? ["T", "Patient", "In ED", "Referral", "Next"]
-              : ["T", "Patient", "In ED", "Bay", "Form", "Cleared", "Review", "Referral", "Next"];
+              : ["T", "Patient", "In ED", "Form", "Cleared", "Review", "Referral", "Next"];
             return (
               <>
                 {boardMatchCount === 0 ? (

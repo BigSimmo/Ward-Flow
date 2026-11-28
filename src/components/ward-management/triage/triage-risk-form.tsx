@@ -15,7 +15,16 @@
 import { BellRing, BookUser, Check, CircleHelp, FileText } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ReactNode,
+} from "react";
 
 import {
   Button,
@@ -26,7 +35,7 @@ import {
   Hero,
   HeroChip,
   HeroChips,
-  HeroStat,
+  HeroFigures,
   Icon,
   buttonClass,
   useIsPhone,
@@ -52,7 +61,8 @@ import { SectionCard, StatusMark, type FormApi } from "./triage-risk-parts";
 import { AssessmentBody, ReviewBody } from "./triage-risk-review";
 import { PlanBody, RiskBody } from "./triage-risk-risk";
 import { AllFactorsDrawer, SummaryDocument, SummaryDrawer } from "./triage-risk-sheets";
-import { HowToDrawer } from "./triage-risk-how";
+import { HowToDrawer, type HowTab } from "./triage-risk-how";
+import { TriageGuideProvider, useTriageGuides, type GuideId } from "./triage-guide-context";
 import { ContactsPop, TeamPop } from "./triage-risk-pops";
 import { seeBy } from "./triage-see-by";
 import { signerName } from "./triage-signer";
@@ -329,6 +339,20 @@ function useFocusKeeper(state: TriageState) {
 }
 
 /** Start a triage (`/bedchart/triage/new`): choosing a person opens their form, blank. */
+/** The How to drawer, wired to the note that opened What to cover (it sits inside the guide provider). */
+function HowToWithGuides(props: Omit<ComponentProps<typeof HowToDrawer>, "onHeading">) {
+  const guides = useTriageGuides();
+  return (
+    <HowToDrawer
+      {...props}
+      onHeading={(heading) => {
+        props.onClose();
+        window.setTimeout(() => guides?.insert(props.guide, heading), 0);
+      }}
+    />
+  );
+}
+
 export function TriageStartScreen() {
   const router = useRouter();
   return <TriageStart onChoose={(person) => router.push(triageHrefFor(person.id))} />;
@@ -400,6 +424,8 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
   const [editingReview, setEditingReview] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
   const [tab, setTab] = useState("sum");
+  const [howTab, setHowTab] = useState<HowTab>("steps");
+  const [coverGuide, setCoverGuide] = useState<GuideId>("note");
   const [active, setActive] = useState<SectionId>("rev");
   // Josh (7 Nov 2026): the form runs on the board clock, as signing does. Now stamps it and the
   // future-time check measures against it, as Perth wall-clock time whatever the device's own zone.
@@ -616,7 +642,10 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
       size="sm"
       icon={CircleHelp}
       className={phoneRows.heroPill}
-      onClick={() => setSheet("how")}
+      onClick={() => {
+        setHowTab("steps");
+        setSheet("how");
+      }}
       aria-haspopup="dialog"
     >
       How to
@@ -654,321 +683,343 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
   ));
 
   return (
-    <div className={styles.screen} data-testid="triage-risk-page">
-      <main id="main-content" className={styles.main}>
-        <Hero
-          level={1}
-          eyebrow={`Triage and risk · Synthetic · ${signed ? "Signed" : left ? `${left} left before signing` : "Ready to sign"}`}
-          title={<FormalName name={person.name} />}
-          titleMeta={person.meta}
-          // 9 Nov 2026 (Josh): How to joins the record row at every width, so the banner's actions sit
-          // together in one evenly spaced row instead of How to floating above them.
-          stats={
-            isPhone ? undefined : (
-              <>
-                <HeroStat
-                  label="Urgency"
-                  value={state.urgency ? `${state.urgency} ${TIER_SHORT[state.urgency]}` : notSet}
+    <TriageGuideProvider
+      onOpen={(id) => {
+        setCoverGuide(id);
+        setHowTab("cover");
+        setSheet("how");
+      }}
+    >
+      <div className={styles.screen} data-testid="triage-risk-page">
+        <main id="main-content" className={styles.main}>
+          <Hero
+            level={1}
+            eyebrow={`Triage and risk · Synthetic · ${signed ? "Signed" : left ? (isPhone ? `${left} left before signing` : "Not signed") : "Ready to sign"}`}
+            title={<FormalName name={person.name} />}
+            titleMeta={person.meta}
+            // 9 Nov 2026 (Josh): How to joins the record row at every width, so the banner's actions sit
+            // together in one evenly spaced row instead of How to floating above them.
+            stats={
+              isPhone ? undefined : (
+                // #109 (audit two): the kit's equal-column figures. D-186 (Q11): the form's own legal
+                // status reads "Chosen today"; the record's chip reads "On record".
+                <HeroFigures
+                  label="Triage figures"
+                  items={[
+                    {
+                      id: "urgency",
+                      value: state.urgency ? `${state.urgency} ${TIER_SHORT[state.urgency]}` : notSet,
+                      label: "Urgency",
+                      word: true,
+                    },
+                    {
+                      id: "legal",
+                      value: state.legal ? <LegalName name={LEGAL_NAME[state.legal]} /> : notSet,
+                      label: "Legal, chosen today",
+                      word: true,
+                    },
+                    { id: "flags", value: flagCount, label: "Risk flags" },
+                    {
+                      id: "review",
+                      value: state.review ? REVIEW_SHORT[state.review] : notSet,
+                      label: "Review",
+                      word: true,
+                    },
+                  ]}
                 />
-                {/* D-186 (Q11): the form's own status reads "Chosen today"; the record's chip reads "On record". */}
-                <HeroStat
-                  label="Legal, chosen today"
-                  value={state.legal ? <LegalName name={LEGAL_NAME[state.legal]} /> : notSet}
-                />
-                <HeroStat label="Risk flags" value={flagCount} />
-                <HeroStat label="Review" value={state.review ? REVIEW_SHORT[state.review] : notSet} />
-              </>
-            )
-          }
-          bar={
-            <div className={styles.bannerBar}>
-              <p className={styles.idLine}>
-                <span>
-                  UMRN <b className={styles.mono}>{person.umrn}</b>
-                </span>
-                <span>
-                  DOB <b className={styles.mono}>{person.dob}</b>
-                </span>
-                {isPhone ? null : (
+              )
+            }
+            bar={
+              <div className={styles.bannerBar}>
+                <p className={styles.idLine}>
                   <span>
-                    Location <b>{person.nowAt}</b>
+                    UMRN <b className={styles.mono}>{person.umrn}</b>
                   </span>
-                )}
-                <span>
-                  Community team <TeamPop patientId={person.id} recordHref={person.recordHref} />
-                </span>
-              </p>
-              {/* Alert first, then allergies, legal status on record in full words, then the rest. */}
-              <HeroChips label="Alerts, allergies and legal" className={styles.bannerTags}>
-                {signed ? (
-                  <HeroChip
-                    value="Signed"
-                    tone="success"
-                    label={`${signedAt} by ${reviewer}`}
-                    testId="triage-signed-tag"
-                  />
-                ) : null}
-                {due ? (
-                  <HeroChip
-                    value={`See by ${due.when}`}
-                    label={due.unsigned ? `${due.basis} · window not signed` : due.basis}
-                    testId="triage-see-by"
-                  />
-                ) : null}
-                {person.alert ? <HeroChip value="Alert" tone="warning" label={person.alert} /> : null}
-                <HeroChip
-                  value="Allergies"
-                  // A recorded allergy carries the amber mark, as the alert chip does; none reads plain.
-                  // (Chips never take the triangle: tests/wf-triangle-guard.test.ts.)
-                  tone={person.allergies === "Not recorded" ? undefined : "warning"}
-                  label={person.allergies}
-                />
-                {person.legal ? (
-                  <HeroChip value={<LegalName name={person.legal} />} label={person.legalTag} />
-                ) : (
-                  <HeroChip value="Legal on record" label="Not recorded" />
-                )}
-                {person.alertCount > 1 ? (
-                  <HeroChip
-                    value={`+${person.alertCount - 1}`}
-                    label="more alerts"
-                    onPress={() => openSummary("alerts")}
-                  />
-                ) : null}
-              </HeroChips>
-            </div>
-          }
-          barAside={
-            <div className={`${phoneRows.heroPills} ${styles.heroLinks}`}>
-              {bannerLink(
-                "Alerts",
-                "Alerts",
-                BellRing,
-                () => openSummary("alerts"),
-                person.alertCount ? (
-                  <>
-                    {" "}
-                    <span className={styles.heroCount}>{person.alertCount}</span>
-                  </>
-                ) : undefined,
-              )}
-              {bannerLink("Patient and referral", "Patient", BookUser, () => openSummary("patient"))}
-              <ContactsPop patientId={person.id} recordHref={person.recordHref} />
-              {howToButton}
-            </div>
-          }
-          condensed={`${person.name} · ${person.umrn} · ${signed ? "Signed" : left ? `${left} left before signing` : "Ready to sign"}`}
-        />
-
-        <div className={styles.layout}>
-          <nav ref={indexRef} className={styles.index} aria-label="Sections">
-            {indexLinks}
-          </nav>
-
-          {/* The left rail (Josh, 13 Nov 2026: the nav reads more naturally on the left): sections, progress and
-              Sign and send in one card. A tablet shows it after the form; the phone has its bar. */}
-          {isPhone ? null : (
-            <SignRail
-              reqs={reqs}
-              status={status}
-              active={active}
-              left={left}
-              percent={percent}
-              signed={signed}
-              signedLine={signedAt ? `${signedAt} by ${reviewer}` : undefined}
-              doneLine={(section) => foldLine(state, section)[0] ?? ""}
-              onJump={(section, target) => {
-                navLock.current = Date.now() + 1200;
-                setActive(section);
-                jump(section, target);
-              }}
-              onSummary={() => openSummary("sum")}
-              signButton={signed ? null : signButton("foot")}
-            />
-          )}
-
-          <div className={styles.mainCol}>
-            {signed ? (
-              <Card className={startStyles.card} aria-labelledby="triage-signed-title" data-testid="triage-signed">
-                {/* Redesign (13 Nov 2026): what to do next sits under the title, above the signed entry. */}
-                <div className={startStyles.signedHead}>
-                  <span className={startStyles.chip} data-done="" aria-hidden="true">
-                    <Icon icon={Check} size={16} />
+                  <span>
+                    DOB <b className={styles.mono}>{person.dob}</b>
                   </span>
-                  <div className={startStyles.signedText}>
-                    <h2 className={startStyles.signedTitle} id="triage-signed-title">
-                      Triage signed
-                    </h2>
-                    <p className={startStyles.quiet}>
-                      One entry, printed as SMHMR900 and SMHMR905. The form below is read-only.
-                    </p>
-                  </div>
-                  <div className={startStyles.actions} role="group" aria-label="Next">
-                    <Button variant="pri" onClick={copySummary} data-testid="triage-signed-copy">
-                      Copy summary
-                    </Button>
-                    {/* Review finding 4 (12 Nov 2026): opens the new referral for this person, where the desk may. */}
-                    {canRequestBed ? (
-                      <Link href={bedRequestHref} className={buttonClass()} data-testid="triage-signed-bed-request">
-                        Make a bed request
-                      </Link>
-                    ) : null}
-                    <Link href={person.recordHref} className={buttonClass()}>
-                      Open patient record
-                    </Link>
-                    <Button onClick={onStartNew}>Start another triage</Button>
-                  </div>
-                </div>
-                <div className={startStyles.signedDoc}>
-                  <SummaryDocument form={formApi} signed={{ at: signedAt, by: reviewer }} />
-                </div>
-                <p className={`${startStyles.quiet} ${startStyles.signedFoot}`} data-testid="triage-signed-record-line">
-                  {/* D-186 (Q14): every field signing saves (`TriageSignedRecord` in triage-record.ts). */}
-                  Signed to the patient record as codes: urgency, outcome, legal status, review, the risk flags marked
-                  present, problems, actions, venue and referral type, with when it was signed and by which desk. The
-                  typed assessment, mental state, formulation and plan are not part of that record.
+                  {isPhone ? null : (
+                    <span>
+                      Location <b>{person.nowAt}</b>
+                    </span>
+                  )}
+                  <span>
+                    Community team <TeamPop patientId={person.id} recordHref={person.recordHref} />
+                  </span>
                 </p>
-              </Card>
-            ) : null}
-
-            {/* Once signed the form is read-only: every control in the fieldset is disabled, the text stays readable. */}
-            <fieldset
-              className={`${styles.form} ${startStyles.readOnly}`}
-              disabled={signed || signing}
-              aria-label={signed ? "Signed triage, read-only" : undefined}
-              data-testid="triage-form"
-            >
-              {/* Redesign (13 Nov 2026): one card per printed form, its sections as rows with a hairline
-                  between them, in place of six cards and two divider headings. */}
-              {PARTS.map(({ part, title, code }) => {
-                const sections = SECTIONS.filter((s) => s.part === part);
-                const doneHere = sections.filter((s) => status[s.id].done).length;
-                return (
-                  <Card
-                    key={part}
-                    as="div"
-                    role="group"
-                    aria-labelledby={`triage-part-${part}`}
-                    className={styles.partCard}
-                  >
-                    <CardHead
-                      eyebrow
-                      id={`triage-part-${part}`}
-                      title={title}
-                      meta={<span className={styles.mono}>{code}</span>}
-                      aside={
-                        <span className={styles.partCount}>
-                          <b className={styles.mono}>{doneHere}</b> of {sections.length} done
-                        </span>
-                      }
+                {/* Alert first, then allergies, legal status on record in full words, then the rest. */}
+                <HeroChips label="Alerts, allergies and legal" className={styles.bannerTags}>
+                  {signed ? (
+                    <HeroChip
+                      value="Signed"
+                      tone="success"
+                      label={`${signedAt} by ${reviewer}`}
+                      testId="triage-signed-tag"
                     />
-                    {sections.map((s) => (
-                      <SectionCard
-                        key={s.id}
-                        id={s.id}
-                        n={s.n}
-                        title={s.label}
-                        sub={SUB[s.id]}
-                        status={status[s.id]}
-                        active={active === s.id}
-                        fold={
-                          FOLDABLE.includes(s.id)
-                            ? {
-                                folded: folded.has(s.id),
-                                line: foldLine(state, s.id),
-                                onOpen: () => {
-                                  openSection(s.id);
-                                  focusSectionStart(s.id);
-                                },
-                              }
-                            : undefined
-                        }
-                      >
-                        {sectionBody[s.id]}
-                      </SectionCard>
-                    ))}
-                  </Card>
-                );
-              })}
-            </fieldset>
-          </div>
-        </div>
-        <p className={styles.footNote}>
-          BedChart prototype. Synthetic patient and figures only. Not validated clinical decision support. One entry
-          prints as SMHMR900 and SMHMR905.
-        </p>
-      </main>
+                  ) : null}
+                  {due ? (
+                    <HeroChip
+                      value={`See by ${due.when}`}
+                      label={due.unsigned ? `${due.basis} · window not signed` : due.basis}
+                      testId="triage-see-by"
+                    />
+                  ) : null}
+                  {person.alert ? <HeroChip value="Alert" tone="warning" label={person.alert} /> : null}
+                  <HeroChip
+                    value="Allergies"
+                    // A recorded allergy carries the amber mark, as the alert chip does; none reads plain.
+                    // (Chips never take the triangle: tests/wf-triangle-guard.test.ts.)
+                    tone={person.allergies === "Not recorded" ? undefined : "warning"}
+                    label={person.allergies}
+                  />
+                  {person.legal ? (
+                    <HeroChip value={<LegalName name={person.legal} />} label={person.legalTag} />
+                  ) : (
+                    <HeroChip value="Legal on record" label="Not recorded" />
+                  )}
+                </HeroChips>
+              </div>
+            }
+            barAside={
+              <div className={`${phoneRows.heroPills} ${styles.heroLinks}`}>
+                {bannerLink(
+                  "Alerts",
+                  "Alerts",
+                  BellRing,
+                  () => openSummary("alerts"),
+                  person.alertCount ? (
+                    <>
+                      {" "}
+                      <span className={styles.heroCount}>{person.alertCount}</span>
+                    </>
+                  ) : undefined,
+                )}
+                {bannerLink("Patient and referral", "Patient", BookUser, () => openSummary("patient"))}
+                <ContactsPop patientId={person.id} recordHref={person.recordHref} />
+                {howToButton}
+              </div>
+            }
+            condensed={`${person.name} · ${person.umrn} · ${signed ? "Signed" : left ? `${left} left before signing` : "Ready to sign"}`}
+          />
 
-      {signed ? null : isPhone ? (
-        <div className={styles.phoneBar} data-testid="triage-phone-bar">
-          <button type="button" className={styles.phoneLeft} onClick={() => openSummary("sum")} aria-haspopup="dialog">
-            {left ? (
-              <>
-                <b className={styles.mono}>{left}</b> left before signing
-              </>
-            ) : (
-              "Ready to sign"
+          <div className={styles.layout}>
+            <nav ref={indexRef} className={styles.index} aria-label="Sections">
+              {indexLinks}
+            </nav>
+
+            {/* The left rail (Josh, 13 Nov 2026: the nav reads more naturally on the left): sections, progress and
+              Sign and send in one card. A tablet shows it after the form; the phone has its bar. */}
+            {isPhone ? null : (
+              <SignRail
+                reqs={reqs}
+                status={status}
+                active={active}
+                left={left}
+                percent={percent}
+                signed={signed}
+                signedLine={signedAt ? `${signedAt} by ${reviewer}` : undefined}
+                doneLine={(section) => foldLine(state, section)[0] ?? ""}
+                onJump={(section, target) => {
+                  navLock.current = Date.now() + 1200;
+                  setActive(section);
+                  jump(section, target);
+                }}
+                onSummary={() => openSummary("sum")}
+                signButton={signed ? null : signButton("foot")}
+              />
             )}
-          </button>
-          <Button onClick={() => openSummary("sum")} aria-haspopup="dialog">
-            Summary
-          </Button>
-          {signButton("bar")}
-        </div>
-      ) : (
-        // Tablet only: from 62.5rem up the Summary button sits in the sign-off rail.
-        <Button className={styles.edgeTab} icon={FileText} onClick={() => openSummary("sum")} aria-haspopup="dialog">
-          Summary <span className={styles.edgeCount}>{left ? `${left} needed` : "Ready"}</span>
-        </Button>
-      )}
 
-      <SummaryDrawer
-        form={formApi}
-        open={sheet === "sum"}
-        tab={tab}
-        onTab={setTab}
-        onClose={() => setSheet(null)}
-        reqs={reqs}
-        jump={jump}
-        signButton={signed ? null : signButton("sheet")}
-        signed={signedAt ? { at: signedAt, by: reviewer } : undefined}
-      />
-      <HowToDrawer
-        open={sheet === "how"}
-        onClose={() => setSheet(null)}
-        onGoTo={(section) => jump(section)}
-        onStartNew={() => {
-          setSheet(null);
-          onStartNew();
-        }}
-      />
-      <AllFactorsDrawer form={formApi} open={sheet === "all"} onClose={() => setSheet(null)} />
-      <Dialog
-        open={confirming}
-        onClose={() => setConfirming(false)}
-        title={`Sign triage for ${person.name}?`}
-        // D-187 item 18 (TW-198): one entry, as the page foot says (TW-202), not two records.
-        description="Signing records one entry, which prints as SMHMR900 and SMHMR905. Check what you chose."
-        size="sm"
-        data-testid="triage-sign-dialog"
-        primary={{ label: "Sign", onAction: confirmSign }}
-        secondary={[{ label: "Keep editing", onAction: () => setConfirming(false), autoFocus: true }]}
-      >
-        <dl className={startStyles.confirmFacts}>
-          <div>
-            <dt>Urgency</dt>
-            <dd>{state.urgency ? `${state.urgency} · ${TIER_LONG[state.urgency]}` : "–"}</dd>
+            <div className={styles.mainCol}>
+              {signed ? (
+                <Card className={startStyles.card} aria-labelledby="triage-signed-title" data-testid="triage-signed">
+                  {/* Redesign (13 Nov 2026): what to do next sits under the title, above the signed entry. */}
+                  <div className={startStyles.signedHead}>
+                    <span className={startStyles.chip} data-done="" aria-hidden="true">
+                      <Icon icon={Check} size={16} />
+                    </span>
+                    <div className={startStyles.signedText}>
+                      <h2 className={startStyles.signedTitle} id="triage-signed-title">
+                        Triage signed
+                      </h2>
+                      <p className={startStyles.quiet}>
+                        One entry, printed as SMHMR900 and SMHMR905. The form below is read-only.
+                      </p>
+                    </div>
+                    <div className={startStyles.actions} role="group" aria-label="Next">
+                      <Button variant="pri" onClick={copySummary} data-testid="triage-signed-copy">
+                        Copy summary
+                      </Button>
+                      {/* Review finding 4 (12 Nov 2026): opens the new referral for this person, where the desk may. */}
+                      {canRequestBed ? (
+                        <Link href={bedRequestHref} className={buttonClass()} data-testid="triage-signed-bed-request">
+                          Make a bed request
+                        </Link>
+                      ) : null}
+                      <Link href={person.recordHref} className={buttonClass()}>
+                        Open patient record
+                      </Link>
+                      <Button onClick={onStartNew}>Start another triage</Button>
+                    </div>
+                  </div>
+                  <div className={startStyles.signedDoc}>
+                    <SummaryDocument form={formApi} signed={{ at: signedAt, by: reviewer }} />
+                  </div>
+                  <p
+                    className={`${startStyles.quiet} ${startStyles.signedFoot}`}
+                    data-testid="triage-signed-record-line"
+                  >
+                    {/* D-186 (Q14): every field signing saves (`TriageSignedRecord` in triage-record.ts). */}
+                    Signed to the patient record as codes: urgency, outcome, legal status, review, the risk flags marked
+                    present, problems, actions, venue and referral type, with when it was signed and by which desk. The
+                    typed assessment, mental state, formulation and plan are not part of that record.
+                  </p>
+                </Card>
+              ) : null}
+
+              {/* Once signed the form is read-only: every control in the fieldset is disabled, the text stays readable. */}
+              <fieldset
+                className={`${styles.form} ${startStyles.readOnly}`}
+                disabled={signed || signing}
+                aria-label={signed ? "Signed triage, read-only" : undefined}
+                data-testid="triage-form"
+              >
+                {/* Redesign (13 Nov 2026): one card per printed form, its sections as rows with a hairline
+                  between them, in place of six cards and two divider headings. */}
+                {PARTS.map(({ part, title, code }) => {
+                  const sections = SECTIONS.filter((s) => s.part === part);
+                  const doneHere = sections.filter((s) => status[s.id].done).length;
+                  return (
+                    <Card
+                      key={part}
+                      as="div"
+                      role="group"
+                      aria-labelledby={`triage-part-${part}`}
+                      className={styles.partCard}
+                    >
+                      <CardHead
+                        eyebrow
+                        id={`triage-part-${part}`}
+                        title={title}
+                        meta={<span className={styles.mono}>{code}</span>}
+                        aside={
+                          <span className={styles.partCount}>
+                            <b className={styles.mono}>{doneHere}</b> of {sections.length} done
+                          </span>
+                        }
+                      />
+                      {sections.map((s) => (
+                        <SectionCard
+                          key={s.id}
+                          id={s.id}
+                          n={s.n}
+                          title={s.label}
+                          sub={SUB[s.id]}
+                          status={status[s.id]}
+                          active={active === s.id}
+                          fold={
+                            FOLDABLE.includes(s.id)
+                              ? {
+                                  folded: folded.has(s.id),
+                                  line: foldLine(state, s.id),
+                                  onOpen: () => {
+                                    openSection(s.id);
+                                    focusSectionStart(s.id);
+                                  },
+                                }
+                              : undefined
+                          }
+                        >
+                          {sectionBody[s.id]}
+                        </SectionCard>
+                      ))}
+                    </Card>
+                  );
+                })}
+              </fieldset>
+            </div>
           </div>
-          <div>
-            <dt>Outcome</dt>
-            <dd>{state.outcome ?? "–"}</dd>
+          <p className={styles.footNote}>
+            BedChart prototype. Synthetic patient and figures only. Not validated clinical decision support. One entry
+            prints as SMHMR900 and SMHMR905.
+          </p>
+        </main>
+
+        {signed ? null : isPhone ? (
+          <div className={styles.phoneBar} data-testid="triage-phone-bar">
+            <button
+              type="button"
+              className={styles.phoneLeft}
+              onClick={() => openSummary("sum")}
+              aria-haspopup="dialog"
+            >
+              {left ? (
+                <>
+                  <b className={styles.mono}>{left}</b> left before signing
+                </>
+              ) : (
+                "Ready to sign"
+              )}
+            </button>
+            <Button onClick={() => openSummary("sum")} aria-haspopup="dialog">
+              Summary
+            </Button>
+            {signButton("bar")}
           </div>
-          <div>
-            <dt>Reviewer</dt>
-            <dd>{reviewer}</dd>
-          </div>
-        </dl>
-      </Dialog>
-    </div>
+        ) : (
+          // Tablet only: from 62.5rem up the Summary button sits in the sign-off rail.
+          <Button className={styles.edgeTab} icon={FileText} onClick={() => openSummary("sum")} aria-haspopup="dialog">
+            Summary <span className={styles.edgeCount}>{left ? `${left} needed` : "Ready"}</span>
+          </Button>
+        )}
+
+        <SummaryDrawer
+          form={formApi}
+          open={sheet === "sum"}
+          tab={tab}
+          onTab={setTab}
+          onClose={() => setSheet(null)}
+          reqs={reqs}
+          jump={jump}
+          signButton={signed ? null : signButton("sheet")}
+          signed={signedAt ? { at: signedAt, by: reviewer } : undefined}
+        />
+        <HowToWithGuides
+          tab={howTab}
+          onTab={setHowTab}
+          guide={coverGuide}
+          noteText={state.text[coverGuide]}
+          open={sheet === "how"}
+          onClose={() => setSheet(null)}
+          onGoTo={(section) => jump(section)}
+        />
+        <AllFactorsDrawer form={formApi} open={sheet === "all"} onClose={() => setSheet(null)} />
+        <Dialog
+          open={confirming}
+          onClose={() => setConfirming(false)}
+          title={`Sign triage for ${person.name}?`}
+          // D-187 item 18 (TW-198): one entry, as the page foot says (TW-202), not two records.
+          description="Signing records one entry, which prints as SMHMR900 and SMHMR905. Check what you chose."
+          size="sm"
+          data-testid="triage-sign-dialog"
+          primary={{ label: "Sign", onAction: confirmSign }}
+          secondary={[{ label: "Keep editing", onAction: () => setConfirming(false), autoFocus: true }]}
+        >
+          <dl className={startStyles.confirmFacts}>
+            <div>
+              <dt>Urgency</dt>
+              <dd>{state.urgency ? `${state.urgency} · ${TIER_LONG[state.urgency]}` : "–"}</dd>
+            </div>
+            <div>
+              <dt>Outcome</dt>
+              <dd>{state.outcome ?? "–"}</dd>
+            </div>
+            <div>
+              <dt>Reviewer</dt>
+              <dd>{reviewer}</dd>
+            </div>
+          </dl>
+        </Dialog>
+      </div>
+    </TriageGuideProvider>
   );
 }

@@ -44,12 +44,12 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     summary:
       "You see the whole network or your own health service, decide referrals and keep patients moving to a bed.",
     startsAt:
-      "Home opens Needs you: Act now and Referrals to decide. Your menu holds Home, Capacity, Movements, Waiting, All EDs, Referrals and Handover. On a desktop, Open on TV on Capacity puts the bed meeting figures on the meeting room screen. On Discharges, use Record departure for a confirmed discharge. It records that the patient has left; it does not choose or approve their clinical discharge.",
+      "Home opens Needs you: Act now and Referrals to decide. Your menu holds Home, Capacity, Movements, Waiting, Find, Referrals and Handover. On a desktop, Open on TV in the Bed meeting sheet on Capacity puts the bed meeting figures on the meeting room screen. On Discharges, use Record departure for a confirmed discharge. It records that the patient has left; it does not choose or approve their clinical discharge.",
     jobs: [
       {
         job: "Decide a referral",
         howTo: "decide-referral",
-        how: "Press Decide, read the referral, then Accept referral or Decline referral. A decline needs a reason.",
+        how: "Press Decide, read the referral, then Accept or Decline referral. A decline needs a reason.",
         go: "referrals",
       },
       {
@@ -67,7 +67,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       {
         job: "Book transport",
         howTo: "book-transport",
-        how: "Open the patient from Movements, then press Book transport, or record that none is needed. Cancel transport before you release a pulled bed.",
+        how: "Open the patient from Movements, then press Record transport booking, or record that none is needed. Cancel transport before you release a pulled bed.",
         go: "movements",
       },
       {
@@ -92,7 +92,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     homeName: "My ward",
     summary: "You run your own ward's beds and answer the referrals sent to it.",
     startsAt:
-      "My ward is your home: the bed board, this shift's jobs and Awaiting your answer. Your menu holds Coming and going, Referrals to answer and Handover. On a desktop, On TV in the ward's toolbar opens a read only screen for the ward's own TV.",
+      "My ward is your home: the bed board, this shift's jobs and Awaiting your answer. Your menu holds Coming and going, Referrals to answer and Handover. On a desktop, Open on TV in the ward's toolbar opens a read only screen for the ward's own TV.",
     jobs: [
       {
         job: "Confirm your beds",
@@ -103,18 +103,18 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       {
         job: "Read the referral",
         howTo: "answer-ward-referrals",
-        how: "Tap the patient's name or View referral. You see the whole referral before you answer.",
+        how: "Tap the patient's name or Open referral. You see the whole referral before you answer.",
         go: "home",
       },
       {
         job: "Answer it",
         howTo: "decide-referral",
-        how: "Press Accept referral and choose the pull time limit, or press Decline referral and pick a reason.",
+        how: "Press Accept and choose the pull time limit, or press Decline referral and pick a reason.",
         go: "home",
       },
       {
         job: "Arrivals",
-        how: "Open the patient from Coming and going. When they reach the ward, press Confirm arrival.",
+        how: "Open the patient from Coming and going. When they reach the ward, press Record arrival.",
         go: "movements",
       },
       {
@@ -158,7 +158,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       },
       {
         job: "Transport",
-        how: "Once a bed is pulled for your patient, open the row's actions and choose Log transport booking or Record no transport needed.",
+        how: "Once a bed is pulled for your patient, open the row's actions and choose Record transport booking or Record no transport needed.",
         go: "home",
       },
       {
@@ -212,14 +212,14 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       {
         job: "Send a referral",
         howTo: "new-referral",
-        how: "Use New referral. For another team, choose the purpose and first contact time, then Send referral.",
+        how: "Use New referral. For another team, choose the purpose and first contact time, then Review and send.",
         go: "referral-intake",
       },
       { job: "Check what you sent", how: "The Sent tab shows your referrals and whether a ward accepted.", go: "home" },
       {
         job: "Answer a referral",
         howTo: "decide-referral",
-        how: "Open it, then Accept referral or Decline referral.",
+        how: "Open it, then Accept or Decline referral.",
         go: "referrals",
       },
       { job: "Record contact", how: "Use Record contact after you reach the person.", go: "home" },
@@ -241,7 +241,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     startsAt: "Capacity is your home. Your menu holds Wards, Movements, Waiting and Handover.",
     jobs: [
       {
-        job: "Check beds",
+        job: "Check counts",
         how: "Check each ward's figures and who confirmed them. If one is old, ask the coordinator to request an update.",
         go: "home",
       },
@@ -279,7 +279,11 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       "Statistics is your home. Your menu holds Statistics and Capacity. Capacity shows bed counts; both screens are read only. Your own Settings is also available.",
     jobs: [
       { job: "See the network", how: "Statistics shows beds, occupancy and ED waits in one place.", go: "home" },
-      { job: "Check beds", how: "Open Capacity for bed counts across your network or health service.", go: "capacity" },
+      {
+        job: "Check counts",
+        how: "Open Capacity for bed counts across your network or health service.",
+        go: "capacity",
+      },
       { job: "Compare", how: "Set two wards or departments side by side.", go: "home" },
       { job: "Look for pressure", how: "Check ED waits, blocked discharges and expected discharges.", go: "home" },
       {

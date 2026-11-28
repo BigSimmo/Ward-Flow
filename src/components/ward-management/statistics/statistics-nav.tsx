@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, ChevronLeft, Ellipsis } from "lucide-react";
+import { ChevronDown, ChevronLeft, Clock, Ellipsis } from "lucide-react";
 
 import {
   FolderTabs,
+  HeroQuickChips,
   HeroTrack,
   Menu,
   Segmented,
@@ -31,6 +32,7 @@ import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { statisticsHeldToOwnPlace } from "@/components/ward-management/ward-role-access";
 import { useStatisticsSamples, setStatisticsSamples } from "./statistics-samples";
+import { StatisticsShareMenu, useShareMenuHosted } from "./statistics-share";
 import styles from "./statistics-nav.module.css";
 
 export type StatisticsNavSection = "hub" | "overview" | "compare" | "service" | "ward" | "ed" | "community" | "weekly";
@@ -58,8 +60,12 @@ interface StatisticsNavProps {
   testId?: string;
 }
 
-/** On a phone the folder row keeps these sections (and the current one); the rest open from More. */
-const PHONE_FOLDER_SECTIONS: readonly StatisticsNavSection[] = ["hub", "service", "ward"];
+/**
+ * The four unit kinds. Since the simplification mock-up (26 Nov 2026) they are no longer tabs: their
+ * lists are Network's Browse segments, so the tabs are Network, Compare and Weekly. A phone, which
+ * keeps the four index pages, opens them from More.
+ */
+const UNIT_SECTIONS: readonly StatisticsNavSection[] = ["service", "ward", "ed", "community"];
 
 /**
  * The current chip scrolls into the row's view, so a later section (Teams, Weekly) never hides
@@ -131,6 +137,31 @@ export function StatisticsSamplesSwitch() {
     <span className={styles.samples}>
       <Switch checked={samples} onCheckedChange={setStatisticsSamples} label="Show example history" onHero />
     </span>
+  );
+}
+
+/**
+ * Example history as the hero's pressed chip (final look, 26 Nov 2026). Since audit two (#97) it is a
+ * ticked item of the tabs row's Share menu, so the chip shows only on a desk with no tabs row.
+ */
+export function StatisticsSamplesChip() {
+  const samples = useStatisticsSamples();
+  const hosted = useShareMenuHosted();
+  if (hosted) return null;
+  return (
+    <HeroQuickChips
+      label="Statistics tools"
+      items={[
+        {
+          id: "history",
+          label: "Example history",
+          icon: <Clock size={16} strokeWidth={1.75} aria-hidden="true" />,
+          onClick: () => setStatisticsSamples(!samples),
+          pressed: samples,
+          testId: "ward-statistics-example-history",
+        },
+      ]}
+    />
   );
 }
 
@@ -269,48 +300,53 @@ function StatisticsFolderTabs({
 }) {
   const isPhone = useIsPhone();
   const router = useOptionalRouter();
-  const shown = isPhone
-    ? items.filter((item) => PHONE_FOLDER_SECTIONS.includes(item.id) || item.id === activeSection)
-    : items;
-  const rest = items.filter((item) => !shown.includes(item));
+  // Final look (26 Nov 2026): a phone shows the same three tabs as a desktop, on a unit's page too
+  // (Network is current there, as on a desktop); the unit lists open from More.
+  const shown = items.filter((item) => !UNIT_SECTIONS.includes(item.id));
+  const rest = isPhone ? items.filter((item) => !shown.includes(item)) : [];
+  // A unit's own page and the old index addresses belong to Network now (its Browse card).
+  const value = shown.some((item) => item.id === activeSection) ? activeSection : "hub";
   return (
     <FolderTabs
       label="BedChart statistics sections"
-      value={activeSection}
+      value={value}
       testId={testId}
       more={
-        rest.length === 0 ? undefined : (
-          <Menu
-            label="More statistics sections"
-            align="end"
-            items={rest.map((item) => ({
-              id: item.id,
-              label: item.count === undefined ? item.label : `${item.label} ${item.count}`,
-              onSelect: () => {
-                if (router) router.push(item.href);
-                else window.location.assign(item.href);
-              },
-            }))}
-            trigger={(props) => (
-              <button
-                type="button"
-                {...props}
-                className={cx(buttonClass({ variant: "ghost", size: "sm" }), folderTabClasses.more)}
-                data-testid="ward-statistics-nav-more"
-              >
-                <Ellipsis size={16} strokeWidth={1.75} aria-hidden="true" />
-                <span className="sr-only">More statistics sections</span>
-              </button>
-            )}
-          />
-        )
+        <>
+          <StatisticsShareMenu />
+          {rest.length === 0 ? null : (
+            <Menu
+              label="More"
+              align="end"
+              items={rest.map((item) => ({
+                id: item.id,
+                label: item.count === undefined ? item.label : `${item.label} ${item.count}`,
+                onSelect: () => {
+                  if (router) router.push(item.href);
+                  else window.location.assign(item.href);
+                },
+              }))}
+              trigger={(props) => (
+                <button
+                  type="button"
+                  {...props}
+                  className={cx(buttonClass({ variant: "ghost", size: "sm" }), folderTabClasses.more)}
+                  data-testid="ward-statistics-nav-more"
+                >
+                  <Ellipsis size={16} strokeWidth={1.75} aria-hidden="true" />
+                  <span className="sr-only">More</span>
+                </button>
+              )}
+            />
+          )}
+        </>
       }
     >
       <Segmented<StatisticsNavSection>
         className={folderTabClasses.switch}
         label="Statistics sections"
         size="md"
-        value={activeSection}
+        value={value}
         items={shown.map((item) => ({ id: item.id, label: item.label, count: item.count, href: item.href }))}
       />
     </FolderTabs>

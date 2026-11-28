@@ -74,7 +74,7 @@ export function ToolLeaveDue({ onNavigate }: { onNavigate: () => void }) {
       ) : null}
       {canOpenHref(WARD_LEAVE_HREF) ? (
         <Link href={WARD_LEAVE_HREF} className={styles.seeAll} onClick={onNavigate}>
-          See all leave
+          Open Leave
         </Link>
       ) : null}
     </>

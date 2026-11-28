@@ -101,6 +101,7 @@ export function useReferralPatientSelection({
         title: "Change patient?",
         message: `Changing to ${selected.name}, ${selected.umrn}, discards the current patient's referral details. Keep editing to retain them.`,
         confirmLabel: "Discard and change patient",
+        cancelLabel: "Keep editing",
       }).then((confirmed) => {
         if (
           confirmed &&

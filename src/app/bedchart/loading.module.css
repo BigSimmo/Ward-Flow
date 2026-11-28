@@ -1,10 +1,12 @@
 /* shell-10: the in-shell page placeholder while a route loads. Tokens only, no new colour. The
    blocks themselves are drawn by shell/ward-loading-shape.module.css. */
 .main {
+  /* The side inset, shared with the full-bleed hero placeholder (gate r10 F6). */
+  --wl-pad: var(--wf-s-4);
   display: grid;
   grid-template-rows: auto auto 1fr;
   gap: var(--wf-s-3);
-  padding: var(--wf-s-4);
+  padding: var(--wl-pad);
   min-width: 0;
 }
 
@@ -95,6 +97,57 @@
 
 @media (max-width: 46.4375rem) {
   .main {
-    padding: var(--wf-s-3);
+    --wl-pad: var(--wf-s-3);
   }
+}
+
+/* Audit four #83 (28 Nov 2026): the Demo pill (wf/live.module.css's chip), neutral until the page lands. */
+.demoPill {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 22px;
+  padding: 0 10px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-tag, var(--wf-r-pill));
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* On a page whose loaded top is the navy hero (Home, Capacity, Waiting: the shaped placeholders; and,
+   audit four #83, every other navy-hero page listed in loading.tsx, data-shape="hero"),
+   the status row and the hero block are drawn in the hero's own colours and joined, as the loaded
+   page joins its bar and hero, so only the content fades in. Other pages keep the pale skeleton. */
+.main:has([data-shape="home"], [data-shape="capacity"], [data-shape="waiting"], [data-shape="hero"]) .top {
+  /* Gate r10 (1b F6): full-bleed and square, touching the navy bar above, as the loaded band does. */
+  margin: calc(-1 * var(--wl-pad)) calc(-1 * var(--wl-pad)) calc(-1 * var(--wf-s-3));
+  padding: var(--wf-s-3) var(--wl-pad) var(--wf-s-2);
+  border-radius: 0;
+  background: var(--wf-hero-1);
+}
+
+.main:has([data-shape="home"], [data-shape="capacity"], [data-shape="waiting"], [data-shape="hero"]) .status {
+  color: var(--wf-hero-ink-3);
+}
+
+.main:has([data-shape="home"], [data-shape="capacity"], [data-shape="waiting"], [data-shape="hero"]) .demoPill {
+  border-color: color-mix(in srgb, var(--wf-hero-ink) 20%, transparent);
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  color: var(--wf-hero-ink);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
 }

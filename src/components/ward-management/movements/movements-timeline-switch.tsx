@@ -7,10 +7,14 @@
  * worklist there instead. Table is the default (UX review, Josh "yes", 20 Nov 2026; D-270). The
  * choice is remembered on this device only; a stored "off" from the old switch reads as "Table".
  * The bar keeps the one fact worth seeing without the chart.
+ *
+ * Simplification mock-up (26 Nov 2026): the Graph or Table switch moved into the worklist head's
+ * tools menu ("Traffic graph"). With the table chosen nothing is drawn here, so no empty heading row
+ * sits between the stages and the list; with the graph on, its bar names it and offers Hide.
  */
 import { useSyncExternalStore, type ReactNode } from "react";
 
-import { Segmented } from "@/components/wf";
+import { Button } from "@/components/wf";
 import s from "./movements-timeline-switch.module.css";
 
 const KEY = "ward-flow-movements-timeline";
@@ -38,7 +42,7 @@ function subscribe(listener: () => void) {
 const snapshot = () => memory ?? readPref();
 const serverSnapshot = (): TrafficView => "table";
 
-function setTrafficView(next: TrafficView) {
+export function setTrafficView(next: TrafficView) {
   // Only a fixed word is stored, never the control's value itself (CodeQL clear-text storage: the
   // shared segmented control also carries patient fields elsewhere, so its value reads as sensitive).
   memory = next === "table" ? "table" : "graph";
@@ -57,32 +61,24 @@ export function useTrafficView(): TrafficView {
 
 export function MovementsTimelineSwitch({
   summary,
-  tableSummary,
   children,
 }: {
   /** What the bar says while the graph shows (active corridors). */
   summary: string;
-  /** What the bar says while the table shows instead. */
-  tableSummary: string;
   children: ReactNode;
 }) {
   const view = useTrafficView();
+  if (view !== "graph") return null;
   return (
     <>
       <div className={s.bar} data-testid="movements-timeline-switch">
         <h2 className={s.title}>Today’s traffic</h2>
-        <span className={s.summary}>{view === "graph" ? summary : tableSummary}</span>
-        <Segmented
-          label="Show today’s traffic as"
-          items={[
-            { id: "graph", label: "Graph" },
-            { id: "table", label: "Table" },
-          ]}
-          value={view}
-          onChange={setTrafficView}
-        />
+        <span className={s.summary}>{summary}</span>
+        <Button variant="ghost" size="sm" onClick={() => setTrafficView("table")}>
+          Hide graph
+        </Button>
       </div>
-      {view === "graph" ? children : null}
+      {children}
     </>
   );
 }

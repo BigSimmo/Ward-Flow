@@ -24,6 +24,9 @@ import styles from "./bed-squares.module.css";
  * - `notes`   the note line, already in order (build it with `bedSquaresNotes()`); none = no line.
  * - `size`    `"map"` 8 px squares (Capacity, All wards, default) or `"board"` 12 px (Ward "Every
  *             bed" head). Phones draw 10 px squares that fill the row whatever the size.
+ *             `"table"` draws one fixed square size that never shrinks with the bed count, and a
+ *             ward over 20 beds on two rows (Find Wards table, Josh 28 Nov 2026, amending D-191
+ *             ruling 7's single line for that table only).
  * - `figure`  `"md"` 15 px head figure (default) or `"lg"` 20 px where the card is the page's focal strip.
  * - `head`    false draws the strip (and notes) without the head line, e.g. in a table row whose
  *             cells already say the figures.
@@ -48,7 +51,7 @@ export type BedSquaresProps = {
   counts: BedSquareCounts;
   tag?: string;
   notes?: readonly BedSquaresNote[];
-  size?: "map" | "board";
+  size?: "map" | "board" | "table";
   figure?: "md" | "lg";
   head?: boolean;
   /** The tag straight after the words, not at the line's end (Ward "Every bed"). */
@@ -149,15 +152,27 @@ export function BedSquare({ state, className }: { state: BedSquareState; classNa
   return <i className={cx(styles.swatch, className)} data-s={state} aria-hidden="true" />;
 }
 
-/** The squares alone (decorative). */
-export function BedSquaresStrip({ counts, className }: { counts: BedSquareCounts; className?: string }) {
+/** Over this many beds, a `twoRows` strip draws on two rows (Josh, 28 Nov 2026). */
+const TWO_ROWS_OVER = 20;
+
+/** The squares alone (decorative). `twoRows` puts a ward over 20 beds on two rows. */
+export function BedSquaresStrip({
+  counts,
+  className,
+  twoRows = false,
+}: {
+  counts: BedSquareCounts;
+  className?: string;
+  twoRows?: boolean;
+}) {
   const states = BED_SQUARE_ORDER.flatMap((state) => Array.from({ length: clamp(counts[state]) }, () => state));
+  const columns = twoRows && states.length > TWO_ROWS_OVER ? Math.ceil(states.length / 2) : states.length;
   return (
     <span
       className={cx(styles.strip, className)}
       aria-hidden="true"
       data-testid="bed-squares-strip"
-      style={{ "--sq-n": Math.max(states.length, 1) } as CSSProperties}
+      style={{ "--sq-n": Math.max(columns, 1) } as CSSProperties}
     >
       {states.map((state, index) => (
         <i key={index} data-s={state} />
@@ -195,7 +210,13 @@ export function BedSquares({
   const ready = clamp(counts.ready);
   return (
     <div
-      className={cx(styles.bedSquares, size === "board" && styles.board, figure === "lg" && styles.lg, className)}
+      className={cx(
+        styles.bedSquares,
+        size === "board" && styles.board,
+        size === "table" && styles.fixed,
+        figure === "lg" && styles.lg,
+        className,
+      )}
       data-testid={testId}
     >
       {head ? (
@@ -222,7 +243,7 @@ export function BedSquares({
           <SrOnly>.</SrOnly>
         </p>
       ) : null}
-      <BedSquaresStrip counts={counts} />
+      <BedSquaresStrip counts={counts} twoRows={size === "table"} />
       {notes.length > 0 ? (
         <p className={styles.note} data-testid={testId ? `${testId}-note` : undefined}>
           {notes.map((note, index) => (

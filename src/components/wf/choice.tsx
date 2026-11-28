@@ -379,18 +379,21 @@ export function FilterChip({
 }: FilterChipProps) {
   const reasonId = useId();
   const off = Boolean(disabledReason);
+  // Simplification A1 (Josh, 19 Oct 2026): a filter with nothing to show recedes, so the eye lands on
+  // the ones that matter. Audit three #52 (Josh, 28 Nov 2026): it also goes quiet to the hand: it
+  // stays in place (rows never jump) but cannot be pressed until it has something to show. A
+  // pressed chip whose count falls to zero can still be pressed off.
+  const empty = !pressed && (count === 0 || count === "0");
   const chip = (
     <button
       type="button"
       aria-pressed={pressed}
-      aria-disabled={unavailable || off || undefined}
+      aria-disabled={unavailable || off || empty || undefined}
       aria-describedby={off ? reasonId : undefined}
       className={cx(styles.chip, (unavailable || off) && styles.unavailableChip, className)}
-      // Simplification A1 (Josh, 19 Oct 2026): a filter with nothing to show recedes, so the eye
-      // lands on the ones that matter. It stays pressable; only its colour changes.
-      data-dim={!pressed && (count === 0 || count === "0") ? "true" : undefined}
+      data-dim={empty ? "true" : undefined}
       onClick={() => {
-        if (!off) onPressedChange(!pressed);
+        if (!off && !empty) onPressedChange(!pressed);
       }}
     >
       {tone ? <StatusGlyph tone={controlTone(tone)} size={9} /> : null}

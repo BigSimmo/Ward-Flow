@@ -39,5 +39,5 @@ export function heldUpReleases(releases: readonly BedRelease[], now: Instant) {
 /** Where the held-up releases are listed: Discharges, whose first group is Held up. It has no
  *  address for that group alone, so the link opens the board. */
 export const HELD_UP_HREF = "/bedchart/discharges";
-/** Spec item 9 (13 Nov 2026): the name starts with the visible words, "See all". */
-export const HELD_UP_LINK_LABEL = "See all held-up discharges";
+/** Spec item 9 (13 Nov 2026): the name starts with the visible words. Audit four #75: "Open Discharges". */
+export const HELD_UP_LINK_LABEL = "Open Discharges, held-up discharges";

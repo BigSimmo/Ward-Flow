@@ -18,6 +18,9 @@ import {
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { isbarText } from "@/components/ward-management/referrals/referral-board-sheets";
+import { REFERRAL_SOURCE_WORDS } from "@/components/ward-management/referrals/referral-board-parts";
+import { siteByCode } from "@/components/ward-management/ward-sites";
 import { chooseSampleReferralPerson } from "./helpers/referral-drawer-person";
 import { typeDate } from "./helpers/type-date-time";
 
@@ -75,6 +78,19 @@ function Probe() {
       </output>
       <output data-testid="errors">{rejections.map((rejection) => rejection.reason).join(";")}</output>
       <output data-testid="reasons">{sent.map((referral) => referral.intake?.reasonForReferral).join(";")}</output>
+      <output data-testid="saved">
+        {JSON.stringify(
+          sent.map(({ source, originSiteCode, originUnitId, sendingTeamName }) => ({
+            source,
+            originSiteCode,
+            originUnitId,
+            hasSendingTeamName: sendingTeamName !== undefined,
+          })),
+        )}
+      </output>
+      <output data-testid="copy-text">
+        {sent.map((referral) => isbarText(referral, "Synthetic Person", "UM000000", "Adult", NOW_ANCHOR)).join("\n")}
+      </output>
     </>
   );
 }
@@ -115,8 +131,9 @@ function startReferral(umrn: string) {
 }
 
 /** Walks the sheet to the wards step, with no From details chosen: a ward sender has none. */
-async function walkToWards(umrn = ON_WARD_UMRN, notOnWardReason?: string) {
+async function walkToWards(umrn = ON_WARD_UMRN, notOnWardReason?: string, afterStart?: () => Promise<void>) {
   startReferral(umrn);
+  if (afterStart) await afterStart();
   if (notOnWardReason)
     fireEvent.change(screen.getByLabelText("Why is the ward referring them?"), { target: { value: notOnWardReason } });
   next("Next, referral");
@@ -158,9 +175,9 @@ async function walkToWards(umrn = ON_WARD_UMRN, notOnWardReason?: string) {
 }
 
 /** Walks the sheet to Confirm and send. */
-async function walkToConfirm(umrn?: string, notOnWardReason?: string) {
-  await walkToWards(umrn, notOnWardReason);
-  fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
+async function walkToConfirm(umrn?: string, notOnWardReason?: string, afterStart?: () => Promise<void>) {
+  await walkToWards(umrn, notOnWardReason, afterStart);
+  fireEvent.click(screen.getByRole("button", { name: "Review and send" }));
   expect(screen.getByRole("heading", { name: "Confirm and send" })).toBeVisible();
   fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Demo Sender" } });
   fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "sender@example.com" } });
@@ -190,6 +207,33 @@ describe("the New referral sheet on a ward page", () => {
     route.pathname = `/bedchart/ward/${SENDING}`;
     await walkToConfirm();
     await sendAndExpectFromSendingWard();
+  }, 60_000);
+
+  // Build of audit four, item 109: a kept draft that once named a community team still saves as the
+  // sending ward, with the ward's site, and the typed team name is never sent.
+  it("saves a ward send as the ward, even from a kept draft holding a team name", async () => {
+    route.pathname = `/bedchart/ward/${SENDING}`;
+    await walkToConfirm(undefined, undefined, async () => {
+      await waitFor(() => expect(readKeptReferralDraft()).not.toBeNull());
+      const draft = readKeptReferralDraft<Record<string, unknown>>()!;
+      cleanup();
+      keepReferralDraft({ ...draft, sourceKind: "community", sendingTeam: "Synthetic Community Team" });
+      renderSheet();
+    });
+    await sendAndExpectFromSendingWard();
+    expect(JSON.parse(screen.getByTestId("saved").textContent!)).toEqual([
+      {
+        source: "psychiatric_ward",
+        originSiteCode: sendingWard.siteCode,
+        originUnitId: SENDING,
+        hasSendingTeamName: false,
+      },
+    ]);
+    // The summary's From fact and the copy text read the same site and source words.
+    const site = siteByCode(sendingWard.siteCode)?.name ?? sendingWard.siteCode;
+    expect(screen.getByTestId("copy-text")).toHaveTextContent(
+      `from ${site} (${REFERRAL_SOURCE_WORDS.psychiatric_ward})`,
+    );
   }, 60_000);
 
   it("never counts a kept choice of the sending ward toward the ward limit", async () => {

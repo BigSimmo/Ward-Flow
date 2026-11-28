@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CalendarDays, Printer } from "lucide-react";
 
-import { Button, HeroStat, Menu, SrOnly, buttonClass, useIsPhone } from "@/components/wf";
+import { Button, HeroFigures, Menu, SrOnly, buttonClass, useIsPhone } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { formatSheetMoment, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { originName } from "@/components/ward-management/ward-movement-origin";
@@ -15,6 +15,7 @@ import { DelayedReasonsCard } from "@/components/ward-management/statistics/rede
 import { delayedBedDaysByReason } from "@/components/ward-management/ward-delayed-discharge";
 import { dateOf } from "../statistics/statistics-dates";
 import { StatisticsHero, useStatisticsLive } from "../statistics/statistics-hero";
+import { useShareOutput } from "../statistics/statistics-share";
 
 import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
@@ -46,7 +47,11 @@ const OUT_OF_AREA_META = OUT_OF_AREA_BANDS.map((band) => TRAVEL_BAND_LABELS[band
 
 /** Offsets offered in the week picker: this week so far, the last full week, then seven before it. */
 const WEEK_OFFSETS = [-1, 0, 1, 2, 3, 4, 5, 6, 7] as const;
-const OCCUPIED_TIME_LABEL = "Recorded occupied bed time";
+/** A hero label with its people count ("out of area, 3 people"); a held-back count is left out. */
+/** A figure's sub line: its people count ("3 people"); nothing when the count is not a number. */
+function peopleSub(people: number | string): string | undefined {
+  return typeof people === "number" ? `${people} ${people === 1 ? "person" : "people"}` : undefined;
+}
 const OCCUPIED_TIME_DEFINITION =
   "Recorded occupied stay time divided by the current total bed count and counted time. Closed beds stay in the denominator; time pulled for arrival is excluded. Historical bed capacity and pull times are not reconstructed.";
 
@@ -348,6 +353,13 @@ function WeeklyReportView({
   const print = () => {
     window.print();
   };
+  // Final look (26 Nov 2026): Share at the end of the tabs row, as on Network, Compare and a ward's
+  // page. Print the report is its item, so the hero's own Print button closes up. A phone keeps its
+  // own Print under the report, as Network's phone tabs carry no Share.
+  const printShared = useShareOutput(
+    isPhone ? null : { id: "weekly-print", kind: "print", label: "Print the report", order: 0, pinned: true },
+    print,
+  );
 
   // The title states the week's main fact, as on Capacity and Waiting; with no published time, the page name.
   const arrivalTitle = figures.arrival.minutes === null ? null : figures.arrival.typical;
@@ -420,25 +432,29 @@ function WeeklyReportView({
           }
           title={title}
           titleAction={
-            // Q198 (Josh, 1 Nov 2026): the report keeps opening on the last full week; when that week
-            // has no arrivals to state, one step takes the reader to this week so far. The phone
-            // already has its own Last full week / This week so far switch under the hero.
-            !isPhone && offset === 0 && arrivalTitle === null ? (
-              <Button variant="onHero" size="sm" onClick={() => setOffset(-1)} data-testid="ward-weekly-so-far">
-                See this week so far
-              </Button>
-            ) : null
+            // Design review (27 Nov 2026): the week chip sits on the title line, after the title, so
+            // the hero has no chip row holding it alone.
+            isPhone ? null : (
+              <span className={weekly.titleTools}>
+                {picker}
+                {/* Q198 (Josh, 1 Nov 2026): the report keeps opening on the last full week; when that
+                    week has no arrivals to state, one step takes the reader to this week so far. The
+                    phone already has its own Last full week / This week so far switch under the hero. */}
+                {offset === 0 && arrivalTitle === null ? (
+                  <Button variant="onHero" size="sm" onClick={() => setOffset(-1)} data-testid="ward-weekly-so-far">
+                    See this week so far
+                  </Button>
+                ) : null}
+              </span>
+            )
           }
           tools={
-            isPhone ? undefined : (
-              <>
-                {picker}
-                <span data-print-hide>
-                  <Button variant="onHero" size="sm" icon={Printer} onClick={print} data-testid="ward-weekly-print">
-                    Print
-                  </Button>
-                </span>
-              </>
+            isPhone || printShared ? undefined : (
+              <span data-print-hide>
+                <Button variant="onHero" size="sm" icon={Printer} onClick={print} data-testid="ward-weekly-print">
+                  Print
+                </Button>
+              </span>
             )
           }
           phone={{
@@ -447,36 +463,68 @@ function WeeklyReportView({
               ? `Typical · ${figures.arrival.arrivals} ${figures.arrival.arrivals === 1 ? "arrival" : "arrivals"} · ${weekRange}`
               : weekRange,
             stats: (
-              <>
-                <HeroStat
-                  value={report.edWaits.count}
-                  label={<ShortLabel short={`${hoursText}+ waits`} full={`New ED waits ${hoursText}+`} />}
-                  tone={report.edWaits.count === 0 ? undefined : "danger"}
-                />
-                {/* Phone review F-26 and F-33: each figure names its unit and what it averages. */}
-                <HeroStat
-                  value={report.outOfArea.bedDays}
-                  label={<ShortLabel short="Out-of-area days" full="Out of area bed days" />}
-                />
-                <HeroStat value={occupancyText} label="Occupied bed time" />
-              </>
+              <HeroFigures
+                label="Week figures"
+                items={[
+                  {
+                    id: "ed-waits",
+                    value: report.edWaits.count,
+                    label: <ShortLabel short={`${hoursText}+ waits`} full={`New ED waits ${hoursText}+`} />,
+                    tone: report.edWaits.count === 0 ? undefined : "danger",
+                  },
+                  // Phone review F-26 and F-33: each figure names its unit and what it averages.
+                  {
+                    id: "out-of-area",
+                    value: report.outOfArea.bedDays,
+                    label: <ShortLabel short="Out-of-area days" full="Out of area bed days" />,
+                  },
+                  { id: "occupancy", value: occupancyText, label: "Occupied bed time" },
+                ]}
+              />
             ),
           }}
+          // Audit two (#98, #109): the kit figures carry what the old Pressure this week card added,
+          // each figure's people count or now-count on its sub line, so the card goes on a desktop.
           stats={
-            <>
-              <HeroStat
-                value={report.edWaits.count}
-                label={`New ED waits over ${hoursText}`}
-                tone={report.edWaits.count === 0 ? undefined : "danger"}
-              />
-              <HeroStat value={report.outOfArea.bedDays} label="Out of area bed days" />
-              {/* "not enough history" is said in the label, never set as a big figure. */}
-              <HeroStat
-                value={delayedUnknown ? "—" : report.delayedDischarge.bedDays}
-                label={delayedUnknown ? "Delayed discharge days, not enough history yet" : "Delayed discharge days"}
-              />
-              <HeroStat value={occupancyText} label={OCCUPIED_TIME_LABEL} />
-            </>
+            <HeroFigures
+              label="Week figures"
+              items={[
+                {
+                  id: "ed-waits",
+                  value: <span data-testid="ward-weekly-ed-count">{report.edWaits.count}</span>,
+                  label: `new ED waits over ${hoursText}`,
+                  tone: report.edWaits.count === 0 ? undefined : "danger",
+                },
+                {
+                  id: "out-of-area",
+                  value: <span data-testid="ward-weekly-ooa-days">{report.outOfArea.bedDays}</span>,
+                  unit: <>&thinsp;days</>,
+                  label: "out of area",
+                  sub: peopleSub(report.outOfArea.people),
+                },
+                // "not enough history" is said in the label, never set as a big figure.
+                delayedUnknown
+                  ? {
+                      id: "delayed",
+                      value: <span data-testid="ward-weekly-delayed-days">—</span>,
+                      label: "delayed discharge",
+                      sub: "not enough history yet",
+                    }
+                  : {
+                      id: "delayed",
+                      value: <span data-testid="ward-weekly-delayed-days">{report.delayedDischarge.bedDays}</span>,
+                      unit: <>&thinsp;days</>,
+                      label: "delayed discharge",
+                      sub: peopleSub(report.delayedDischarge.people),
+                    },
+                {
+                  id: "occupancy",
+                  value: <span data-testid="ward-weekly-occupancy">{occupancyText}</span>,
+                  label: "occupied bed time",
+                  sub: `${report.occupancy.now.inUse} of ${report.occupancy.now.beds} in use now`,
+                },
+              ]}
+            />
           }
           paused={paused}
           onTogglePause={togglePause ?? undefined}

@@ -176,17 +176,12 @@ export const CRAWL_JOBS: readonly HowTo[] = [
       {
         target: [inDialog("Hand back"), button("Hand back")],
         title: "Hand back",
-        body: "Shows on an alert you took. It asks before it returns the alert to the queue.",
+        body: "Shows on an alert you took. One tap returns the alert to the queue, and Undo shows until the time shown.",
       },
       {
-        target: { sel: '[data-testid="alerts-release-ownership-confirm"] button', text: "Hand back" },
-        title: "Confirm",
-        body: "Press Hand back to return it, or Cancel to keep it. Undo shows for a short while after.",
-      },
-      {
-        target: { sel: '[data-testid="ward-alerts-yours"]' },
+        target: { sel: '[data-testid="ward-alerts-filters"] button', text: "Yours" },
         title: "Yours",
-        body: "Counts the alerts you own. Press it to see just those.",
+        body: "Counts the alerts you own. Choose it to see just those.",
       },
     ],
   },
@@ -573,7 +568,7 @@ export const CRAWL_JOBS: readonly HowTo[] = [
     title: "Reopen a closed ward to admissions",
     keywords: "reopen ward closed admissions open again closure lifted",
     answer:
-      "On Capacity, open the ward and press Closures. Press Reopen to admissions and confirm. The ward is offered for new patients again straight away. Anything still pointed at it is listed so you can mark each one dealt with.",
+      "On Capacity, open the ward and press Reopen ward. Press Reopen to admissions and confirm. The ward is offered for new patients again straight away. Anything still pointed at it is listed so you can mark each one dealt with.",
     desks: ["coordinator", "bed_manager", "ward"],
     acts: ["REOPEN_WARD_TO_ADMISSIONS", "MARK_CLOSURE_TRANSITION_ITEM"],
     go: "capacity",
@@ -584,7 +579,7 @@ export const CRAWL_JOBS: readonly HowTo[] = [
         title: "Closed to admissions",
         body: "A closed ward says so at the top of its panel.",
       },
-      { target: button("Closures"), title: "Closures", body: "The last button at the foot of the panel." },
+      { target: button("Reopen ward"), title: "Reopen ward", body: "The last button at the foot of the panel." },
       {
         target: { sel: '[data-testid="ward-closure-panel"]' },
         title: "The closure",

@@ -3290,3 +3290,9 @@ button.searchBox:hover {
 .followUpReplies > li + li {
   border-top: 1px solid var(--wf-line);
 }
+
+/* Audit four #89 (r10): the shell is a flex column whose height is not definite, so the earlier
+   `min-height: 100%` resolved to nothing in light; growing in the column fills the screen height. */
+.screen.screen {
+  flex: 1 0 auto;
+}

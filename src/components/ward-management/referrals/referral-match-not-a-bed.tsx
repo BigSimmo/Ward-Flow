@@ -83,7 +83,7 @@ export function renderNotABedPhoneReview({
       {phoneDeclining ? (
         <>
           <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
-            Back
+            Cancel
           </button>
           <button
             type="button"
@@ -146,7 +146,7 @@ export function renderNotABedPhoneReview({
             data-placement-action
             onClick={() => setEdAcceptConfirmOpen(true)}
           >
-            <span className={ph.ell}>Accept presentation</span>
+            <span className={ph.ell}>Accept</span>
           </button>
         </>
       )}
@@ -351,7 +351,7 @@ export function renderNotABedPanel({
                 onClick={() => setEdAcceptConfirmOpen(true)}
               >
                 <Check size={15} strokeWidth={1.75} aria-hidden="true" />
-                <span>Accept presentation</span>
+                <span>Accept</span>
               </button>
             ) : (
               <div
@@ -450,7 +450,7 @@ export function renderNotABedPanel({
               onClick={handleCommunityAccept}
             >
               <Check size={15} strokeWidth={1.75} aria-hidden="true" />
-              <span>Accept referral</span>
+              <span>Accept</span>
             </button>
           </div>
         ) : null}

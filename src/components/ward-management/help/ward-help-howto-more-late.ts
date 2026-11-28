@@ -822,7 +822,7 @@ export const CRAWL_JOBS_LATE: readonly HowTo[] = [
     title: "Record that a patient has left the ward",
     keywords: "discharged left gone home departure record discharge leaving",
     answer:
-      "On the bed board, choose the bed, say where they are going and press Record that they have left. On Discharges, open the discharge and press Record discharge. The bed is then free for the ward to prepare. Undo shows straight after.",
+      "On the bed board, choose the bed, say where they are going and press Record discharge. On Discharges, open the discharge and press Record discharge. The bed is then free for the ward to prepare. Undo shows straight after.",
     desks: ["ward", "coordinator"],
     acts: ["RECORD_PATIENT_DISCHARGE", "RECORD_LEAVING"],
     go: ["discharges", "wards", "home"],
@@ -855,7 +855,7 @@ export const CRAWL_JOBS_LATE: readonly HowTo[] = [
           { sel: '[data-testid="ward-board-record-leaving-submit"]' },
           { sel: '[data-testid="ward-discharge-record-departure"]' },
         ],
-        title: "Record that they have left",
+        title: "Record discharge",
         body: "Greyed until the destination is chosen. It may ask you to confirm.",
       },
       {

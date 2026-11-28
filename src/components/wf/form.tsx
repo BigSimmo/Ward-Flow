@@ -82,6 +82,11 @@ export type FieldProps = {
    * never move the controls below (spec items 10 and 17).
    */
   reserveLine?: boolean;
+  /**
+   * Audit two #81 (K31): one quiet "Optional" after the label. Required fields carry no mark, so
+   * this is the only marker a form uses.
+   */
+  optional?: boolean;
 };
 
 /**
@@ -99,6 +104,7 @@ export function Field({
   className,
   layout = "stack",
   reserveLine = false,
+  optional = false,
 }: FieldProps) {
   const generated = useId();
   const id = idProp ?? generated;
@@ -136,6 +142,7 @@ export function Field({
         <div className={styles.labelRow}>
           <label htmlFor={id} className={styles.label}>
             {label}
+            {optional ? <span className={styles.optional}> Optional</span> : null}
           </label>
           {hint ? (
             <span id={hintId} className={styles.hint}>

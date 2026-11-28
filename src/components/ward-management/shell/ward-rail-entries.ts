@@ -45,7 +45,7 @@ export const RAIL_GROUPS = [
   {
     label: "Where",
     entries: [
-      ["hub", "Places"],
+      ["hub", "Find"],
       // shell-18 (Josh, 13 Oct 2026): one name per page, the same in Menu, header and h1.
       ["ed", "All EDs"],
       ["wards", "All wards"],
@@ -135,10 +135,11 @@ const ROLE_MENU_DEFINITIONS: Record<WardChromeRole, RoleMenuDefinition> = {
       // keeps the current screens and the B5 rename to Beds will not happen.
       ["capacity", "Capacity"],
       ["movements", "Movements"],
-      // Josh, 27 Oct 2026: Waiting and All EDs come back to the coordinator's own menu, the delays
-      // it chases and who is stuck in which ED, one tap each.
+      // Josh, 27 Oct 2026: Waiting and All EDs came back to the coordinator's own menu. Audit two
+      // (B11, #26, 27 Nov 2026): Find, which holds the EDs and Wards tabs, takes All EDs' slot, so
+      // one row lights on every Find tab. No decisions.md ruling fixes the All EDs row.
       ["delays", "Waiting"],
-      ["ed", "All EDs"],
+      ["hub", "Find"],
       ["referrals", "Referrals"],
       ["handover", "Handover"],
     ],
@@ -242,6 +243,32 @@ export type RoleMenuItemEntry = RailEntry | RoleMenuAction;
 
 export function isRoleMenuAction(item: RoleMenuItemEntry): item is RoleMenuAction {
   return "kind" in item && item.kind === "bed-finder";
+}
+
+/**
+ * Audit two (B11, #26): the coordinator's phone menu has one Find row, which holds the EDs and Wards
+ * tabs, so its All EDs and All wards rows are not listed again.
+ */
+export function findHolds(role: WardChromeRole, entryId: string): boolean {
+  return role === "coordinator" && (entryId === "ed" || entryId === "wards");
+}
+
+/**
+ * States review 07 (27 Nov 2026): once Find holds All EDs and All wards, the phone menu's Where group
+ * is one Transport row under its own head. That lone row leads the Work group instead, so no head
+ * sits over a single row.
+ */
+export function foldLoneWhere<G extends { label: string; entries: readonly unknown[] }>(groups: G[]): G[] {
+  const where = groups.findIndex((group) => group.label === "Where");
+  const work = groups.findIndex((group) => group.label === "Work");
+  if (where < 0 || work < 0 || groups[where].entries.length !== 1) return groups;
+  return groups.flatMap((group, index) =>
+    index === where
+      ? []
+      : index === work
+        ? [{ ...group, entries: [...groups[where].entries, ...group.entries] }]
+        : [group],
+  );
 }
 
 export type RoleMenu = {

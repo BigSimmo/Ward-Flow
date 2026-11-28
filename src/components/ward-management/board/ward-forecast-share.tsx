@@ -5,6 +5,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { wardForecastShare } from "@/components/ward-management/capacity/beds-forecast";
+import { FactGrid } from "@/components/wf";
 
 // The ward's own surface, the same quiet panel the stranded prompts use, so the two read as one family.
 import styles from "./stranded-prompts.module.css";
@@ -44,9 +45,27 @@ export function WardForecastShare({
       <h2 id={headingId} className={own.heading}>
         Your part in tomorrow&apos;s expected beds
       </h2>
-      <p className={styles.lead} data-testid="ward-board-forecast-share-counted">
-        {countedSentence(confirmed, expected, heldUp, overdue)}
-      </p>
+      {/* Audit two #92 (P57, GATE): three small figures in place of a sentence of five numbers, with
+          the best case caveat as a quiet note. The sentence stays as the figures' spoken summary. */}
+      <div
+        role="group"
+        data-testid="ward-board-forecast-share-counted"
+        aria-label={countedSentence(confirmed, expected, heldUp, overdue)}
+      >
+        <FactGrid
+          className={own.figures}
+          facts={[
+            { id: "expected", label: "Expected", value: expected },
+            { id: "confirmed", label: "Confirmed", value: confirmed },
+            { id: "held", label: overdue > 0 ? "Held up or overdue" : "Held up", value: heldUp + overdue },
+          ]}
+        />
+        <p className={own.note}>
+          {heldUp + overdue > 0
+            ? "Held up and overdue discharges count in the best case only."
+            : "Expected and confirmed discharges count towards tomorrow's beds."}
+        </p>
+      </div>
       {notFlagged.length === 0 ? null : (
         <>
           <p className={styles.lead} id={`${headingId}-unflagged`}>

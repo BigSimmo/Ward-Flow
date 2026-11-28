@@ -5,7 +5,7 @@ import { useWardFormSave } from "../use-ward-form-save";
 import type { WardCommandDispatch } from "../ward-shared-client";
 import { useWardDraftAcceptance } from "../use-ward-draft-acceptance";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Check, Clock, Copy, ExternalLink, X } from "lucide-react";
+import { Check, Clock, ExternalLink } from "lucide-react";
 
 import {
   Button,
@@ -22,7 +22,7 @@ import {
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { typedClock } from "./legal-time-as-typed";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { edHref, movementHref } from "@/components/ward-management/shell/ward-facade";
+import { edHref } from "@/components/ward-management/shell/ward-facade";
 
 import { LegalFormNextStep, LegalFormSummary } from "./legal-form-card";
 import { LegalFormDetailsSection, type LegalFormDetailsSave } from "./legal-form-details";
@@ -44,11 +44,6 @@ function asTimeline(items: ReturnType<typeof formEvents>, now: Instant): Timelin
 }
 
 /**
- * FOCUS. The side panel for one patient: their form's clock, what is recorded and what is still to
- * record, the form's facts and its history. Desktop has this one detail surface (owner, 9 Oct
- * 2026); there is no drawer.
- */
-/**
  * Gap list item 1: an optional typed receipt time. Blank means now. A time that will not read, or
  * reads later than now, is a problem and nothing is sent.
  */
@@ -58,15 +53,19 @@ export function typedReceipt(text: string, now: Instant): { at: Instant | null; 
   return at === null ? { at, problem: "Type the time received, like 2:30 pm or 14:30, not later than now" } : { at };
 }
 
+/**
+ * FOCUS. The body of the form drawer for one patient: their form's clock, what is recorded and what
+ * is still to record, the form's facts and its history. Audit four #98: the kit PanelDrawer draws
+ * the name, form code and UMRN in its head and the next step, Patient page, Open move and Copy to
+ * notes in its foot, so the panel has neither.
+ */
 export function FocusPanel({
   movement,
   name,
-  umrn,
   edName,
   wardName,
   now,
   dayZero,
-  onClose,
   focusGap,
   refusal,
   onSaveWritten,
@@ -77,21 +76,16 @@ export function FocusPanel({
   markReceivedUnavailable,
   onExtend,
   extendUnavailable,
-  onRecordNext,
   onSaveDetails,
   detailsUnavailable,
   onRequirements,
-  onCopy,
-  copied,
 }: {
   movement: Movement;
   name: string;
-  umrn: string;
   edName: string;
   wardName: string | null;
   now: Instant;
   dayZero: Date;
-  onClose: () => void;
   /** Set by "Add time" or "Mark received" in the strip, so the panel focuses that control. */
   focusGap: { gap: RecordGap; nonce: number } | null;
   refusal: string | undefined;
@@ -109,14 +103,11 @@ export function FocusPanel({
   onExtend: () => void;
   /** Feature 11: why this route's role may not extend a recorded form, if it may not. */
   extendUnavailable?: string;
-  onRecordNext: () => void;
   /** Gap list items 3 to 7: saves the details typed from the paper. */
   onSaveDetails: (details: LegalFormDetailsSave, onAccepted: () => void) => ReturnType<WardCommandDispatch>;
   /** Why this desk may not record form details, if it may not. */
   detailsUnavailable?: string;
   onRequirements: (code: string) => void;
-  onCopy: () => void;
-  copied: boolean;
 }) {
   const legalForm = movement.legalForm;
   const facts = recordedFacts(movement);
@@ -162,18 +153,6 @@ export function FocusPanel({
 
   return (
     <section className={cx(styles.panel, p.panel)} aria-label={`Form for ${name}`} data-testid="ward-legal-selected">
-      <div className={styles.focusHead}>
-        <div className={styles.cellStack}>
-          <h2 className={styles.panelTitle}>{name}</h2>
-          <span className={styles.sub}>
-            <span className={styles.mono}>{umrn}</span> · {edName}
-            {wardName ? ` to ${wardName}` : ""}
-          </span>
-        </div>
-        {legalForm ? <span className={styles.code}>{legalForm.code}</span> : null}
-        <Button variant="ghost" size="sm" iconOnly icon={X} aria-label="Close and show the summary" onClick={onClose} />
-      </div>
-
       <div className={p.top}>
         <LegalFormSummary
           movement={movement}
@@ -387,19 +366,6 @@ export function FocusPanel({
             holdNew={false}
           />
         </div>
-      </div>
-
-      <div className={cx(styles.focusFoot, p.foot)}>
-        <Button variant="ghost" size="sm" icon={Copy} onClick={onCopy}>
-          {copied ? "Copied" : "Copy summary"}
-        </Button>
-        <Link href={movementHref(movement.id)} className={cx(buttonClass({ variant: "ghost", size: "sm" }))}>
-          Open move
-        </Link>
-        <span className={styles.footSpacer} />
-        <Button variant="pri" size="sm" onClick={onRecordNext} disabledReason={recordUnavailable}>
-          {step.action === "next-form" ? step.title : "Record next form"}
-        </Button>
       </div>
     </section>
   );

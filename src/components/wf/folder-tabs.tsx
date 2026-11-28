@@ -239,6 +239,7 @@ export const folderTabClasses = {
   rule: styles.rule,
   filters: styles.filters,
   more: styles.more,
+  moreOutlined: styles.moreOutlined,
 } as const;
 
 export type FolderTabsProps = {

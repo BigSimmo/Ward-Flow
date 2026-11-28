@@ -24,8 +24,11 @@ import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-l
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import type { StatisticsSection } from "./statistics-sections";
 
-import { StatisticsNav, StatisticsSamplesSwitch, type StatisticsNavSection } from "./statistics-nav";
+import { StatisticsNav, StatisticsSamplesChip, type StatisticsNavSection } from "./statistics-nav";
 import { downloadCsv, statisticsExportLines, type StatisticsExport } from "./statistics-csv";
+import { useShareMenuHosted, useShareOutput } from "./statistics-share";
+import { browseMeta, useBrowseEmbedded, useBrowseLead } from "./statistics-browse-slot";
+import browseStyles from "./statistics-browse.module.css";
 import styles from "./statistics-hero.module.css";
 import topTitle from "../shell/page-top-title.module.css";
 import phoneStyles from "./statistics-phone.module.css";
@@ -243,19 +246,34 @@ function StatisticsHeroView({
   const zone = useClockZoneLabel();
   const now = nowProp ?? liveNow;
   const isPhone = useIsPhone();
+  // Simplification mock-up (26 Nov 2026): on a page with a second output the figures join the one
+  // Share menu at the end of the tabs row, and the hero's Export chip or button closes up.
+  const exportShared = useShareOutput(
+    exportFigures
+      ? // Network keeps Share on every view (Bed board, Movement, Map), though only the board has a chart CSV.
+        { id: "hero-figures", kind: "csv", label: "Export figures", order: 0, pinned: section === "hub" }
+      : null,
+    () => {
+      if (exportFigures) downloadStatisticsFigures(exportFigures, now, dayZero, zone);
+    },
+  );
   // With chips (Summary) Export sits in the title row's action slot; with hero figures it leads
   // the band's tool row, so it never adds a row of its own under the figures.
-  const exportButton = exportFigures ? (
-    <Button
-      variant="light"
-      size="sm"
-      icon={Download}
-      data-testid="ward-statistics-export"
-      onClick={() => downloadStatisticsFigures(exportFigures, now, dayZero, zone)}
-    >
-      Export the figures
-    </Button>
-  ) : null;
+  // Example history is an item of the tabs row's Share menu (audit two #97); the chip stays only
+  // where no tabs row is drawn, and the tool row closes up when it holds nothing.
+  const shareHosted = useShareMenuHosted();
+  const exportButton =
+    exportFigures && !exportShared ? (
+      <Button
+        variant="light"
+        size="sm"
+        icon={Download}
+        data-testid="ward-statistics-export"
+        onClick={() => downloadStatisticsFigures(exportFigures, now, dayZero, zone)}
+      >
+        Export the figures
+      </Button>
+    ) : null;
   if (top) {
     return (
       <>
@@ -285,9 +303,10 @@ function StatisticsHeroView({
           }
         >
           {top.content({
-            exportFigures: exportFigures
-              ? () => downloadStatisticsFigures(exportFigures, now, dayZero, zone)
-              : undefined,
+            exportFigures:
+              exportFigures && !exportShared
+                ? () => downloadStatisticsFigures(exportFigures, now, dayZero, zone)
+                : undefined,
           })}
         </Hero>
         <StatisticsNav
@@ -308,7 +327,7 @@ function StatisticsHeroView({
       <>
         <Hero
           level={1}
-          className={cx(styles.phoneStatsHero, phone?.lead ? styles.phoneLeadBeside : undefined)}
+          className={cx(styles.phoneStatsHero, phone?.lead ? styles.phoneLeadBeside : undefined, folderTabClasses.hero)}
           // The phone eyebrow already keeps the page name for screen readers only; what it draws is
           // the scope, site or "Counts only", which the header does not say (Q153).
           phoneEyebrow="show"
@@ -316,7 +335,13 @@ function StatisticsHeroView({
           title={phone?.title ?? title}
           titleMeta={phone?.sub}
           lead={phone?.lead}
-          stats={phone?.stats ?? chips ?? stats}
+          stats={
+            phone?.stats ? (
+              <div className={styles.figuresSlot}>{phone.stats}</div>
+            ) : (
+              (chips ?? (stats ? <div className={styles.figuresSlot}>{stats}</div> : undefined))
+            )
+          }
           aside={
             <LiveChip
               state={paused ? "paused" : "live"}
@@ -327,15 +352,16 @@ function StatisticsHeroView({
           }
           bar={titleAction ? <PhoneHeroActions titleAction={titleAction} /> : undefined}
         />
-        <div className={styles.phoneNav} data-testid={navTestId}>
-          <StatisticsNav
-            currentSection={section}
-            activeSlug={slug}
-            withSamples={false}
-            wardCount={wardCount}
-            variant="chips"
-          />
-        </div>
+        {/* Final look (26 Nov 2026): the same folder tabs as Network on a phone (Network, Compare,
+            Weekly, the rest under More), in place of the old row of seven section chips. */}
+        <StatisticsNav
+          currentSection={section}
+          activeSlug={slug}
+          withSamples={false}
+          wardCount={wardCount}
+          variant="folder"
+          testId={navTestId}
+        />
       </>
     );
   }
@@ -349,17 +375,19 @@ function StatisticsHeroView({
         eyebrow={eyebrow}
         title={title}
         titleMeta={titleAction ? <span className={styles.titleAction}>{titleAction}</span> : undefined}
-        stats={chips ?? stats}
+        stats={chips ?? (stats ? <div className={styles.figuresSlot}>{stats}</div> : undefined)}
         statsAlign="end"
         aside={
           <LiveChip state={paused ? "paused" : "live"} onHero age={formatInstant(now)} onTogglePause={onTogglePause} />
         }
       >
-        <div className={styles.heroToolRow}>
-          {exportButton}
-          {tools ? <span className={styles.heroTools}>{tools}</span> : null}
-          <StatisticsSamplesSwitch />
-        </div>
+        {exportButton || tools || !shareHosted ? (
+          <div className={styles.heroToolRow}>
+            {exportButton}
+            {tools ? <span className={styles.heroTools}>{tools}</span> : null}
+            <StatisticsSamplesChip />
+          </div>
+        ) : null}
       </Hero>
       <StatisticsNav
         currentSection={section}
@@ -394,6 +422,24 @@ export function StatCard({
   action?: ReactNode;
 }) {
   const id = useId();
+  // Network's Browse card: the segment's first card carries the Browse head, its own control below.
+  const browse = useBrowseLead();
+  if (browse) {
+    return (
+      <Card aria-labelledby={id} data-ward-primitive="panel" className={cx(styles.card, className)} {...rest}>
+        <div data-ward-primitive="panel-header">
+          <CardHead id={id} title="Browse" meta={browseMeta(title, meta)} icon={icon} action={browse} />
+        </div>
+        {aside || action ? (
+          <div className={browseStyles.tools}>
+            {aside}
+            {action}
+          </div>
+        ) : null}
+        {children}
+      </Card>
+    );
+  }
   return (
     <Card aria-labelledby={id} data-ward-primitive="panel" className={cx(styles.card, className)} {...rest}>
       <div data-ward-primitive="panel-header">
@@ -451,6 +497,14 @@ export function StatisticsPage({
   children: ReactNode;
 }) {
   const isPhone = useIsPhone();
+  // Inside Network's Browse card only the page's cards show: Network has the hero, tabs and footer.
+  const embedded = useBrowseEmbedded();
+  if (embedded)
+    return (
+      <div data-testid={testId} className={browseStyles.contents}>
+        {children}
+      </div>
+    );
   return (
     <div className={styles.page} data-testid={testId} data-ward-design="v6">
       <main id="main-content" className={styles.main}>
@@ -488,7 +542,8 @@ export function StatisticsPage({
             ) : (
               <>
                 <span data-testid="ward-statistics-section-eyebrow">{eyebrowLabel ?? section.label}</span>
-                {eyebrowDetail ? <> · {eyebrowDetail}</> : ` · as at ${formatInstant(now)}`}
+                {/* No "as at" stamp: it equalled the header clock (audit two #71). */}
+                {eyebrowDetail ? <> · {eyebrowDetail}</> : null}
               </>
             )
           }

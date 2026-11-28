@@ -492,7 +492,7 @@
 
 .heroStrip {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--wf-s-4);
   inline-size: 100%;
   margin: 0;
@@ -678,6 +678,12 @@
   min-height: 44px;
 }
 
+/* Audit two #123: the warning mark on the Alerts tab while alerts do not reach this desk. */
+.tabGlyph {
+  margin-inline-end: 4px;
+  flex: none;
+}
+
 .folderSwitch {
   display: flex;
   align-items: stretch;
@@ -717,6 +723,15 @@
 /* UX review (D-270): the rules filter, at the head of the Rules tab. */
 .rulesFilter {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: var(--wf-s-4);
   margin: 0 0 var(--wf-s-3);
+}
+
+/* Audit three #19: one ⓘ per rule card says where each rule shows, one rule a line. */
+.shownOnList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }

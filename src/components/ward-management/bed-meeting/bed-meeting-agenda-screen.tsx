@@ -3,7 +3,7 @@
 import { useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
-import { Check, Ellipsis, FileText, Plus, Search } from "lucide-react";
+import { Check, Ellipsis, Plus, Search } from "lucide-react";
 
 import {
   AppliedFilter,
@@ -447,12 +447,7 @@ function BedMeetingAgenda() {
                 }}
               />
             </div>
-          ) : (
-            // `data-wf-live` places the plain pill where the hero puts its Live pill.
-            <span className={pageTop.pill} data-wf-live="" data-testid="agenda-as-at">
-              As at {formatInstantWithDay(now, now)}
-            </span>
-          )
+          ) : undefined
         }
       >
         <HeroTop
@@ -502,14 +497,15 @@ function BedMeetingAgenda() {
               }
               testId="agenda-act"
               action={
-                // The meeting room screen, behind the `bed-meeting-tv` flag as on Capacity; hidden while
-                // a meeting runs, so Stop and Next are the only meeting controls.
-                bedMeetingTvOn && !running
+                // Audit two #13: the act button scrolls to the Actions card; Open on TV is a chip.
+                actionRows.length > 0
                   ? {
-                      // C08: it opens the TV view, so it says so; the guided meeting is Run meeting.
-                      label: "Open on TV",
-                      href: bedMeetingTvHref(),
-                      testId: "agenda-start-meeting",
+                      label: "Show actions",
+                      testId: "agenda-show-actions",
+                      onClick: () =>
+                        document
+                          .getElementById("agenda-actions")
+                          ?.scrollIntoView({ block: "start", behavior: "smooth" }),
                     }
                   : undefined
               }
@@ -538,16 +534,6 @@ function BedMeetingAgenda() {
                       );
                     },
                   },
-                  {
-                    id: "referrals",
-                    label: "Referrals",
-                    icon: <FileText strokeWidth={1.75} aria-hidden="true" />,
-                    count: queue.length,
-                    countTone: "quiet",
-                    pressed: chips.has("referrals"),
-                    testId: "agenda-referrals-chip",
-                    onClick: () => toggleChip("referrals"),
-                  },
                   // Run meeting (six features, Josh 9 Nov 2026): the chair steps through the services.
                   ...(chairs && !run
                     ? [
@@ -556,6 +542,17 @@ function BedMeetingAgenda() {
                           label: "Run meeting",
                           testId: "bed-meeting-run-start",
                           onClick: startRun,
+                        },
+                      ]
+                    : []),
+                  // The meeting room screen, behind the `bed-meeting-tv` flag; hidden while a meeting runs.
+                  ...(bedMeetingTvOn && !running
+                    ? [
+                        {
+                          id: "tv",
+                          label: "Open on TV",
+                          href: bedMeetingTvHref(),
+                          testId: "agenda-start-meeting",
                         },
                       ]
                     : []),
@@ -605,7 +602,7 @@ function BedMeetingAgenda() {
         more={
           isPhone ? (
             <Menu
-              label="More services"
+              label="More"
               align="end"
               items={HEALTH_SERVICES.slice(PHONE_SERVICE_TABS).map((candidate) => ({
                 id: candidate,
@@ -622,7 +619,7 @@ function BedMeetingAgenda() {
                   iconOnly
                   icon={Ellipsis}
                   className={folderTabClasses.more}
-                  aria-label="More services"
+                  aria-label="More"
                 />
               )}
             />
@@ -683,7 +680,7 @@ function BedMeetingAgenda() {
               value={query}
               onValueChange={setQuery}
               label="Find anyone to discuss"
-              placeholder="Find anyone by name or UMRN"
+              placeholder="Name or UMRN"
               data-testid="bed-meeting-agenda-search"
             />
           ) : null}
@@ -751,7 +748,7 @@ function BedMeetingAgenda() {
           ref={actionSummary}
         >{`No actions waiting from earlier meetings${summary.doneLastDay > 0 ? ` · ${summary.doneLastDay} done in the last day` : ""}`}</p>
       ) : (
-        <Card>
+        <Card id="agenda-actions" className={styles.anchored}>
           <CardHead title="Actions" meta="From earlier meetings" level={2} />
           <CardBody>
             <p className={styles.summary} data-testid="bed-meeting-action-summary" ref={actionSummary}>
@@ -895,7 +892,6 @@ function BedMeetingAgenda() {
         {/* Batch 3 item 12: each ward's bed round answer, in the fixed ward order (D-126). */}
         {listChips.length === 0 && !actionedOnly ? <BedRoundAnswersCard service={service} /> : null}
       </div>
-      {chairs ? null : <p className={styles.note}>Read only. The bed coordinator records and completes actions.</p>}
       <WardPrototypeFooter testId="ward-bed-meeting-agenda-governance" />
     </main>
   );
@@ -936,7 +932,7 @@ function AgendaList({
             </ul>
             {limit < count || all ? (
               <ShowMoreRow onClick={() => setAll((value) => !value)} expanded={all} controls={listId}>
-                {all ? "Show fewer" : `Show ${count - limit} more`}
+                {all ? "Show fewer" : `Show all ${count}`}
               </ShowMoreRow>
             ) : null}
           </>
@@ -1066,7 +1062,8 @@ function AgendaRow({
             }}
             data-testid="bed-meeting-add-action"
           >
-            {adding ? "Close" : "Action"}
+            {/* Audit three fix 5: the composer's exit says Cancel, as other dialogs do (audit two #37). */}
+            {adding ? "Cancel" : "Action"}
           </Button>
         ) : null}
       </div>
@@ -1180,6 +1177,29 @@ function ActionForm({
     </FilterChip>
   );
   const dueAt = now + Number(dueHours) * 60;
+  /* Audit three #39 (D-113 item 2, one tap): a suggested ask records at once with its default owner
+     and the due time shown, and the toast carries Undo. The More asks keep choose, then Record. */
+  const recordNow = (entry: (typeof BED_MEETING_ACTION_KINDS)[number]) => {
+    if (save.pending) return;
+    const defaultOwner: BedMeetingActionOwner =
+      item.unitId !== undefined && WARD_OWNED_KINDS.has(entry.id) ? "ward" : "coordinator";
+    save.submit(
+      () =>
+        onRecord({
+          subject: item.subject,
+          action: entry.id,
+          owner: defaultOwner,
+          ...(defaultOwner === "ward" && item.unitId !== undefined ? { unitId: item.unitId } : {}),
+          dueAt,
+        }),
+      onDone,
+    );
+  };
+  const suggestedChip = (entry: (typeof BED_MEETING_ACTION_KINDS)[number]) => (
+    <FilterChip key={entry.id} pressed={false} unavailable={save.pending} onPressedChange={() => recordNow(entry)}>
+      {entry.label}
+    </FilterChip>
+  );
   return (
     <div id={id} className={styles.form} data-testid="bed-meeting-action-form">
       {/* B1 (Josh, 3 Nov 2026): choices as chips and segments, never the browser's drop-down (Q319). */}
@@ -1187,10 +1207,13 @@ function ActionForm({
         {suggested.length > 0 ? (
           <div className={styles.formKindGroup}>
             <span className={styles.formLabel} aria-hidden="true">
-              Suggested
+              Record now
             </span>
-            <ChipGroup label="Suggested for this list" className={styles.formKinds}>
-              {suggested.map(chip)}
+            <ChipGroup
+              label={`Suggested for this list, records at once, due ${formatInstantWithDay(dueAt, now)}`}
+              className={styles.formKinds}
+            >
+              {suggested.map(suggestedChip)}
             </ChipGroup>
           </div>
         ) : null}

@@ -95,6 +95,13 @@
   text-underline-offset: 3px;
 }
 
+/* Audit two (#109, #128): a figure's one quiet line under its label. */
+.figSub {
+  font: 400 var(--wf-fs-12) / 16px var(--wf-font);
+  color: var(--wf-hero-ink-3);
+  white-space: nowrap;
+}
+
 a.figLink:hover,
 .figButton:hover {
   color: var(--wf-hero-ink);
@@ -127,6 +134,22 @@ a.figLink::after,
   outline: 2px solid var(--wf-hero-ink);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* A figure that filters the list below (Out of area, Leave) shows it is on as the band's pressed
+   cell does: a soft tile behind the value and label. The margin takes back the padding, so nothing
+   moves when it turns on or off. The label drops its underline and takes the full ink. */
+.fig:has(> .figButton[aria-pressed="true"]) {
+  margin: -6px -10px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--wf-on-hero-hl);
+  box-shadow: inset 0 0 0 1px var(--wf-on-hero-line);
+}
+
+.figButton[aria-pressed="true"] {
+  color: var(--wf-hero-ink);
+  text-decoration: none;
 }
 
 /* The act row: one slim soft card, one light button. */
@@ -567,6 +590,25 @@ a.cellBody {
   }
 }
 
+/* Audit two B18 (T30): scrolled to its end, a phone row lifts its right-hand fade, so the last chip
+   ("Copy counts" on Discharges) reads in full instead of ending faded mid-word. Until then the fade
+   is the same 36px as before. */
+@property --wf-row-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 36px;
+}
+
+@keyframes wfRowFadeEnd {
+  0%,
+  90% {
+    --wf-row-fade-end: 36px;
+  }
+  100% {
+    --wf-row-fade-end: 0px;
+  }
+}
+
 /* Phone: chips and cells run to the screen's edges, scroll sideways under a soft fade and snap per
    item; chips keep a 48px tap area; the act button may use its short label. */
 @media (max-width: 46.4375rem) {
@@ -601,14 +643,14 @@ a.cellBody {
       90deg,
       transparent 0,
       black var(--wf-row-fade-start),
-      black calc(100% - 36px),
+      black calc(100% - var(--wf-row-fade-end)),
       transparent
     );
     mask-image: linear-gradient(
       90deg,
       transparent 0,
       black var(--wf-row-fade-start),
-      black calc(100% - 36px),
+      black calc(100% - var(--wf-row-fade-end)),
       transparent
     );
   }
@@ -620,7 +662,7 @@ a.cellBody {
     .chips,
     .cells {
       scroll-padding-left: 48px;
-      animation-name: wfRowFadeStart;
+      animation-name: wfRowFadeStart, wfRowFadeEnd;
       animation-duration: 1ms;
       animation-timing-function: linear;
       animation-fill-mode: both;

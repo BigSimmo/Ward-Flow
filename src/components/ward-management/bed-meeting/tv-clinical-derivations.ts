@@ -410,7 +410,7 @@ export function edClinicalRows(input: EdClinicalInputs): EdClinicalRow[] | undef
           : movement.transport && movement.transport.cancelledAt === undefined
             ? { text: eta === undefined ? "Transport booked" : `Transport due ${formatInstantWithDay(eta, now)}` }
             : accepted
-              ? { text: "Book transport", tone: "warning" }
+              ? { text: "Record transport booking", tone: "warning" }
               : !movement.examination
                 ? { text: "Psychiatry review" }
                 : { text: "Find a bed" };

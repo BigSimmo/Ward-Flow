@@ -94,6 +94,11 @@
   min-height: 26rem;
 }
 
+/* Audit four #83: any other page with the navy hero, a band about its headline's height. */
+.bandPage {
+  min-height: 7rem;
+}
+
 /* Every other page: today's plain placeholder. */
 .plain {
   min-height: 6rem;
@@ -106,6 +111,9 @@
 @media (max-width: 46.4375rem) {
   .band {
     min-height: 7.5rem;
+  }
+  .bandPage {
+    min-height: 5.5rem;
   }
   .strip {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -155,4 +163,37 @@
   .block {
     border-color: CanvasText;
   }
+}
+
+/* Audit four #83 (28 Nov 2026): the hero block in the hero's colours, joined under the status row
+   (loading.module.css), so a slow load no longer flashes a pale hero before the navy one. */
+.blocks[data-shape="home"] > .band,
+.blocks[data-shape="capacity"] > .band,
+.blocks[data-shape="waiting"] > .bandShort,
+.blocks[data-shape="hero"] > .bandPage {
+  /* Gate r10 (1b F6): full-bleed and square, as the loaded band, with the light sheet's rounded
+     top (the band lip) drawn under it. --wl-pad is the placeholder's own side inset. */
+  position: relative;
+  margin-inline: calc(-1 * var(--wl-pad, var(--wf-s-4)));
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  background-size: 100% calc(100% - 4px);
+  background-repeat: no-repeat;
+  animation: none;
+}
+
+.blocks[data-shape="home"] > .band::after,
+.blocks[data-shape="capacity"] > .band::after,
+.blocks[data-shape="waiting"] > .bandShort::after,
+.blocks[data-shape="hero"] > .bandPage::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--wf-band-lip);
+  border-radius: var(--wf-band-lip) var(--wf-band-lip) 0 0;
+  background: var(--wf-page-canvas, var(--wf-canvas));
+  box-shadow: 0 -1px 0 var(--wf-hero-edge);
 }

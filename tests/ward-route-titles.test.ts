@@ -1,16 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { generateMetadata as boardMetadata } from "@/app/bedchart/board/[unitId]/page";
 import { generateMetadata as communityMetadata } from "@/app/bedchart/community/[teamId]/page";
 import { generateMetadata as edMetadata } from "@/app/bedchart/ed/[edId]/page";
 import { metadata as movementMetadata } from "@/app/bedchart/movements/[movementId]/page";
 import { metadata as personMetadata } from "@/app/bedchart/people/[patientId]/page";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
-import { knownWardUnit } from "@/components/ward-management/ward-known-places";
 
 /**
  * Design re-score DR-11 and DR-20 (24 Oct 2026): browser tab titles.
- *   - DR-11: every board tab read "Ward board", and a movement record read "Patient" like a person's page.
+ *   - DR-11: a movement record read "Patient" like a person's page. (The Bed board route is a redirect to
+ *     the Ward page since item 13 of the 26 Nov 2026 simplification, so it has no title of its own.)
  *   - DR-20: an unknown community or emergency department address put the typed text in the title.
  */
 
@@ -20,14 +19,7 @@ const params = <K extends string>(key: K, value: string) => ({
 });
 
 describe("browser tab titles", () => {
-  it("names the ward on its board", async () => {
-    const unit = knownWardUnit("dn-rph-acute")!;
-    const { title } = await boardMetadata(params("unitId", unit.id));
-    expect(title).toBe(`${unit.name} Bed board — BedChart`);
-  });
-
   it.each([
-    ["board", () => boardMetadata(params("unitId", TYPED))],
     ["community team", () => communityMetadata(params("teamId", TYPED))],
     ["emergency department", () => edMetadata(params("edId", TYPED))],
   ])("never echoes an unknown %s address into the title", async (_label, read) => {

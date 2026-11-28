@@ -5,7 +5,7 @@ import { fieldsMatchEveryWord } from "@/components/ward-management/search/search
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { setServiceScope, useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { BedSingle, ChevronRight, Circle, Lock, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -25,6 +25,7 @@ import {
   Icon,
   Kbd,
   PhoneSheet,
+  type DrawerPagerProps,
   ScrollRow,
   Segmented,
   SrOnly,
@@ -57,15 +58,11 @@ import { remainingSpeciallingCapacity } from "@/components/ward-management/ward-
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-import { CLINICAL_VALUES, isBedCountStale } from "@/components/ward-management/ward-clinical-values";
+import { isBedCountStale } from "@/components/ward-management/ward-clinical-values";
 import { SAMPLE_OBSERVATION_MIX_LABEL } from "@/components/ward-management/ward-sample-choices";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
-import { BedSquares, BedSquaresKey, bedSquareCounts, bedSquaresNotes } from "@/components/ward-management/bed-squares";
-import {
-  bedKindGaps,
-  bedKindTotals,
-  bedsFreeingTodayTotal,
-} from "@/components/ward-management/capacity/capacity-derivations";
+import { BedSquaresKey } from "@/components/ward-management/bed-squares";
+import { bedsFreeingTodayTotal, networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
 import { heldUpReleases } from "@/components/ward-management/capacity/capacity-held-up";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
@@ -74,9 +71,27 @@ import { shiftConfirmations } from "@/components/ward-management/capacity/shift-
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 
 import styles from "./ward-index.module.css";
-import { WardIndexDrawer } from "./ward-index-drawer";
+import { CapacityWardPanel } from "@/components/ward-management/capacity/capacity-ward-drawer";
+import { useCapacityModel } from "@/components/ward-management/capacity/capacity-model";
+import { HeadingHere } from "@/components/ward-management/hub/hub-heading-here";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { OtherSitesMore, SiteHead, otherSitesFolded } from "./ward-index-site-desk";
 import { WardIndexTabs } from "./ward-index-tabs";
+import {
+  NEAR_FULL,
+  WardBedSquares,
+  WardCard,
+  Confirmed,
+  SecurityLabel,
+  cohortKey,
+  cohortLabel,
+  isNearFull,
+  serviceShortName,
+  shortWardName,
+  type WardRow,
+} from "./ward-index-card";
+export { isNearFull };
 import pageTop from "@/components/ward-management/page-top-title.module.css";
 
 /**
@@ -103,15 +118,40 @@ import pageTop from "@/components/ward-management/page-top-title.module.css";
  */
 
 export type ServiceFilter = "all" | HealthService;
-type StatusFilter = "all" | "has-ready" | "full" | "stale";
-type CohortFilter = "all" | "adult" | "older-adult" | "youth" | "perinatal";
+export type StatusFilter = "all" | "has-ready" | "full" | "stale";
+export type CohortFilter = "all" | "adult" | "older-adult" | "youth" | "perinatal";
 // D-126 (10 Nov 2026): neutral orders only; no "Most ready" or "Fullest" ranking of wards.
-type OrderBy = "service" | "a-z";
+export type OrderBy = "service" | "a-z";
+export const STATUS_FILTERS: readonly StatusFilter[] = ["all", "has-ready", "full", "stale"];
+export const COHORT_FILTERS: readonly CohortFilter[] = ["all", "adult", "older-adult", "youth", "perinatal"];
+export const ORDERS: readonly OrderBy[] = ["service", "a-z"];
+
+/**
+ * Area 3 item 1 (mock-up, 26 Nov 2026): Capacity's Wards tab is this directory. Capacity owns the
+ * hero, the tab row (with Filters and the view switch) and the ward panel, and keeps every choice
+ * in the URL; the directory draws the Filters panel, the bed key, the cards or table and the
+ * unplaced foot. The service is the header's own choice, as on a phone.
+ */
+export type WardDirectoryControl = {
+  status: StatusFilter;
+  cohort: CohortFilter;
+  order: OrderBy;
+  view: ViewMode;
+  query: string;
+  onChange: (
+    changes: Partial<{ status: StatusFilter; cohort: CohortFilter; order: OrderBy; view: ViewMode; query: string }>,
+    mode?: "push" | "replace",
+  ) => void;
+  filtersOpen: boolean;
+  onFiltersOpen: (open: boolean) => void;
+  /** Opens Capacity's own ward panel (Open ward, Discharge board, Bed board, Closures). */
+  onOpenWard: (unitId: string) => void;
+};
 
 const STATUS_LABELS: Record<Exclude<StatusFilter, "all">, string> = {
   "has-ready": "Has a ready bed",
   full: "Full",
-  stale: "Stale count",
+  stale: "Count old",
 };
 
 const COHORT_LABELS: Record<Exclude<CohortFilter, "all">, string> = {
@@ -127,67 +167,30 @@ function siteShortName(name: string): string {
   return name.replace(/ (Hospital|Health Service|Health Campus|Mental Health Service)$/u, "");
 }
 
-function serviceShortName(service: HealthService): string {
-  return service.replace(/ Metro$/u, "");
-}
-
-/** Mother and baby wards read as perinatal; the model's cohorts are Adult, Older adult, Youth. */
-function cohortKey(unit: Unit): Exclude<CohortFilter, "all"> {
-  if (/mother|baby|perinatal|mbu/iu.test(unit.name)) return "perinatal";
-  if (unit.cohort === "Older adult") return "older-adult";
-  if (unit.cohort === "Youth") return "youth";
-  return "adult";
-}
-
-function cohortLabel(unit: Unit): string {
-  return cohortKey(unit) === "perinatal" ? "Perinatal" : unit.cohort;
-}
-
-/** Owner ruling 2026-09-04: Open, Locked or Mixed, read from the bed counts. */
-function SecurityLabel({ unit }: { unit: Unit }) {
-  const category = wardCategory(unit);
-  return (
-    <span className={styles.acuityBadge} data-category={category} title={designationSummary(unit)}>
-      {category !== "Open" ? <Icon icon={Lock} size={14} /> : null}
-      {category}
-    </span>
-  );
-}
-
-/** Near full: the signed occupancy surge band (95%), as a fraction. */
-const NEAR_FULL = CLINICAL_VALUES.occupancySurge.value / 100;
-
-/** D-122: the band tests the whole percent the card shows, so 18 of 19 (94.7%, shown 95%) is near full too. */
-export function isNearFull(occupancy: number): boolean {
-  // A whole percent rounds half up, so the shown figure reaches the band from half a point below it.
-  return occupancy >= NEAR_FULL - 0.005;
-}
 /* The one alert line (device audit, 11 Oct 2026): the rail's Bed alerts threshold, as on Home and
    Capacity. It was 90% here, so All wards drew a "90% line" against everyone else's 85%. */
 const SERVICE_LINE = BED_ALERT_THRESHOLD_PERCENT / 100;
 
-type WardRow = {
-  unit: Unit;
-  service: HealthService | null;
-  siteName: string;
-  siteShort: string;
-  states: ReturnType<typeof bedStates>;
-  occupancy: number;
-  ready: number;
-  /** Beds being made ready, off Ready since D-179 item 8: the hollow squares' own figure (`bedStates`). */
-  pendingPreparation: number;
-  /** Wave 4 bed squares (D-191): discharges still due today and not held up (`isFreeingToday`). */
-  dischargesToday: number;
-  /** Held-up discharges, as Capacity and Discharges count them (`heldUpReleases`). */
-  heldUp: number;
-  out: number;
-  incoming: number;
-  confirmedAt: Instant;
-  stale: boolean;
-  specialling: number;
-};
-
-export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
+export function WardIndex({
+  units: unitsOverride,
+  directory,
+  pageSwitch,
+  heroTabs,
+  initialQuery = "",
+  onQueryChange,
+}: {
+  units?: Unit[];
+  directory?: WardDirectoryControl;
+  /** Find (mock-up, 26 Nov 2026): the Find tabs, drawn first in this page's tab row; the page is unchanged. */
+  pageSwitch?: ReactNode;
+  /** Find (mock-up): the Find tabs, drawn at the top of the hero. */
+  heroTabs?: ReactNode;
+  /** Find: words carried from another tab's search box. */
+  initialQuery?: string;
+  /** Find: the search box's words, handed back so the next tab can carry them. */
+  onQueryChange?: (query: string) => void;
+}) {
+  const embedded = directory !== undefined;
   const {
     units: liveUnits,
     bedReleases,
@@ -214,21 +217,47 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   const { now, paused, togglePause } = usePageLive();
 
   const [pickedService, setPickedService] = useState<ServiceFilter>("all");
-  const [status, setStatus] = useState<StatusFilter>("all");
-  const [cohort, setCohort] = useState<CohortFilter>("all");
-  const [order, setOrder] = useState<OrderBy>("service");
-  const [view, setView] = useState<ViewMode>("cards");
-  const [query, setQuery] = useState("");
+  const [localStatus, setLocalStatus] = useState<StatusFilter>("all");
+  const [localCohort, setLocalCohort] = useState<CohortFilter>("all");
+  const [localOrder, setLocalOrder] = useState<OrderBy>("service");
+  const [localView, setLocalView] = useState<ViewMode>("cards");
+  const [localQuery, setLocalQuery] = useState(initialQuery);
+  // Find: the search sits behind Filters, so carried words open it and the box shows what narrowed the cards.
+  const [localFiltersOpen, setLocalFiltersOpen] = useState(initialQuery !== "");
+  // Embedded in Capacity, every choice is Capacity's (kept in its URL); on its own page, local.
+  const status = directory?.status ?? localStatus;
+  const cohort = directory?.cohort ?? localCohort;
+  const order = directory?.order ?? localOrder;
+  const view = directory?.view ?? localView;
+  const query = directory?.query ?? localQuery;
+  const filtersOpen = directory?.filtersOpen ?? localFiltersOpen;
+  const setStatus = (next: StatusFilter) => (directory ? directory.onChange({ status: next }) : setLocalStatus(next));
+  const setCohort = (next: CohortFilter) => (directory ? directory.onChange({ cohort: next }) : setLocalCohort(next));
+  const setOrder = (next: OrderBy) => (directory ? directory.onChange({ order: next }) : setLocalOrder(next));
+  const setView = (next: ViewMode) => (directory ? directory.onChange({ view: next }) : setLocalView(next));
+  const setQuery = (next: string) => (directory ? directory.onChange({ query: next }, "replace") : setLocalQuery(next));
+  const setFiltersOpen = useCallback(
+    (next: boolean | ((open: boolean) => boolean)) => {
+      const value = typeof next === "function" ? next(filtersOpen) : next;
+      if (directory) directory.onFiltersOpen(value);
+      else setLocalFiltersOpen(value);
+    },
+    [directory, filtersOpen],
+  );
   const searchRef = useRef<HTMLInputElement>(null);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  useEffect(() => {
+    if (!directory) onQueryChange?.(localQuery);
+  }, [directory, localQuery, onQueryChange]);
   // Phone (v10): one list of wards; a tap opens the ward's card as a bottom sheet.
   const isPhone = useIsPhone();
   // shell-15 (Josh, 13 Oct 2026): on a phone the header's service is the one service control, so
-  // the page follows it and draws no region chips of its own. Desktop keeps its own chips.
+  // the page follows it and draws no region chips of its own. Desktop keeps its own chips; inside
+  // Capacity the header's picker is the one service choice on every size (C-10).
   const headerService = useServiceScope();
-  const service: ServiceFilter = isPhone ? (headerService ?? "all") : pickedService;
+  const serviceFromHeader = isPhone || embedded;
+  const service: ServiceFilter = serviceFromHeader ? (headerService ?? "all") : pickedService;
   const setService = (next: ServiceFilter) => {
-    if (isPhone) setServiceScope(next === "all" ? null : next);
+    if (serviceFromHeader) setServiceScope(next === "all" ? null : next);
     else setPickedService(next);
   };
   const [phoneWardId, setPhoneWardId] = useState<string | null>(null);
@@ -257,7 +286,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [setFiltersOpen]);
 
   // A16-25 (3.4): a bed named for an incoming patient is held here as on Capacity, not Ready.
   const namedHolds = useMemo(() => networkNamedHolds(movements, referrals), [movements, referrals]);
@@ -317,12 +346,6 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   // by 15:00" went (it read beside "short"); Discharges · today is the meeting sheet's freeing today,
   // still due later today and not held up (`isFreeingToday`), so the two never disagree.
   const dischargesToday = bedsFreeingTodayTotal(bedReleases, now, new Set(heroUnits.map((unit) => unit.id))) ?? 0;
-  // "Short" is Capacity's figure from the same selector (`bedKindTotals` over `bedKindGaps`), relabelled
-  // only: PR C owns the rule (ruling 6, never net a spare youth bed).
-  const bedGap = useMemo(
-    () => bedKindTotals(bedKindGaps(movements, units, now, admissions, referrals, bedReleases)).gap,
-    [movements, units, now, admissions, referrals, bedReleases],
-  );
   const staleCount = heroRows.filter((row) => row.stale).length;
   // Page tops (Josh, 9 Nov 2026): the counts confirmed this shift, the same pill and words as Capacity.
   const confirmations = shiftConfirmations(heroUnits, now);
@@ -357,17 +380,22 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
 
   const lit = placed.filter(isLit);
   const serviceRank = (row: WardRow) => wardServiceOrder.indexOf(row.service as HealthService);
-  const ordered = [...placed].sort((a, b) => {
+  // A chosen service filters the list to its wards (audit three review); status, cohort and search still highlight.
+  const ordered = placed.filter(byService).sort((a, b) => {
     if (order === "a-z") return a.unit.name.localeCompare(b.unit.name);
     return serviceRank(a) - serviceRank(b);
   });
 
   const isFiltered = service !== "all" || status !== "all" || cohort !== "all" || query !== "";
   const resetFilters = () => {
+    if (directory) {
+      directory.onChange({ status: "all", cohort: "all", query: "" });
+      return;
+    }
     setPickedService("all");
-    setStatus("all");
-    setCohort("all");
-    setQuery("");
+    setLocalStatus("all");
+    setLocalCohort("all");
+    setLocalQuery("");
   };
 
   const otherFilters = (row: WardRow) => byStatus(row) && byCohort(row) && matchesQuery(row);
@@ -478,8 +506,20 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                   {row.unit.name}
                 </Link>
                 <span className={styles.checkAge}>
-                  <b className={styles.num}>{durMinutes(Math.max(0, now - row.confirmedAt))}</b> stale
+                  Count <b className={styles.num}>{durMinutes(Math.max(0, now - row.confirmedAt))}</b> old
                 </span>
+                {askWard ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={styles.checkAsk}
+                    onClick={() => askWard(row.unit)}
+                    aria-label={`Ask ${row.unit.name} to confirm its beds`}
+                    data-testid="ward-index-check-ask"
+                  >
+                    Ask
+                  </Button>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -488,19 +528,43 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
     </aside>
   );
 
-  return (
-    <div
-      className={styles.screen}
-      data-testid="ward-index"
-      data-ward-design="v10"
-      data-ward-rebuilt-screen="wards-index"
-    >
-      <main id="main-content" className={styles.main}>
+  // Inside Capacity, a ward of this desk opens Capacity's own ward panel; another site's ward (a
+  // site bed manager's counts-only card) keeps this page's counts-only panel.
+  const openRow = (row: WardRow) => {
+    if (directory && isOwn(row.unit)) directory.onOpenWard(row.unit.id);
+    else if (isPhone) setPhoneWardId(row.unit.id);
+    else setDrawerWardId(row.unit.id);
+  };
+
+  // Audit four #31: the kit pager on the ward panel and phone sheet steps through the wards in the
+  // order shown, skipping the ones that open Capacity's own panel instead.
+  const listedRows = deskSite
+    ? [...ownOrdered, ...(view !== "cards" && !isPhone ? otherOrdered : otherShown)]
+    : ordered;
+  const pagerRows = listedRows.filter((row) => !(directory && isOwn(row.unit)));
+  const wardPager = (openId: string | null, open: (id: string) => void): DrawerPagerProps | undefined => {
+    const index = pagerRows.findIndex((row) => row.unit.id === openId);
+    if (openId === null || pagerRows.length < 2 || index < 0) return undefined;
+    return {
+      index,
+      total: pagerRows.length,
+      noun: "ward",
+      onStep: (delta) => {
+        const next = pagerRows[(index + delta + pagerRows.length) % pagerRows.length];
+        if (next) open(next.unit.id);
+      },
+    };
+  };
+
+  const body = (
+    <>
+      {embedded ? null : (
         <Hero
           level={1}
           className={`${pageTop.hero} ${folderTabClasses.hero}`}
           // A site desk says whose wards these are; statewide, the header already says it.
-          eyebrow={deskSite ? `Wards · ${deskSite.name}` : undefined}
+          eyebrow={heroTabs ?? (deskSite ? `Wards · ${deskSite.name}` : undefined)}
+          phoneEyebrow={heroTabs ? "show" : undefined}
           title={
             <>
               <SrOnly>{"All wards, "}</SrOnly>
@@ -546,23 +610,19 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                       ]
                     : [
                         // A site desk: this figure counts the wards with a ready bed, as its filter does.
-                        deskSite
-                          ? {
-                              id: "with-ready",
-                              value: wardsWithReady,
-                              label: wardsWithReady === 1 ? "Ward with a ready bed" : "Wards with a ready bed",
-                              pressed: status === "has-ready",
-                              onClick: () => setStatus(status === "has-ready" ? "all" : "has-ready"),
-                              testId: "ward-index-figure-with-ready",
-                            }
-                          : {
-                              // Capacity's hero figure: spare only while the selector nets bed types.
-                              id: "short",
-                              // D-251: a gap of 0 reads "Enough" with no number, not "Short 0".
-                              value: bedGap === 0 ? "Enough" : Math.abs(bedGap),
-                              label: bedGap === 0 ? "Bed gap" : bedGap > 0 ? "Spare" : "Short",
-                              testId: "ward-index-figure-short",
-                            },
+                        // Audit two #55: the statewide hero no longer carries Capacity's Short figure.
+                        ...(deskSite
+                          ? [
+                              {
+                                id: "with-ready",
+                                value: wardsWithReady,
+                                label: wardsWithReady === 1 ? "Ward with a ready bed" : "Wards with a ready bed",
+                                pressed: status === "has-ready",
+                                onClick: () => setStatus(status === "has-ready" ? "all" : "has-ready"),
+                                testId: "ward-index-figure-with-ready",
+                              },
+                            ]
+                          : []),
                         {
                           id: "full",
                           value: noReadyCount,
@@ -590,27 +650,19 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                     <b className={styles.pillCount}>
                       {confirmations.confirmed} of {confirmations.total}
                     </b>{" "}
-                    {firstToConfirm
-                      ? `confirmed · ${firstToConfirm.name} ${durMinutes(Math.max(0, now - firstToConfirm.allocatable.confirmedAt))} old`
-                      : "counts confirmed this shift"}
+                    confirmed
                   </>
                 }
+                // Audit two #55: Ask sits on every Counts to check row; the pill only opens the ward for a desk that cannot ask.
                 action={
-                  firstToConfirm && askWard
+                  firstToConfirm && !askWard
                     ? {
-                        label: "Ask",
-                        ariaLabel: `Ask ${firstToConfirm.name} to confirm its beds`,
-                        onClick: () => askWard(firstToConfirm),
-                        testId: "ward-index-ask",
+                        label: "Open",
+                        ariaLabel: `Open ${firstToConfirm.name}`,
+                        href: `/bedchart/ward/${firstToConfirm.id}`,
+                        testId: "ward-index-open-count",
                       }
-                    : firstToConfirm
-                      ? {
-                          label: "Open",
-                          ariaLabel: `Open ${firstToConfirm.name}`,
-                          href: `/bedchart/ward/${firstToConfirm.id}`,
-                          testId: "ward-index-open-count",
-                        }
-                      : undefined
+                    : undefined
                 }
               />
             }
@@ -648,17 +700,19 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                   note: `${entry.ready} ready`,
                   pressed: service === entry.id,
                   // The name starts with the cell's visible words (WCAG 2.5.3, label in name).
-                  ariaLabel: `${serviceShortName(entry.name)} ${entry.percent === null ? "—" : `${Math.round(entry.percent)}%`}, ${entry.ready} ready: ${entry.name}, ${entry.percent === null ? "share in use not recorded" : `${Math.round(entry.percent)}% in use`}. Highlight its wards`,
+                  ariaLabel: `${serviceShortName(entry.name)} ${entry.percent === null ? "—" : `${Math.round(entry.percent)}%`}, ${entry.ready} ready: ${entry.name}, ${entry.percent === null ? "share in use not recorded" : `${Math.round(entry.percent)}% in use`}. Show only its wards`,
                   onClick: () => setService(service === entry.id ? "all" : (entry.id as ServiceFilter)),
                 }))}
               />
             }
           />
         </Hero>
+      )}
 
-        {/* Page tops (Josh, 9 Nov 2026): the service choice is the page's tabs; Filters and the view
+      {/* Page tops (Josh, 9 Nov 2026): the service choice is the page's tabs; Filters and the view
             switch sit at the row's right end. The search went from the top (Josh): it is the first
             choice behind Filters, and "/" still opens it. */}
+      {embedded ? null : (
         <WardIndexTabs
           isPhone={isPhone}
           service={service}
@@ -671,41 +725,48 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           view={view}
           onView={setView}
         />
+      )}
 
-        <section className={styles.filters} aria-label="Ward filters">
-          <div className={styles.moreFilters} id="ward-index-more-filters" data-open={filtersOpen ? "true" : undefined}>
-            <TextInput
-              ref={searchRef}
-              type="search"
-              id="wardSearchInput"
-              icon={Search}
-              placeholder="Ward, hospital or service"
-              aria-label="Filter wards by keyword"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onClear={() => setQuery("")}
-              trailing={query || isPhone ? undefined : <Kbd>/</Kbd>}
-              autoComplete="off"
-              spellCheck={false}
-              boxClassName={styles.search}
-            />
-            <div className={styles.filterGroup}>
-              <span className={styles.filterLabel}>Status</span>
-              <ScrollRow className={styles.phoneFilterScroll} role="group" aria-label="Status choices">
-                <Segmented
-                  className={styles.phoneFilterChoices}
-                  label="Status"
-                  items={[
-                    { id: "all" as StatusFilter, label: "All" },
-                    { id: "has-ready" as StatusFilter, label: "Has ready" },
-                    { id: "full" as StatusFilter, label: "Full" },
-                    { id: "stale" as StatusFilter, label: "Stale" },
-                  ]}
-                  value={status}
-                  onChange={setStatus}
-                />
-              </ScrollRow>
-            </div>
+      <section className={styles.filters} aria-label="Ward filters">
+        {/* Find (mock-up): the service tabs keep the page's own folder look, Filters and the view
+              switch at their right end; Find's pinned and recent places, once used, lead the sheet. */}
+        {pageSwitch ? <div className={styles.findMemory}>{pageSwitch}</div> : null}
+        <div className={styles.moreFilters} id="ward-index-more-filters" data-open={filtersOpen ? "true" : undefined}>
+          <TextInput
+            ref={searchRef}
+            type="search"
+            id="wardSearchInput"
+            icon={Search}
+            placeholder="Ward, hospital or service"
+            aria-label="Filter wards by keyword"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onClear={() => setQuery("")}
+            trailing={query || isPhone ? undefined : <Kbd>/</Kbd>}
+            autoComplete="off"
+            spellCheck={false}
+            boxClassName={styles.search}
+          />
+          <div className={styles.filterGroup}>
+            <span className={styles.filterLabel}>Status</span>
+            <ScrollRow className={styles.phoneFilterScroll} role="group" aria-label="Status choices">
+              <Segmented
+                className={styles.phoneFilterChoices}
+                label="Status"
+                items={[
+                  { id: "all" as StatusFilter, label: "All" },
+                  { id: "has-ready" as StatusFilter, label: "Has ready" },
+                  { id: "full" as StatusFilter, label: "Full" },
+                  { id: "stale" as StatusFilter, label: "Count old" },
+                ]}
+                value={status}
+                onChange={setStatus}
+              />
+            </ScrollRow>
+          </div>
+          {/* Cohort and Sort wrap as one pair, so a narrow row breaks before Cohort and Sort is
+                never left alone on a row (Josh, 28 Nov 2026). */}
+          <div className={styles.filterPair}>
             <div className={styles.filterGroup}>
               <span className={styles.filterLabel}>Cohort</span>
               <ScrollRow className={styles.phoneFilterScroll} role="group" aria-label="Cohort choices">
@@ -725,11 +786,11 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
               </ScrollRow>
             </div>
             <div className={styles.filterGroup}>
-              <span className={styles.filterLabel}>Order</span>
-              <ScrollRow className={styles.phoneFilterScroll} role="group" aria-label="Order choices">
+              <span className={styles.filterLabel}>Sort</span>
+              <ScrollRow className={styles.phoneFilterScroll} role="group" aria-label="Sort choices">
                 <Segmented
                   className={styles.phoneFilterChoices}
-                  label="Order"
+                  label="Sort"
                   items={[
                     { id: "service" as OrderBy, label: deskSite ? "Site" : "Service" },
                     { id: "a-z" as OrderBy, label: "A to Z" },
@@ -740,25 +801,46 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
               </ScrollRow>
             </div>
           </div>
-          {/* Audit 11 Oct 2026: the bed strip key is one line under the filters, not a rail card. */}
-          {/* A site desk's phone has its own site headings, so no "Every ward"; unfiltered, the row is empty. */}
-          {isPhone && deskSite && !isFiltered ? null : (
-            <div className={styles.keyRow}>
-              {isPhone ? null : (
-                <div className={styles.legendLine} aria-label="Reading a ward" role="note">
-                  {/* Wave 4 (D-191, ruling 7): the shared bed squares key, in strip order. */}
-                  <BedSquaresKey />
-                  <span>One square a bed.</span>
-                </div>
-              )}
+        </div>
+        {/* Audit 11 Oct 2026: the bed strip key is one line under the filters, not a rail card. */}
+        {/* A site desk's phone has its own site headings, so no "Every ward"; unfiltered, the row is empty. */}
+        {isPhone && deskSite && !isFiltered ? null : (
+          <div className={styles.keyRow}>
+            {isPhone ? null : (
+              <div className={styles.legendLine} aria-label="Reading a ward" role="note">
+                {/* Wave 4 (D-191, ruling 7): the shared bed squares key, in strip order. */}
+                <BedSquaresKey />
+                <span>One square a bed.</span>
+              </div>
+            )}
+            {/* Audit two #21: "22 wards" shows only when filtered ("8 of 22"); unfiltered the row ends on its legend. */}
+            {isFiltered || (isPhone && !deskSite) ? (
               <p className={styles.shownCount} data-testid="ward-index-count-note">
                 {isPhone && !deskSite ? <b className={styles.phoneListTitle}>Every ward</b> : null}
                 {isFiltered ? (
                   <>
                     {/* A short label; that every ward stays is said to screen readers only. */}
                     <span>
-                      <b className={styles.num}>{lit.length}</b> of <b className={styles.num}>{placed.length}</b> wards
-                      highlighted<SrOnly>. All wards stay.</SrOnly>
+                      {status === "all" && cohort === "all" && query === "" ? (
+                        <>
+                          {/* D-41 pattern: a filter that hides wards says how many and offers them back. */}
+                          <b className={styles.num}>{ordered.length}</b> of{" "}
+                          <b className={styles.num}>{placed.length}</b> wards
+                          {service !== "all" && ordered.length < placed.length ? (
+                            <>
+                              {" · "}
+                              <button type="button" className={styles.showAllLink} onClick={() => setService("all")}>
+                                Show all wards
+                              </button>
+                            </>
+                          ) : null}
+                        </>
+                      ) : (
+                        <>
+                          <b className={styles.num}>{lit.length}</b> of <b className={styles.num}>{ordered.length}</b>{" "}
+                          wards highlighted<SrOnly>. The other wards stay.</SrOnly>
+                        </>
+                      )}
                     </span>
                     {/* Second pass: what is set behind Filters shows here, each with its own remove. */}
                     {filtersOpen ? null : (
@@ -776,198 +858,216 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                       </>
                     )}
                     {/* On a phone the service is the header's own choice, so Reset never offers to undo it. */}
-                    {isPhone && status === "all" && cohort === "all" && query === "" ? null : (
+                    {serviceFromHeader && status === "all" && cohort === "all" && query === "" ? null : (
                       <Button variant="ghost" size="sm" onClick={resetFilters}>
                         Reset filters
                       </Button>
                     )}
                   </>
-                ) : isPhone ? null : (
-                  // shell-15: the phone shows no count while nothing is filtered. "22 wards", since
-                  // "22 of 22" says nothing while nothing is filtered.
-                  <span>
-                    <b className={styles.num}>{placed.length}</b> {placed.length === 1 ? "ward" : "wards"}
-                  </span>
-                )}
+                ) : null}
               </p>
-            </div>
-          )}
-        </section>
+            ) : null}
+          </div>
+        )}
+      </section>
 
-        {/* Service anchors: the canonical service order, one heading each, for in-page links. */}
-        <div className={styles.serviceAnchors}>
-          {wardServiceOrder.map((name) => (
-            <section key={name} id={`wards-${slug(name)}`} data-testid={`ward-index-service-${slug(name)}`}>
-              <h2>{name}</h2>
-            </section>
-          ))}
-        </div>
+      {/* Service anchors: the canonical service order, one heading each, for in-page links. */}
+      <div className={styles.serviceAnchors}>
+        {wardServiceOrder.map((name) => (
+          <section key={name} id={`wards-${slug(name)}`} data-testid={`ward-index-service-${slug(name)}`}>
+            <h2>{name}</h2>
+          </section>
+        ))}
+      </div>
 
-        <div className={styles.layout}>
-          {/* D-276: wider screens show Counts to check above the cards (D-270), so it comes first in
+      <div className={styles.layout}>
+        {/* D-276: wider screens show Counts to check above the cards (D-270), so it comes first in
               reading order too, not only on screen. */}
-          {isPhone ? null : rail}
-          <div className={styles.wardsColumn}>
-            {placed.length === 0 ? (
-              <Card className={cx(styles.emptyCard, styles.wrapText)}>
-                <EmptyState icon={Circle} title="No wards recorded" meta="The network has no placed wards." />
-              </Card>
-            ) : isPhone && deskSite ? (
-              <>
-                <SiteHead title={deskSite.name} meta={`${ownOrdered.length} wards`} />
-                <WardPhoneList
-                  rows={ownOrdered}
-                  now={now}
-                  dotKey={false}
-                  grouped={false}
-                  isDim={(row) => isFiltered && !isLit(row)}
-                  onOpen={(row) => setPhoneWardId(row.unit.id)}
-                />
-                <SiteHead title="Other sites" meta="Bed counts only" />
-                <WardPhoneList
-                  rows={otherShown}
-                  now={now}
-                  countsOnly
-                  grouped={order === "service"}
-                  isDim={(row) => isFiltered && !isLit(row)}
-                  onOpen={(row) => setPhoneWardId(row.unit.id)}
-                />
-                {otherMore}
-              </>
-            ) : isPhone ? (
+        {isPhone || embedded ? null : rail}
+        <div className={styles.wardsColumn}>
+          {placed.length === 0 ? (
+            <Card className={cx(styles.emptyCard, styles.wrapText)}>
+              <EmptyState icon={Circle} title="No wards recorded" meta="The network has no placed wards." />
+            </Card>
+          ) : isPhone && deskSite ? (
+            <>
+              <SiteHead title={deskSite.name} meta={`${ownOrdered.length} wards`} />
               <WardPhoneList
-                rows={ordered}
+                rows={ownOrdered}
                 now={now}
+                dotKey={false}
+                grouped={false}
+                isDim={(row) => isFiltered && !isLit(row)}
+                onOpen={openRow}
+              />
+              <SiteHead title="Other sites" meta="Bed counts only" />
+              <WardPhoneList
+                rows={otherShown}
+                now={now}
+                countsOnly
                 grouped={order === "service"}
                 isDim={(row) => isFiltered && !isLit(row)}
-                onOpen={(row) => setPhoneWardId(row.unit.id)}
+                onOpen={openRow}
               />
-            ) : view === "cards" && deskSite ? (
-              <>
-                <SiteHead title={deskSite.name} meta={`${ownOrdered.length} wards, ${totalBeds} beds`} />
-                <section className={styles.cardGrid} aria-label={`${deskSite.name} ward cards`}>
-                  {ownOrdered.map((row) => (
-                    <WardCard
-                      key={row.unit.id}
-                      row={row}
-                      now={now}
-                      dim={isFiltered && !isLit(row)}
-                      headingLevel={3}
-                      onOpen={() => setDrawerWardId(row.unit.id)}
-                    />
-                  ))}
-                </section>
-                <SiteHead
-                  title="Other sites"
-                  meta={`Bed counts only · ${otherOrdered.length} wards, ${otherOrdered.reduce((sum, row) => sum + row.ready, 0)} ready`}
-                />
-                <section className={styles.cardGrid} aria-label="Other sites, bed counts">
-                  {otherShown.map((row) => (
-                    <WardCard
-                      key={row.unit.id}
-                      row={row}
-                      now={now}
-                      dim={isFiltered && !isLit(row)}
-                      countsOnly
-                      headingLevel={3}
-                      onOpen={() => setDrawerWardId(row.unit.id)}
-                    />
-                  ))}
-                </section>
-                {otherMore}
-              </>
-            ) : view === "cards" ? (
-              <section className={styles.cardGrid} aria-label="Ward cards">
-                {ordered.map((row) => (
+              {otherMore}
+            </>
+          ) : isPhone ? (
+            <WardPhoneList
+              rows={ordered}
+              now={now}
+              grouped={order === "service"}
+              isDim={(row) => isFiltered && !isLit(row)}
+              onOpen={openRow}
+            />
+          ) : view === "cards" && deskSite ? (
+            <>
+              <SiteHead title={deskSite.name} meta={`${ownOrdered.length} wards, ${totalBeds} beds`} />
+              <section className={styles.cardGrid} aria-label={`${deskSite.name} ward cards`}>
+                {ownOrdered.map((row) => (
                   <WardCard
                     key={row.unit.id}
                     row={row}
                     now={now}
                     dim={isFiltered && !isLit(row)}
-                    onOpen={() => setDrawerWardId(row.unit.id)}
+                    headingLevel={3}
+                    onOpen={() => openRow(row)}
                   />
                 ))}
               </section>
-            ) : (
-              <WardTable
-                rows={deskSite ? [...ownOrdered, ...otherOrdered] : ordered}
-                now={now}
-                isDim={(row) => isFiltered && !isLit(row)}
-                countsOnly={(row) => !isOwn(row.unit)}
-                onOpen={(row) => setDrawerWardId(row.unit.id)}
+              <SiteHead
+                title="Other sites"
+                meta={`Bed counts only · ${otherOrdered.length} wards, ${otherOrdered.reduce((sum, row) => sum + row.ready, 0)} ready`}
               />
-            )}
-          </div>
-
-          {isPhone ? (
-            <button
-              type="button"
-              className={styles.phoneRailLink}
-              aria-haspopup="dialog"
-              onClick={() => setPhoneRailOpen(true)}
-            >
-              <span className={styles.phoneRailLinkText}>
-                <b>Occupancy by service</b>
-                <span>Bars against the {SERVICE_LINE * 100}% line, with ready beds</span>
-              </span>
-              <ChevronRight strokeWidth={1.75} size={16} aria-hidden="true" />
-            </button>
-          ) : null}
-          {isPhone ? (
-            <PhoneSheet
-              open={phoneRailOpen}
-              onClose={() => setPhoneRailOpen(false)}
-              title="Occupancy by service"
-              description={`Bars against the ${SERVICE_LINE * 100}% line, with ready beds`}
-              className={styles.phoneRailSheet}
-            >
-              {rail}
-            </PhoneSheet>
-          ) : null}
+              <section className={styles.cardGrid} aria-label="Other sites, bed counts">
+                {otherShown.map((row) => (
+                  <WardCard
+                    key={row.unit.id}
+                    row={row}
+                    now={now}
+                    dim={isFiltered && !isLit(row)}
+                    countsOnly
+                    headingLevel={3}
+                    onOpen={() => openRow(row)}
+                  />
+                ))}
+              </section>
+              {otherMore}
+            </>
+          ) : view === "cards" ? (
+            <section className={styles.cardGrid} aria-label="Ward cards">
+              {ordered.map((row) => (
+                <WardCard
+                  key={row.unit.id}
+                  row={row}
+                  now={now}
+                  dim={isFiltered && !isLit(row)}
+                  onOpen={() => openRow(row)}
+                />
+              ))}
+            </section>
+          ) : (
+            <WardTable
+              rows={deskSite ? [...ownOrdered, ...otherOrdered] : ordered}
+              now={now}
+              isDim={(row) => isFiltered && !isLit(row)}
+              countsOnly={(row) => !isOwn(row.unit)}
+              onOpen={openRow}
+            />
+          )}
         </div>
 
-        {unplaced.length > 0 ? (
-          <section id="wards-unplaced" className={styles.unplaced} data-testid="ward-index-unplaced">
-            <h3 className={styles.eyebrow}>Not placed in a health service</h3>
-            <ul className={styles.unplacedList}>
-              {unplaced.map((row) => (
-                <li key={row.unit.id}>
-                  <Link
-                    className={styles.unplacedLink}
-                    href={`/bedchart/ward/${row.unit.id}`}
-                    data-testid={`ward-index-link-${row.unit.id}`}
-                  >
-                    {row.unit.name}
-                  </Link>
-                  <span className={styles.meta}>
-                    {row.siteName} · {row.unit.cohort} · {wardCategory(row.unit)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
+        {isPhone && !embedded ? (
+          <button
+            type="button"
+            className={styles.phoneRailLink}
+            aria-haspopup="dialog"
+            onClick={() => setPhoneRailOpen(true)}
+          >
+            <span className={styles.phoneRailLinkText}>
+              <b>Occupancy by service</b>
+              <span>Bars against the {SERVICE_LINE * 100}% line, with ready beds</span>
+            </span>
+            <ChevronRight strokeWidth={1.75} size={16} aria-hidden="true" />
+          </button>
         ) : null}
-
-        {isPhone ? (
-          <WardPhoneSheet
-            row={rows.find((row) => row.unit.id === phoneWardId)}
-            now={now}
-            onClose={() => setPhoneWardId(null)}
-            countsOnly={phoneWardId !== null && !rows.some((row) => row.unit.id === phoneWardId && isOwn(row.unit))}
-          />
+        {isPhone && !embedded ? (
+          <PhoneSheet
+            open={phoneRailOpen}
+            onClose={() => setPhoneRailOpen(false)}
+            title="Occupancy by service"
+            description={`Bars against the ${SERVICE_LINE * 100}% line, with ready beds`}
+            className={styles.phoneRailSheet}
+          >
+            {rail}
+          </PhoneSheet>
         ) : null}
+      </div>
 
-        {isPhone ? null : (
-          <WardIndexDrawer
-            unit={drawerRow?.unit}
-            place={drawerRow ? `${drawerRow.siteName} · ${drawerRow.service ?? "Service not recorded"}` : ""}
-            now={now}
-            countsOnly={drawerRow !== undefined && !isOwn(drawerRow.unit)}
-            onClose={() => setDrawerWardId(null)}
-            profile={drawerRow ? <WardProfileFacts row={drawerRow} /> : null}
-          />
-        )}
+      {unplaced.length > 0 ? (
+        <section id="wards-unplaced" className={styles.unplaced} data-testid="ward-index-unplaced">
+          <h3 className={styles.eyebrow}>Not placed in a health service</h3>
+          <ul className={styles.unplacedList}>
+            {unplaced.map((row) => (
+              <li key={row.unit.id}>
+                <Link
+                  className={styles.unplacedLink}
+                  href={`/bedchart/ward/${row.unit.id}`}
+                  data-testid={`ward-index-link-${row.unit.id}`}
+                >
+                  {row.unit.name}
+                </Link>
+                <span className={styles.meta}>
+                  {row.siteName} · {row.unit.cohort} · {wardCategory(row.unit)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
+      {isPhone ? (
+        <WardPhoneSheet
+          row={rows.find((row) => row.unit.id === phoneWardId)}
+          now={now}
+          onClose={() => setPhoneWardId(null)}
+          pager={wardPager(phoneWardId, setPhoneWardId)}
+          countsOnly={phoneWardId !== null && !rows.some((row) => row.unit.id === phoneWardId && isOwn(row.unit))}
+        />
+      ) : null}
+
+      {isPhone ? null : (
+        // Batch 3 (one Ward panel): All wards opens Capacity's ward panel, with this page's extras
+        // (Site · Service, Heading here, Ward profile) as optional props. ward-index-drawer.tsx is
+        // now unused; deleting it needs Josh's yes.
+        <AllWardsPanel
+          unit={drawerRow?.unit}
+          place={drawerRow ? `${drawerRow.siteName} · ${drawerRow.service ?? "Service not recorded"}` : ""}
+          now={now}
+          countsOnly={drawerRow !== undefined && !isOwn(drawerRow.unit)}
+          onClose={() => setDrawerWardId(null)}
+          pager={wardPager(drawerWardId, setDrawerWardId)}
+          profile={drawerRow ? <WardProfileFacts row={drawerRow} /> : null}
+        />
+      )}
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div className={styles.directory} data-testid="capacity-ward-directory" data-ward-design="v10">
+        {body}
+      </div>
+    );
+  }
+  return (
+    <div
+      className={styles.screen}
+      data-testid="ward-index"
+      data-ward-design="v10"
+      data-ward-rebuilt-screen="wards-index"
+    >
+      <main id="main-content" className={styles.main}>
+        {body}
         <WardPrototypeFooter
           testId="ward-index-governance"
           note="Invented figures under real WA hospital names. Lists update once a minute."
@@ -977,194 +1077,40 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   );
 }
 
-/** "Maali (Ward 4.2)", not "Maali (Ward 4.2) — open"; the security label already says it. */
-function shortWardName(unit: Pick<Unit, "name">): string {
-  return unit.name.split(" — ")[0];
-}
-
 function slug(service: HealthService): string {
   return service.toLowerCase().split(" ").join("-");
 }
 
-/** The card's occupancy as a soft pill, amber from the surge band (95%). */
-function OccupancyPill({ row }: { row: WardRow }) {
-  const pct = Math.round(row.occupancy * 100);
-  const nearFull = isNearFull(row.occupancy);
-  return (
-    <span className={styles.sharePill} data-tone={nearFull ? "warning" : undefined}>
-      {nearFull ? <StatusGlyph tone="warning" size={8} /> : null}
-      <b className={styles.num}>{pct}%</b> {nearFull ? "near full" : "in use"}
-    </span>
-  );
-}
-
-function Confirmed({ row, now, countsOnly = false }: { row: WardRow; now: Instant; countsOnly?: boolean }) {
-  const age = durMinutes(Math.max(0, now - row.confirmedAt));
-  return row.stale ? (
-    <span className={styles.confirmed}>
-      <StatusGlyph tone="warning" size={8} />
-      {/* Site bed manager: another site's count is its own ward's to chase, not this desk's. */}
-      <b className={styles.num}>{age}</b> {countsOnly ? "stale" : "stale, ask the nurse unit manager"}
-    </span>
-  ) : (
-    <span className={styles.confirmed}>
-      <b className={styles.num}>{age}</b> since confirmed
-    </span>
-  );
-}
-
-function WardCard({
-  row,
-  now,
-  onOpen,
-  dim = false,
-  countsOnly = false,
-  headingLevel = 2,
-}: {
-  row: WardRow;
-  now: Instant;
-  /** WS1: the card opens the ward's side panel. */
-  onOpen: () => void;
-  dim?: boolean;
-  /** A7 (accessibility check, 2 Nov 2026): h2 under the page title, h3 under a site bed manager's site heading. */
-  headingLevel?: 2 | 3;
-  /** Site bed manager: another site's ward, drawn as bed counts with no way in. */
-  countsOnly?: boolean;
-}) {
-  const { unit } = row;
-  const WardTitle = headingLevel === 3 ? "h3" : "h2";
-  return (
-    <article
-      className={styles.wardCard}
-      data-dim={dim ? "true" : undefined}
-      data-service={row.service ?? "none"}
-      data-cohort={cohortKey(unit)}
-      data-avail={row.ready > 0 ? "vacant" : "full"}
-      data-acuity={unitHasLockedBeds(unit) ? "high" : "standard"}
-    >
-      <div className={styles.cardHead}>
-        <WardTitle className={cx(styles.wardTitle, styles.wrapLine)} title={unit.name}>
-          {/* The name is the card's one target: it stretches over the card and opens the side panel. */}
-          <button type="button" className={styles.cardOpen} aria-haspopup="dialog" onClick={onOpen}>
-            {shortWardName(unit)}
-          </button>
-        </WardTitle>
-        <SecurityLabel unit={unit} />
-      </div>
-      <p className={styles.meta} title={`${row.service ?? ""} · ${row.siteName} · ${unit.cohort}`}>
-        {row.service ? serviceShortName(row.service) : "Not placed"} · {row.siteShort} · {cohortLabel(unit)}
-      </p>
-      {/* One large figure, then the strip and the quiet lines at the card's foot, so they line up across a row. */}
-      <div className={cx(styles.readyLine, styles.stripFoot)}>
-        <span className={styles.readyFigure}>{row.ready}</span>
-        <span className={styles.readyWords}>
-          ready of <b className={styles.num}>{unit.beds}</b>
-        </span>
-        <OccupancyPill row={row} />
-      </div>
-      {/* Wave 4 (D-191, ruling 7): the shared bed squares; the card's line above is their head. */}
-      <WardBedSquares row={row} className={styles.strip} />
-      {/* Second pass (3 Nov 2026): the confirmation age shows on a card only when it is past the
-          ward's limit, the one time anyone acts on it. A fresh age is in the side panel. */}
-      {row.stale ? (
-        <p className={styles.staleLine}>
-          <Confirmed row={row} now={now} countsOnly={countsOnly} />
-        </p>
-      ) : null}
-      <div className={styles.cardFoot}>
-        {/* Site bed manager: out and in are read from people records a site desk is not
-            given for other sites, so they would read 0. Its counts-only cards leave them out. */}
-        {countsOnly ? (
-          <span className={styles.flow}>
-            <b className={styles.num}>{unit.beds}</b> beds
-          </span>
-        ) : (
-          <span className={styles.flow}>
-            <b className={styles.num}>{row.out}</b> out <span aria-hidden="true">·</span>{" "}
-            <b className={styles.num}>{row.incoming}</b> in today
-          </span>
-        )}
-        {countsOnly ? (
-          <span className={styles.countsOnly}>Bed counts only</span>
-        ) : (
-          <Link
-            className={styles.cardLink}
-            href={`/bedchart/ward/${unit.id}`}
-            data-testid={`ward-index-link-${unit.id}`}
-            aria-label={`Open ward: ${unit.name}`}
-          >
-            Open ward
-            <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" />
-          </Link>
-        )}
-      </div>
-    </article>
-  );
-}
-
-/**
- * Wave 4 (D-191, ruling 7): one ward's beds as the shared bed squares, for the card, the phone sheet
- * and the table. The card's own line ("1 ready of 20") is the head, so the squares draw without one;
- * the note line says pulled, held up and the rest in words (a pulled bed is no longer hatched: the
- * hatch means "may move"). The squares are decorative; the card's line, the sheet's figures and the
- * table's Ready column say the counts. Since D-179 item 8 (PR C) a bed being made ready is off
- * Ready and drawn as its own hollow square.
- */
-function WardBedSquares({ row, className, notes = true }: { row: WardRow; className?: string; notes?: boolean }) {
-  const { unit, states } = row;
-  const counts = bedSquareCounts({
-    beds: unit.beds,
-    ready: row.ready,
-    beingMadeReady: states.beingMadeReady,
-    dischargesToday: row.dischargesToday,
-    closed: states.closed,
-  });
-  const squares = (
-    <BedSquares
-      className={className}
-      head={false}
-      counts={counts}
-      notes={
-        notes
-          ? bedSquaresNotes({
-              dischargesToday: row.dischargesToday,
-              heldUp: row.heldUp,
-              pulled: states.pulled,
-              prep: row.pendingPreparation,
-              closed: states.closed,
-              onLeave: states.onLeave,
-            })
-          : undefined
-      }
-      testId={`ward-index-squares-${unit.id}`}
-    />
-  );
-  if (notes) return squares;
-  // Review FA-3: the table's squares have no note line and the strip is hidden from screen readers,
-  // so the cell says the squares in words, from the same counts the strip draws (no new counting).
-  const spoken = [
-    `${counts.ready} ready`,
-    counts.prep > 0 ? `${counts.prep} being made ready` : null,
-    counts.free > 0 ? `${counts.free} ${counts.free === 1 ? "discharge" : "discharges"} today` : null,
-    counts.closed > 0 ? `${counts.closed} closed` : null,
-    `${counts.use} in use${states.pulled > 0 ? `, ${states.pulled} of them pulled` : ""}`,
-  ]
-    .filter(Boolean)
-    .join(", ");
-  return (
-    <>
-      {squares}
-      <SrOnly>{`${unit.beds} beds: ${spoken}.`}</SrOnly>
-    </>
-  );
-}
-
 /** The ward's profile: its cohort and security. Side panel and phone sheet. */
+/**
+ * The ward profile (cohort, security, beds being made ready) as All wards' panel shows it, for
+ * Capacity's own ward panel now that its Wards tab is the directory (area 3 item 1).
+ */
+export function WardProfileSection({ unit }: { unit: Unit }) {
+  const { admissions, bedReleases, leaveBeds, movements, referrals } = useWardFlowSelect(
+    "admissions",
+    "bedReleases",
+    "leaveBeds",
+    "movements",
+    "referrals",
+  );
+  const states = useMemo(
+    () => bedStates(unit, admissions, bedReleases, leaveBeds, networkNamedHolds(movements, referrals)),
+    [unit, admissions, bedReleases, leaveBeds, movements, referrals],
+  );
+  return (
+    <section className={styles.drawerProfile} aria-label="Ward profile">
+      <h3 className={styles.drawerProfileTitle}>Ward profile</h3>
+      <WardProfileFacts row={{ unit, pendingPreparation: states.beingMadeReady, specialling: 0 }} />
+    </section>
+  );
+}
+
 function WardProfileFacts({
   row,
   showStaff = false,
 }: {
-  row: WardRow;
+  row: Pick<WardRow, "unit" | "pendingPreparation" | "specialling">;
   /** Phone sheet only: the side panel already says specialling free under Today. */
   showStaff?: boolean;
 }) {
@@ -1314,28 +1260,35 @@ function WardPhoneSheet({
   now,
   onClose,
   countsOnly = false,
+  pager,
 }: {
   row: WardRow | undefined;
   now: Instant;
   onClose: () => void;
   /** Site bed manager: another site's ward, with no Enter or stays action. */
   countsOnly?: boolean;
+  pager?: DrawerPagerProps;
 }) {
   // The router is read here, not in the index: this sheet mounts only on phone, so the index
   // still renders where no app router is mounted (unit tests).
   const router = useRouter();
+  const canOpen = useCanOpenHref();
   if (!row) return null;
+  const statsHref = wardStatisticsHref(row.unit.id);
   return (
     <PhoneSheet
       open
       onClose={onClose}
       title={row.unit.name}
       description={`${row.service ?? "Not placed"} · ${row.siteShort} · ${cohortLabel(row.unit)}`}
+      pager={pager}
       secondary={
-        countsOnly ? undefined : { label: "Bed board", onAction: () => router.push(`/bedchart/board/${row.unit.id}`) }
+        !countsOnly && canOpen(statsHref) ? { label: "Statistics", onAction: () => router.push(statsHref) } : undefined
       }
       primary={
-        countsOnly ? undefined : { label: "Open ward", onAction: () => router.push(`/bedchart/ward/${row.unit.id}`) }
+        countsOnly
+          ? undefined
+          : { label: `Open ${row.unit.name}`, onAction: () => router.push(`/bedchart/ward/${row.unit.id}`) }
       }
       className={styles.phoneSheet}
       data-testid="ward-index-phone-sheet"
@@ -1369,14 +1322,16 @@ function WardPhoneSheet({
         )}
       </dl>
       <p className={styles.phoneSheetConfirmed}>
-        <Confirmed row={row} now={now} countsOnly={countsOnly} />
+        <Confirmed row={row} now={now} />
       </p>
       <WardProfileFacts row={row} showStaff />
     </PhoneSheet>
   );
 }
 
-const TABLE_COLUMNS = "minmax(200px, 2.2fr) 100px 80px minmax(120px, 1.4fr) 76px 56px 64px 92px 72px";
+/* Beds holds 20 fixed squares (20 x 6 px + 19 x 2 px gaps); Ward, Service and Occupied give up
+   the 40 px it needs, so the table still fits at 1280 (Josh, 28 Nov 2026). */
+const TABLE_COLUMNS = "minmax(184px, 2.2fr) 88px 80px minmax(160px, 1.4fr) 64px 56px 64px 92px 72px";
 
 function WardTable({
   rows,
@@ -1395,89 +1350,159 @@ function WardTable({
 }) {
   return (
     <Card className={styles.tableCard} as="section" aria-label="Ward table">
-      <div role="table" aria-label="Wards" className={styles.table}>
-        <div role="rowgroup">
-          <div role="row" className={cx(styles.tr, styles.th)} style={{ gridTemplateColumns: TABLE_COLUMNS }}>
-            <span role="columnheader">Ward</span>
-            <span role="columnheader">Service</span>
-            <span role="columnheader">Security</span>
-            <span role="columnheader">Beds</span>
-            <span role="columnheader">Occupied</span>
-            <span role="columnheader" className={styles.end}>
-              Ready
-            </span>
-            <span role="columnheader" className={styles.end}>
-              Out, in
-            </span>
-            <span role="columnheader">Confirmed</span>
-            <span role="columnheader">
-              <span className={styles.srOnly}>Open</span>
-            </span>
-          </div>
-        </div>
-        <div role="rowgroup">
-          {rows.map((row) => (
-            <div
-              role="row"
-              key={row.unit.id}
-              className={styles.tr}
-              style={{ gridTemplateColumns: TABLE_COLUMNS }}
-              data-dim={isDim(row) ? "true" : undefined}
-            >
-              <span role="cell" className={styles.wardCell}>
-                <button
-                  type="button"
-                  className={cx(styles.wardTitle, styles.tableOpen)}
-                  aria-haspopup="dialog"
-                  onClick={() => onOpen(row)}
-                >
-                  {shortWardName(row.unit)}
-                </button>
-                <span className={styles.meta}>
-                  {row.siteShort} · {cohortLabel(row.unit)}
-                </span>
+      {/* fix-5: the table scrolls inside its own band, so the right-edge fade (820) dims the cut
+          columns and never the card's own edge. */}
+      <div className={styles.tableScroll}>
+        <div role="table" aria-label="Wards" className={styles.table}>
+          <div role="rowgroup">
+            <div role="row" className={cx(styles.tr, styles.th)} style={{ gridTemplateColumns: TABLE_COLUMNS }}>
+              <span role="columnheader">Ward</span>
+              <span role="columnheader">Service</span>
+              <span role="columnheader">Security</span>
+              <span role="columnheader">Beds</span>
+              <span role="columnheader">In use</span>
+              <span role="columnheader" className={styles.end}>
+                Ready
               </span>
-              <span role="cell">{row.service}</span>
-              <span role="cell">
-                <SecurityLabel unit={row.unit} />
+              <span role="columnheader" className={styles.end}>
+                Out, in
               </span>
-              <span role="cell">
-                <WardBedSquares row={row} notes={false} />
-              </span>
-              <span role="cell">
-                <span className={styles.figure}>
-                  {isNearFull(row.occupancy) ? <StatusGlyph tone="warning" size={8} /> : null}
-                  <b className={styles.num}>{Math.round(row.occupancy * 100)}%</b>
-                </span>
-              </span>
-              <span role="cell" className={cx(styles.end, styles.bigNum)}>
-                {row.ready}
-              </span>
-              <span role="cell" className={cx(styles.end, styles.num)}>
-                {countsOnly(row) ? <span className={styles.countsOnly}>Not shown</span> : `${row.out}, ${row.incoming}`}
-              </span>
-              <span role="cell" className={styles.num}>
-                {row.stale ? <StatusGlyph tone="warning" size={8} /> : null}{" "}
-                {durMinutes(Math.max(0, now - row.confirmedAt))}
-              </span>
-              <span role="cell" className={styles.end}>
-                {countsOnly(row) ? (
-                  <span className={styles.countsOnly}>Counts only</span>
-                ) : (
-                  <Link
-                    className={buttonClass({ variant: "sec", size: "sm" })}
-                    href={`/bedchart/ward/${row.unit.id}`}
-                    data-testid={`ward-index-link-${row.unit.id}`}
-                    aria-label={`Enter ${row.unit.name}`}
-                  >
-                    Enter
-                  </Link>
-                )}
+              <span role="columnheader">Confirmed</span>
+              <span role="columnheader">
+                <span className={styles.srOnly}>Open</span>
               </span>
             </div>
-          ))}
+          </div>
+          <div role="rowgroup">
+            {rows.map((row) => (
+              <div
+                role="row"
+                key={row.unit.id}
+                className={styles.tr}
+                style={{ gridTemplateColumns: TABLE_COLUMNS }}
+                data-dim={isDim(row) ? "true" : undefined}
+              >
+                <span role="cell" className={styles.wardCell}>
+                  <button
+                    type="button"
+                    className={cx(styles.wardTitle, styles.tableOpen)}
+                    aria-haspopup="dialog"
+                    onClick={() => onOpen(row)}
+                  >
+                    {shortWardName(row.unit)}
+                  </button>
+                  <span className={styles.meta}>
+                    {row.siteShort} · {cohortLabel(row.unit)}
+                  </span>
+                </span>
+                <span role="cell">{row.service}</span>
+                <span role="cell">
+                  <SecurityLabel unit={row.unit} showOpen />
+                </span>
+                <span role="cell">
+                  <WardBedSquares row={row} notes={false} />
+                </span>
+                <span role="cell">
+                  <span className={styles.figure}>
+                    {isNearFull(row.occupancy) ? <StatusGlyph tone="warning" size={8} /> : null}
+                    <b className={styles.num}>{Math.round(row.occupancy * 100)}%</b>
+                  </span>
+                </span>
+                <span role="cell" className={cx(styles.end, styles.bigNum)}>
+                  {row.ready}
+                </span>
+                <span role="cell" className={cx(styles.end, styles.num)}>
+                  {countsOnly(row) ? (
+                    <span className={styles.countsOnly}>Not shown</span>
+                  ) : (
+                    `${row.out}, ${row.incoming}`
+                  )}
+                </span>
+                <span role="cell" className={styles.num}>
+                  {row.stale ? <StatusGlyph tone="warning" size={8} /> : null}{" "}
+                  {durMinutes(Math.max(0, now - row.confirmedAt))}
+                </span>
+                <span role="cell" className={styles.end}>
+                  {countsOnly(row) ? (
+                    <span className={styles.countsOnly}>Counts only</span>
+                  ) : (
+                    <Link
+                      className={buttonClass({ variant: "sec", size: "sm" })}
+                      href={`/bedchart/ward/${row.unit.id}`}
+                      data-testid={`ward-index-link-${row.unit.id}`}
+                      aria-label={`Enter ${row.unit.name}`}
+                    >
+                      Enter
+                    </Link>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </Card>
+  );
+}
+
+/** All wards' side panel: Capacity's ward panel fed the same `networkWardRows` figures. */
+function AllWardsPanel({
+  unit,
+  place,
+  now,
+  countsOnly,
+  onClose,
+  profile,
+  pager,
+}: {
+  unit: Unit | undefined;
+  place: string;
+  now: Instant;
+  countsOnly: boolean;
+  onClose: () => void;
+  profile: ReactNode;
+  pager?: DrawerPagerProps;
+}) {
+  const { bedReleases, admissions, leaveBeds, movements, referrals } = useWardFlowSelect(
+    "bedReleases",
+    "admissions",
+    "leaveBeds",
+    "movements",
+    "referrals",
+  );
+  // WF-FIG-017: a bed held by name is held, not Ready, as on the Capacity network table.
+  const row = useMemo(
+    () =>
+      unit
+        ? networkWardRows([unit], now, bedReleases, admissions, leaveBeds, [...movements, ...referrals])[0]
+        : undefined,
+    [unit, now, bedReleases, admissions, leaveBeds, movements, referrals],
+  );
+  // Fable batch 3: the same panel as Capacity's, with its "Going out, next 7 days" chart.
+  const model = useCapacityModel();
+  const week = unit
+    ? { days: model.days, row: model.week.rows.find((weekRow) => weekRow.unitId === unit.id) }
+    : undefined;
+  return (
+    <CapacityWardPanel
+      week={week}
+      row={row}
+      now={now}
+      onClose={onClose}
+      subtitle={place}
+      countsOnly={countsOnly}
+      pager={pager}
+      testId="ward-index-ward-drawer"
+    >
+      {!countsOnly && unit ? (
+        <div className={styles.drawerHeading}>
+          <HeadingHere unitId={unit.id} />
+        </div>
+      ) : null}
+      <section className={`${styles.drawerProfile} ${styles.drawerInset}`} aria-label="Ward profile">
+        <h3 className={styles.drawerProfileTitle}>Ward profile</h3>
+        {profile}
+      </section>
+    </CapacityWardPanel>
   );
 }

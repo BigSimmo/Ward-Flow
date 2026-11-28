@@ -4,6 +4,11 @@
  */
 .screen {
   min-width: 0;
+  /* Audit four #89: the page sheet fills the screen height, so no second colour shows under a short page. */
+  min-height: 100%;
+  /* fix-5: the shell column has no definite height, so min-height alone resolved to nothing in light
+     and the sheet stopped short; growing in the column fills the screen (same rule as community.module.css). */
+  flex: 1 0 auto;
   background: var(--wf-canvas);
   --wf-page-canvas: var(--wf-canvas);
 }
@@ -652,6 +657,11 @@
     display: none;
   }
 
+  /* Find's Suburbs on a phone stacks its three panes; the A to Z is the Community teams tab. */
+  .layout[data-find-view="suburbs"] [data-pane="az"] {
+    display: none;
+  }
+
   /* Phone: the letter is a full-width sticky GroupHead row above its names. */
   .letterSection {
     display: block;
@@ -1119,5 +1129,103 @@
   /* The name check reads as one sentence on paper, not two squeezed columns. */
   .check .readsAlike {
     display: block !important;
+  }
+}
+
+/* Find (mock-up, 26 Nov 2026): Suburbs is the lookup bar with Read alike and Teams by service under
+   it; Community teams is the A to Z with Read alike and Teams by service beside it, as Catchments had
+   them. Tablet and laptop; a phone has its panes. */
+@media (min-width: 46.5rem) {
+  .layout[data-find-view="suburbs"] [data-pane="az"] {
+    display: none;
+  }
+
+  .layout[data-find-view="teams"] .suburbBar {
+    display: none;
+  }
+}
+
+/* #87 (audit two, 27 Nov 2026): on Community teams the Read alike chip and the Name check column
+   carry the read-alike job, and the service tabs carry the counts, so the side cards show on Suburbs
+   only and the A to Z takes the full width. Its columns re-proportion so the name stays widest and
+   the right-hand columns spread across the row instead of bunching at its end. */
+@media (min-width: 46.5rem) {
+  .layout[data-find-view="teams"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .layout[data-find-view="teams"] .side {
+    display: none;
+  }
+
+  .layout[data-find-view="teams"] .listWrap {
+    --cti-row-cols: minmax(0, 3fr) minmax(4.5rem, 1fr) minmax(4.5rem, 0.75fr) minmax(10rem, 1.5fr) 1rem;
+  }
+
+  /* Gate r10 look upgrade 5: a 16px column gap, so the Suburbs figures and the Similar names check
+     no longer almost touch. */
+  .layout[data-find-view="teams"] .columnHead,
+  .layout[data-find-view="teams"] .teamRow {
+    column-gap: var(--wf-s-4);
+  }
+}
+
+@media (min-width: 62.5625rem) {
+  .layout[data-find-view="suburbs"] .side {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--wf-s-3);
+    align-items: stretch;
+  }
+
+  /* The two cards are level; the shorter one's bars sit at the top. */
+  .layout[data-find-view="suburbs"] .side > .sideCard {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .layout[data-find-view="suburbs"] .side > [data-pane="services"] > :last-child {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+}
+
+/* #87: on Find's Community teams the result line closes the filter row, at its right end. */
+.resultLineEnd {
+  margin-left: auto;
+}
+
+/* #87: with no card head above it, the filter row takes the card's normal top padding. */
+.toolbarTop {
+  padding-top: var(--wf-s-4);
+}
+
+/* Review (390): a phone hides the card head, and with it the result line, as before #87; the line
+   stays a live region for screen readers and no longer takes a 48px row of its own under the chips,
+   and the filter row keeps the phone's own top. The html prefix wins whatever the build's order. */
+@media (max-width: 46.4375rem) {
+  html .toolbar > .resultLineEnd {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  html .toolbarTop {
+    padding-top: 0;
+  }
+}
+
+/* Gate r10 look upgrade 7: on a phone the Similar names table's "Written as" label holds one line
+   (its column takes the few pixels it needs). */
+@media (max-width: 46.4375rem) {
+  .sideTable thead th:first-child {
+    white-space: nowrap;
   }
 }

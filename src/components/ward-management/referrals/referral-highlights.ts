@@ -25,7 +25,7 @@ export const HIGHLIGHT_LABELS: readonly (readonly [Exclude<HighlightKey, "refuse
   ["overdue", "Decision overdue"],
   ["tier1", "Tier 1"],
   ["ward", "Ward bed"],
-  ["ed", "ED"],
+  ["ed", "ED review"],
   ["both", "More than one"],
   ["community", "Community"],
 ];

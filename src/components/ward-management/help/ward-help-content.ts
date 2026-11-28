@@ -57,7 +57,7 @@ const WHY_NO_ANSWER: HelpQuestion = {
 const TV_QUESTION: HelpQuestion = {
   question: "How do I put this on the meeting room TV?",
   answer:
-    "On a desktop, choose Open on TV on Capacity, or On TV on a ward or an ED. The TV is read only, shows full names as the desks do and updates on its own. Use Screen to pick another meeting, ward or ED and View to switch that screen's board, Full screen for the wall screen and Leave TV view to come back. On a TV that stays on the wall, Lock as TV keeps that browser on TV views, even after a reload, until someone presses Unlock.",
+    "On a desktop, choose Open on TV in the Bed meeting sheet on Capacity, or On TV on a ward or an ED. The TV is read only, shows full names as the desks do and updates on its own. Use Screen to pick another meeting, ward or ED and View to switch that screen's board and Leave TV view to come back. On a TV that stays on the wall, Lock as TV goes full screen and keeps that browser on TV views, even after a reload, until someone presses Unlock.",
 };
 
 /** PL1 (3 Nov 2026): the suburb lookup moved from Community to the Catchments tab of Places. */
@@ -141,7 +141,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       {
         question: "How do I reopen a closed ward?",
         answer:
-          "Open the ward, press Closures, then Reopen to admissions and confirm. It is offered again straight away, and anything still pointed at it is listed to mark dealt with.",
+          "Open the ward, press Reopen ward, then Reopen to admissions and confirm. It is offered again straight away, and anything still pointed at it is listed to mark dealt with.",
       },
       {
         question: "How do I change or cancel a planned admission?",
@@ -247,7 +247,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     actions: [
       "Read Act now first, then anything due before the next handover.",
       "Check the Before you sign list, then choose Sign off.",
-      "Print handover and Present are under More.",
+      "Print handover is under Share. Open on TV shows the sheet on a big screen.",
     ],
     questions: [
       {
@@ -297,7 +297,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       },
       {
         question: "How do I see who is waiting without leaving the list?",
-        answer: "On a computer, choose an ED's card to preview who is waiting there. Enter opens its full board.",
+        answer: "On a computer, choose an ED's card to preview who is waiting there. Open goes to its full board.",
       },
     ],
   },
@@ -321,12 +321,12 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     actions: [
       "Open a job to see the pickup, the destination and the booking.",
       "Each job's button is its next stage, such as En route, Collected or Arrived at ward.",
-      "Log booking records a booking already made by phone, with its CAD number.",
+      "Record booking records a booking already made by phone, with its CAD number.",
     ],
     phoneActions: [
       "Next action at the top is the job to do now. Tap a job for the pickup, destination and booking.",
       "Each job's button is its next stage, such as En route, Collected or Arrived at ward.",
-      "Log booking records a booking already made by phone, with its CAD number.",
+      "Record booking records a booking already made by phone, with its CAD number.",
     ],
     questions: [
       {
@@ -336,7 +336,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       {
         question: "Why can't I book transport?",
         answer:
-          "Log booking stays greyed until a ward has accepted the patient, and the reason shows beside it. Book by phone first: logging it needs the CAD number from the call, the quoted ETA, the provider, the legal status and whether an escort is needed.",
+          "Record booking stays greyed until a ward has accepted the patient, and the reason shows beside it. Book by phone first: recording it needs the CAD number from the call, the quoted ETA, the provider, the legal status and whether an escort is needed.",
       },
     ],
   },
@@ -420,7 +420,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     actions: [
       "Work through what is blocking each discharge.",
       "Open one to see where the patient is going and the bed release.",
-      "On a computer, Print list makes a paper copy for the ward or the bed meeting.",
+      "On a computer, Print list, under Share, makes a paper copy for the ward or the bed meeting.",
     ],
     questions: [
       {
@@ -514,7 +514,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     title: "Governance",
     purpose: "Recorded decisions to review, gaps by site and the audit trail for this session.",
     actions: [
-      "Choose an event under Review, then Record review.",
+      "Choose an event under Review, then Reviewed or Follow-up.",
       "Gaps by site lists missing requirements for each site.",
       "Audit trail lists what this session captured. Registers and Reports hold previews.",
     ],
@@ -663,7 +663,7 @@ const PAGE_HELP: readonly PageHelp[] = [
     title: "Bed board",
     purpose: "Every bed on one ward, who is in it, who is coming in and who is going out today and tomorrow.",
     actions: [
-      "Choose a bed to see its patient. Move the date, Record hold-up or Record that they have left.",
+      "Choose a bed to see its patient. Move the date, Record hold-up or Record discharge.",
       "Before handover lists what needs you before the next handover, such as a discharge still here.",
       "Show shift brief opens the ward's sheet for the shift.",
     ],
@@ -671,7 +671,7 @@ const PAGE_HELP: readonly PageHelp[] = [
       {
         question: "How do I record that a patient has left?",
         answer:
-          "Choose their bed, choose where they are going, then Record that they have left. A trip to an ED is Gone to an ED instead, which keeps the bed.",
+          "Choose their bed, choose where they are going, then Record discharge. A trip to an ED is Gone to an ED instead, which keeps the bed.",
       },
       {
         question: "What does Past date mean on a bed?",
@@ -730,7 +730,7 @@ const PAGE_HELP: readonly PageHelp[] = [
       {
         question: "Why can't I book transport?",
         answer:
-          "Log booking stays greyed until a ward has accepted the patient, and the reason shows beside it. Book by phone first: logging it needs the CAD number from the call, the quoted ETA, the provider, the legal status and whether an escort is needed.",
+          "Record booking stays greyed until a ward has accepted the patient, and the reason shows beside it. Book by phone first: recording it needs the CAD number from the call, the quoted ETA, the provider, the legal status and whether an escort is needed.",
       },
     ],
   },
@@ -766,18 +766,19 @@ const PAGE_HELP: readonly PageHelp[] = [
     id: "catchments",
     path: /^\/bedchart\/hub\/catchments$/u,
     title: "Catchments",
-    purpose: "Which community team covers a suburb, every community team from A to Z, and team names that read alike.",
+    purpose:
+      "Which community team covers a suburb, every community team from A to Z, and Similar names, team names that look alike.",
     actions: [
       "Type a suburb or postcode in the lookup to find the team that covers it.",
       "Use the A to Z to open a team's own page with its referrals.",
-      "Read alike sets team names that look similar side by side. Choose Places on the band to go back.",
+      "Similar names sets team names that look alike side by side. Choose Places on the band to go back.",
     ],
     questions: [
       CATCHMENT_QUESTION,
       {
-        question: "Why do some teams read alike?",
+        question: "Why do some teams show under Similar names?",
         answer:
-          "Some team names are written more than one way. Read alike sets them side by side so you open the right one.",
+          "Some team names are written more than one way. Similar names sets them side by side so you open the right one.",
       },
     ],
   },
@@ -903,7 +904,7 @@ const PAGE_HELP: readonly PageHelp[] = [
     actions: [
       "Find a patient by name or UMRN, or choose one from Patients on the board.",
       "Narrow the events by source: Records, Audit or Session.",
-      "Print, or Download CSV for a spreadsheet copy.",
+      "Share holds Copy rows, Export CSV for a spreadsheet copy, and Print.",
     ],
     phoneActions: [
       "Find a patient by name or UMRN, or choose one from Patients on the board.",
@@ -928,8 +929,8 @@ const PAGE_HELP: readonly PageHelp[] = [
     title: "Compare",
     purpose: "Every ward and every ED side by side, as a chart or a table, with up to three wards pinned.",
     actions: [
-      "Choose what to compare, such as Occupancy or Stay, and switch between Chart and Data.",
-      "CSV downloads the figures you are looking at.",
+      "Choose what to compare, such as Occupancy or Stay, and switch between Graph and Table.",
+      "The Share menu downloads the figures you are looking at.",
       "Pin up to three wards to set them beside the network.",
     ],
     questions: [FIGURES_FROM, FEWER_THAN_FIVE],
@@ -1254,7 +1255,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
     meaning: "Coordinator changes and overrides, with their reasons. Only some desks see it.",
   },
   { term: "Session log", meaning: "What this browser session recorded, for this session only." },
-  { term: "CSV", meaning: "A plain spreadsheet file. Download CSV saves the figures or events you are looking at." },
+  { term: "CSV", meaning: "A plain spreadsheet file. Export CSV saves the figures or events you are looking at." },
 
   // Statistics (5 Nov 2026): the words the figures and their notes use.
   { term: "In use", meaning: "Beds occupied or pulled, as a share of a ward's beds." },
@@ -1315,7 +1316,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
     meaning: "A copy of the figures at one time. Only the bed coordinator takes a new one.",
   },
   {
-    term: "Read alike",
+    term: "Similar names",
     meaning: "Community team names that look similar, set side by side so you open the right one.",
   },
   {
@@ -1514,4 +1515,67 @@ export function shortcutsForDesk(role: WardTourRole): typeof KEYBOARD_SHORTCUTS 
   return KEYBOARD_SHORTCUTS.filter((item) =>
     item.keys === "Shift+R" ? refers : item.keys === "Shift+T" || item.keys === "Shift+A" ? alerts : true,
   );
+}
+
+/**
+ * Audit two (#82, K33): the one list the in-page shortcut buttons open. The page's own keys come
+ * first, then the desk's shell keys in the sheet's three groups. Referrals, Handover and Triage read
+ * this instead of their own lists (they switch in their own batches); the Handover single-key switch
+ * stays in its popover. Josh, 31 Oct 2026 (answer 35): M is off on the ED desk, so the Referrals list
+ * leaves it out here.
+ */
+export type ShortcutPage = "Referrals" | "Handover" | "Triage";
+
+type PageShortcut = { keys: string; short: string; notDesks?: readonly WardTourRole[]; needs?: "signOff" };
+
+const PAGE_SHORTCUTS: Record<ShortcutPage, readonly PageShortcut[]> = {
+  Referrals: [
+    { keys: "J", short: "Next referral" },
+    { keys: "K", short: "Previous referral" },
+    { keys: "1 2 3", short: "Place, Patient or Timeline" },
+    { keys: "O", short: "Next overdue referral" },
+    { keys: "A", short: "Accept (at the chosen ward)" },
+    { keys: "D", short: "Decline (choose a reason)" },
+    { keys: "S", short: "Referral" },
+    { keys: "M", short: "Bed meeting agenda, at its referrals", notDesks: ["ed"] },
+    { keys: "Esc", short: "Close the referral" },
+  ],
+  Handover: [
+    { keys: "J K", short: "Step through patients" },
+    { keys: "P", short: "Print handover" },
+    { keys: "S", short: "Sign off", needs: "signOff" },
+    { keys: "M", short: "Start or stop the meeting timer" },
+    { keys: "Esc", short: "Close or go back" },
+  ],
+  Triage: [
+    { keys: "S", short: "Anywhere on the form: opens the summary" },
+    { keys: "Y / N", short: "A family violence question: answers it and moves to the next" },
+    { keys: ".all", short: "Assessment, or Formulation and plan: adds every missing heading" },
+    { keys: ".form", short: "Formulation and plan: adds the formulation headings" },
+    { keys: ".plan", short: "Formulation and plan: adds the safety plan headings" },
+    { keys: "Esc", short: "A drawer or pop-out: closes it" },
+  ],
+};
+
+export type ShortcutSection = { group: string; rows: readonly { keys: string; short: string }[] };
+
+/** The shortcut sections for a desk: the page's own group first (when named), then Find, Open and Move around. */
+export function shortcutSectionsForDesk(
+  role: WardTourRole,
+  page?: ShortcutPage,
+  options: { signOff?: boolean } = {},
+): ShortcutSection[] {
+  const own = page
+    ? PAGE_SHORTCUTS[page]
+        .filter((item) => !item.notDesks?.includes(role))
+        .filter((item) => item.needs !== "signOff" || options.signOff !== false)
+    : [];
+  const shell = shortcutsForDesk(role);
+  return [
+    ...(page && own.length > 0 ? [{ group: `On ${page}`, rows: own.map(({ keys, short }) => ({ keys, short })) }] : []),
+    ...SHORTCUT_GROUPS.map((group) => ({
+      group,
+      rows: shell.filter((item) => item.group === group).map(({ keys, short }) => ({ keys, short })),
+    })).filter((section) => section.rows.length > 0),
+  ];
 }

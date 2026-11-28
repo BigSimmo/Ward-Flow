@@ -1,5 +1,6 @@
 "use client";
 
+import { BROWSE_ROWS, LeadsBrowse, useBrowseEmbedded } from "./statistics-browse-slot";
 import { openEdJourneys } from "@/components/ward-management/ward-shared-figures";
 
 import { useMemo, useState, type ReactNode } from "react";
@@ -9,9 +10,10 @@ import { ArrowLeftRight, Users } from "lucide-react";
 import {
   BarList,
   ColumnChart,
-  HeroStat,
+  HeroFigures,
   PhoneListRow,
   Segmented,
+  ShowMoreRow,
   cx,
   durMinutes,
   tableClasses,
@@ -25,7 +27,7 @@ import { ED_WAIT_BANDS, edWaitBands, edStatisticsFigures } from "./statistics-ed
 import { StatisticsEdSwarm } from "./statistics-ed-swarm";
 import { HeroTool } from "./statistics-hero-tools";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
-import { STATISTICS_COMPARE_HREF, statisticsSectionById } from "./statistics-sections";
+import { STATISTICS_COMPARE_EDS_HREF, statisticsSectionById } from "./statistics-sections";
 import { SortTh } from "./statistics-wards-index";
 import { PhoneBody, PhoneGroup, PhoneList, PhoneSheetRow, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
@@ -77,6 +79,14 @@ type EdSortKey = "name" | "waiting" | "unplaced" | "over24" | "over48" | "longes
 type SwarmShow = "all" | "unplaced" | "over24";
 
 /** "Under 4h", "4 to 8h" and "24h and over", from the band floors rather than typed here. */
+/**
+ * Side by side on the page; in Network's Browse card the table takes the full width (every column
+ * whole at 1280) and Time since opening follows under it, sized to its five bars.
+ */
+function BrowseRow({ embedded, children }: { embedded: boolean; children: ReactNode }) {
+  return embedded ? <>{children}</> : <Grid layout="wide">{children}</Grid>;
+}
+
 function bandName(position: number): string {
   const from = ED_WAIT_BANDS[position]!.fromMinutes / 60;
   const next = ED_WAIT_BANDS[position + 1]?.fromMinutes;
@@ -325,6 +335,9 @@ function EdsIndexView({
   const [asc, setAsc] = useState(false);
   const [show, setShow] = useState<SwarmShow>("all");
   const isPhone = useIsPhone();
+  // Network's Browse card, EDs segment: the swarm card leads, the table stops at eight rows.
+  const embedded = useBrowseEmbedded();
+  const [allRows, setAllRows] = useState(false);
 
   const sorted = useMemo(() => {
     const value = (row: Row): number | string | null =>
@@ -365,7 +378,7 @@ function EdsIndexView({
       onTogglePause={togglePause ?? undefined}
       tools={
         <HeroTool
-          href={STATISTICS_COMPARE_HREF}
+          href={STATISTICS_COMPARE_EDS_HREF}
           icon={<ArrowLeftRight size={14} aria-hidden="true" />}
           testId="ward-statistics-eds-compare"
         >
@@ -380,44 +393,52 @@ function EdsIndexView({
             : `${shown(waiting)} open ED movements`,
         sub: `Longest ${waitText(longestRow?.longest ?? null)} · median ${waitText(networkMedian)}`,
         stats: (
-          <>
-            <HeroStat
-              value={shown(over24)}
-              label={`Over ${LONG_HOURS}h`}
-              tone={positive(over24) ? "warning" : undefined}
-            />
-            <HeroStat value={shown(unplaced)} label="No ward yet" />
-            <HeroStat value={shown(urgent)} label="Flagged urgent" />
-          </>
+          <HeroFigures
+            label="ED figures"
+            items={[
+              {
+                id: "over-24",
+                value: shown(over24),
+                label: `over ${LONG_HOURS}h`,
+                tone: positive(over24) ? "warning" : undefined,
+              },
+              { id: "unplaced", value: shown(unplaced), label: "no ward yet" },
+              { id: "urgent", value: shown(urgent), label: "flagged urgent" },
+            ]}
+          />
         ),
       }}
       stats={
-        <>
-          <HeroStat value={shown(waiting)} label="Open ED movements" />
-          <HeroStat
-            value={waitText(longestRow?.longest ?? null)}
-            label={longestRow ? `Longest, ${longestRow.code}` : "Longest"}
-            tone={
-              longestRow?.longest == null
-                ? undefined
-                : longestRow.longest >= VERY_LONG_WAIT_MINUTES
-                  ? "danger"
-                  : longestRow.longest >= LONG_WAIT_MINUTES
-                    ? "warning"
-                    : undefined
-            }
-          />
-          <HeroStat value={waitText(networkMedian)} label="Median" />
-          <HeroStat
-            value={shown(over24)}
-            label={`Over ${LONG_HOURS}h`}
-            tone={positive(over24) ? "warning" : undefined}
-          />
-          <HeroStat value={shown(unplaced)} label="No ward yet" />
-        </>
+        <HeroFigures
+          label="ED figures"
+          items={[
+            { id: "waiting", value: shown(waiting), label: "open ED movements" },
+            {
+              id: "longest",
+              value: waitText(longestRow?.longest ?? null),
+              label: longestRow ? `longest, ${longestRow.code}` : "longest",
+              tone:
+                longestRow?.longest == null
+                  ? undefined
+                  : longestRow.longest >= VERY_LONG_WAIT_MINUTES
+                    ? "danger"
+                    : longestRow.longest >= LONG_WAIT_MINUTES
+                      ? "warning"
+                      : undefined,
+            },
+            { id: "median", value: waitText(networkMedian), label: "median" },
+            {
+              id: "over-24",
+              value: shown(over24),
+              label: `over ${LONG_HOURS}h`,
+              tone: positive(over24) ? "warning" : undefined,
+            },
+            { id: "unplaced", value: shown(unplaced), label: "no ward yet" },
+          ]}
+        />
       }
     >
-      {isPhone ? (
+      {isPhone && !embedded ? (
         <PhoneBody testId="ward-statistics-eds-phone">
           <p className={styles.muted} data-testid="ward-statistics-eds-population">
             {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure. Times run from movement
@@ -476,45 +497,47 @@ function EdsIndexView({
         </PhoneBody>
       ) : (
         <>
-          <StatCard
-            id="everyone-waiting"
-            className={index.anchorTarget}
-            title="Waiting in ED, by ED"
-            meta={`Across ${departments.length} EDs`}
-            action={
-              executive ? undefined : (
-                <Segmented<SwarmShow>
-                  label="Show"
-                  value={show}
-                  onChange={setShow}
-                  items={[
-                    { id: "all", label: "All" },
-                    { id: "unplaced", label: "No ward yet", count: shown(unplaced) },
-                    { id: "over24", label: `Over ${LONG_HOURS}h`, count: shown(over24) },
-                  ]}
-                />
-              )
-            }
-            data-testid="ward-statistics-eds-swarm-card"
-          >
-            <div className={index.swarmBody}>{renderSwarm(176, show)}</div>
-            <Foot
-              how={
-                executive
-                  ? undefined
-                  : [
-                      "Each mark is one person waiting in ED. Times run from when the movement opened.",
-                      `The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults.`,
-                    ]
+          <LeadsBrowse>
+            <StatCard
+              id="everyone-waiting"
+              className={index.anchorTarget}
+              title="Waiting in ED, by ED"
+              meta={`Across ${departments.length} EDs`}
+              action={
+                executive ? undefined : (
+                  <Segmented<SwarmShow>
+                    label="Show"
+                    value={show}
+                    onChange={setShow}
+                    items={[
+                      { id: "all", label: "All" },
+                      { id: "unplaced", label: "No ward yet", count: shown(unplaced) },
+                      { id: "over24", label: `Over ${LONG_HOURS}h`, count: shown(over24) },
+                    ]}
+                  />
+                )
               }
+              data-testid="ward-statistics-eds-swarm-card"
             >
-              <span data-testid="ward-statistics-eds-population">
-                {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure
-              </span>
-            </Foot>
-          </StatCard>
+              <div className={index.swarmBody}>{renderSwarm(176, show)}</div>
+              <Foot
+                how={
+                  executive
+                    ? undefined
+                    : [
+                        "Each mark is one person waiting in ED. Times run from when the movement opened.",
+                        `The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines are local defaults.`,
+                      ]
+                }
+              >
+                <span data-testid="ward-statistics-eds-population">
+                  {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure
+                </span>
+              </Foot>
+            </StatCard>
+          </LeadsBrowse>
 
-          <Grid layout="wide">
+          <BrowseRow embedded={embedded}>
             <StatCard
               id="every-ed"
               className={index.anchorTarget}
@@ -552,7 +575,7 @@ function EdsIndexView({
                     </tr>
                   </thead>
                   <tbody>
-                    {sorted.map((row) => {
+                    {(embedded && !allRows ? sorted.slice(0, BROWSE_ROWS) : sorted).map((row) => {
                       const num = (zero: boolean) => cx(redesign.r, tableClasses.num, zero && redesign.zero);
                       return (
                         <tr key={row.id}>
@@ -612,6 +635,11 @@ function EdsIndexView({
                   </tfoot>
                 </table>
               </div>
+              {embedded && sorted.length > BROWSE_ROWS ? (
+                <ShowMoreRow expanded={allRows} onClick={() => setAllRows((value) => !value)}>
+                  {allRows ? "Show fewer" : `Show all ${sorted.length}`}
+                </ShowMoreRow>
+              ) : null}
               <Foot>{`Over ${VERY_LONG_HOURS}h is part of over ${LONG_HOURS}h, so the two are never added`}</Foot>
             </StatCard>
 
@@ -636,7 +664,7 @@ function EdsIndexView({
               </div>
               <Foot>The bands add up to every open movement</Foot>
             </StatCard>
-          </Grid>
+          </BrowseRow>
         </>
       )}
     </StatisticsPage>

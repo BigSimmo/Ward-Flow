@@ -34,6 +34,8 @@ export function ReferralsCard({
     <StatCard
       icon={Users}
       title="Referrals into ward"
+      meta="Now and on record"
+      className={ward.tightHead}
       id="ward-referrals"
       data-testid="ward-statistics-ward-referrals-panel"
     >
@@ -128,7 +130,10 @@ export function ReferralsCard({
  */
 export function BedsNowCard({
   model,
+  twoByTwo = false,
 }: {
+  /** Its four tiles two by two, for a column (simplification mock-up, 26 Nov 2026). */
+  twoByTwo?: boolean;
   model: Pick<
     WardDetailModel,
     "unit" | "emptyBeds" | "allocatableBeds" | "openBeds" | "pendingPreparation" | "oldestPulled"
@@ -139,12 +144,14 @@ export function BedsNowCard({
     <StatCard
       icon={BedSingle}
       title="Beds now"
-      aside={`${unit.beds} beds`}
+      // Beside Length of stay: the same stacked title and caption, so the two heads are level.
+      meta={`${unit.beds} beds`}
+      className={ward.tightHead}
       id="ward-beds"
       data-testid="ward-statistics-ward-beds-now"
     >
       <CardBody className={styles.bodyStack}>
-        <dl className={styles.tiles} aria-label="Current bed figures">
+        <dl className={cx(styles.tiles, twoByTwo && compact.tilesTwoRows)} aria-label="Current bed figures">
           <div className={styles.tile}>
             <dt className={styles.tileLabel}>Empty</dt>
             <dd className={styles.tileValue} data-testid="ward-stat-capacity-empty">
@@ -169,7 +176,15 @@ export function BedsNowCard({
             </dd>
           </div>
         </dl>
-        {oldestPulled === null ? null : (
+        {oldestPulled === null ? (
+          // In a column the line always shows, so the card says "none" rather than ending early.
+          twoByTwo ? (
+            <p className={ward.factLine}>
+              <span>Oldest pulled bed</span>
+              <span>None waiting</span>
+            </p>
+          ) : null
+        ) : (
           <p className={ward.factLine}>
             <span className={styles.flagged}>
               <StatusGlyph tone="warning" size={9} />

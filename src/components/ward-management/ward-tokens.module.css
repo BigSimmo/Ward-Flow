@@ -501,3 +501,15 @@
  * re-derives a stated reason. That is how both of these survived unchallenged until somebody put a
  * number to them.
  */
+
+/* Audit four #88 (28 Nov 2026): in dark every page stands on the one canvas colour. Pages that set
+ * no ground of their own fell back to the surface grey here; light is left as it is. */
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .wardTokens {
+    --ward-ground: var(--wf-canvas);
+  }
+}
+
+:global(:root[data-theme="dark"]) .wardTokens {
+  --ward-ground: var(--wf-canvas);
+}

@@ -93,7 +93,7 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
       // A stray tap on the backdrop does not close the booking, because closing clears every answer
       // typed in (form friction audit, 27 Oct 2026). Close, Cancel and Escape ask before discard.
       closeOnScrim={false}
-      title="Log transport booking"
+      title="Record transport booking"
       description={`${patientName} · booked by phone. Read each answer off the call with the provider.`}
       closeLabel="Close dialog"
       size="md"

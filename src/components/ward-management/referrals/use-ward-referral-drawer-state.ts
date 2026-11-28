@@ -801,6 +801,15 @@ export function useWardReferralDrawerState({
   }
   // WS-01: a ward referral answers gender before Send ("Not yet recorded" counts as an answer).
   const genderUnanswered = destType === "ward" && referralGender === "";
+  // Audit two #104 (28 Nov 2026): sex and gender are asked once. When the patient record already holds
+  // both and the referral still carries them, Bed requirements states them instead of asking again.
+  const onRecord = recordedSexAndGender(patientRecord, undefined);
+  const identityFromRecord =
+    !!patientRecord &&
+    onRecord.sex !== "Not recorded" &&
+    onRecord.gender !== "" &&
+    referralSex === onRecord.sex &&
+    referralGender === onRecord.gender;
   // A9-10: a ward referral answers bed security; it no longer starts on "Open".
   const securityUnanswered = destType === "ward" && security !== "Secure" && security !== "Open";
   const originValid = !!sendingWard || (!senderMissing && isListedOrigin(originSiteCode, sourceKind));
@@ -1394,6 +1403,7 @@ export function useWardReferralDrawerState({
     setReferralSex,
     referralGender,
     setReferralGender,
+    identityFromRecord,
     highAcuity,
     setHighAcuity,
     arrivalEta,

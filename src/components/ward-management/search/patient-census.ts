@@ -189,7 +189,7 @@ function nextStepFor(cause: DelayCause | undefined, movement: Movement, moving: 
       if (moving) return ["In transit", "move"];
       // A live job is already booked: the step is the provider's, not another booking.
       const job = movement.transport;
-      if (!job || job.cancelledAt !== undefined) return ["Book transport", "wait"];
+      if (!job || job.cancelledAt !== undefined) return ["Record transport booking", "wait"];
       return [job.acceptedAt !== undefined ? "Awaiting pickup" : "Provider to accept", "wait"];
     }
     case "patient_or_family":
@@ -727,6 +727,26 @@ export function parseDob(text: string): string | null {
   const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
   if (date.getUTCMonth() !== Number(month) - 1 || date.getUTCDate() !== Number(day)) return null;
   return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+}
+
+/**
+ * Audit three #62 (Josh, 28 Nov 2026): a date of birth typed into the one search. A word written
+ * as a whole date with separators (16/07/1987, 16.07.1987, 16-07-1987 or 1987-07-16) that names a
+ * real day is the date of birth; the other words stay the name search. Strict as D-113: a half or
+ * impossible date is not read as one, and a bare run of digits stays text (it may be a UMRN).
+ */
+export function splitTypedDob(text: string): { rest: string; dob: string | null } {
+  const words = text.split(/\s+/u);
+  const index = words.findIndex((word) => /[/.-]/u.test(word) && parseDob(word) !== null);
+  if (index < 0) return { rest: text, dob: null };
+  const dob = words[index]!;
+  return {
+    rest: words
+      .filter((_, at) => at !== index)
+      .join(" ")
+      .trim(),
+    dob,
+  };
 }
 
 /** "1987-07-16" as "16/07/1987". */

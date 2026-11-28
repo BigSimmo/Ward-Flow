@@ -167,6 +167,8 @@ export function RecordFormSheet({
   onSaveForm,
   targetMovement,
   coordinator = false,
+  replacesNote,
+  portal = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -190,6 +192,10 @@ export function RecordFormSheet({
   targetMovement?: string;
   /** D-226: the coordinator may record a form refused after a Form 3E with a listed reason. */
   coordinator?: boolean;
+  /** Audit two #94: opened from the ED table, the form it would replace ("Replaces Form 3A."), shown above the foot. */
+  replacesNote?: string;
+  /** The sheet portals out of the page by default only where the host is not a table (the ED table's cell is). */
+  portal?: boolean;
 }) {
   // Bumped by Clear to remount the form's fields.
   const [formKey, setFormKey] = useState(0);
@@ -354,7 +360,7 @@ export function RecordFormSheet({
       initialFocusRef={headingFocus}
       title="Record a form"
       description="Record the time written on the paper form"
-      portal={false}
+      portal={portal}
       testId="ward-legal-record"
       footer={
         <div className={styles.recordFoot}>
@@ -447,7 +453,7 @@ export function RecordFormSheet({
           label="Patient"
           name="record-patient"
           id={movementId}
-          placeholder="Search name or UMRN"
+          placeholder="Name or UMRN"
           required
           disabled={saving}
           invalid={!!problemFor(movementId)}
@@ -558,6 +564,11 @@ export function RecordFormSheet({
         <p className={asWritten.asWritten} data-testid="ward-legal-forms-record-as-written">
           Only the written time is recorded. No expiry is calculated.
         </p>
+        {replacesNote ? (
+          <p className={styles.note} role="status" data-testid="ward-legal-forms-replaces">
+            {replacesNote}
+          </p>
+        ) : null}
         {saveRefusal ? (
           <p className={styles.note} role="alert" data-testid="ward-legal-forms-record-refusal">
             {saveRefusal}
@@ -786,18 +797,15 @@ export function TellSheet({
       description="Advisory only. Nothing is blocked."
       portal={false}
       testId="ward-legal-tell"
+      // Audit four #42: the head's close is the way out; the foot shows only to step back to the list.
       footer={
-        <div className={styles.sheetFoot}>
-          {party && subject ? (
+        party && subject ? (
+          <div className={styles.sheetFoot}>
             <Button variant="ghost" icon={ChevronLeft} onClick={() => onSubject(null)}>
               Back to the list
             </Button>
-          ) : null}
-          <span className={styles.footSpacer} />
-          <Button variant="sec" onClick={onClose}>
-            Done
-          </Button>
-        </div>
+          </div>
+        ) : undefined
       }
     >
       {subject ? (

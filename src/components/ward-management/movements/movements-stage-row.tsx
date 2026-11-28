@@ -30,6 +30,7 @@ import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/wa
 import { type MovementLegState } from "./movements-derivations";
 import { ArrowRight, Check, ChevronRight, Lock, Scale, X } from "lucide-react";
 import {
+  Badge,
   FormalName,
   SrOnly,
   StatusGlyph,
@@ -41,6 +42,7 @@ import {
   useIsPhone,
   type WfTone,
 } from "@/components/wf";
+import { expectReviewDue, expectReviewTag } from "@/components/ward-management/ward-expect-review";
 import { movementNextStep, nextStepTarget, type MovementNextStep } from "./movement-next-step";
 import { useSenderPresentation } from "../ward-sender-presentation";
 import { movementPresentation } from "../ward-partial-view-presenters";
@@ -334,6 +336,8 @@ export function StageRow({
   ]
     .filter(Boolean)
     .join(" · ");
+  // D-275: the Home Flow row's plan-review flag shows here too, for the same people.
+  const expectReview = closure ? null : expectReviewDue(movement, now);
   const recordedStep = movementNextStep(movement);
   let step: MovementNextStep | null = presentation.kind === "record" ? recordedStep : null;
   if (presentation.kind === "sender" && presentation.nextStep !== "none") {
@@ -415,9 +419,9 @@ export function StageRow({
             <span className={flow.routeTo}>
               <ArrowRight size={12} className={flow.routeArrow} aria-hidden="true" />
               <SrOnly> to </SrOnly>
-              {canOpen(`/bedchart/board/${movement.acceptedUnitId}`) ? (
+              {canOpen(`/bedchart/ward/${movement.acceptedUnitId}?view=grid`) ? (
                 <Link
-                  href={`/bedchart/board/${movement.acceptedUnitId}`}
+                  href={`/bedchart/ward/${movement.acceptedUnitId}?view=grid`}
                   className={flow.wardLink}
                   title={`Open ${destinationLabel} Bed board`}
                 >
@@ -451,6 +455,11 @@ export function StageRow({
           <span className="sr-only">{closure ? "Closure note: " : blocker ? "Held up by: " : "Stage: "}</span>
           {barrierText}
         </span>
+        {expectReview ? (
+          <Badge size="sm" tone="warning" className={flow.reviewTag}>
+            {expectReviewTag(expectReview)}
+          </Badge>
+        ) : null}
       </span>
       <span className={flow.cell} title={legalFull}>
         <span className={flow.legal}>

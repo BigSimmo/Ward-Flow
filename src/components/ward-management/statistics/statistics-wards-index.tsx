@@ -11,7 +11,8 @@ import { ArrowLeftRight, ChevronDown, ChevronRight, ChevronUp } from "lucide-rea
 import {
   BarList,
   FilterChip,
-  HeroStat,
+  HeroFigures,
+  InfoTip,
   GroupHead,
   Icon,
   PhoneListRow,
@@ -42,6 +43,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 
 import { admissionStagePosition } from "./statistics-derivations";
 import { HeroTool } from "./statistics-hero-tools";
+import { useBrowseEmbedded } from "./statistics-browse-slot";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { STATISTICS_COMPARE_HREF, statisticsSectionById } from "./statistics-sections";
 import { ServiceDot } from "./statistics-services-index";
@@ -248,6 +250,8 @@ function WardsIndexView({
   const [blockedAll, setBlockedAll] = useState(false);
   const [stayAll, setStayAll] = useState(false);
   const isPhone = useIsPhone();
+  // Network's Browse card, Wards segment: Network's pressure table leads; only the two charts follow.
+  const embedded = useBrowseEmbedded();
 
   type Row = WardIndexRow;
 
@@ -366,43 +370,53 @@ function WardsIndexView({
         title: "All wards",
         sub: `${readyBeds} ready ${plural(readyBeds, "bed", "beds")} · ${shown(blockedTotal)} ${plural(blockedTotal, "discharge", "discharges")} held up`,
         stats: (
-          <>
-            <HeroStat
-              value={overLine}
-              label={`Over ${BED_ALERT_THRESHOLD_PERCENT}%`}
-              tone={overLine > 0 ? "warning" : undefined}
-              onToggle={() => toggleChip("over", !chips.has("over"))}
-              pressed={chips.has("over")}
-            />
-            <HeroStat
-              value={noneReady}
-              label="None ready"
-              onToggle={() => toggleChip("none-ready", !chips.has("none-ready"))}
-              pressed={chips.has("none-ready")}
-            />
-            {/* Phone review F-24: "Pulled" alone is shorthand; the desktop label says what it means. */}
-            <HeroStat value={pulledBeds} label="Pulled, not arrived" />
-          </>
+          <HeroFigures
+            label="Ward figures"
+            items={[
+              {
+                id: "over",
+                value: overLine,
+                label: `over ${BED_ALERT_THRESHOLD_PERCENT}%`,
+                tone: overLine > 0 ? "warning" : undefined,
+                onClick: () => toggleChip("over", !chips.has("over")),
+                pressed: chips.has("over"),
+              },
+              {
+                id: "none-ready",
+                value: noneReady,
+                label: "none ready",
+                onClick: () => toggleChip("none-ready", !chips.has("none-ready")),
+                pressed: chips.has("none-ready"),
+              },
+              // Phone review F-24: "Pulled" alone is shorthand; the desktop label says what it means.
+              { id: "pulled", value: pulledBeds, label: "pulled, not arrived" },
+            ]}
+          />
         ),
       }}
       stats={
-        <>
-          <HeroStat
-            value={overLine}
-            label={`At or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
-            tone={overLine > 0 ? "warning" : undefined}
-          />
-          <HeroStat value={noneReady} label="None ready" />
-          <HeroStat
-            value={readyBeds}
-            label={pendingBeds > 0 ? `Ready beds, ${pendingBeds} being made ready` : "Ready beds"}
-          />
-          <HeroStat value={pulledBeds} label="Pulled, not arrived" />
-          <HeroStat value={shown(blockedTotal)} label="Discharges held up" />
-        </>
+        <HeroFigures
+          label="Ward figures"
+          items={[
+            {
+              id: "over",
+              value: overLine,
+              label: `at or over ${BED_ALERT_THRESHOLD_PERCENT}%`,
+              tone: overLine > 0 ? "warning" : undefined,
+            },
+            { id: "none-ready", value: noneReady, label: "none ready" },
+            {
+              id: "ready",
+              value: readyBeds,
+              label: pendingBeds > 0 ? `ready beds, ${pendingBeds} being made ready` : "ready beds",
+            },
+            { id: "pulled", value: pulledBeds, label: "pulled, not arrived" },
+            { id: "held-up", value: shown(blockedTotal), label: "discharges held up" },
+          ]}
+        />
       }
     >
-      {isPhone ? (
+      {isPhone && !embedded ? (
         <PhoneBody testId="ward-statistics-wards-phone">
           <div className={phone.chips} role="group" aria-label="Highlight wards">
             {chipItems
@@ -491,145 +505,152 @@ function WardsIndexView({
         </PhoneBody>
       ) : (
         <>
-          <StatCard
-            id="every-ward"
-            className={index.anchorTarget}
-            title="Every ward"
-            meta={
-              <span data-testid="ward-statistics-wards-match-count">
-                {chips.size > 0
-                  ? `${matched} of ${rows.length} highlighted`
-                  : `${rows.length} ${plural(rows.length, "ward", "wards")}`}
-              </span>
-            }
-            action={
-              <Segmented
-                label="Group wards"
-                value={group}
-                onChange={setGroup}
-                items={[
-                  { id: "service", label: "By service" },
-                  { id: "none", label: "One list" },
-                ]}
-              />
-            }
-            data-testid="ward-statistics-wards-table-card"
-          >
-            <div className={redesign.chips} role="group" aria-label="Highlight wards">
-              {chipItems.map((chip) => (
-                <FilterChip
-                  key={chip.id}
-                  pressed={chips.has(chip.id)}
-                  onPressedChange={(pressed) => toggleChip(chip.id, pressed)}
-                  count={chip.count}
-                  tone={chip.tone}
-                >
-                  {chip.label}
-                </FilterChip>
-              ))}
-            </div>
-            <div className={redesign.tableWrap} tabIndex={0} role="region" aria-label="Every ward, scrollable">
-              <table className={cx(tableClasses.table, redesign.table)} data-testid="ward-statistics-wards-table">
-                <caption className={styles.srOnly}>
-                  Every inpatient ward: in-use percent (occupied or pulled), occupied (in a bed, leave included), ready,
-                  being made ready, pulled, closed, blocked, and the longest current stay
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Ward</th>
-                    <th scope="col" title={IN_USE_CAPTION}>
-                      {IN_USE_NOUN} %
-                    </th>
-                    <th scope="col" className={redesign.r} title={OCCUPIED_CAPTION}>
-                      {OCCUPIED_NOUN}
-                    </th>
-                    {[
-                      BED_STATE_LABELS.ready,
-                      "Making ready",
-                      BED_STATE_LABELS.pulled,
-                      BED_STATE_LABELS.closed,
-                      "Blocked",
-                      "Longest stay",
-                    ].map((label) => (
-                      <th key={label} scope="col" className={redesign.r}>
-                        {label}
+          {embedded ? null : (
+            <StatCard
+              id="every-ward"
+              className={index.anchorTarget}
+              title="Every ward"
+              meta={
+                <span data-testid="ward-statistics-wards-match-count">
+                  {chips.size > 0
+                    ? `${matched} of ${rows.length} highlighted`
+                    : `${rows.length} ${plural(rows.length, "ward", "wards")}`}
+                </span>
+              }
+              action={
+                <Segmented
+                  label="Group wards"
+                  value={group}
+                  onChange={setGroup}
+                  items={[
+                    { id: "service", label: "By service" },
+                    { id: "none", label: "One list" },
+                  ]}
+                />
+              }
+              data-testid="ward-statistics-wards-table-card"
+            >
+              <div className={redesign.chips} role="group" aria-label="Highlight wards">
+                {chipItems.map((chip) => (
+                  <FilterChip
+                    key={chip.id}
+                    pressed={chips.has(chip.id)}
+                    onPressedChange={(pressed) => toggleChip(chip.id, pressed)}
+                    count={chip.count}
+                    tone={chip.tone}
+                  >
+                    {chip.label}
+                  </FilterChip>
+                ))}
+              </div>
+              <div className={redesign.tableWrap} tabIndex={0} role="region" aria-label="Every ward, scrollable">
+                <table className={cx(tableClasses.table, redesign.table)} data-testid="ward-statistics-wards-table">
+                  <caption className={styles.srOnly}>
+                    Every inpatient ward: in-use percent (occupied or pulled), occupied (in a bed, leave included),
+                    ready, being made ready, pulled, closed, blocked, and the longest current stay
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Ward</th>
+                      {/* Audit two (#113, D-224): the two definitions were hover-only; one info mark
+                        at the list head says both. */}
+                      <th scope="col">
+                        {IN_USE_NOUN} %{" "}
+                        <InfoTip about={`${IN_USE_NOUN} and ${OCCUPIED_NOUN.toLowerCase()}`}>
+                          {`${IN_USE_NOUN}: ${IN_USE_CAPTION.toLowerCase()}. ${OCCUPIED_NOUN}: ${OCCUPIED_CAPTION.toLowerCase()}.`}
+                        </InfoTip>
                       </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleGroups.map((entry) => (
-                    <Fragment key={entry.service ?? "all"}>
-                      {group === "service" ? (
-                        <tr className={redesign.group}>
-                          <th scope="colgroup" colSpan={9}>
-                            <span>
-                              <ServiceDot service={entry.service} />
-                              {entry.service ?? "Service not recorded"}
-                              <small>{`${entry.rows.length} ${plural(entry.rows.length, "ward", "wards")}`}</small>
-                            </span>
-                          </th>
-                        </tr>
-                      ) : null}
-                      {entry.rows.map((row) => {
-                        const hit = matches(row);
-                        const num = (zero: boolean) => cx(redesign.r, tableClasses.num, zero && redesign.zero);
-                        return (
-                          <tr key={row.id} data-match={hit || undefined} {...rowDim(chips.size > 0 && !hit)}>
-                            <th scope="row">
-                              <span className={redesign.name}>
-                                <Link href={wardStatisticsHref(row.id)} className={redesign.nameLink}>
-                                  {row.name}
-                                </Link>
-                                <small className={redesign.nameSub}>
-                                  {group === "none" ? <ServiceDot service={row.service} /> : null}
-                                  {row.hospital}
-                                </small>
-                                {hit ? <SrOnly>Highlighted by the chosen filters.</SrOnly> : null}
+                      <th scope="col" className={redesign.r}>
+                        {OCCUPIED_NOUN}
+                      </th>
+                      {[
+                        BED_STATE_LABELS.ready,
+                        "Making ready",
+                        BED_STATE_LABELS.pulled,
+                        BED_STATE_LABELS.closed,
+                        "Blocked",
+                        "Longest stay",
+                      ].map((label) => (
+                        <th key={label} scope="col" className={redesign.r}>
+                          {label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleGroups.map((entry) => (
+                      <Fragment key={entry.service ?? "all"}>
+                        {group === "service" ? (
+                          <tr className={redesign.group}>
+                            <th scope="colgroup" colSpan={9}>
+                              <span>
+                                <ServiceDot service={entry.service} />
+                                {entry.service ?? "Service not recorded"}
+                                <small>{`${entry.rows.length} ${plural(entry.rows.length, "ward", "wards")}`}</small>
                               </span>
                             </th>
-                            <td>
-                              <Occ
-                                pct={row.rate}
-                                threshold={BED_ALERT_THRESHOLD_PERCENT}
-                                label={`${row.name} beds in use`}
-                              />
-                            </td>
-                            <td className={num(false)}>{`${row.occupied} of ${row.beds}`}</td>
-                            <td className={num(row.ready === 0)}>{row.ready}</td>
-                            <td className={num(row.pending === 0)}>{row.pending}</td>
-                            <td className={num(row.pulled === 0)}>{row.pulled}</td>
-                            <td className={num(row.closed === 0)}>{row.closed}</td>
-                            <td className={num(exactStatisticsCount(row.blocked) === 0)}>{shown(row.blocked)}</td>
-                            <td className={num(row.longest === null)}>
-                              {row.longest === null ? "none" : `${row.longest} d`}
-                            </td>
                           </tr>
-                        );
-                      })}
-                    </Fragment>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <Foot
-              link={
-                canShowMore ? (
-                  <button
-                    type="button"
-                    className={redesign.link}
-                    aria-expanded={showMore}
-                    onClick={() => setShowMore((more) => !more)}
-                  >
-                    {moreLabel}
-                    <ChevronRight size={14} aria-hidden="true" />
-                  </button>
-                ) : null
-              }
-            >
-              Ready leaves out beds being made ready · stays count whole days since arrival
-            </Foot>
-          </StatCard>
+                        ) : null}
+                        {entry.rows.map((row) => {
+                          const hit = matches(row);
+                          const num = (zero: boolean) => cx(redesign.r, tableClasses.num, zero && redesign.zero);
+                          return (
+                            <tr key={row.id} data-match={hit || undefined} {...rowDim(chips.size > 0 && !hit)}>
+                              <th scope="row">
+                                <span className={redesign.name}>
+                                  <Link href={wardStatisticsHref(row.id)} className={redesign.nameLink}>
+                                    {row.name}
+                                  </Link>
+                                  <small className={redesign.nameSub}>
+                                    {group === "none" ? <ServiceDot service={row.service} /> : null}
+                                    {row.hospital}
+                                  </small>
+                                  {hit ? <SrOnly>Highlighted by the chosen filters.</SrOnly> : null}
+                                </span>
+                              </th>
+                              <td>
+                                <Occ
+                                  pct={row.rate}
+                                  threshold={BED_ALERT_THRESHOLD_PERCENT}
+                                  label={`${row.name} beds in use`}
+                                />
+                              </td>
+                              <td className={num(false)}>{`${row.occupied} of ${row.beds}`}</td>
+                              <td className={num(row.ready === 0)}>{row.ready}</td>
+                              <td className={num(row.pending === 0)}>{row.pending}</td>
+                              <td className={num(row.pulled === 0)}>{row.pulled}</td>
+                              <td className={num(row.closed === 0)}>{row.closed}</td>
+                              <td className={num(exactStatisticsCount(row.blocked) === 0)}>{shown(row.blocked)}</td>
+                              <td className={num(row.longest === null)}>
+                                {row.longest === null ? "none" : `${row.longest} d`}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Foot
+                link={
+                  canShowMore ? (
+                    <button
+                      type="button"
+                      className={redesign.link}
+                      aria-expanded={showMore}
+                      onClick={() => setShowMore((more) => !more)}
+                    >
+                      {moreLabel}
+                      <ChevronRight size={14} aria-hidden="true" />
+                    </button>
+                  ) : null
+                }
+              >
+                Ready leaves out beds being made ready · stays count whole days since arrival
+              </Foot>
+            </StatCard>
+          )}
 
           <Grid>
             <StatCard
@@ -660,7 +681,7 @@ function WardsIndexView({
                       aria-expanded={stayAll}
                       onClick={() => setStayAll((all) => !all)}
                     >
-                      {stayAll ? "Show fewer" : `Show top ${byMean.length}`}
+                      {stayAll ? "Show fewer" : `Show all ${byMean.length}`}
                       <ChevronRight size={14} aria-hidden="true" />
                     </button>
                   ) : null
@@ -673,7 +694,7 @@ function WardsIndexView({
             <StatCard
               id="blocked"
               className={index.anchorTarget}
-              title="Discharges held up"
+              title={embedded ? "Discharges held up, by ward" : "Discharges held up"}
               meta={`${shown(blockedTotal)} across ${blockedRows.length} ${plural(blockedRows.length, "ward", "wards")}`}
               data-testid="ward-statistics-wards-blocked"
             >

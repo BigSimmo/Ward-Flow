@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
 import Link from "next/link";
 import { AlarmClock } from "lucide-react";
 
@@ -10,7 +10,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { InboxSnoozeEntry } from "@/components/ward-management/ward-inbox-snooze";
 import { snoozedLine } from "@/components/ward-management/inbox-snooze-control";
-import { Button, Count, StatusGlyph, buttonClass, type WfTone } from "@/components/wf";
+import { Badge, Button, Count, StatusGlyph, buttonClass, type WfTone } from "@/components/wf";
 
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import {
@@ -186,6 +186,9 @@ function ageNoteFor(entry: QueueEntry, age: string | undefined, now: Instant, da
   return age !== undefined && overdue.startsWith(`${age} `) ? overdue.slice(age.length + 1) : overdue;
 }
 
+/** True inside a "N alerts, one record" group, whose head already names the person (gate r10). */
+export const LinkedRecordGroupContext = createContext(false);
+
 /**
  * Desktop row (Alerts redesign, 1 Nov 2026): Home's act-now row. Glyph, the alert, then
  * "Surname, Given UMRN · where", then how long with a short note, then one action. The owner and
@@ -204,15 +207,25 @@ export function AlertRow({
   const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   const { subject } = entry;
   const where = subject.to ? `${subject.to}, from ${subject.from}` : subject.from;
+  // An alert about a ward or ED, not a person: no movement, booking, stay or person behind it.
+  const unitAlert =
+    !entry.item.movementId &&
+    !entry.item.plannedAdmission &&
+    !entry.item.admissionId &&
+    !entry.item.personId &&
+    !subject.patientHref;
   const state = entry.snooze ? undefined : stateLine(entry, now);
   // The owner shows only when it is not you, by its full name, as on Home.
   const owner = entry.mine || !entry.owner ? undefined : entry.owner;
   const ageFrom = entry.snooze ? undefined : shownAgeFrom(entry.item, entry.raised);
   const age = ageFrom === undefined ? undefined : minutesText(Math.max(0, now - ageFrom));
+  // Gate r10 (1b upgrade 2): inside "N alerts, one record: <name>" the group head already names the
+  // person and record, so each row leads with the alert alone, as an alert about a unit does.
+  const inRecordGroup = useContext(LinkedRecordGroupContext) && !unitAlert;
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its Open button is the keyboard route
     <li
-      className={`${homeStyles.hrow} ${styles.queueRow}`}
+      className={`${homeStyles.hrow} ${homeStyles.hrowStacked} ${styles.queueRow}`}
       {...rowData(entry, handlers)}
       onClick={(event) => {
         if ((event.target as HTMLElement).closest("a, button")) return;
@@ -222,21 +235,38 @@ export function AlertRow({
       <span className={homeStyles.hrowGlyph}>
         <StatusGlyph tone={glyphTone(entry)} />
       </span>
+      {/* Audit four item 108: one row grammar, Home's. Who or where first (the person, or the ward or
+          ED on an alert about a unit), then the alert as a tag, then the detail. */}
       <span className={homeStyles.hrowMain}>
-        <button
-          type="button"
-          className={homeStyles.hrowTitle}
-          aria-current={handlers.selectedId === entry.item.id ? "true" : undefined}
-          aria-label={`Open ${entry.item.title} for ${subject.displayName}`}
-          data-testid="ward-alerts-open"
-          onClick={() => handlers.onSelect(entry)}
-        >
-          {entry.item.title}
-        </button>
-        <span className={homeStyles.hrowLine}>
-          <Who entry={entry} />
-          <span className={homeStyles.hrowWhere}> · {where}</span>
+        <span className={homeStyles.hrowWho}>
+          <button
+            type="button"
+            className={`${homeStyles.hrowName} ${homeStyles.hrowNameOpen}`}
+            aria-current={handlers.selectedId === entry.item.id ? "true" : undefined}
+            aria-label={
+              inRecordGroup
+                ? `Open ${entry.item.title} for ${subject.displayName}`
+                : `${unitAlert ? subject.from : subject.displayName}, open ${entry.item.title}`
+            }
+            data-testid="ward-alerts-open"
+            onClick={() => handlers.onSelect(entry)}
+          >
+            {inRecordGroup ? entry.item.title : unitAlert ? subject.from : subject.displayName}
+          </button>{" "}
+          {unitAlert || inRecordGroup ? null : <span className={homeStyles.hrowUmrn}>{subject.umrn}</span>}
+          {inRecordGroup ? null : (
+            <Badge size="sm" className={homeStyles.hrowTag}>
+              {entry.item.title}
+            </Badge>
+          )}
         </span>
+        {unitAlert ? (
+          entry.item.detail ? (
+            <span className={homeStyles.hrowLine}>{entry.item.detail}</span>
+          ) : null
+        ) : (
+          <span className={homeStyles.hrowLine}>{where}</span>
+        )}
         {owner || state ? (
           <span className={homeStyles.hrowExtra}>
             {owner ? (
@@ -249,12 +279,15 @@ export function AlertRow({
           </span>
         ) : null}
       </span>
-      <span className={homeStyles.hrowAge}>
-        {age === undefined ? null : <span className={homeStyles.mono}>{age}</span>}
-        <span>{ageNoteFor(entry, age, now, dayZero)}</span>
-      </span>
-      <span className={homeStyles.hrowAction}>
-        <RowAction entry={entry} handlers={handlers} />
+      {/* Gate r10 (1b upgrade 3): the time sits left of the button on one line, as in r9. */}
+      <span className={`${homeStyles.hrowEnd} ${styles.queueEnd}`}>
+        <span className={homeStyles.hrowAge}>
+          {age === undefined ? null : <span className={homeStyles.mono}>{age}</span>}
+          <span>{ageNoteFor(entry, age, now, dayZero)}</span>
+        </span>
+        <span className={homeStyles.hrowAction}>
+          <RowAction entry={entry} handlers={handlers} />
+        </span>
       </span>
     </li>
   );
@@ -404,13 +437,37 @@ export function AlertPhoneRow({ entry, now, handlers }: { entry: QueueEntry; now
   const route = entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from;
   const ageFrom = shownAgeFrom(entry.item, entry.raised);
   const ended = legalTypedEnd(entry.item);
+  const unitAlert =
+    !entry.item.movementId &&
+    !entry.item.plannedAdmission &&
+    !entry.item.admissionId &&
+    !entry.item.personId &&
+    !entry.subject.patientHref;
   return (
     <AlertPhoneRowLayout
       data={rowData(entry, handlers)}
       glyph={entry.snooze ? <AlarmClock size={14} aria-hidden="true" /> : <StatusGlyph tone={glyphTone(entry)} />}
-      open={<OpenButton entry={entry} handlers={handlers} />}
-      who={<Who entry={entry} />}
-      line={route}
+      // Gate r10 F8: the phone row speaks the desktop and Home grammar. The person (or the ward or
+      // ED on an alert about a unit) opens the row; the record number and the alert, as a tag, follow.
+      open={
+        <button
+          type="button"
+          className={styles.rowOpen}
+          aria-current={handlers.selectedId === entry.item.id ? "true" : undefined}
+          aria-label={`${unitAlert ? entry.subject.from : entry.subject.displayName}, open ${entry.item.title}`}
+          data-testid="ward-alerts-open"
+          onClick={() => handlers.onSelect(entry)}
+        >
+          <span className={styles.rowOpenText}>{unitAlert ? entry.subject.from : entry.subject.displayName}</span>
+        </button>
+      }
+      who={
+        <span className={styles.phoneRowTagLine}>
+          {unitAlert ? null : <span className={styles.umrn}>{entry.subject.umrn}</span>}
+          <Badge size="sm">{entry.item.title}</Badge>
+        </span>
+      }
+      line={unitAlert ? (entry.item.detail ?? route) : route}
       action={<RowAction entry={entry} handlers={handlers} />}
       age={
         ageFrom !== undefined

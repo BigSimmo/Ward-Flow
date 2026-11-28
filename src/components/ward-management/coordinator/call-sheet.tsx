@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Printer } from "lucide-react";
 
 import { Button, DisabledReason, Field, Select } from "@/components/wf";
+import { MissingValue } from "@/components/wf/missing-value";
 
 import { referralBoardHref } from "../ed/ed-bed-search-step";
 import { CommitmentStatusLine, CommitmentTimeSelect } from "../referrals/referral-commitments-panel";
@@ -345,7 +346,13 @@ function WardGroup({
         </div>
         <div>
           <dt>Next callback</dt>
-          <dd>{group.nextCallbackAt !== undefined ? formatInstantWithDay(group.nextCallbackAt, now) : "Not set"}</dd>
+          <dd>
+            {group.nextCallbackAt !== undefined ? (
+              formatInstantWithDay(group.nextCallbackAt, now)
+            ) : (
+              <MissingValue reason="not_recorded" />
+            )}
+          </dd>
         </div>
       </dl>
       {fresh.length > 0 ? <ol className={styles.items}>{fresh.map(renderItem)}</ol> : null}

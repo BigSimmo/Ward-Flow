@@ -10,10 +10,10 @@
  * - Promises due by handover: open ward promises or callbacks due by the handover cutoff, earliest
  *   chase first (`promiseChaseTimes`, the card's own order), at most five.
  *
- * Night shift on the morning look (item 11): the first read of a new shift, when the digest would
- * read from this shift's start, reads from the previous shift's start instead, so the day
- * coordinator's first read after the morning handover covers the whole night. A later read covers
- * this shift only. `firstLookOfShift` and `sinceItemsFor` carry that; without them nothing changes.
+ * One window (audit three #10): "What changed" reads from the hero's own window, shift start, on
+ * every read, so the hero and the digest never count the same change twice with two numbers. The
+ * night before shift start shows in the Since sheet. Item 11's absences and transfers still count,
+ * within that window.
  *
  * Privacy: the digest holds no patient names or record numbers. Lines carry ward names, counts and
  * times, plus record ids only for in-app links; `handoverDigestText` drops the ids, so the copied
@@ -26,8 +26,6 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { openStaffRequests, type StaffRequestRecord } from "@/components/ward-management/staffing/staff-requests";
 import { durMinutes } from "@/components/wf";
-import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
-import { previousShiftStartInstant } from "@/components/ward-management/shift-first-look";
 import type { NightMovementChange } from "@/components/ward-management/night-movement-changes";
 
 import { openPromiseCounts, promiseChaseTimes } from "./handover-open-promises";
@@ -109,19 +107,12 @@ export type HandoverDigestInput = {
   nightMovesFor?: (since: Instant) => readonly NightMovementChange[];
 };
 
-/**
- * Item 11: the window "What changed" reads. A first read whose window is this shift's start reads
- * from the previous shift's start; a chosen earlier handover or a later read keeps its own window.
- */
+/** Audit three #10: "What changed" reads the hero's window (shift start), so the two agree. */
 function digestSinceWindow(input: HandoverDigestInput): {
   sinceAt: Instant;
   sinceItems: readonly DigestSinceItem[];
 } {
-  const { sinceItemsFor } = input;
-  if (!input.firstLookOfShift || !sinceItemsFor || input.sinceAt !== currentShiftStartInstant(input.now))
-    return { sinceAt: input.sinceAt, sinceItems: input.sinceItems };
-  const sinceAt = previousShiftStartInstant(input.now);
-  return { sinceAt, sinceItems: sinceItemsFor(sinceAt) };
+  return { sinceAt: input.sinceAt, sinceItems: input.sinceItems };
 }
 
 const PROMISES_SHOWN = 5;

@@ -22,7 +22,7 @@ New here? Open **Help** and choose **Take the tour**.
 ## Most common tasks
 
 1. **See the network.** **Statistics** shows beds, occupancy and ED waits in one place.
-2. **Check beds.** Open **Capacity** for bed counts across your network or service.
+2. **Check counts.** Open **Capacity** for bed counts across your network or service.
 3. **Compare.** Use the ward and ED comparisons to set two side by side.
 4. **Export.** Use **CSV** to save a table of figures.
 

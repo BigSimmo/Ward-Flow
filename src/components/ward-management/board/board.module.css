@@ -6151,3 +6151,77 @@
   text-transform: none;
   letter-spacing: 0;
 }
+
+/* Simplification 26 Nov 2026 (fold the Bed board into Ward, item 13): the dense grid as the Ward
+   page's Grid view of Every bed. It keeps `.screen` (so every board rule, light and dark, applies as
+   on the board), less the page-level canvas: the Every bed card is its frame. */
+.screen.embedded {
+  min-height: 0;
+  background: transparent;
+  font-size: inherit;
+}
+
+.screen.embedded::before {
+  content: none;
+}
+
+.embeddedMain,
+.embeddedZones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.screen.embedded .gridColumn {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Past its date is "at risk", amber, as the Ward picture marks the same beds; red means act now. */
+.screen.embedded .bedPast {
+  border-color: var(--wf-warning);
+  outline: 0;
+  box-shadow: 0 0 0 1px var(--wf-warning);
+}
+
+.screen.embedded .pastMark[data-testid$="-past"] .statusGlyph {
+  color: var(--wf-warning);
+}
+
+.screen.embedded .legendBar {
+  width: 1.5rem;
+  flex: none;
+}
+
+/* Ward page parts: one rhythm and one type size with the page around them (review fix). */
+.screen.embedded {
+  font-size: var(--wf-fs-13);
+}
+
+.screen.embedded .beds {
+  grid-auto-rows: 1fr;
+}
+
+/* Fable re-review: embedded in Decisions, Before handover fills the column like the cards above
+   (the board's `align-self: start` shrank it to its content in the flex column). */
+.screen.embedded .embeddedZones > .workZone {
+  align-self: stretch;
+}
+
+/* Fable re-review: the key's past-date swatch matches the tiles (amber outline and amber dot),
+   not the board's red inset outline. */
+.screen.embedded .legendSwatchPast {
+  outline: 0;
+  border-color: var(--wf-warning);
+  box-shadow: 0 0 0 1px var(--wf-warning);
+  background: var(--wf-surface);
+}
+
+.screen.embedded .legendSwatchPast .statusGlyph,
+.screen.embedded .legendSwatchPast .legendGlyph {
+  color: var(--wf-warning);
+}

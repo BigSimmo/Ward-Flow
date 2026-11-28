@@ -26,6 +26,13 @@
   text-overflow: ellipsis;
 }
 
+/* Audit two #81 (K31): the quiet "Optional" mark after a label, in the hint's ink. */
+.label .optional {
+  margin-left: var(--wf-s-1);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+
 .hint {
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
   color: var(--wf-ink-3);

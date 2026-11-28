@@ -44,7 +44,7 @@ import styles from "./discharge-weekend-prep.module.css";
 type WeekendPrepRow = { release: BedRelease; item: DischargeDependency };
 export type WeekendPrepGroup = { closure: ServiceClosure; rows: WeekendPrepRow[] };
 
-function weekendPrepGroups(releases: readonly BedRelease[], now: Instant, dayZero: Date): WeekendPrepGroup[] {
+export function weekendPrepGroups(releases: readonly BedRelease[], now: Instant, dayZero: Date): WeekendPrepGroup[] {
   const groups: WeekendPrepGroup[] = [];
   for (const owner of DISCHARGE_DEPENDENCY_OWNERS) {
     const rows = releases.flatMap((release) =>
@@ -107,6 +107,7 @@ export function DischargeWeekendPrep({
   dayZero,
   onOpen,
   foldable = false,
+  embedded = false,
 }: {
   releases: readonly BedRelease[];
   units: readonly Unit[];
@@ -118,6 +119,11 @@ export function DischargeWeekendPrep({
   onOpen: (releaseId: string, opener: HTMLElement) => void;
   /** Phone: starts folded to its heading and the number of arrangements. */
   foldable?: boolean;
+  /**
+   * Thu and Fri (Thread C mock-up): a section of the one Weekend discharges card, under the people to
+   * review. No card or head of its own; the services keep their pills.
+   */
+  embedded?: boolean;
 }) {
   const [phoneOpen, setPhoneOpen] = useState(false);
   const groups = weekendPrepGroups(releases, now, dayZero);
@@ -196,6 +202,68 @@ export function DischargeWeekendPrep({
       })}
     </ul>
   );
+  const pills = (
+    <ul className={styles.pills} aria-label="Closed services">
+      {groups.map((group) => {
+        const OwnerIcon = OWNER_ICONS[group.closure.owner];
+        const service = DISCHARGE_DEPENDENCY_OWNER_LABELS[group.closure.owner];
+        return (
+          <li key={group.closure.owner}>
+            <Popover
+              label={`${service}, ${group.rows.length} waiting`}
+              align="end"
+              panelClassName={styles.pillPanel}
+              trigger={(props) => (
+                <button
+                  type="button"
+                  {...props}
+                  className={styles.pill}
+                  // CB-3: the visible service and count lead the name (axe label-content-name-mismatch).
+                  aria-label={`${service}, ${group.rows.length} waiting. ${closureFact(group.closure, dayZero)}.`}
+                  data-testid={`ward-discharge-weekend-${group.closure.owner}`}
+                >
+                  <OwnerIcon size={14} strokeWidth={1.75} aria-hidden="true" className={styles.pillIcon} />
+                  <span className={styles.pillName}>{service}</span>{" "}
+                  <span className={styles.pillCount}>{group.rows.length}</span>
+                  <ChevronDown size={14} strokeWidth={1.75} aria-hidden="true" className={styles.pillChevron} />
+                </button>
+              )}
+            >
+              {(close) => (
+                <div className={styles.pillBody}>
+                  <p className={styles.pillWhen}>{closureWhen(group.closure, dayZero)}</p>
+                  {rowsFor(group, () => close(false))}
+                </div>
+              )}
+            </Popover>
+          </li>
+        );
+      })}
+    </ul>
+  );
+  const holidayNote = pastHolidayList ? (
+    <p className={styles.note}>
+      WA public holidays after {WA_PUBLIC_HOLIDAYS_LAST_YEAR} are not listed yet, so they are not marked.
+    </p>
+  ) : null;
+  if (embedded) {
+    return (
+      <section
+        className={styles.embedded}
+        aria-labelledby="discharge-weekend-prep-heading"
+        data-testid="ward-discharge-weekend-prep"
+      >
+        <h3 id="discharge-weekend-prep-heading" className={styles.embeddedHead}>
+          {holidays.length > 0 ? title : "Closed over the weekend"}
+        </h3>
+        <div className={styles.embeddedRow}>
+          <p className={styles.summary}>{summary}</p>
+          {pills}
+        </div>
+        {holidayNote}
+      </section>
+    );
+  }
   return (
     <Card
       as="section"
@@ -229,43 +297,7 @@ export function DischargeWeekendPrep({
             {/* DC3 round 2 (3 Nov 2026): on a desk the services sit in one line as pills, each
                 opening its people in a popover, so the card stays one row tall and the list below
                 stays in view. */}
-            <ul className={styles.pills} aria-label="Closed services">
-              {groups.map((group) => {
-                const OwnerIcon = OWNER_ICONS[group.closure.owner];
-                const service = DISCHARGE_DEPENDENCY_OWNER_LABELS[group.closure.owner];
-                return (
-                  <li key={group.closure.owner}>
-                    <Popover
-                      label={`${service}, ${group.rows.length} waiting`}
-                      align="end"
-                      panelClassName={styles.pillPanel}
-                      trigger={(props) => (
-                        <button
-                          type="button"
-                          {...props}
-                          className={styles.pill}
-                          // CB-3: the visible service and count lead the name (axe label-content-name-mismatch).
-                          aria-label={`${service}, ${group.rows.length} waiting. ${closureFact(group.closure, dayZero)}.`}
-                          data-testid={`ward-discharge-weekend-${group.closure.owner}`}
-                        >
-                          <OwnerIcon size={14} strokeWidth={1.75} aria-hidden="true" className={styles.pillIcon} />
-                          <span className={styles.pillName}>{service}</span>{" "}
-                          <span className={styles.pillCount}>{group.rows.length}</span>
-                          <ChevronDown size={14} strokeWidth={1.75} aria-hidden="true" className={styles.pillChevron} />
-                        </button>
-                      )}
-                    >
-                      {(close) => (
-                        <div className={styles.pillBody}>
-                          <p className={styles.pillWhen}>{closureWhen(group.closure, dayZero)}</p>
-                          {rowsFor(group, () => close(false))}
-                        </div>
-                      )}
-                    </Popover>
-                  </li>
-                );
-              })}
-            </ul>
+            {pills}
           </>
         )}
       </header>
@@ -297,11 +329,7 @@ export function DischargeWeekendPrep({
           })}
         </div>
       ) : null}
-      {open && pastHolidayList ? (
-        <p className={styles.note}>
-          WA public holidays after {WA_PUBLIC_HOLIDAYS_LAST_YEAR} are not listed yet, so they are not marked.
-        </p>
-      ) : null}
+      {open ? holidayNote : null}
     </Card>
   );
 }

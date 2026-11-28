@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { StatisticsServicesIndexScreen } from "@/components/ward-management/statistics/statistics-services-index";
+import { StatisticsIndexRoute } from "@/components/ward-management/statistics/statistics-index-route";
 
 export const metadata: Metadata = {
   title: "Health services — Statistics — BedChart",
@@ -12,5 +12,5 @@ export const metadata: Metadata = {
  * page. It has no params and supplies nothing; the screen reads live state.
  */
 export default function WardStatisticsServicesPage() {
-  return <StatisticsServicesIndexScreen />;
+  return <StatisticsIndexRoute segment="services" />;
 }

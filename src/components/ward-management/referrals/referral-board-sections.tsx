@@ -45,7 +45,6 @@ import {
   TierTile,
   Timer,
   buttonClass,
-  requestConfirm,
 } from "@/components/wf";
 import Link from "next/link";
 import { BedSingle, Undo2 } from "lucide-react";
@@ -214,8 +213,8 @@ export function QueuedSection({
               <col className={a.colPatient} />
               <col className={a.colWait} />
               <col className={a.colFrom} />
-              <col className={a.colAsk} />
-              <col className={cx(a.colNeeds, redesign.colNeeds)} />
+              {/* Audit three #58: Needs sits inside Asking for as quiet tags, so one column fewer. */}
+              <col className={cx(a.colAsk, redesign.colAskNeeds)} />
               <col className={a.colFit} />
             </colgroup>
             <thead>
@@ -227,7 +226,6 @@ export function QueuedSection({
                 </th>
                 <th scope="col">From</th>
                 <th scope="col">Asking for</th>
-                <th scope="col">Needs</th>
                 <th scope="col" className={a.numHead}>
                   Fit
                 </th>
@@ -355,22 +353,20 @@ export function QueuedSection({
                             : armChips(referral, units)
                           : [{ words: "Awaiting answer", refused: false, titles: [] }]
                         ).map(({ words, refused, titles }) => (
-                          <span key={words} className={cx(a.arm, refused && a.armNo)} title={titles.join("\n")}>
+                          <span
+                            key={words}
+                            className={cx(a.arm, refused && a.armNo)}
+                            title={titles.join("\n")}
+                            data-all-declined={words === ALL_ASKED_DECLINED_TAG ? "true" : undefined}
+                          >
                             {/* Polish: an open destination is a worded tag; only a refused one keeps its glyph. */}
                             {refused ? <StatusGlyph tone="closed" size={9} /> : null}
                             {words}
                           </span>
                         ))}
                       </span>
-                      {refusals.length > 0 ? (
-                        <span className="sr-only" data-testid={`ward-referral-board-refusals-${referral.id}`}>
-                          {`${QUEUED_REFUSED_LEAD} — ${refusals.join(" · ")}`}
-                        </span>
-                      ) : null}
-                    </td>
-                    <td>
                       {needs.length > 0 ? (
-                        <span className={cx(a.needs, redesign.needWords)}>
+                        <span className={cx(a.needs, redesign.needWords, redesign.askNeeds)}>
                           {needs.map((need) => (
                             <span key={need.label} title={need.label}>
                               <span aria-hidden="true">{need.word}</span>
@@ -378,10 +374,12 @@ export function QueuedSection({
                             </span>
                           ))}
                         </span>
-                      ) : (
-                        // Polish (Josh, 9 Nov 2026): empty cells say so in words, not a dash.
-                        <span className={a.none}>None</span>
-                      )}
+                      ) : null}
+                      {refusals.length > 0 ? (
+                        <span className="sr-only" data-testid={`ward-referral-board-refusals-${referral.id}`}>
+                          {`${QUEUED_REFUSED_LEAD} — ${refusals.join(" · ")}`}
+                        </span>
+                      ) : null}
                     </td>
                     <td className={a.numCell}>
                       {ready === undefined ? (
@@ -500,9 +498,11 @@ export function QueuedSection({
                       {ALL_ASKED_DECLINED_TAG}
                     </span>
                   ) : null}
-                  {refusals.length > 0 ? (
+                  {/* Audit four 48: said once on the phone row ("Declined by 3 wards"); the reasons open in the drawer.
+                      When every asked ward declined, the tag above already says so. */}
+                  {refusals.length > 0 && !referralAllWardsDeclined(referral) ? (
                     <span className={a.cardNote} data-testid={`ward-referral-board-card-refusals-${referral.id}`}>
-                      {`${QUEUED_REFUSED_LEAD} — ${refusals.join(" · ")}`}
+                      {`Declined by ${refusals.length} ${refusals.length === 1 ? "ward" : "wards"}`}
                     </span>
                   ) : null}
                   {referralNeedsGenderReview(referral) ? (
@@ -949,19 +949,12 @@ function DecidedRowActions({
           icon={BedSingle}
           data-testid={`ward-referral-board-release-held-bed-${referral.id}${suffix}`}
           onClick={() => {
-            void requestConfirm({
-              title: `Release bed ${heldElsewhere.bedNumber}?`,
-              message:
-                "The person is now in a bed elsewhere. The bed held for this referral is offered again; the acceptance stands.",
-              confirmLabel: "Release held bed",
-            }).then((confirmed) => {
-              if (!confirmed || !flow) return;
-              wardRaise(
-                flow.dispatch,
-                "coordinator",
-                nowRef.current,
-              )("RELEASE_REFERRAL_BED", { referralId: referral.id, unitId: heldElsewhere.unitId });
-            });
+            if (!flow) return;
+            wardRaise(
+              flow.dispatch,
+              "coordinator",
+              nowRef.current,
+            )("RELEASE_REFERRAL_BED", { referralId: referral.id, unitId: heldElsewhere.unitId });
           }}
         >
           Release held bed
@@ -974,21 +967,15 @@ function DecidedRowActions({
           icon={Undo2}
           data-testid={`ward-referral-board-decided-undo-${referral.id}${suffix}`}
           onClick={() => {
-            void requestConfirm({
-              title: "Undo this decision?",
-              message: "The referral goes back to the queue as it was before the decision.",
-              confirmLabel: "Undo decision",
-            }).then((confirmed) => {
-              if (!confirmed || !undoRole || !flow) return;
-              wardRaise(
-                flow.dispatch,
-                undoRole,
-                nowRef.current,
-              )("UNDO_REFERRAL_DECISION", {
-                recordSeq: record.seq,
-                referralId: referral.id,
-                actingUnitId,
-              });
+            if (!undoRole || !flow) return;
+            wardRaise(
+              flow.dispatch,
+              undoRole,
+              nowRef.current,
+            )("UNDO_REFERRAL_DECISION", {
+              recordSeq: record.seq,
+              referralId: referral.id,
+              actingUnitId,
             });
           }}
         >

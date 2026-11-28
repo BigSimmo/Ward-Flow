@@ -53,8 +53,55 @@
 }
 
 .row + .row,
+.row + .run,
+.run + .row,
+.run + .run,
 .row + .agenda > .row:first-child {
   border-top: 1px solid var(--wf-line);
+}
+
+/* Audit two #90 (P8, GATE): same-kind neighbours under one sub-label, one 32px line each, times in
+   the same tabular column as the single rows around them. */
+.run {
+  padding: 6px 0 4px;
+}
+
+.runLabel {
+  margin: 0;
+  padding: 0 var(--wf-s-4) 2px calc(72px + var(--wf-s-3) + var(--wf-s-4));
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.runRows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.runRow {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  column-gap: var(--wf-s-3);
+  align-items: center;
+  min-height: 32px;
+  padding: 0 var(--wf-s-4);
+}
+
+.runRow[data-past] .time {
+  color: var(--wf-warning-ink);
+}
+
+.runLine {
+  margin: 0;
+  min-width: 0;
+  font: 600 var(--wf-fs-13) / 20px var(--wf-font);
+  overflow-wrap: break-word;
+}
+
+.runLine .where {
+  font-weight: 400;
+  font-size: var(--wf-fs-12);
 }
 
 .time {

@@ -251,3 +251,18 @@ table.pinTable {
   flex: 0 0 auto;
   height: auto;
 }
+
+/* Design review (27 Nov 2026): the phone hero's three figures share three equal columns, and a long
+   label ("wards over 1 SD") wraps to a second line instead of running off the right edge. */
+.phoneFigures {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.phoneFigures [role="group"] {
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+.phoneFigures [data-wf-hero-figure] > :not(b) {
+  white-space: normal;
+}

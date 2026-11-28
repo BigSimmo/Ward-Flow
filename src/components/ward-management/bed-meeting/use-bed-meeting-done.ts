@@ -34,9 +34,9 @@ export function useBedMeetingDone(role: WardFlowRole): MarkBedMeetingActionDone 
     run(
       { type: "COMPLETE_BED_MEETING_ACTION", role, now, subject, action, ...unit },
       {
-        success: `Marked done: ${label}.`,
+        success: `Marked done: ${label}`,
         undo: (at) => ({ type: "UNDO_BED_MEETING_ACTION", role, now: at, subject, action, ...unit }),
-        undone: `Undone. ${label} is open again.`,
+        undone: `Undone: ${label} is open again`,
       },
     );
   };
@@ -82,7 +82,7 @@ export function useBedMeetingRecord(role: WardFlowRole): RecordBedMeetingAction 
       {
         success: success ?? `Recorded: ${label}.`,
         undo: (at) => ({ type: "UNDO_BED_MEETING_ACTION", role, now: at, subject, action }),
-        undone: `Undone. ${label} is taken back.`,
+        undone: `Undone: ${label} is taken back`,
       },
     );
     return completion;

@@ -134,7 +134,7 @@ export function ReferralSummaryRail({
                 return (
                   <div key={row.label} data-state={row.state}>
                     <dt>
-                      {row.state !== "done" && step ? (
+                      {(row.state !== "done" || row.label === "Clearance") && step ? (
                         <button
                           type="button"
                           className={styles.railJump}
@@ -279,10 +279,12 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
   return (
     <div className={styles.sendReferralFoot}>
       <div className={styles.sendTargetSummary} role={footStatus.alert ? "alert" : undefined}>
-        <span className={styles.sendTargetLabel} data-tone={footStatus.tone}>
-          {footStatus.tone === "neutral" ? null : <StatusGlyph tone={footStatus.tone} size={9} />}
-          <span>{footStatus.first}</span>
-        </span>
+        {footStatus.first ? (
+          <span className={styles.sendTargetLabel} data-tone={footStatus.tone}>
+            {footStatus.tone === "neutral" ? null : <StatusGlyph tone={footStatus.tone} size={9} />}
+            <span>{footStatus.first}</span>
+          </span>
+        ) : null}
         <span className={styles.sendTargetName}>{footStatus.second}</span>
       </div>
       {isPhone && phMode === "list" ? (
@@ -325,7 +327,7 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
             ) : (
               <>
                 <Send aria-hidden="true" />
-                Send referral
+                Review and send
               </>
             )}
           </button>
@@ -348,7 +350,7 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
               {activeSection === "placement" ? (
                 <>
                   <Send aria-hidden="true" />
-                  Send referral
+                  Review and send
                 </>
               ) : (
                 `Next, ${sectionLabel(sectionIds[phStepIndex + 1]!, destType).toLowerCase()}`
@@ -414,9 +416,10 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
                     referrer called away does not lose it. */}
             {confirmationOpen ? null : (
               <>
+                {/* Audit three #40: Save draft is a quiet link, so the foot's buttons are the steps. */}
                 <button
                   type="button"
-                  className={styles.btnCancelReferral}
+                  className={`${styles.textLink} ${styles.footLink}`}
                   data-testid="ward-referral-save-draft"
                   aria-disabled={sendPending || !dirty ? "true" : undefined}
                   aria-describedby={sendPending || !dirty ? `${sectionId}-save-draft-waits` : undefined}
@@ -499,7 +502,7 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
                   : confirmationOpen
                     ? "Confirm and send"
                     : activeSection === "placement"
-                      ? "Send referral"
+                      ? "Review and send"
                       : `Next, ${sectionLabel(sectionIds[sectionIds.indexOf(activeSection) + 1]!, destType).toLowerCase()}`}
               </button>
             )}

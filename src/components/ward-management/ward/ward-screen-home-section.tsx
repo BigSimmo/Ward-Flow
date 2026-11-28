@@ -369,6 +369,13 @@ export function WardScreenHomeSection({
             </>
           ) : undefined
         }
+        refreshMark={
+          latestRefreshRequest ? (
+            <p className={styles.refreshRequestMark} data-testid="ward-refresh-request-mark">
+              Asked to refresh at {formatInstant(latestRefreshRequest.at)} by {latestRefreshRequest.byRole}
+            </p>
+          ) : null
+        }
         squaresAfter={
           <>
             {latestRefreshRequest ? (

@@ -33,7 +33,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 
 import { bedMeetingSheet } from "./bed-meeting-derivations";
-import { BedMapCards, BedMapHighlights, type Highlight } from "./capacity-bed-map-cards";
+import { BedMapCards, type Highlight } from "./capacity-bed-map-cards";
 import { ForecastCard } from "./capacity-forecast-card";
 import { HeldUpCard } from "./capacity-held-up-rail";
 import { CapacityHero } from "./capacity-hero";
@@ -97,7 +97,7 @@ type PageTab = "overview" | "wards" | "planned";
  * Capacity (redesign approved by Josh, 31 Oct 2026; wave 4, D-191). The page answers "where are the
  * beds, where are the gaps, and what's blocking discharges", never "where could this person go":
  * the gap by bed type in the hero, then the bed map with Held up and the Forecast in a rail. On a
- * phone the Overview is three cards: Held up, Wards to check and the Forecast. Every figure comes from the derivations in
+ * phone the Overview is three cards: Held up, Wards needing a look and the Forecast. Every figure comes from the derivations in
  * `capacity-model.ts`; nothing here ranks a ward for a patient.
  *
  * One component serves every desk that opens Capacity:
@@ -133,6 +133,10 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
     setChosenTab(next);
     startTransition(() => setTab(next));
   };
+  // Simplification (26 Nov 2026): off the phone the Wards tab repeated Overview's bed map, so it is
+  // gone there; All wards is the hero chip row's last, quiet link to Find. The phone keeps its Wards tab.
+  const shownChosenTab: PageTab = chosenTab === "wards" && !isPhone ? "overview" : chosenTab;
+  const shownTab: PageTab = tab === "wards" && !isPhone ? "overview" : tab;
   const [highlight, setHighlight] = useState<Highlight | null>(null);
   // Site bed manager: another site's ward has no drawer here (its ward page and Discharge board are
   // not this desk's to open), so choosing one shows its row in Other sites instead.
@@ -277,7 +281,7 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
         highlight={highlight}
         onHighlight={setHighlight}
         // Desktop: the highlights sit at the right of the page tabs (page tops, 9 Nov 2026).
-        highlightsInCard={isPhone}
+        highlightsInCard
         findBed={!executive}
         // Every service starts open on a tablet or desktop; a phone folds all but the first two.
         foldLater={isPhone}
@@ -316,34 +320,25 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
         />
         {/* Page tops (Josh, 9 Nov 2026): Overview, Wards and Planned on every size. The Mismatch card
             is gone: its gap by bed type is the hero's band, and each band cell opens its pop-up. */}
-        <FolderTabs label="Capacity view" value={chosenTab} testId="capacity-tabs" className={styles.pageTabs}>
+        <FolderTabs label="Capacity view" value={shownChosenTab} testId="capacity-tabs" className={styles.pageTabs}>
           <Segmented
             label="Capacity view"
             size="md"
             className={folderTabClasses.switch}
             items={[
               { id: "overview" as const, label: "Overview" },
-              { id: "wards" as const, label: "Wards", count: mapModel.networkRows.length },
+              ...(isPhone ? [{ id: "wards" as const, label: "Wards", count: mapModel.networkRows.length }] : []),
               { id: "planned" as const, label: "Planned", count: model.plannedBooked },
             ]}
-            value={chosenTab}
+            value={shownChosenTab}
             onChange={chooseTab}
           />
-          {isPhone || chosenTab === "planned" ? null : (
-            <>
-              <span className={folderTabClasses.rule} aria-hidden="true" />
-              <BedMapHighlights
-                className={folderTabClasses.filters}
-                model={mapModel}
-                highlight={highlight}
-                onHighlight={setHighlight}
-              />
-            </>
-          )}
+          {/* Audit three #17 (Josh, 28 Nov 2026): Has ready and Count old sit in the Bed map's head,
+              beside Find a bed, where they light wards; they are not on the tab row. */}
         </FolderTabs>
-        {tab === "wards" ? (
+        {shownTab === "wards" ? (
           bedMap
-        ) : tab === "planned" ? (
+        ) : shownTab === "planned" ? (
           planned
         ) : isPhone ? (
           <PhoneOverview

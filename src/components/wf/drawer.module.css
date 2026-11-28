@@ -43,6 +43,23 @@
   min-width: 0;
 }
 
+/* Audit three #34: the list pager in the head, before the tag and Close. */
+.pager {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.pagerCount {
+  min-width: 3.5rem;
+  color: var(--wf-ink-2);
+  font: var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .eyebrow {
   margin: 0 0 2px;
   font-size: var(--wf-fs-12);
@@ -55,7 +72,50 @@
   font-size: var(--wf-fs-20);
   font-weight: 650;
   line-height: 1.2;
-  overflow-wrap: anywhere;
+  /* Audit three review: a name breaks between words; a single word breaks only if it cannot fit the line. */
+  overflow-wrap: break-word;
+}
+
+/* Audit three review: on a phone, a head with a pager puts the pager, tag and Close on their own row
+   and gives the title the full width under them. */
+@media (max-width: 46.49rem) {
+  html .head:has(> .pager) {
+    flex-wrap: wrap;
+    /* Gate r10 (2 FIX 3): the pager row's items share one centre line. */
+    align-items: center;
+  }
+
+  html .head:has(> .pager) > .who {
+    flex-basis: 100%;
+    order: 1;
+  }
+
+  html .head:has(> .pager) > :last-child {
+    margin-inline-start: auto;
+  }
+}
+
+/* Final r10 F3: on a wider screen a head with a pager keeps name, pager and close on line one and
+   lets the subtitle run the full head width under them, so its last part (the time) stays on its line. */
+@media (min-width: 46.5rem) {
+  html .head:has(> .pager):not(:has(> .who > .eyebrow)) {
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+
+  html .head:has(> .pager):not(:has(> .who > .eyebrow)) > .who {
+    display: contents;
+  }
+
+  html .head:has(> .pager):not(:has(> .who > .eyebrow)) > .who > .title {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  html .head:has(> .pager):not(:has(> .who > .eyebrow)) > .who > .subtitle {
+    flex-basis: 100%;
+    order: 1;
+  }
 }
 
 .subtitle {
@@ -67,6 +127,49 @@
   margin: 2px 0 0;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
+}
+
+/* Final r10 (a2 F2): each part keeps one line, so a separator never ends or starts a line; a part
+   wider than the drawer still ends in an ellipsis rather than spilling. */
+.metaItem {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Each " · " part of the meta line; the dot leads every part but the first (audit three review). */
+.metaItem + .metaItem::before {
+  content: "·";
+  margin-inline-end: var(--wf-s-1);
+}
+
+/* r10 (final-b1 #12, final-b2 #10): a wrapped meta line never opens on a bare "·". Every part leads
+   with a dot of fixed width, the line is pulled left by that width and clipped there, so the dot of a
+   part that starts a line (the first part, or one that wrapped) falls outside and is not drawn. A tag
+   that starts the line steps back in by the same width; a part after the tag keeps its dot. */
+.subtitle:has(> .metaItem) {
+  --wf-meta-dot: calc(0.5em + var(--wf-s-1));
+  margin-inline-start: calc(-1 * var(--wf-meta-dot));
+  clip-path: inset(-8px -8px -8px var(--wf-meta-dot));
+}
+
+.subtitle:has(> .metaItem) > .metaItem::before {
+  content: "·";
+  display: inline-block;
+  width: 0.5em;
+  margin-inline-end: var(--wf-s-1);
+  text-align: center;
+}
+
+.subtitle:has(> .metaItem) > :first-child:not(.metaItem) {
+  margin-inline-start: var(--wf-meta-dot);
+}
+
+@media (min-width: 46.5rem) {
+  html .head:has(> .pager):not(:has(> .who > .eyebrow)) > .who > .subtitle:has(> .metaItem) {
+    flex-basis: calc(100% + var(--wf-meta-dot));
+  }
 }
 
 /* Tabs inside the drawer, under the head and outside the scroll. When they are wider than the

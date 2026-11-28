@@ -47,7 +47,6 @@ import {
   SrOnly,
   StatusGlyph,
   cx,
-  Drawer,
   tableClasses,
   useIsPhone,
   useIsTabletPortrait,
@@ -74,10 +73,12 @@ import {
 } from "./on-call-directory";
 import {
   ContactCard,
+  ContactDrawer,
   FavouriteButton,
   NumberCell,
   ServiceTag,
   UntilCell,
+  contactPager,
   isWardRow,
   placeOf,
   type ContactActions,
@@ -90,20 +91,11 @@ import styles from "./on-call.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { useActionToast } from "@/components/ward-management/use-action-toast";
 
-export type Highlight = "now" | "soon" | "email" | "due";
+export type Highlight = "now" | "due";
 
 /** Highlights mark rows and never hide one: a contact you cannot see is a contact you cannot ring. */
 const HIGHLIGHTS: { id: Highlight; label: string; test: (entry: DirectoryEntry, minute: number) => boolean }[] = [
   { id: "now", label: "Answering", test: (entry, minute) => isAnswering(entry, minute) },
-  {
-    id: "soon",
-    label: "Ending soon",
-    test: (entry, minute) => {
-      const now = availability(entry, minute);
-      return now.kind === "on" && !now.allDay && now.soon;
-    },
-  },
-  { id: "email", label: "Has email", test: (entry) => Boolean(entry.email) },
   { id: "due", label: "Check due", test: (entry) => entry.checkedDaysAgo > CHECK_DUE_DAYS },
 ];
 
@@ -115,13 +107,14 @@ const COVER_AT: { id: string; label: string }[] = [
   { id: "720", label: "12:00 pm" },
 ];
 
+// Audit two #8: the same short words as every service filter (North, South, East, WACHS, CAHS, Private).
 const JUMP_LABEL: Record<string, string> = {
-  "North Metro": "NM",
-  "East Metro": "EM",
-  "South Metro": "SM",
-  CAHS: "CA",
-  WACHS: "WA",
-  Private: "Pvt",
+  "North Metro": "North",
+  "East Metro": "East",
+  "South Metro": "South",
+  CAHS: "CAHS",
+  WACHS: "WACHS",
+  Private: "Private",
 };
 
 const SECTION_LABEL: Record<DirectorySection, string> = {
@@ -304,8 +297,9 @@ export function OnCallScreen() {
     favouritesChanged.current = true;
     const next = favourites.includes(id) ? favourites.filter((value) => value !== id) : [...favourites, id];
     setFavourites(next);
-    if (saveFavourites(next)) say(next.includes(id) ? "Added to My list" : "Removed from My list");
-    else say("My list is kept for this visit only. Browser storage is unavailable.");
+    const home = isPhone ? "Mine" : "Key lines";
+    if (saveFavourites(next)) say(next.includes(id) ? `Added to ${home}` : `Removed from ${home}`);
+    else say(`${home} keeps this for this visit only. Browser storage is unavailable.`);
   }
 
   /** Selecting a contact opens its group and its tab, so the card and the row always agree. */
@@ -313,7 +307,7 @@ export function OnCallScreen() {
     const entry = entries.find((item) => item.id === id);
     if (!entry) return;
     setSelectedId(id);
-    // My list stays open only for a starred line; anything else opens its own tab so its row shows.
+    // Mine stays open only for a starred line; anything else opens its own tab so its row shows.
     const stays = tab === entry.section || (tab === "mine" && favourites.includes(id));
     if (!stays) setTab(entry.section);
     setCollapsed((current) => {
@@ -338,7 +332,6 @@ export function OnCallScreen() {
   };
 
   const answering = entries.filter((entry) => isAnswering(entry, minute));
-  const closed = entries.filter((entry) => availability(entry, minute).kind === "off");
   const checkDue = entries.filter((entry) => entry.checkedDaysAgo > CHECK_DUE_DAYS);
   const keyLines = KEY_LINE_IDS.map((id) => entries.find((entry) => entry.id === id)).filter(
     (entry): entry is DirectoryEntry => entry !== undefined,
@@ -493,11 +486,13 @@ export function OnCallScreen() {
   // Three show; "All 6 lines" opens the rest in place.
   // OC3 (4 Nov 2026): a chosen service shows its own bed flow, consultant and executive lines.
   const scopeKey = scope ? SERVICE_META[scope].short.toLowerCase() : null;
-  const bandLines = (
-    scopeKey
-      ? [`${scopeKey}-bfc`, `${scopeKey}-scon`, `${scopeKey}-exec`, "sw-mherl"]
-      : KEY_LINE_IDS.filter((id) => id !== "sw-bfc")
-  )
+  // Audit three #67 (mock-up): the starred lines lead Key lines, so there is one place to keep numbers
+  // close on a desktop; the service lines follow as the defaults. The Mine tab stays on the phone only,
+  // where there is no Key lines band.
+  const defaultLines = scopeKey
+    ? [`${scopeKey}-bfc`, `${scopeKey}-scon`, `${scopeKey}-exec`, "sw-mherl"]
+    : KEY_LINE_IDS.filter((id) => id !== "sw-bfc");
+  const bandLines = [...favourites, ...defaultLines.filter((id) => !favourites.includes(id))]
     .map((id) => entries.find((entry) => entry.id === id))
     .filter((entry): entry is DirectoryEntry => entry !== undefined);
   const bandShown = allLines ? bandLines : bandLines.slice(0, 3);
@@ -530,7 +525,7 @@ export function OnCallScreen() {
                 aria-expanded={allLines}
                 onClick={() => setAllLines((open) => !open)}
               >
-                {allLines ? "Fewer lines" : `All ${bandLines.length} lines`}
+                {allLines ? "Show fewer" : `Show all ${bandLines.length}`}
                 <Icon icon={allLines ? ChevronDown : ChevronRight} size={14} />
               </button>
             ) : null}
@@ -551,6 +546,7 @@ export function OnCallScreen() {
             ),
             // Live walk 16 Nov 2026: a press copies the number (the same Copy and toast) and opens the card.
             onClick: () => {
+              // eslint-disable-next-line react-hooks/refs -- runs on a press, never in render; `copy` only touches the notice timer ref
               if (number) void copy(number, "Number copied");
               pick(entry.id);
             },
@@ -582,8 +578,9 @@ export function OnCallScreen() {
     { id: "statewide" as const, label: "State", count: tabCounts.statewide },
     { id: "mine" as const, label: "Mine", count: tabCounts.mine },
     // Page tops QA (10 Nov 2026): a phone shows three tabs; Mine opens from the More menu beside the
-    // search and joins the row only while it is the chosen tab.
-  ].filter((item) => !isPhone || item.id !== "mine" || tab === "mine");
+    // search and joins the row only while it is the chosen tab. Audit three #67: on a desktop the
+    // starred lines are in Key lines, so Mine shows only while it is the chosen tab.
+  ].filter((item) => item.id !== "mine" || tab === "mine");
 
   const hero = (
     <div data-testid="ward-on-call-hud-island" className={styles.hudIsland}>
@@ -619,7 +616,6 @@ export function OnCallScreen() {
                   label: "answering, all lists",
                   testId: "ward-on-call-figure-answering",
                 },
-                { id: "closed", value: closed.length, label: "closed", testId: "ward-on-call-figure-closed" },
                 {
                   id: "due",
                   value: checkDue.length,
@@ -670,11 +666,7 @@ export function OnCallScreen() {
       count={tabRows.filter((entry) => item.test(entry, minute)).length}
       className={styles.chip}
     >
-      {item.id === "email" ? (
-        <Icon icon={Mail} size={14} />
-      ) : (
-        <StatusGlyph tone={item.id === "now" ? "success" : "warning"} size={9} />
-      )}
+      <StatusGlyph tone={item.id === "now" ? "success" : "warning"} size={9} />
       {item.label}
     </FilterChip>
   ));
@@ -688,11 +680,7 @@ export function OnCallScreen() {
       onPressedChange={() => toggleHighlight(item.id)}
       className={styles.chip}
     >
-      {item.id === "email" ? (
-        <Icon icon={Mail} size={16} />
-      ) : (
-        <StatusGlyph tone={item.id === "now" ? "success" : "warning"} size={9} />
-      )}
+      <StatusGlyph tone={item.id === "now" ? "success" : "warning"} size={9} />
       {item.label}
     </FilterChip>
   ));
@@ -772,7 +760,7 @@ export function OnCallScreen() {
                 menu beside it rather than as two large buttons above it. */}
             <div className={styles.phoneSearchRow}>
               {search}
-              {/* Josh review (4 Nov 2026): By role, Answering and Has email fold into one Filter
+              {/* Josh review (4 Nov 2026): By role and the Show highlights fold into one Filter
                   button on the search line, so the directory starts a row higher. */}
               <PhoneFilterFold
                 count={(groupBy === "role" && tab === "hospitals" ? 1 : 0) + (highlight !== null ? 1 : 0)}
@@ -835,7 +823,13 @@ export function OnCallScreen() {
           <WardPrototypeFooter testId="ward-on-call-governance" />
         </main>
         {sheetEntry ? (
-          <PhoneSheet entry={sheetEntry} actions={actions} notice={sheetNotice} onClose={() => setSheetId(null)} />
+          <PhoneSheet
+            entry={sheetEntry}
+            actions={actions}
+            notice={sheetNotice}
+            pager={contactPager(tabRows, sheetEntry.id, setSheetId)}
+            onClose={() => setSheetId(null)}
+          />
         ) : null}
         {downtimeCard}
       </div>
@@ -941,21 +935,15 @@ export function OnCallScreen() {
           )}
         </div>
         {isTabletPortrait && slideEntry ? (
-          <Drawer
-            open
+          // Audit four #98: the same kit drawer as the phone sheet, its pager over the rows shown.
+          <ContactDrawer
+            entry={slideEntry}
+            actions={actions}
+            notice={sheetNotice}
+            pager={contactPager(shownRows, slideEntry.id, setSlideId)}
             onClose={() => setSlideId(null)}
-            title={slideEntry.name}
-            description={[
-              SERVICE_META[slideEntry.service].name,
-              slideEntry.place === SERVICE_META[slideEntry.service].short ? null : placeOf(slideEntry),
-            ]
-              .filter(Boolean)
-              .join(", ")}
             testId="ward-on-call-line-sheet"
-          >
-            {/* OC1: the drawer title already names the contact, so the card drops its own head. */}
-            <ContactCard entry={slideEntry} actions={actions} showHead={false} showStar />
-          </Drawer>
+          />
         ) : null}
         <WardPrototypeFooter
           testId="ward-on-call-governance"
@@ -1078,7 +1066,7 @@ function DirectoryTable({
         <thead>
           <tr>
             <th scope="col">
-              <SrOnly>My list</SrOnly>
+              <SrOnly>Mine</SrOnly>
             </th>
             <th scope="col">Role and place</th>
             <th scope="col">Number</th>
@@ -1271,7 +1259,7 @@ function DirectoryRow({
   );
 }
 
-/** Key lines and My list with every number and its hours, to copy out before a planned outage. */
+/** Key lines and Mine with every number and its hours, to copy out before a planned outage. */
 function DowntimeCard({
   open,
   onClose,
@@ -1307,7 +1295,7 @@ function DowntimeCard({
       open={open}
       onClose={onClose}
       title="Downtime card"
-      description="Key lines and My list, with their hours."
+      description="Key lines and Mine, with their hours."
       testId="ward-on-call-downtime"
       footer={
         <div className={styles.downtimeFoot}>

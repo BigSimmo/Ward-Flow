@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { ChevronDown, Copy, Mail, Search } from "lucide-react";
-import { Button, Icon, RadioGroup, Sheet, SrOnly, StatusGlyph, cx } from "@/components/wf";
+import { Button, Icon, RadioGroup, SrOnly, StatusGlyph, cx, type DrawerPagerProps } from "@/components/wf";
 import {
   SERVICE_META,
   availability,
@@ -14,7 +14,7 @@ import {
   type DirectoryEntry,
   type DirectoryTab,
 } from "./on-call-directory";
-import { ContactCard, ServiceTag, isWardRow, placeOf, type ContactActions } from "./on-call-parts";
+import { ContactDrawer, ServiceTag, isWardRow, type ContactActions } from "./on-call-parts";
 
 import styles from "./on-call.module.css";
 
@@ -341,38 +341,31 @@ export function PhoneDirectory({
   );
 }
 
-/** The contact card as a bottom sheet: who answers now with Copy number, Copy email and Star, then folds (OC1). */
+/**
+ * The contact on a phone (OC1): the kit drawer shared with the tablet slide-over (audit four #98),
+ * who answers now first with the copy steps in its foot.
+ */
 export function PhoneSheet({
   entry,
   actions,
   notice,
+  pager,
   onClose,
 }: {
   entry: DirectoryEntry;
   actions: ContactActions;
   notice: ReactNode;
+  pager: DrawerPagerProps;
   onClose: () => void;
 }) {
   return (
-    <Sheet
-      open
+    <ContactDrawer
+      entry={entry}
+      actions={actions}
+      notice={notice}
+      pager={pager}
       onClose={onClose}
-      title={entry.name}
-      description={[
-        SERVICE_META[entry.service].name,
-        entry.place === SERVICE_META[entry.service].short ? null : placeOf(entry),
-      ]
-        .filter(Boolean)
-        .join(", ")}
-      contentClassName={styles.sheetSolid}
-      mobilePlacement="bottom"
-      mobileSize="viewport"
       testId="ward-on-call-sheet"
-    >
-      <div className={styles.sheetBody}>
-        {notice}
-        <ContactCard entry={entry} actions={actions} showHead={false} showStar />
-      </div>
-    </Sheet>
+    />
   );
 }

@@ -73,14 +73,11 @@
 .handoverTable[data-columns="handover"] col[data-col="In ED"] {
   width: 124px;
 }
-.handoverTable[data-columns="handover"] col[data-col="Bay"] {
-  width: 80px;
-}
 .handoverTable[data-columns="handover"] col[data-col="Presentation"] {
-  width: 112px;
+  width: 148px;
 }
 .handoverTable[data-columns="handover"] col[data-col="Form"] {
-  width: 140px;
+  width: 164px;
 }
 .handoverTable[data-columns="handover"] col[data-col="Checks"] {
   width: 136px;
@@ -310,6 +307,9 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
+  /* States B review: 8px above and below each option, as kit menu rows, so a form name no longer
+     butts against the description above it. */
+  padding-block: var(--space-2);
   white-space: normal;
   max-width: 18rem;
 }
@@ -543,10 +543,11 @@
   gap: var(--wf-s-1) var(--wf-s-3);
   min-width: 0;
 }
+/* Sweep fix (26 Nov 2026): no auto margin. On one line the growing text still puts the button at
+   the row's end; wrapped (820) it starts under the tag, not pushed away from it. */
 .listReview > button,
 .listReviewSeen {
   flex: none;
-  margin-left: auto;
   white-space: nowrap;
 }
 .listReviewSeen {
@@ -616,11 +617,8 @@
   .handoverTable[data-columns="handover"] col[data-col="In ED"] {
     width: 120px;
   }
-  .handoverTable[data-columns="handover"] col[data-col="Bay"] {
-    width: 76px;
-  }
   .handoverTable[data-columns="handover"] col[data-col="Presentation"] {
-    width: 108px;
+    width: 128px;
   }
   .handoverTable[data-columns="handover"] td[class*="a2Wait"],
   .handoverTable[data-columns="handover"] td [class*="a2Wait"],
@@ -629,7 +627,7 @@
     white-space: normal;
   }
   .handoverTable[data-columns="handover"] col[data-col="Form"] {
-    width: 92px;
+    width: 124px;
   }
   .handoverTable[data-columns="handover"] col[data-col="Checks"] {
     width: 132px;
@@ -843,4 +841,19 @@
   margin-left: auto;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
+}
+
+/* My list (26 Nov 2026): the parts of the one card meet on a hairline, as the card's rows do. */
+.myListPart + .myListPart {
+  border-top: 1px solid var(--wf-line);
+}
+
+/* Sweep fix (26 Nov 2026): below 1280 a long name wraps, so the UMRN sits under the name instead of
+   floating beside its last line. */
+@media (max-width: 79.9375rem) {
+  .listWho {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
 }

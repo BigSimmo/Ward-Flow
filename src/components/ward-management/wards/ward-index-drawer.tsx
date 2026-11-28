@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { BarChart2 } from "lucide-react";
+import { HeadingHere } from "@/components/ward-management/hub/hub-heading-here";
 import { useMemo, type ReactNode } from "react";
 
 import { DrawerFootRow, PanelDrawer, StatusPill, buttonClass } from "@/components/wf";
@@ -8,6 +10,7 @@ import { CapacityWardSidebar } from "@/components/ward-management/capacity/capac
 import { useCapacityWardTabs } from "@/components/ward-management/capacity/capacity-ward-tabs";
 import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -55,9 +58,9 @@ export function WardIndexDrawer({
     [unit, now, bedReleases, admissions, leaveBeds, movements, referrals],
   );
   const wardHref = unit ? `/bedchart/ward/${unit.id}` : "";
-  const boardHref = unit ? `/bedchart/board/${unit.id}` : "";
+  const statsHref = unit ? wardStatisticsHref(unit.id) : "";
+  const showStats = !countsOnly && unit !== undefined && canOpen(statsHref);
   const showWard = !countsOnly && unit !== undefined && canOpen(wardHref);
-  const showBoard = !countsOnly && unit !== undefined && canOpen(boardHref);
   const wardTabs = useCapacityWardTabs(row ? unit?.id : undefined);
   return (
     <PanelDrawer
@@ -72,16 +75,24 @@ export function WardIndexDrawer({
       tabsLabel="Ward panel view"
       testId="ward-index-ward-drawer"
       foot={
-        showWard || showBoard ? (
+        showWard || showStats ? (
           <DrawerFootRow>
             {showWard ? (
-              <Link href={wardHref} className={buttonClass({ variant: "pri", size: "sm" })}>
-                Open ward
+              // Audit four #41: one unit drawer foot. Filled Open <unit>, then quiet Statistics, one size.
+              <Link href={wardHref} className={buttonClass({ variant: "pri" })}>
+                Open {unit?.name ?? "ward"}
               </Link>
             ) : null}
-            {showBoard ? (
-              <Link href={boardHref} className={buttonClass({ variant: "sec", size: "sm" })}>
-                Bed board
+            {/* Batch 3 (one bed record): Bed board is the ward page's Grid view, so no second link. */}
+            {/* Find: the old Places preview's "View statistics" link, for this ward. */}
+            {showStats ? (
+              <Link
+                href={statsHref}
+                className={buttonClass({ variant: "ghost" })}
+                aria-label={`Statistics, ${unit?.name ?? "ward"}`}
+              >
+                <BarChart2 size={16} aria-hidden="true" />
+                Statistics
               </Link>
             ) : null}
           </DrawerFootRow>
@@ -91,6 +102,7 @@ export function WardIndexDrawer({
       {row ? (
         <>
           <CapacityWardSidebar row={row} onBack={onClose} now={now} tab={wardTabs.tab} showPlace={false} footInDrawer />
+          {wardTabs.tab === "ward" && !countsOnly && unit ? <HeadingHere unitId={unit.id} /> : null}
           {wardTabs.tab === "ward" ? (
             <section className={styles.drawerProfile} aria-label="Ward profile">
               <h3 className={styles.drawerProfileTitle}>Ward profile</h3>

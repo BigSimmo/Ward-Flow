@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { Badge } from "@/components/wf";
 import type { DemonstrationSeries } from "./statistics-demonstration";
 import { useStatisticsSamples } from "./statistics-samples";
 import styles from "./statistics-samples.module.css";
@@ -40,7 +41,8 @@ export function DemonstrationChart({
     >
       <div className={styles.chartHeader}>
         <h3 id={titleId}>{series.label}</h3>
-        <span className={styles.badge}>Sample</span>
+        {/* Audit two (#97): the kit badge names the switch that drew it, now in the Share menu. */}
+        <Badge size="sm">Example history</Badge>
       </div>
       <strong className={styles.value}>{format(last)}</strong>
       <svg viewBox="0 0 300 100" role="img" aria-labelledby={titleId} className={styles.sparkline}>

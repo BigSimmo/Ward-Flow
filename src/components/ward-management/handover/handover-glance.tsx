@@ -124,17 +124,26 @@ export function HandoverSignOffChip({
   signed: string | null;
   onClick: () => void;
 }) {
+  const open = Math.max(0, total - done);
   return (
     <button
       type="button"
       className={heroChipClassName}
       onClick={onClick}
       data-testid="ward-handover-hero-sign-off"
-      aria-label={signed === null ? `Sign off ${done}/${total}, ${done} of ${total} checks clear` : undefined}
+      // Audit four item 20: "Sign off · 4 open", never "1/5", which read like a gate. Signing is never
+      // blocked by an open check; the count only says how many are left to look at.
+      aria-label={
+        signed === null
+          ? open > 0
+            ? `Sign off, ${open} ${open === 1 ? "check" : "checks"} open`
+            : "Sign off"
+          : undefined
+      }
     >
       <Check size={16} strokeWidth={1.75} aria-hidden="true" />
       {signed === null ? "Sign off" : `Signed ${signed}`}{" "}
-      {signed === null ? <b className={styles.signCount}>{`${done}/${total}`}</b> : null}
+      {signed === null && open > 0 ? <b className={styles.signCount}>{`${open} open`}</b> : null}
     </button>
   );
 }
@@ -161,7 +170,7 @@ export function HandoverMeetingChip({
       data-testid="ward-handover-meeting"
     >
       <Users size={16} strokeWidth={1.75} aria-hidden="true" />
-      {startedAt !== null ? <HandoverMeetingTimer startedAt={startedAt} now={now} /> : "Start meeting"}
+      {startedAt !== null ? <HandoverMeetingTimer startedAt={startedAt} now={now} /> : "Meeting timer"}
     </button>
   );
 }

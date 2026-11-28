@@ -1,9 +1,10 @@
 "use client";
 
-import { useId, type ComponentPropsWithRef, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useId, type ComponentPropsWithRef, type MouseEvent, type ReactNode } from "react";
 import { Lock, type LucideIcon } from "lucide-react";
 import { Tooltip } from "./tooltip";
 import { cx } from "./cx";
+import { warnExtraFilledButtons } from "./design-system-diagnostics";
 import { Icon } from "./icon";
 import { Count, Kbd, SrOnly, Spinner } from "./primitives";
 import styles from "./button.module.css";
@@ -120,6 +121,13 @@ export function Button(props: ButtonProps) {
   const isAriaDisabled = off || ariaDisabled === true || ariaDisabled === "true";
   const restProps = isAriaDisabled ? rest : disabled !== undefined ? { ...rest, disabled } : rest;
   const iconSize = size === "lg" ? 16 : size === "sm" ? 14 : 16;
+  // Audit two #83: in development only, warn when this filled button shares its panel with another.
+  const filled = variant === "pri" || variant === "light";
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development" || !filled || typeof document === "undefined") return;
+    const node = document.querySelector(`[data-wf-filled="${CSS.escape(reasonId)}"]`);
+    if (node) warnExtraFilledButtons(node, `[data-wf-filled], a.${styles.pri}, a.${styles.light}`);
+  }, [filled, reasonId]);
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
     if (off || loading) {
@@ -142,6 +150,7 @@ export function Button(props: ButtonProps) {
       aria-disabled={isAriaDisabled || undefined}
       aria-busy={loading || undefined}
       aria-describedby={cx(describedBy, off && reasonId) || undefined}
+      data-wf-filled={filled ? reasonId : undefined}
       onClick={handleClick}
     >
       {loading ? <Spinner /> : icon ? <Icon icon={icon} size={iconSize} /> : null}

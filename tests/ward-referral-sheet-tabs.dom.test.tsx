@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { subscribeReferralRecord } from "@/components/ward-management/referrals/referral-sheet-bus";
@@ -7,6 +7,7 @@ import { referralSentToVisible } from "@/components/ward-management/referrals/re
 import { latestReferralForPerson } from "@/components/ward-management/referrals/referral-sheet-latest";
 import { ReferralSummarySheet } from "@/components/ward-management/referrals/referral-summary-sheet";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import { NOW_ANCHOR, allEmergencyDepartments } from "@/components/ward-management/ward-sites";
@@ -30,7 +31,9 @@ describe("Referral sheet tabs (RQ9)", () => {
         />
       </WardFlowProvider>,
     );
-    expect(screen.getByRole("dialog", { name: "Referral" })).toBeInTheDocument();
+    // Audit four #98: the kit drawer head names the person under the "Referral" eyebrow.
+    expect(screen.getByRole("dialog", { name: "SMITH, Alex" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Referral" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Summary" })).toHaveAttribute("aria-selected", "true");
     fireEvent.click(screen.getByRole("tab", { name: "Full referral" }));
     expect(screen.getByTestId("ward-referral-full-referral")).toBeInTheDocument();
@@ -38,7 +41,52 @@ describe("Referral sheet tabs (RQ9)", () => {
     fireEvent.click(screen.getByRole("tab", { name: /^Sent to/ }));
     expect(screen.getByTestId("ward-referral-sent-to")).toBeInTheDocument();
     expect(screen.getAllByRole("listitem").length).toBe(referral.destinations.length);
-    expect(screen.getByRole("button", { name: "Copy summary" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy for handover" })).toBeInTheDocument();
+  });
+
+  // Audit four #98: the one drawer pattern. Head: the eyebrow, the name and close, then the tier tag,
+  // the UMRN and who. The body opens on the wait strip, which repeats neither the name nor the UMRN.
+  // Foot: Copy for handover filled, then the quiet Patient page and Open in Referrals.
+  it("draws the kit drawer head and foot, with the wait strip first in the body", () => {
+    const linked = state.referrals.find((candidate) => candidate.patientId !== undefined)!;
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ReferralSummarySheet
+          open
+          onClose={() => undefined}
+          referral={linked}
+          name="SMITH, Alex"
+          umrn="UM100001"
+          demographics="34 F"
+          now={NOW_ANCHOR}
+          patientId={linked.patientId}
+        />
+      </WardFlowProvider>,
+    );
+    const sheet = screen.getByTestId("ward-referral-summary-sheet");
+    const head = sheet.querySelector("[data-drawer-head]") as HTMLElement;
+    const foot = sheet.querySelector("[data-drawer-foot]") as HTMLElement;
+    expect(head).toHaveTextContent(`Tier ${linked.urgency}`);
+    expect(head).toHaveTextContent("UM100001");
+    expect(head).toHaveTextContent("34 F");
+    expect(within(head).queryByTestId("wf-drawer-pager")).toBeNull();
+    const wait = screen.getByTestId("ward-referral-sheet-wait");
+    expect(wait).toHaveTextContent(/^Tier \d.*Waiting/u);
+    expect(wait).not.toHaveTextContent("SMITH, Alex");
+    expect(wait).not.toHaveTextContent("UM100001");
+    const copy = within(foot).getByRole("button", { name: "Copy for handover" });
+    expect(copy.className).toMatch(/pri/u);
+    expect(within(foot).getByRole("link", { name: "Patient page" })).toHaveAttribute(
+      "href",
+      patientHref(linked.patientId!),
+    );
+    expect(within(foot).getByRole("link", { name: "Open in Referrals" })).toHaveAttribute(
+      "href",
+      expect.stringContaining("/bedchart/referrals?referral="),
+    );
+    expect(
+      within(sheet.querySelector("[data-drawer-scroll]") as HTMLElement).queryByRole("button", { name: /Copy/u }),
+    ).toBeNull();
   });
 
   it("shows Sent to only to the coordinator and the desk that sent it", () => {

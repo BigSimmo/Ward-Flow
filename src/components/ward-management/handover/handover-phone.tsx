@@ -7,7 +7,7 @@
  */
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, ClipboardCopy, Clock, Ellipsis, FileText, Users } from "lucide-react";
+import { Check, ChevronDown, ClipboardCopy, FileText, PhoneCall, Share2, Users } from "lucide-react";
 import {
   Button,
   Drawer,
@@ -18,14 +18,14 @@ import {
   HeroQuickChips,
   HeroTop,
   folderTabClasses,
+  heroChipClassName,
+  Menu,
   type HeroActProps,
   FactGrid,
   FilterChip,
   Icon,
-  Menu,
   PhoneSheet,
   PillTabs,
-  Sheet,
   SrOnly,
   StatusGlyph,
   StatusPill,
@@ -36,7 +36,6 @@ import {
   type WfTone,
   FormalName,
 } from "@/components/wf";
-import { agoMinutes } from "@/components/ward-management/ward-ago-text";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { ColumnContext } from "./handover-columns";
 import {
@@ -50,21 +49,19 @@ import {
   isbarLines,
   obsLong,
   nextStep,
-  wardIsStale,
-  wardsByService,
   type HandoverPill,
   type HandoverRow,
   type HandoverShiftId,
   type HandoverWard,
   type RowGroup,
 } from "./handover-model";
-import { wardClosedLine } from "../capacity/ward-closure";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { handoverDeskOf, peopleToHandOver } from "./handover-desk";
 import styles from "./handover-phone.module.css";
 import pageTop from "../page-top-title.module.css";
-import { HandoverSinceLine } from "./handover-glance";
+import { HandoverShiftMenu, HandoverSinceLine } from "./handover-glance";
 import parts from "./handover-sheet-parts.module.css";
+import { HandoverBeds } from "./handover-beds";
 
 export type HandoverPhoneProps = {
   shift: HandoverShiftId;
@@ -105,6 +102,12 @@ export type HandoverPhoneProps = {
   onCopySince: () => void;
   /** Open promises and callbacks to carry over, shown under the Since previous handover card. */
   carryOver?: ReactNode;
+  /** Fable batch 3: shown on the Patients tab only, after the carry-over ("To review before handover"). */
+  patientsExtra?: ReactNode;
+  /** The On-call page, when this desk can open it: the chip row's last chip. */
+  onCallHref?: string;
+  /** Bumped when a sign-off check asks for the Beds tab (audit four item 20). */
+  bedsAsk?: number;
   /** Highlight chips with their counts. */
   chips: { id: string; label: string; count: number; pressed: boolean; onToggle: () => void }[];
   /** The meeting timer, as on desktop. */
@@ -135,56 +138,6 @@ const GROUP_TONE: Record<string, WfTone> = {
 
 /** Act now, Flagged urgent and Due show full cards and start open; the other groups are compact and start closed. */
 const CARD_GROUPS = new Set(["act", "urg", "due", "out"]);
-
-function relative(at: Instant, now: Instant): string {
-  return at <= now ? `Passed ${agoMinutes(now - at)} ago` : `In ${durMinutes(at - now)}`;
-}
-
-/* ------------------------------------------------------------------ shift sheet */
-
-function ShiftSheet({
-  open,
-  shift,
-  now,
-  onShift,
-  onClose,
-}: {
-  open: boolean;
-  shift: HandoverShiftId;
-  now: Instant;
-  onShift: (id: HandoverShiftId) => void;
-  onClose: () => void;
-}) {
-  return (
-    <Sheet open={open} onClose={onClose} title="Which handover" testId="ward-handover-phone-shift-sheet">
-      <div role="group" aria-label="Which handover" className={styles.shiftList}>
-        {HANDOVER_SHIFTS.map((item) => {
-          const at = handoverAt(item.id, now);
-          const checked = item.id === shift;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              aria-current={checked ? "true" : undefined}
-              className={styles.shiftOption}
-              onClick={() => {
-                onShift(item.id);
-                onClose();
-              }}
-            >
-              <b className={styles.shiftOptionTime}>{formatInstantWithDay(at, now)}</b>
-              <span className={styles.shiftOptionText}>
-                <b>{item.label}</b>
-                <span>{relative(at, now)}</span>
-              </span>
-              {checked ? <Icon icon={Check} size={16} className={styles.shiftOptionCheck} /> : null}
-            </button>
-          );
-        })}
-      </div>
-    </Sheet>
-  );
-}
 
 /* ------------------------------------------------------------------ patients */
 
@@ -315,11 +268,11 @@ function IsbarSheet({
         </span>
       }
       height="tall"
-      primary={{ label: "Copy ISBAR", onAction: onCopy }}
+      primary={{ label: "Copy for handover", onAction: onCopy }}
       secondary={
         patientHref
-          ? { label: "Patient", onAction: () => router.push(patientHref) }
-          : { label: "Patient", onAction: () => undefined, disabledReason: "No patient record is linked" }
+          ? { label: "Patient page", onAction: () => router.push(patientHref) }
+          : { label: "Patient page", onAction: () => undefined, disabledReason: "No patient record is linked" }
       }
       data-testid="ward-handover-phone-isbar"
     >
@@ -356,67 +309,6 @@ function IsbarSheet({
   );
 }
 
-/* ------------------------------------------------------------------ beds */
-
-function WardRow({ ward, incoming, now }: { ward: HandoverWard; incoming: number; now: Instant }) {
-  const stale = wardIsStale(ward, now);
-  return (
-    <div className={styles.wardRow}>
-      <span className={styles.phoneWardName}>
-        <b>{ward.name}</b>
-        {wardClosedLine(ward.unit) ? <span className={styles.wardSub}>{wardClosedLine(ward.unit)}</span> : null}
-        <span className={styles.wardSub}>
-          <span className={styles.trunc}>
-            <b>{ward.pendingPreparation}</b> being made ready · <b>{ward.holds}</b> held up · <b>{incoming}</b> incoming
-          </span>
-          {stale ? (
-            <span className={styles.stale}>
-              <StatusGlyph tone="warning" size={8} />
-              {agoMinutes(now - ward.confirmedAt)} ago
-              <SrOnly>, feed past its time limit</SrOnly>
-            </span>
-          ) : null}
-        </span>
-      </span>
-      <span className={styles.readyCell}>
-        <b className={`${styles.ready} ${ward.ready > 0 ? styles.readyOn : ""}`}>{ward.ready}</b>
-        <span className={styles.readyWord}>ready</span>
-      </span>
-    </div>
-  );
-}
-
-/** Beds (v10 phone): wards grouped by service, each with what is ready, held and incoming. */
-function BedsView({ rows, wards, now }: { rows: HandoverRow[]; wards: HandoverWard[]; now: Instant }) {
-  const incomingTo = (ward: HandoverWard) => rows.filter((row) => row.to?.unitId === ward.id).length;
-  return (
-    <div className={styles.beds} data-testid="ward-handover-phone-beds">
-      {wards.length === 0 ? <p className={styles.empty}>No ward in this scope.</p> : null}
-      {wards.length ? (
-        <div className={styles.listCard}>
-          {wardsByService(wards).map(({ service, wards: list }) => {
-            const ready = list.reduce((total, ward) => total + ward.ready, 0);
-            return (
-              <section key={service} className={styles.sec} aria-label={String(service)}>
-                <h3 className={`${styles.secHead} ${styles.secHeadStatic}`}>
-                  <span className={styles.secTitle}>{service}</span>
-                  <b className={styles.secCount}>{ready}</b>
-                  <span className={styles.secTitle}>ready</span>
-                </h3>
-                <div className={styles.list}>
-                  {list.map((ward) => (
-                    <WardRow key={ward.id} ward={ward} incoming={incomingTo(ward)} now={now} />
-                  ))}
-                </div>
-              </section>
-            );
-          })}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 /* ------------------------------------------------------------------ page */
 
 export function HandoverPhone({
@@ -450,6 +342,8 @@ export function HandoverPhone({
   sinceItems,
   onCopySince,
   carryOver,
+  patientsExtra,
+  onCallHref,
   chips,
   meetingOn,
   onToggleMeeting,
@@ -457,6 +351,7 @@ export function HandoverPhone({
   history,
   siteSignOff,
   promisesAct,
+  bedsAsk = 0,
 }: HandoverPhoneProps) {
   // Role branches: the nurse in charge's one ward, and the ED desk (no Beds tab, no sign-off).
   const { ownWard, edDesk } = handoverDeskOf(
@@ -464,7 +359,12 @@ export function HandoverPhone({
     wards.map((ward) => ward.unit),
   );
   const [tab, setTab] = useState<PhoneTab>("pts");
-  const [shiftSheetOpen, setShiftSheetOpen] = useState(false);
+  // Audit four item 20: a sign-off check's "Check counts" opens this sheet's Beds tab, as on desktop.
+  const [seenBedsAsk, setSeenBedsAsk] = useState(bedsAsk);
+  if (bedsAsk !== seenBedsAsk) {
+    setSeenBedsAsk(bedsAsk);
+    if (!edDesk) setTab("beds");
+  }
   const [sinceOpen, setSinceOpen] = useState(false);
   /** Sections the user has opened or closed, over each group's default. */
   const [toggled, setToggled] = useState<Record<string, boolean>>({});
@@ -477,7 +377,6 @@ export function HandoverPhone({
   const readyCount = wards.reduce((total, ward) => total + ward.ready, 0);
   const highlightedCount = rows.filter(isHighlighted).length;
   const clock = formatInstantWithDay(at, now);
-  const countdown = `${passed ? "passed" : "in"} ${durMinutes(Math.abs(at - now))}${passed ? " ago" : ""}`;
 
   const isOpen = (id: string) => toggled[id] ?? CARD_GROUPS.has(id);
 
@@ -486,22 +385,25 @@ export function HandoverPhone({
       <Hero
         level={1}
         testId="ward-handover-phone-hero"
-        className={cx(pageTop.hero, folderTabClasses.hero)}
+        // Design review (27 Nov 2026): the Which handover pill sits at the title row's right end.
+        className={cx(pageTop.hero, folderTabClasses.hero, styles.heroShiftEnd)}
         // A4-29 (audit round 2): the title counts every row listed under Act now, Urgent and Due, so it
         // agrees with the figures beneath it.
         title={
           <>
             {ownWard
               ? peopleToHandOver(actCount + urgentCount + dueCount)
-              : `${actCount + urgentCount + dueCount} to hand over`}{" "}
-            <span className={pageTop.soft}>at {clock}</span>
+              : `${actCount + urgentCount + dueCount} to hand over`}
           </>
         }
         aside={
-          // `data-wf-live` places it where the hero puts its Live pill, on the title's line.
-          <span className={styles.countdownPill} data-wf-live="" data-testid="ward-handover-phone-countdown">
-            {countdown}
-          </span>
+          // Locked A28: one menu for Which handover, the desktop's pill (it replaces the sheet and its chip).
+          <HandoverShiftMenu
+            shift={shift}
+            now={now}
+            label={{ clock, words: HANDOVER_SHIFTS.find((item) => item.id === shift)?.label ?? "" }}
+            onChange={onShift}
+          />
         }
       >
         <HeroTop
@@ -535,28 +437,69 @@ export function HandoverPhone({
               items={[
                 {
                   id: "meeting",
-                  label: meetingOn ? "Meeting on" : "Start meeting",
+                  label: meetingOn ? "Timer on" : "Meeting timer",
                   icon: <Users strokeWidth={1.75} aria-hidden="true" />,
                   pressed: meetingOn,
                   testId: "ward-handover-phone-meeting",
                   onClick: onToggleMeeting,
                 },
+                // Audit four item 101 (A3-28, locked A28): the outputs sit under one Share chip, as on
+                // desktop: the Shift digest and Copy for handover. Copy left the bottom bar.
                 {
-                  id: "shift",
-                  label: "Change handover",
-                  icon: <Clock strokeWidth={1.75} aria-hidden="true" />,
-                  testId: "ward-handover-phone-shift",
-                  onClick: () => setShiftSheetOpen(true),
+                  id: "share",
+                  label: "Share",
+                  node: (
+                    <Menu
+                      label="Share"
+                      // Gate r10 F4: right-aligned to the chip, so the menu stays inside the phone gutter;
+                      // same order as desktop (the output first, then the pack).
+                      align="end"
+                      items={[
+                        {
+                          id: "copy",
+                          label: (
+                            <span data-testid="ward-handover-phone-copy">
+                              {copied ? "Copied" : "Copy for handover"}
+                            </span>
+                          ),
+                          icon: copied ? Check : ClipboardCopy,
+                          onSelect: onCopySummary,
+                        },
+                        ...(onOpenDigest
+                          ? [
+                              {
+                                id: "digest",
+                                label: <span data-testid="ward-handover-phone-digest">Shift digest</span>,
+                                icon: FileText,
+                                onSelect: onOpenDigest,
+                              },
+                            ]
+                          : []),
+                      ]}
+                      trigger={(props) => (
+                        <button
+                          type="button"
+                          {...props}
+                          className={heroChipClassName}
+                          data-testid="ward-handover-phone-share"
+                        >
+                          <Share2 size={16} strokeWidth={1.75} aria-hidden="true" />
+                          <span>Share</span>
+                          <ChevronDown size={14} strokeWidth={1.75} aria-hidden="true" />
+                        </button>
+                      )}
+                    />
+                  ),
                 },
-                // Feature 15: the Shift digest, as on desktop.
-                ...(onOpenDigest
+                // Fable batch 3: the On-call chip ends the row, as on desktop. It is a page, not an output.
+                ...(onCallHref
                   ? [
                       {
-                        id: "digest",
-                        label: "Digest",
-                        icon: <FileText strokeWidth={1.75} aria-hidden="true" />,
-                        testId: "ward-handover-phone-digest",
-                        onClick: onOpenDigest,
+                        id: "on-call",
+                        label: "On-call",
+                        icon: <PhoneCall strokeWidth={1.75} aria-hidden="true" />,
+                        href: onCallHref,
+                        testId: "ward-handover-on-call",
                       },
                     ]
                   : []),
@@ -579,42 +522,7 @@ export function HandoverPhone({
           />
         </HeroTop>
       </Hero>
-      <FolderTabs
-        label="Handover views"
-        value={tab}
-        testId="ward-handover-phone-tabs"
-        className={styles.folder}
-        more={
-          <Menu
-            label="More handover actions"
-            align="end"
-            items={[
-              {
-                id: "meeting",
-                label: meetingOn ? "Stop the meeting timer" : "Start the meeting timer",
-                onSelect: onToggleMeeting,
-              },
-              { id: "since", label: `What changed since ${since}`, onSelect: () => setSinceOpen(true) },
-              { id: "copy", label: copied ? "Copied" : "Copy summary", onSelect: onCopySummary },
-            ]}
-            // While the meeting timer runs, the trigger says so in words, and its name keeps them.
-            trigger={(props) => (
-              <Button
-                {...props}
-                variant="ghost"
-                size="sm"
-                iconOnly={!meetingOn}
-                icon={Ellipsis}
-                className={folderTabClasses.more}
-                aria-label={meetingOn ? "More handover actions, timer on" : "More handover actions"}
-                data-testid="ward-handover-phone-more"
-              >
-                {meetingOn ? "Timer on" : undefined}
-              </Button>
-            )}
-          />
-        }
-      >
+      <FolderTabs label="Handover views" value={tab} testId="ward-handover-phone-tabs" className={styles.folder}>
         <PillTabs<PhoneTab>
           label="Handover views"
           className={folderTabClasses.switch}
@@ -631,7 +539,9 @@ export function HandoverPhone({
 
       <div className={styles.main}>
         {tab === "pts" ? siteSignOff : null}
-        {carryOver}
+        {/* Fable batch 3: on Beds, "Beds now" comes first; the carry-over stays on the other tabs. */}
+        {tab === "beds" ? null : carryOver}
+        {tab === "pts" ? patientsExtra : null}
 
         {tab === "pts" ? (
           <div
@@ -710,7 +620,9 @@ export function HandoverPhone({
             aria-labelledby="ward-handover-phone-tab-beds"
             className={styles.panel}
           >
-            <BedsView rows={rows} wards={wards} now={now} />
+            {/* Batch 3 (one Handover): the phone's Beds tab is the same "Beds now" card, stacked.
+                The older BedsView stays in this file, unused. */}
+            <HandoverBeds rows={rows} wards={wards} held={[]} now={now} onOpenPatient={onPick} />
           </div>
         ) : (
           <div
@@ -726,17 +638,11 @@ export function HandoverPhone({
         <p className={`${styles.note} ${styles.phPageNote}`}>Synthetic data. Not approved for clinical use.</p>
       </div>
 
-      <div className={styles.sticky}>
-        <Button
-          variant="sec"
-          icon={copied ? Check : ClipboardCopy}
-          className={styles.stickyButton}
-          onClick={onCopySummary}
-          data-testid="ward-handover-phone-copy"
-        >
-          {copied ? "Copied" : "Copy summary"}
-        </Button>
-        {edDesk || !signOffOffered ? null : (
+      {/* Audit four item 101: the bottom bar holds Sign off alone, one full-width filled button; a desk
+          that does not sign off has no bar. The copy result is still said to a screen reader. */}
+      <SrOnly role="status">{copied ? "Summary copied" : ""}</SrOnly>
+      {edDesk || !signOffOffered ? null : (
+        <div className={styles.sticky}>
           <Button
             variant="pri"
             icon={Check}
@@ -746,17 +652,8 @@ export function HandoverPhone({
           >
             {signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : "Sign off"}
           </Button>
-        )}
-        <SrOnly role="status">{copied ? "Summary copied" : ""}</SrOnly>
-      </div>
-
-      <ShiftSheet
-        open={shiftSheetOpen}
-        shift={shift}
-        now={now}
-        onShift={onShift}
-        onClose={() => setShiftSheetOpen(false)}
-      />
+        </div>
+      )}
 
       <PhoneSheet
         open={sinceOpen}
@@ -764,10 +661,9 @@ export function HandoverPhone({
         title="Since previous handover"
         description={`Previous handover at ${since}`}
         primary={{
-          label: "Copy as handover text",
+          label: "Copy for handover",
           onAction: onCopySince,
         }}
-        secondary={{ label: "Done", onAction: () => setSinceOpen(false) }}
         data-testid="ward-handover-phone-since-sheet"
       >
         {sinceItems.length === 0 ? (

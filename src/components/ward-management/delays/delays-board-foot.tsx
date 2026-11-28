@@ -5,8 +5,9 @@
 // page. Movement stays a plain link to the full record.
 import { useMemo } from "react";
 import Link from "next/link";
-import { ArrowUpRight, BedSingle, Hospital, LayoutDashboard, ListChecks } from "lucide-react";
-import { Button, Popover, buttonClass } from "@/components/wf";
+import { ArrowUpRight, BedSingle, ChevronDown, Hospital, LayoutDashboard } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Button, Menu, Popover, buttonClass } from "@/components/wf";
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -21,10 +22,12 @@ import styles from "@/components/ward-management/peek-popover.module.css";
 const secondaryClass = buttonClass({ variant: "sec", size: "md" });
 
 /** Movement opens the Patient peek over Waiting; the full page stays on its link (new tab). */
-export function MovementRecordLink({ movement }: { movement: Movement }) {
+export function MovementRecordLink({ movement, onOpen }: { movement: Movement; onOpen?: () => void }) {
   return (
     <PatientPeekLink
       movementId={movement.id}
+      // Audit four item 14: the placement peek replaces the person drawer, never stacks on it.
+      onClick={onOpen}
       className={secondaryClass}
       href={movementHref(movement.id)}
       data-testid={`delays-foot-movement-${movement.id}`}
@@ -34,80 +37,56 @@ export function MovementRecordLink({ movement }: { movement: Movement }) {
   );
 }
 
-/** Coordinator actions without leaving Waiting: the Wards tab, Find a bed, then Home if needed. */
-export function CoordinatorFootMenu({
-  movement,
-  onShowWards,
-  onOpenHome,
-}: {
-  movement: Movement;
-  onShowWards: () => void;
-  onOpenHome: () => void;
-}) {
+/**
+ * Audit four item 110 (amends D-98 item 3): the Coordinator pop-up is a kit menu called More, with
+ * Find a bed and Open on Home. "Wards that could take them" went: the drawer's Wards tab is in view.
+ * A desk that cannot find beds gets the one link on its own, never a menu of one.
+ */
+export function CoordinatorFootMenu({ movement, onOpenHome }: { movement: Movement; onOpenHome: () => void }) {
   const role = useEffectiveWardAccess().role;
+  const router = useRouter();
   const findsBeds = seesNetworkBedFigures(role);
+  const openHome = () => {
+    onOpenHome();
+    router.push("/bedchart");
+  };
+  if (!findsBeds) {
+    return (
+      <Link
+        className={secondaryClass}
+        href="/bedchart"
+        onClick={onOpenHome}
+        data-testid={`delays-foot-coordinator-${movement.id}`}
+      >
+        Open on Home
+      </Link>
+    );
+  }
   return (
-    <Popover
-      label="Coordinator actions"
-      align="start"
-      panelClassName={styles.panel}
+    <Menu
+      label="More for this person"
+      align="end"
+      items={[
+        {
+          id: "find-bed",
+          icon: BedSingle,
+          label: "Find a bed",
+          onSelect: () => requestToolsTool("bed-finder"),
+        },
+        { id: "home", icon: LayoutDashboard, label: "Open on Home", onSelect: openHome },
+      ]}
       trigger={(props) => (
         <Button
           {...props}
           variant="sec"
           size="md"
-          icon={LayoutDashboard}
+          iconEnd={ChevronDown}
           data-testid={`delays-foot-coordinator-${movement.id}`}
         >
-          Coordinator
+          More
         </Button>
       )}
-    >
-      {(close) => (
-        <div className={styles.body}>
-          <p className={styles.title}>Coordinator actions</p>
-          <div className={styles.actions}>
-            <button
-              type="button"
-              className={styles.action}
-              onClick={() => {
-                close();
-                onShowWards();
-              }}
-            >
-              <ListChecks size={16} aria-hidden="true" />
-              <span>
-                <b>Wards that could take them</b>
-                <small>Opens the Wards tab here</small>
-              </span>
-            </button>
-            {findsBeds ? (
-              <button
-                type="button"
-                className={styles.action}
-                onClick={(event) => {
-                  const trigger = event.currentTarget
-                    .closest("[role=dialog]")
-                    ?.parentElement?.querySelector<HTMLElement>("button[aria-haspopup]");
-                  close({ restoreFocus: false });
-                  requestToolsTool("bed-finder", trigger ?? undefined);
-                }}
-              >
-                <BedSingle size={16} aria-hidden="true" />
-                <span>
-                  <b>Find a bed</b>
-                  <small>Opens Bed finder in Tools</small>
-                </span>
-              </button>
-            ) : null}
-          </div>
-          <Link className={styles.pageLink} href="/bedchart" onClick={onOpenHome}>
-            Open on coordinator Home
-            <ArrowUpRight size={14} aria-hidden="true" />
-          </Link>
-        </div>
-      )}
-    </Popover>
+    />
   );
 }
 

@@ -46,7 +46,7 @@ function shortNeed(need: string): string {
  * the column instead of under the four-row table. The line
  * keeps the totals ("23 short now · 14 short tomorrow"); the table opens in place.
  */
-export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsReady: number; condensed: boolean }) {
+export function BedsGapCard({ now }: { now: Instant; bedsReady?: number; condensed?: boolean }) {
   const { movements, units, admissions, bedReleases, plannedAdmissions, referrals } = useWardFlowSelect(
     "movements",
     "units",
@@ -68,7 +68,10 @@ export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsR
   const tomorrowById = new Map(tomorrow.kinds.map((kind) => [kind.id, kind]));
   const [open, setOpen] = useState(false);
   const [lever, setLever] = useState<string | undefined>(undefined);
-  const folded = condensed && !open;
+  // Simplification mock-up (area 2 item 5): the card rests on its one line on every width, and the
+  // "23 Ready · whole network" meta that repeated the hero is gone. The table still opens in place,
+  // so the "beds that could free by tomorrow" detail stays reachable until Capacity carries it.
+  const folded = !open;
   const capacityLink = (
     <Link href="/bedchart/capacity" className={styles.headLink}>
       Capacity
@@ -80,33 +83,30 @@ export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsR
       <CardHead
         id="home-beds-fit-title"
         title="Beds that fit"
+        // Audit two #85 (T12): the "N short" figure takes the warning ink it has on Capacity.
         meta={
-          folded
-            ? `${gapRangeWord(totals.gap)} now · ${gapRangeWord(tomorrow.total.likely)} tomorrow`
-            : // PR E swap: the kit's WindowWord / `window` prop. Wave 4 (D-191, notes item 4): the count label "Ready", as the hero and Capacity say it; no
-              // window word, since the page title already says "right now".
-              `${bedsReady} Ready · whole network`
+          <>
+            <span className={totals.gap < 0 ? styles.warnInk : undefined}>{`${gapRangeWord(totals.gap)} now`}</span>
+            {` · ${gapRangeWord(tomorrow.total.likely)} tomorrow`}
+          </>
         }
         icon={BedSingle}
         iconPlain
         action={
-          condensed ? (
-            <span className={styles.foldActions}>
-              {capacityLink}
-              <button
-                type="button"
-                className={styles.foldToggle}
-                aria-expanded={!folded}
-                aria-controls="home-beds-fit-table"
-                aria-label={folded ? "Show the beds that fit table" : "Fold the beds that fit table"}
-                onClick={() => setOpen((value) => !value)}
-              >
-                <ChevronDown size={16} aria-hidden="true" />
-              </button>
-            </span>
-          ) : (
-            capacityLink
-          )
+          <span className={styles.foldActions}>
+            {/* Audit two #50 (P9): the folded line keeps only its chevron; Capacity shows once opened. */}
+            {folded ? null : capacityLink}
+            <button
+              type="button"
+              className={styles.foldToggle}
+              aria-expanded={!folded}
+              aria-controls="home-beds-fit-table"
+              aria-label={folded ? "Show the beds that fit table" : "Fold the beds that fit table"}
+              onClick={() => setOpen((value) => !value)}
+            >
+              <ChevronDown size={16} aria-hidden="true" />
+            </button>
+          </span>
         }
       />
       {folded ? null : (

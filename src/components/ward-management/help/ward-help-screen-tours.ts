@@ -50,7 +50,7 @@ const MORE_SCREENS: readonly Around[] = [
         { sel: "#main-content [data-wf-hero-next]" },
         {
           title: "What needs you",
-          body: "How many need you now, split into act now and to decide. Show act now takes you to that list.",
+          body: "How many need you now, split into act now and to decide. Open next opens the first act now item; Show to decide narrows the list to referrals.",
         },
       ),
       step(id("home-next-checking"), {
@@ -59,7 +59,7 @@ const MORE_SCREENS: readonly Around[] = [
       }),
       step(id("ward-quick-bar"), {
         title: "Quick controls",
-        body: "The tools you use most, such as Ward updates and Find a bed. Each opens in the Tools panel on this page.",
+        body: "The tools you use most, such as Check counts and Find a bed. Each opens in the Tools panel on this page.",
       }),
       step(id("ward-home-ed-pressure"), {
         title: "Every ED at a glance",
@@ -74,8 +74,8 @@ const MORE_SCREENS: readonly Around[] = [
       ),
       step(id("ward-home-more"), { title: "More", body: "Today's review, Night view and Alerts history." }),
       step(id("home-since-banner"), {
-        title: "Since the last shift",
-        body: "What changed since the previous shift started. Review opens the changes to go through.",
+        title: "Since the time shown",
+        body: "What changed since the time shown, such as Since 07:00. Review opens the changes to go through.",
       }),
       step(id("home-my-list"), {
         title: "Needs you",
@@ -178,8 +178,8 @@ const MORE_SCREENS: readonly Around[] = [
         body: "Type a ward, hospital, ED, team or service.",
       }),
       // The phone has one button that switches between By service and A to Z.
-      step([named("Order", '[role="radiogroup"]'), { sel: '[data-testid="hub-top"] button[aria-pressed]' }], {
-        title: "Order",
+      step([named("Sort", '[role="radiogroup"]'), { sel: '[data-testid="hub-top"] button[aria-pressed]' }], {
+        title: "Sort",
         body: "Sets how the places are listed: by service or A to Z.",
       }),
       step(named("Show", '[role="radiogroup"]'), {
@@ -268,15 +268,15 @@ const MORE_SCREENS: readonly Around[] = [
         title: "Jobs open",
         body: "Jobs that need transport, need forms or are past the ward's ETA. Each figure highlights those jobs.",
       }),
-      // R-MOVE-2: the phone hero keeps only its figures, so a row's Log booking stands in there.
+      // R-MOVE-2: the phone hero keeps only its figures, so a row's Record booking stands in there.
       // With no pulled bed waiting, the top's calm line stands in, so the step still lights.
       step([id("ward-officer-hero-log-booking"), starts("ward-officer-log-booking-"), id("ward-officer-act")], {
         acts: ["RECORD_TRANSPORT_CAD"],
-        title: "Log booking",
+        title: "Record booking",
         body: "Records a booking already made by phone, with the CAD number and quoted ETA. It shows when a pulled bed has none.",
       }),
       step(id("ward-officer-copy-handover"), {
-        title: "Copy handover",
+        title: "Copy for handover",
         body: "Copies every open job as text, with its route, ETA and forms, to paste into your handover.",
       }),
       step(id("ward-officer-stages"), {
@@ -326,7 +326,7 @@ const AROUND: readonly Around[] = [
       step(id("capacity-bed-meeting"), {
         device: "desk",
         title: "Bed meeting and TV",
-        body: "Bed meeting sheet opens the sheet in one tap. The arrow beside it holds Open the meeting agenda, and Open on TV when a TV is available, which puts the meeting on the room screen, read only.",
+        body: "Bed meeting sheet opens the sheet in one tap. Open on TV is in the sheet's footer, when a TV is available, and puts the meeting on the room screen, read only. The arrow beside it, where shown, holds Open the meeting agenda.",
       }),
       step(id("capacity-mismatch"), {
         title: "Mismatch",
@@ -341,12 +341,12 @@ const AROUND: readonly Around[] = [
         device: "desk",
         acts: ["CONVERT_PLANNED_ADMISSION"],
         title: "Planned admissions",
-        body: "Admissions booked ahead, on the Planned tab. Press Arrived when the person reaches the ward.",
+        body: "Admissions booked ahead, on the Planned tab. Press Record arrival when the person reaches the ward.",
       }),
       step(named("Highlight wards", '[role="group"]'), {
         device: "desk",
         title: "Highlight wards",
-        body: "Any ready, Locked ready and the other choices highlight wards on the map. Every ward stays.",
+        body: "Has ready and Count old highlight wards on the map. Every ward stays.",
       }),
       step(id("capacity-map-find-bed"), {
         device: "desk",
@@ -418,7 +418,7 @@ const AROUND: readonly Around[] = [
       step(named("Find movements by name, UMRN or ED", "input"), {
         device: "desk",
         title: "Find a movement",
-        body: "Type a name, UMRN or ED. Order beside it sets how the list is sorted.",
+        body: "Type a name, UMRN or ED. Sort beside it sets how the list is sorted.",
       }),
       // The row's own Review link, then its row, so the step never lights a row's Ask wards button.
       step(
@@ -431,10 +431,9 @@ const AROUND: readonly Around[] = [
           body: "Movements are listed by stage. Open one to see its bed, transport and legal form in one place.",
         },
       ),
-      step(id("ward-movements-print"), {
-        device: "desk",
-        title: "Print and Export",
-        body: "Print the list for a meeting, or Export it as a spreadsheet.",
+      step(id("ward-movements-share"), {
+        title: "Share",
+        body: "Print list for a meeting, or Export list as a spreadsheet.",
       }),
     ],
   },
@@ -445,7 +444,7 @@ const AROUND: readonly Around[] = [
     steps: [
       step([id("ward-referral-kpis"), id("ward-referral-phone-hero")], {
         title: "Referrals at a glance",
-        body: "How many are awaiting a decision, the oldest wait, and any decision overdue.",
+        body: "How many are awaiting a decision, the longest wait, and any decision overdue.",
       }),
       step(id("ward-referral-next"), {
         title: "Next overdue",
@@ -453,7 +452,7 @@ const AROUND: readonly Around[] = [
       }),
       step(named("Referral highlights", "ul"), {
         title: "Highlight referrals",
-        body: "Ward bed, ED, More than one and Refused once highlight those referrals in the queue.",
+        body: "Ward bed, ED, More than one and Declined once highlight those referrals in the queue.",
       }),
       step(id("ward-referral-meeting"), {
         title: "Bed meeting",
@@ -486,7 +485,7 @@ const AROUND: readonly Around[] = [
     name: "Handover",
     keywords: "shift sheet sign off print",
     steps: [
-      step([id("ward-handover-shift"), id("ward-handover-phone-shift")], {
+      step(id("ward-handover-shift"), {
         title: "Which handover",
         body: "The handover time and shift this sheet is for. Choose it to switch to another handover.",
       }),
@@ -522,7 +521,7 @@ const AROUND: readonly Around[] = [
       step(id("ward-handover-prepare"), {
         device: "desk",
         title: "Set up the sheet",
-        body: "Show filters the sheet to a ward or service. Detail sets the columns, and the other controls highlight or arrange rows.",
+        body: "Show filters the sheet to a ward or service. Arrange the sheet sets Group, Sort and Detail, and the other controls highlight rows.",
       }),
       step(id("ward-handover-sheet"), {
         device: "desk",
@@ -534,15 +533,15 @@ const AROUND: readonly Around[] = [
         title: "Each patient",
         body: "Open a patient for their handover details.",
       }),
-      step(id("ward-handover-print"), {
+      step(id("ward-handover-share"), {
         device: "desk",
-        title: "Print handover",
-        body: "Opens the paper copy of the sheet to print.",
+        title: "Share",
+        body: "Copy for handover, Print handover, Shift digest and the Downtime pack.",
       }),
-      step(named("More handover actions", "button"), {
+      step(id("ward-handover-open-tv"), {
         device: "desk",
-        title: "More",
-        body: "Present on a screen, Copy summary, the Downtime pack and Open in Waiting.",
+        title: "Open on TV",
+        body: "Shows the sheet on a big screen. Close TV view brings it back.",
       }),
     ],
   },
@@ -557,23 +556,19 @@ const AROUND: readonly Around[] = [
       }),
       step(id("delays-next"), {
         title: "Your move",
-        body: "How many are waiting on your move. Show these narrows the list to them, and Show everyone undoes it.",
+        body: "How many are waiting on your move. Open longest wait opens the person who has waited longest.",
       }),
       step(named("Waiting tools", "ul"), {
         title: "Waiting tools",
         body: "Find a bed opens the bed finder. The daily check and the next wait to cross its line show here when there are any.",
       }),
-      step(id("delays-owner-yours"), {
+      step(starts("delays-owner-"), {
         title: "Who the wait is on",
         body: "Split by who can move it on next: you, the ED, the wards, transport or someone else. Press one to show only theirs.",
       }),
-      step(id("delays-tabs"), {
-        title: "Longest wait or By hold-up",
-        body: "Orders the list by the longest wait, or groups it by what is holding each person up.",
-      }),
-      step([id("delays-view-needs-me"), id("delays-filter-fold")], {
-        title: "Saved views",
-        body: "Due soon or on you, Form due and For handover each narrow the list.",
+      step(id("delays-filters"), {
+        title: "Filters",
+        body: "Due soon or on you, Form due, For handover, Locked bed and No update 2h+ each narrow the list. Show everyone clears them.",
       }),
       step([id("delays-waiting-list"), id("delays-phone-cards")], {
         title: "The waiting list",
@@ -610,7 +605,7 @@ const AROUND: readonly Around[] = [
       ),
       step(named("Discharge actions", "ul"), {
         title: "Discharge actions",
-        body: "Ask wards about dates that have passed, Copy counts and Print list. On a phone, Per day and Filter sit here too.",
+        body: "Ask wards about dates that have passed. Share holds Copy counts, Export list and Print list. On a phone, Per day and Filter sit here too.",
       }),
       step(id("ward-discharge-barrier-bars"), {
         device: "desk",
@@ -821,12 +816,7 @@ const AROUND: readonly Around[] = [
       }),
       step(id("ward-governance-act"), {
         title: "Newest to review",
-        body: "The newest event waiting for review. Review next opens it.",
-      }),
-      step([id("ward-governance-record-review"), id("ward-governance-phone-record-review")], {
-        acts: ["REVIEW_AUDIT_EVENT"],
-        title: "Record review",
-        body: "Opens Record a review: choose what is under review and the decision, then save it.",
+        body: "The newest event waiting for review. Open newest opens it.",
       }),
       step(named("Governance actions", "ul"), {
         device: "desk",
@@ -846,7 +836,7 @@ const AROUND: readonly Around[] = [
         device: "phone",
         acts: ["REVIEW_AUDIT_EVENT"],
         title: "Waiting for review",
-        body: "Newest first. Choose an event, then Record review.",
+        body: "Newest first. Choose an event, then Reviewed or Follow-up.",
       }),
       // Drawer review (6 Nov 2026): the event's detail opens in a drawer only once someone chooses
       // it, so the walk lights the list rather than a detail pane that is no longer on the page.
@@ -880,17 +870,19 @@ const AROUND: readonly Around[] = [
         title: "Wards at the line",
         body: "How many wards are at or over the bed alert line. Show wards takes you to them.",
       }),
-      step(named("Statistics tools", "ul"), {
+      step(id("ward-statistics-browse"), {
         device: "desk",
-        title: "Open a unit",
-        body: "Open a unit finds any ward, ED, service or team and opens its figures.",
+        title: "Browse",
+        body: "Browse finds any ward, ED, service or team and opens its figures.",
       }),
-      // D-265: on a phone Export sits in the Statistics tools menu ("…").
+      // On a phone Export sits in the Statistics tools menu ("…"); elsewhere it is in the Share menu.
       step(
-        { sel: '[data-testid="ward-statistics-export"], [data-testid="ward-statistics-tools-menu"]' },
+        {
+          sel: '[data-testid="ward-statistics-share"], [data-testid="ward-statistics-export"], [data-testid="ward-statistics-tools-menu"]',
+        },
         {
           title: "Export the figures",
-          body: "Downloads the figures at the top of the page as a spreadsheet file. On a phone it is in the … menu.",
+          body: "Export, in the Share menu, saves the figures at the top of the page as a spreadsheet file. On a phone it is in the … menu.",
         },
       ),
       step(id("ward-statistics-view-bar"), {
@@ -924,7 +916,10 @@ const AROUND: readonly Around[] = [
         title: "Waiting in EDs",
         body: "How many wait across the EDs, the long waits and those with no bed yet. Each figure highlights those people.",
       }),
-      step(id("ed-index-act"), { title: "Longest wait", body: "The ED with the longest wait. Enter opens its board." }),
+      step(id("ed-index-act"), {
+        title: "Longest wait",
+        body: "The ED with the longest wait. Open goes to its board.",
+      }),
       step(named("Common jobs", "ul"), {
         title: "Common jobs",
         body: "Find a bed, Call and contacts, and Under a form or Accepted to highlight those people.",
@@ -933,9 +928,9 @@ const AROUND: readonly Around[] = [
         title: "Views and services",
         body: "Cards, Table or Lanes, and one health service's EDs.",
       }),
-      step([id("ed-index-match-count"), id("ed-index-phone-filters")], {
-        title: "Filter and order",
-        body: "Filter by status, and choose the order. The count says how many EDs show.",
+      step(id("ed-index-match-count"), {
+        title: "Filter and Sort",
+        body: "Filter by status, and Sort by longest wait or most waiting. The count says how many EDs show.",
       }),
       step([starts("ed-index-card-"), HERO], {
         title: "Each ED",
@@ -948,13 +943,13 @@ const AROUND: readonly Around[] = [
       }),
       step(starts("ed-index-link-"), {
         device: "desk",
-        title: "Enter an ED",
-        body: "Enter opens that ED's board and each patient's next step.",
+        title: "Open an ED",
+        body: "Open goes to that ED's board and each patient's next step.",
       }),
       step(named("Departments with nobody waiting", '[role="group"]'), {
         device: "desk",
         title: "Nobody waiting",
-        body: "The EDs with nobody waiting now. Enter still opens their boards.",
+        body: "The EDs with nobody waiting now. Open still goes to their boards.",
       }),
       step(starts("ed-index-phone-row-"), {
         device: "phone",
@@ -1004,10 +999,10 @@ const AROUND: readonly Around[] = [
         title: "Highlight",
         body: "Lights the people who match, such as Tier 1, without hiding anyone.",
       }),
-      step(id("ward-census-export"), {
+      step([id("ward-patient-search-share"), id("ward-census-export")], {
         device: "desk",
-        title: "Copy list and Export",
-        body: "Copy list copies the rows as text. Export saves them as a spreadsheet.",
+        title: "Share",
+        body: "Copy list copies the rows as text. Export saves them as a spreadsheet. Print is here too.",
       }),
     ],
   },
@@ -1022,8 +1017,8 @@ const AROUND: readonly Around[] = [
       }),
       step(id("ward-alerts-next"), { title: "Next alert", body: "The alert to deal with next. Next alert opens it." }),
       step(named("Alert actions", "ul"), {
-        title: "Yours and Broadcast alert",
-        body: "Yours highlights the alerts addressed to you. Broadcast alert sends one alert to several desks.",
+        title: "Broadcast alert",
+        body: "Sends one alert to several desks.",
       }),
       step(id("ward-alerts-today"), {
         title: "Today",
@@ -1035,18 +1030,18 @@ const AROUND: readonly Around[] = [
       }),
       step(id("ward-alerts-filters"), {
         title: "Show open alerts",
-        body: "Act now, Waiting, Expected, Reminders, Notices, Snoozed or Yours. All shows every one again.",
+        body: "Act now, Waiting, Notices or Yours. All shows every one again.",
       }),
-      step(named("Arrange by", '[role="radiogroup"]'), {
+      step(named("Group by", '[role="radiogroup"]'), {
         device: "desk",
-        title: "Arrange by",
-        body: "Urgency lists act now first. Lanes and Owner group the alerts in columns.",
+        title: "Group by",
+        body: "Urgency lists act now first. Owner groups the alerts by who has them.",
       }),
       step(id("ward-alerts-open"), { title: "Open an alert", body: "Each alert opens the record it is about." }),
       // With no forecast line today the group is not drawn, so the Forecast filter stands in.
-      step([id("ward-alerts-forecast"), { sel: '[data-testid="ward-alerts-filters"] button', text: "Expected" }], {
+      step(id("ward-alerts-forecast"), {
         title: "Expected from recorded dates",
-        body: "Lines set in Settings: beds expected to be short tomorrow, the ED access target and expected beds that got worse. With none today, the Expected filter shows 0.",
+        body: "Lines set in Settings: beds expected to be short tomorrow, the ED access target and expected beds that got worse.",
       }),
       step(id("ward-alerts-notices"), {
         title: "Notices",
@@ -1075,13 +1070,13 @@ const AROUND: readonly Around[] = [
       }),
       step([named("Ward capacity", '[role="group"]'), id("ward-hero")], {
         title: "Ready and arrivals",
-        body: "Beds ready now and arrivals today. Open this shift goes to what needs doing.",
+        body: "Beds ready now and arrivals today. Open next opens the next decision due, or Open this shift goes to what needs doing.",
       }),
       step(id("ward-confirm-numbers"), {
         title: "Confirm numbers",
         body: "Confirm the ward's bed figures once you have checked them, so others can trust the count.",
       }),
-      step(id("ward-updates"), { title: "Updates", body: "What changed on this ward since you last looked." }),
+      step(id("ward-updates"), { title: "Since you looked", body: "What changed on this ward since you last looked." }),
       step(id("ward-contact-open"), {
         title: "Contact and Staff needed",
         body: "Contact opens the ward's contact lines. Staff needed records a request for extra staff.",
@@ -1107,7 +1102,7 @@ const AROUND: readonly Around[] = [
       step(id("ward-open-tv"), {
         device: "desk",
         title: "The toolbar",
-        body: "On TV opens a read only screen for the ward's TV. More, beside it, holds Notices, Shift brief and Ward handover.",
+        body: "Open on TV opens a read only screen for the ward's TV. More, beside it, holds Notices, Shift brief and Ward handover.",
       }),
       step(id("ward-open-bed-board"), {
         title: "Place or move",
@@ -1146,7 +1141,7 @@ const AROUND: readonly Around[] = [
       }),
       step([named("Board jobs", "ul"), id("ward-phone-create")], {
         title: "Board jobs",
-        body: "Updates since you last looked, Add patient and On TV. On a phone, Add patient is under the plus button.",
+        body: "Since you looked, Add patient and Open on TV. On a phone, Add patient is under the plus button.",
       }),
       step(id("ward-ed-switch"), {
         title: "Switch ED",
@@ -1168,7 +1163,7 @@ const AROUND: readonly Around[] = [
       step(starts("ward-ed-next-"), {
         device: "desk",
         title: "Each row's next step",
-        body: "The button is the row's next step, such as Record exam or Log transport booking.",
+        body: "The button is the row's next step, such as Record exam or Record transport booking.",
       }),
       step([starts("ward-ed-form-pick-"), starts("ward-ed-form-expiry-")], {
         device: "desk",

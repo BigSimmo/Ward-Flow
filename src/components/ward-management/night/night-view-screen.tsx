@@ -1,6 +1,7 @@
 "use client";
 
-import { Ambulance, BedSingle, CalendarClock, Clock, Phone } from "lucide-react";
+import topTitle from "@/components/ward-management/shell/page-top-title.module.css";
+import { Ambulance, BedSingle, Clock, Phone } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -9,6 +10,7 @@ import {
   CardHead,
   EmptyState,
   Hero,
+  HeroAct,
   HeroFigures,
   HeroTop,
   LiveChip,
@@ -42,6 +44,7 @@ const CAPACITY_HREF = "/bedchart/capacity";
 const WAITING_HREF = "/bedchart/waiting";
 const MOVEMENTS_HREF = "/bedchart/movements";
 const ON_CALL_HREF = "/bedchart/on-call";
+const HANDOVER_HREF = "/bedchart/handover";
 
 /** About eight rows, then the kit's Show more (DESIGN-SYSTEM.md section 4). */
 const NIGHT_ROWS = 8;
@@ -63,7 +66,7 @@ function useFold<T>(items: readonly T[], id: string) {
 
 /**
  * Night view (feature plan item 29): the coordinator's overnight screen. Beds ready, ED waits by
- * Step, who is on the way, tonight's intake windows and the key on-call lines, on one page. Every
+ * Step, who is on the way and the key on-call lines, on one page. Every
  * figure comes from the same derivation as the day screens (`night-view-figures.ts`), so the counts
  * here always match Home, Waiting, Movements and On-call. It shows; it never suggests a ward (D-71).
  */
@@ -98,14 +101,20 @@ export function NightViewScreen() {
   const movingRows = useFold(onTheWay, "night-moving-list");
   const contacts = useMemo(() => nightContacts(network.sites, minuteOfDay(now)), [network.sites, now]);
   const unitName = (id: string | undefined) => units.find((unit) => unit.id === id)?.name;
-  const atStep = waits.waiting - waits.underFirstStep;
 
   return (
     <main id="main-content" className={styles.main} data-testid="ward-night-view">
       <Hero
         level={1}
-        title="Night view"
-        titleMeta={`${service === null ? "Statewide" : healthServiceAcronym(service) || service} · as at ${formatInstantWithDay(now, now)}`}
+        // Audit four #51: the title is the answer ("Tonight, statewide"); the header already names the page.
+        title={
+          <>
+            Tonight{" "}
+            <span className={topTitle.soft}>
+              {service === null ? "statewide" : healthServiceAcronym(service) || service}
+            </span>
+          </>
+        }
         aside={<LiveChip state="live" onHero age={formatInstant(now)} />}
       >
         <HeroTop
@@ -136,6 +145,19 @@ export function NightViewScreen() {
               ]}
             />
           }
+          act={
+            <HeroAct
+              tone="calm"
+              testId="night-hero-act"
+              title="Hand over to the day team"
+              action={{
+                label: "Open handover",
+                phoneLabel: "Handover",
+                href: HANDOVER_HREF,
+                testId: "night-open-handover",
+              }}
+            />
+          }
         />
       </Hero>
 
@@ -145,7 +167,6 @@ export function NightViewScreen() {
             title={<span id="night-beds-title">Beds ready now</span>}
             icon={BedSingle}
             iconPlain
-            meta={`${beds.total} ready${networkWord}`}
             action={
               <Link href={CAPACITY_HREF} className={styles.headLink}>
                 Capacity
@@ -153,7 +174,7 @@ export function NightViewScreen() {
             }
           />
           {beds.wards.length === 0 ? (
-            <EmptyState title="No bed ready" meta={`Checked at ${formatInstant(now)}`} />
+            <EmptyState title="No bed ready" />
           ) : (
             <ul className={styles.rows} id="night-beds-list">
               {bedRows.rows.map(({ unit, ready }) => (
@@ -177,8 +198,7 @@ export function NightViewScreen() {
           {bedRows.more}
           {beds.wardsWithNone > 0 ? (
             <p className={styles.cardFoot}>
-              {beds.wardsWithNone} {beds.wardsWithNone === 1 ? "ward has" : "wards have"} no bed ready. Wards are in a
-              fixed order: health service, then name.
+              {beds.wardsWithNone} {beds.wardsWithNone === 1 ? "ward has" : "wards have"} no bed ready
             </p>
           ) : null}
         </Card>
@@ -188,7 +208,6 @@ export function NightViewScreen() {
             title={<span id="night-steps-title">ED waits by Step</span>}
             icon={Clock}
             iconPlain
-            meta={`${waits.waiting} waiting`}
             action={
               <Link href={WAITING_HREF} className={styles.headLink}>
                 Waiting
@@ -219,9 +238,6 @@ export function NightViewScreen() {
               </span>
             </li>
           </ul>
-          <p className={styles.cardFoot}>
-            {atStep} at a Step. Time in the department, as on the ED board. A Step is a prompt for a person to act.
-          </p>
         </Card>
 
         <Card aria-labelledby="night-moving-title" data-testid="night-on-the-way">
@@ -229,7 +245,6 @@ export function NightViewScreen() {
             title={<span id="night-moving-title">On the way</span>}
             icon={Ambulance}
             iconPlain
-            meta={`${onTheWay.length} moving`}
             action={
               <Link href={MOVEMENTS_HREF} className={styles.headLink}>
                 Movements
@@ -237,7 +252,7 @@ export function NightViewScreen() {
             }
           />
           {onTheWay.length === 0 ? (
-            <EmptyState title="Nobody on the way" meta={`Checked at ${formatInstant(now)}`} />
+            <EmptyState title="Nobody on the way" />
           ) : (
             <ul className={styles.rows} id="night-moving-list">
               {movingRows.rows.map((movement) => {
@@ -261,25 +276,11 @@ export function NightViewScreen() {
           {movingRows.more}
         </Card>
 
-        <Card aria-labelledby="night-intake-title" data-testid="night-intake-windows">
-          <CardHead
-            title={<span id="night-intake-title">Tonight&apos;s intake windows</span>}
-            icon={CalendarClock}
-            iconPlain
-          />
-          {/* Feature plan item 13 (overnight intake windows) is not built yet. Until wards record
-              their windows, this says so rather than showing a time nobody set. */}
-          <p className={styles.notRecorded} data-testid="night-intake-not-recorded">
-            Not recorded. Wards do not record overnight intake windows in BedChart yet.
-          </p>
-        </Card>
-
         <Card aria-labelledby="night-oncall-title" data-testid="night-on-call">
           <CardHead
-            title={<span id="night-oncall-title">On call now</span>}
+            title={<span id="night-oncall-title">On-call now</span>}
             icon={Phone}
             iconPlain
-            meta={`at ${formatInstant(now)}`}
             action={
               <Link href={ON_CALL_HREF} className={styles.headLink}>
                 On-call

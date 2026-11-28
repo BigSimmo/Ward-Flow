@@ -25,7 +25,13 @@
 .saveCell {
   display: flex;
   align-items: center;
+  gap: var(--wf-s-2);
   min-block-size: var(--wf-h-md);
+}
+
+/* Gate r10 FIX 4: Cancel then Save outage, 8px apart, centred on the 40px field line. */
+.saveCell > * {
+  flex: none;
 }
 
 .recordHint {
@@ -50,5 +56,16 @@
   .dayChoice,
   .saveCell {
     min-block-size: 40px;
+  }
+
+  /* Gate r10 FIX 5: "to" takes the full width like "from"; Cancel and Save share one row at the
+     right; the reason and the day sentence are the one quiet line under it. */
+  .toField.toField {
+    inline-size: 100%;
+  }
+
+  .saveCell {
+    flex: 1 0 100%;
+    justify-content: flex-end;
   }
 }

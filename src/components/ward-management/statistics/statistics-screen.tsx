@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
-import { Clock, Download, Search } from "lucide-react";
+import { Download } from "lucide-react";
 
 import {
   BarList,
@@ -19,6 +19,7 @@ import {
   HeroQuickChips,
   HeroTop,
   Spinner,
+  cx,
   useIsPhone,
 } from "@/components/wf";
 import {
@@ -31,7 +32,6 @@ import { serviceStatisticsHref } from "@/components/ward-management/shell/ward-f
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { axisMax } from "@/components/ward-management/statistics/statistics-axis";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
-import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { formatSheetMoment, dayOf, splitDuration } from "@/components/ward-management/ward-clock";
@@ -40,7 +40,6 @@ import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-l
 import { readyBedsNow, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { edStatisticsFigures } from "@/components/ward-management/statistics/statistics-ed-waits";
 import {
-  HEALTH_SERVICES,
   type BedRelease,
   type Movement,
   type Referral,
@@ -59,13 +58,15 @@ import {
   redesignStyles as redesign,
 } from "./redesign/statistics-redesign-parts";
 import { useStatisticsView } from "./statistics-view-bar";
-import { PhoneUnitFinder, StatisticsViewSwitch, useUnitFinder } from "./statistics-view-switch";
+import { StatisticsViewSwitch } from "./statistics-view-switch";
 import { LeadsViewSwitch, useViewSwitchAction } from "./statistics-view-switch-slot";
 import { StatisticsEdJourneysCard } from "./statistics-ed-journeys-card";
 import { StatisticsReferralsTodayCard } from "./statistics-referrals-today-card";
 import { StatisticsWardsCard, useWardTable } from "./statistics-wards-card";
+import { SHOW_WARDS_EVENT } from "./statistics-browse-slot";
+import { BrowseInitial, StatisticsBrowse, type BrowseSegment } from "./statistics-browse";
 import { arrivalBandsFor } from "./statistics-bands";
-import { median, shortSiteName, wardFinderEntry, type EdSortKey } from "./statistics-screen-parts";
+import { median, shortSiteName, type EdSortKey } from "./statistics-screen-parts";
 import { ReasonCounts, SmallNumberNote, noCountReleased } from "./statistics-count-list";
 import { windowLine } from "@/components/ward-management/figures/figure-windows";
 import {
@@ -108,7 +109,6 @@ import styles from "./statistics-v6.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { StatisticsCapacityChart } from "./statistics-capacity-chart";
 import { StatisticsHero, useStatisticsLive } from "./statistics-hero";
-import { setStatisticsSamples, useStatisticsSamples } from "./statistics-samples";
 import type { StatisticsExport } from "./statistics-csv";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { StatisticsSessionTrendsCard } from "./statistics-session-trends-card";
@@ -124,7 +124,6 @@ import {
   type SummarySlots,
   type SummaryEd,
 } from "./statistics-network-cards";
-import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { DECLINE_REASON_LABELS, isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
 import { occupancyShare, occupiedBeds } from "./statistics-occupancy";
@@ -141,7 +140,6 @@ import {
   withheldBar,
   type StatisticsCount,
 } from "./statistics-small-numbers";
-import type { FinderEntry, FinderKind } from "./statistics-unit-finder";
 
 /**
  * THE COORDINATOR STATISTICS SCREEN — the v6 Summary page.
@@ -164,13 +162,17 @@ type StatisticsInputs = {
   bedReleases?: BedRelease[];
   movements?: Movement[];
 };
-export function StatisticsScreen(props: StatisticsInputs = {}) {
+export function StatisticsScreen({ browse, ...props }: StatisticsInputs & { browse?: BrowseSegment } = {}) {
   const access = useEffectiveWardAccess();
   const control = useExecutiveStatisticsControl();
-  return control.executive || access.role === "executive" ? (
-    <ExecutiveStatisticsScreen />
-  ) : (
-    <OperationalStatisticsScreen {...props} />
+  return (
+    <BrowseInitial.Provider value={browse ?? null}>
+      {control.executive || access.role === "executive" ? (
+        <ExecutiveStatisticsScreen />
+      ) : (
+        <OperationalStatisticsScreen {...props} />
+      )}
+    </BrowseInitial.Provider>
   );
 }
 function ExecutiveStatisticsScreen() {
@@ -562,7 +564,6 @@ function StatisticsSummaryView({
   const {
     executive,
     eventLog,
-    directory,
     now,
     dayZero,
     paused,
@@ -610,8 +611,6 @@ function StatisticsSummaryView({
   // 30 Oct 2026): about 23 wards and 15 EDs sort and show more without one, and the header search
   // finds either by name.
   // D-91: the one unit finder, opened from "Open a unit" on the tab row.
-  const unitFinder = useUnitFinder();
-  const samples = useStatisticsSamples();
   // The page top (Josh, 9 Nov 2026): the place, the wards at or over the line, and the export.
   const overCount = allPressureWards.filter(
     (ward) => Math.round(ward.occupancyRate * 100) >= BED_ALERT_THRESHOLD_PERCENT,
@@ -678,32 +677,6 @@ function StatisticsSummaryView({
     return list;
   }, [isPhone, emergencyDepts, edSortCol, edSortAsc]);
 
-  // A phone shows the finder only when a link arrives at its anchor, so it skips building and
-  // sorting the lists until then. A bed manager's desk never shows it.
-  const phoneSkipsFinder = isPhone && (siteName !== undefined || !unitFinder.open);
-  const finderLists = useMemo<Record<FinderKind, FinderEntry[]>>(
-    () =>
-      phoneSkipsFinder
-        ? { ward: [], ed: [], service: [], team: [] }
-        : {
-            // D-126 (10 Nov 2026): a finder people search by name, so wards run A to Z, not most ready first.
-            ward: allPressureWards.map(wardFinderEntry).sort((left, right) => left.name.localeCompare(right.name)),
-            ed: emergencyDepts
-              .filter((ed) => directory === undefined || directory.edIds.includes(ed.id))
-              .map((ed) => ({
-                id: ed.id,
-                name: ed.name,
-                code: ed.site,
-                meta: String(statisticsCountText(ed.waiting, operationalSmall)) + " open ED movements",
-              })),
-            service: (directory?.services ?? HEALTH_SERVICES).map((name) => {
-              const count = allPressureWards.filter((ward) => siteByCode(ward.site)?.service === name).length;
-              return { id: name, name, meta: String(count) + (count === 1 ? " ward" : " wards") };
-            }),
-            team: directory?.teams ?? COMMUNITY_TEAM_PAGES.map((team) => ({ id: team.id, name: team.name })),
-          },
-    [phoneSkipsFinder, allPressureWards, emergencyDepts, directory, operationalSmall],
-  );
   usePrintableDisclosures();
   const { view, choose: chooseView } = useStatisticsView();
   // Role view (executive): a count the small number rule withholds reads "not shown". At a glance it
@@ -786,7 +759,7 @@ function StatisticsSummaryView({
   const heldUpCard = (
     <StatCardR
       id="held-up"
-      title="Discharges held up"
+      title="Discharges held up, by reason"
       foot={executive ? undefined : <Foot link={<MoreLink href="/bedchart/discharges">Open Discharges</MoreLink>} />}
       data-testid="ward-statistics-blocked-discharges-by-reason"
       meta={
@@ -980,19 +953,8 @@ function StatisticsSummaryView({
           paused={paused}
           onTogglePause={togglePause ?? undefined}
           services={model.services}
-          // Bed manager: no finder, as on the desktop.
-          onOpenUnit={siteName ? undefined : unitFinder.toggle}
-          unitFinderOpen={unitFinder.open}
           exportFigures={exportFigures}
         />
-        {/* Bed manager: no finder, as on the desktop. */}
-        {siteName ? null : (
-          <PhoneUnitFinder
-            open={unitFinder.open}
-            onClose={unitFinder.toggle}
-            finder={<StatisticsUnitFinder lists={finderLists} />}
-          />
-        )}
         {/* The phone summary closes the page's main landmark, so this card is its own landmark. Three
             hours and no total fit a phone's width without a sideways scroll. */}
         <aside className={trendStyles.phoneSlot} aria-label="This session">
@@ -1088,49 +1050,39 @@ function StatisticsSummaryView({
                         ? undefined
                         : {
                             label: "Show wards",
-                            onClick: () => document.getElementById("pressure")?.scrollIntoView?.({ block: "start" }),
+                            // Audit three #6: Show wards opens Browse on Wards with the "At or over"
+                            // chip on, so the count is said once here and filtered there.
+                            onClick: () => {
+                              wardTable.setWardOverLine(true);
+                              window.dispatchEvent(new Event(SHOW_WARDS_EVENT));
+                              (
+                                document.getElementById("browse") ?? document.getElementById("pressure")
+                              )?.scrollIntoView?.({
+                                block: "start",
+                              });
+                            },
                           }
                     }
                   />
                 }
+                // Audit two: Open a unit and its finder went (#118, Browse lists every unit) and
+                // Example history is a ticked item of the Share menu (#97), so the chip row holds
+                // Export only where no Share menu takes it, and is left out when empty.
                 chips={
-                  <HeroQuickChips
-                    label="Statistics tools"
-                    items={[
-                      // Bed manager: no Open a unit (its own wards are listed below).
-                      ...(siteName
-                        ? []
-                        : [
-                            {
-                              id: "unit",
-                              label: "Open a unit",
-                              icon: <Search size={16} strokeWidth={1.75} aria-hidden="true" />,
-                              onClick: unitFinder.toggle,
-                              expanded: unitFinder.open,
-                              testId: "ward-statistics-tool-open-unit",
-                            },
-                          ]),
-                      ...(exportNow
-                        ? [
-                            {
-                              id: "export",
-                              label: "Export",
-                              icon: <Download size={16} strokeWidth={1.75} aria-hidden="true" />,
-                              onClick: exportNow,
-                              testId: "ward-statistics-export",
-                            },
-                          ]
-                        : []),
-                      {
-                        id: "history",
-                        label: "Example history",
-                        icon: <Clock size={16} strokeWidth={1.75} aria-hidden="true" />,
-                        onClick: () => setStatisticsSamples(!samples),
-                        pressed: samples,
-                        testId: "ward-statistics-example-history",
-                      },
-                    ]}
-                  />
+                  exportNow ? (
+                    <HeroQuickChips
+                      label="Statistics tools"
+                      items={[
+                        {
+                          id: "export",
+                          label: "Export",
+                          icon: <Download size={16} strokeWidth={1.75} aria-hidden="true" />,
+                          onClick: exportNow,
+                          testId: "ward-statistics-export",
+                        },
+                      ]}
+                    />
+                  ) : undefined
                 }
               />
             ),
@@ -1156,14 +1108,7 @@ function StatisticsSummaryView({
           </p>
         )}
 
-        <StatisticsViewSwitch
-          view={view}
-          onChoose={chooseView}
-          // Bed manager: no Open a unit. The finder lists every ward, ED, service and team, and this desk
-          // opens only its own site's wards, which its wards table below already lists.
-          finder={siteName ? undefined : <StatisticsUnitFinder lists={finderLists} />}
-          finderOpen={unitFinder.open}
-        >
+        <StatisticsViewSwitch view={view} onChoose={chooseView}>
           {/* Each view's anchor exists whichever view shows, so its link always has a target. Each
               view's first card carries the switch in its head (LeadsViewSwitch). */}
           {view === "board" ? null : <div id="board" hidden />}
@@ -1182,12 +1127,23 @@ function StatisticsSummaryView({
                   every site as bed counts. */}
               {siteName ? <LeadsViewSwitch>{siteDetail}</LeadsViewSwitch> : null}
               {siteName ? slots.occupancy : <LeadsViewSwitch>{slots.occupancy}</LeadsViewSwitch>}
-              {/* Coordinator: the wards and EDs after the occupancy strip. */}
-              {siteName ? null : siteDetail}
+              {/* Coordinator: one Browse card after the occupancy strip (simplification mock-up, 26 Nov
+                  2026). Its Wards segment is the pressure table; EDs, Services and Teams are the
+                  index pages' bodies, so the separate ED card and the four index tabs fold in here. */}
+              {siteName ? null : (
+                <StatisticsBrowse
+                  wardCount={allPressureWards.length}
+                  wardsLead={
+                    <StatisticsWardsCard wards={allPressureWards} table={wardTable} siteName={siteName} small={small} />
+                  }
+                />
+              )}
 
+              {/* Empty to ready and Admission stages stack beside Referrals today (simplification
+                  mock-up, 26 Nov 2026), so neither short card is stretched to the tallest's height. */}
               <Grid layout="thirds">
                 {referralsToday}
-                {slots.flow}
+                <div className={cx(redesign.col, styles.flowCol)}>{slots.flow}</div>
               </Grid>
 
               {slots.waitingStages ? (

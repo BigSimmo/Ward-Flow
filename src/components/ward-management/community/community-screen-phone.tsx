@@ -79,7 +79,6 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
     declineDraft,
     setDeclineDraft,
     setActiveTab,
-    setActiveDrawer,
     setActiveModalType,
     setPendingAcceptance,
     setSwitchOpen,
@@ -287,7 +286,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
                   time: bedStateLabel(admission),
                   onSelect: patientId !== null ? () => openDossier(patientId) : undefined,
                   action: canBook
-                    ? { label: "Log transport", onAction: () => openTransportBook(admission.movementId!) }
+                    ? { label: "Record booking", onAction: () => openTransportBook(admission.movementId!) }
                     : ownBooking
                       ? { label: "Cancel booking", onAction: () => openTransportCancel(admission.movementId!) }
                       : undefined,
@@ -439,7 +438,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
                   disabledReason: communityDeclineBlockedReason(declineDraft),
                   onAction: () => handleConfirmDecline(phoneReferral.id, closePhoneReferral),
                 }
-              : { label: "Accept referral", onAction: () => handleConfirmAccept(phoneReferral.id) }
+              : { label: "Accept", onAction: () => handleConfirmAccept(phoneReferral.id) }
         }
         secondary={
           phoneDeclining
@@ -504,7 +503,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
                 <ReferralIntakeSummary intake={phoneReferral.intake} />
                 <div className={phoneCss.sheetActions}>
                   <Button size="sm" onClick={() => handleActionClick("Contacted", phoneReferral)}>
-                    Log team contact
+                    Record team contact
                   </Button>
                   <Button
                     size="sm"
@@ -514,7 +513,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
                       handleActionClick("Assign", phoneReferral);
                     }}
                   >
-                    Assign
+                    Hand to
                   </Button>
                   <Button
                     size="sm"
@@ -624,11 +623,6 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
         howToReach={howToReachPanel}
         onDuty={onDutyPanel}
         coverage={coveragePanel}
-        samples={[
-          { id: "activity", label: "Activity sample", onPress: () => setActiveDrawer("activityDrawer") },
-          { id: "tasks", label: "Alerts sample", onPress: () => setActiveDrawer("tasksDrawer") },
-          { id: "tools", label: "Tools sample", onPress: () => setActiveDrawer("toolsDrawer") },
-        ]}
         actions={[
           { id: "contact", label: "Record contact", icon: Phone, onPress: () => setActiveModalType("contact") },
           {

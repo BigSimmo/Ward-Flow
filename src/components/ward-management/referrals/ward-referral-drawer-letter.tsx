@@ -1,8 +1,6 @@
 "use client";
 
-import { CircleCheck, Copy, FileText, Info, ListChecks, Phone, Printer, Send, Users } from "lucide-react";
-import Link from "next/link";
-import { referralBoardHref } from "../ed/ed-bed-search-step";
+import { CircleCheck, Copy, FileText, Info, ListChecks, Phone, Printer, Send } from "lucide-react";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
@@ -93,7 +91,6 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
     decisionDueAt,
     letterInput,
     copyText,
-    onClose,
   } = s;
   const zone = useClockZoneLabel();
   return (
@@ -138,16 +135,6 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
                   </li>
                 ))}
               </ul>
-              <div className={styles.cardActions}>
-                <Link
-                  className={styles.btn}
-                  href={s.sentReferralId ? referralBoardHref(s.sentReferralId) : "/bedchart/referrals"}
-                  onClick={onClose}
-                >
-                  <Users aria-hidden="true" />
-                  View referrals board
-                </Link>
-              </div>
             </div>
           </section>
           {/* RF2 (Josh, 4 Nov 2026): the letter as sent, to copy, print or save as a PDF. */}
@@ -327,13 +314,19 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
           </section>
           <section className={styles.refCard}>
             <CardHead icon={Phone} title="Your contact details">
-              <UseMyDetailsButton
-                lookup={myProfile}
-                onFill={(details) => {
-                  setContact(details);
-                  announceToWardShell("Your details filled from your profile.");
-                }}
-              />
+              {/* Audit four 60: hidden when the boxes already hold the profile's details. */}
+              {myProfile.status === "available" &&
+              (["name", "role", "phone", "email", "location"] as const).every(
+                (key) => (contact[key] ?? "") === (myProfile.profile[key] ?? ""),
+              ) ? null : (
+                <UseMyDetailsButton
+                  lookup={myProfile}
+                  onFill={(details) => {
+                    setContact(details);
+                    announceToWardShell("Your details filled from your profile.");
+                  }}
+                />
+              )}
             </CardHead>
             <div className={styles.cardBody}>
               <ContactFields contact={contact} onChange={setContact} errors={contactErrors} />

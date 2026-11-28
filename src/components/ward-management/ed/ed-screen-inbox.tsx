@@ -116,7 +116,7 @@ export function EdInboxReferrals({ ctx }: { ctx: EdScreenContext }) {
                     setReferralDetailsOpenFor((current) => (current === referral.id ? undefined : referral.id))
                   }
                 >
-                  View referral <span aria-hidden="true">›</span>
+                  Open referral <span aria-hidden="true">›</span>
                 </button>
                 <div className={styles.referralDetails} hidden={referralDetailsOpenFor !== referral.id}>
                   <ReferralIntakeSummary intake={referral.intake} />

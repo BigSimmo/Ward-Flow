@@ -117,7 +117,6 @@ export function WaitingOwnerTiles({
               </span>
             ))}
           </span>
-          <span>Choose a group to show only its people.</span>
         </p>
       )}
     </section>

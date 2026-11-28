@@ -1,6 +1,8 @@
 "use client";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { shortcutSectionsForDesk } from "@/components/ward-management/help/ward-help-content";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { Checkbox, ShowMoreRow as OneShowMoreRow } from "@/components/wf";
 
 import styles from "./handover-sheet-parts.module.css";
@@ -40,14 +42,6 @@ export function signOffWaitReason(passed: boolean, nextShift: boolean): string |
   return undefined;
 }
 
-const KEYS: [string, string][] = [
-  ["J K", "Step through patients"],
-  ["P", "Print handover"],
-  ["S", "Sign off"],
-  ["M", "Start or stop the meeting timer"],
-  ["Esc", "Close or go back"],
-];
-
 /**
  * A handover meeting's length on the board clock, in the whole minutes History records (time audit
  * C9; mechanics and clock audit CC-6, 14 Nov 2026). The chip and History read this one rule, so a
@@ -72,6 +66,7 @@ export function HandoverKeysHelp({
   onEnabledChange: (enabled: boolean) => void;
   signOff: boolean;
 }) {
+  const sections = shortcutSectionsForDesk(useEffectiveWardAccess().role, "Handover", { signOff });
   return (
     <>
       <Checkbox
@@ -80,16 +75,26 @@ export function HandoverKeysHelp({
         onChange={(event) => onEnabledChange(event.target.checked)}
       />
       <p>Applies across BedChart in this browser.</p>
-      <dl className={refined.keys}>
-        {KEYS.filter(([keys]) => signOff || keys !== "S").map(([keys, text]) => (
-          <div key={keys}>
-            <dt>
-              <kbd>{keys}</kbd>
-            </dt>
-            <dd>{text}</dd>
-          </div>
+      {/* Audit two (#82): the one shared list, this page's keys first; the switch above stays here. */}
+      <div className={refined.keysScroll}>
+        {sections.map((section) => (
+          <section key={section.group} aria-label={section.group}>
+            <h3 className={refined.keysGroup}>{section.group}</h3>
+            <dl className={refined.keys}>
+              {section.rows.map(({ keys, short }) => (
+                <div key={keys}>
+                  <dt>
+                    {keys.split(" ").map((part) => (
+                      <kbd key={part}>{part}</kbd>
+                    ))}
+                  </dt>
+                  <dd>{short}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
         ))}
-      </dl>
+      </div>
     </>
   );
 }

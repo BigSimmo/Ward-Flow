@@ -8,12 +8,20 @@ import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { hasOpenSheet, topSheetRoot } from "@/components/wf/sheet-focus";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ClipboardCopy, Download, Map as MapIcon, Search } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardCopy,
+  Download,
+  Map as MapIcon,
+  Search,
+  Share2,
+} from "lucide-react";
 
 import {
   Button,
   Card,
-  CardFoot,
   EmptyState,
   FolderTabs,
   Hero,
@@ -22,7 +30,9 @@ import {
   HeroFigures,
   HeroQuickChips,
   HeroTop,
+  Icon,
   LiveChip,
+  Menu,
   PanelDrawer,
   Segmented,
   SrOnly,
@@ -32,6 +42,7 @@ import {
   TextInput,
   cx,
   folderTabClasses,
+  heroChipClassName,
   tableClasses,
   type WfTone,
   useIsPhone,
@@ -453,7 +464,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       {
         success: `${recorded}${movementFeedback}`,
         undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
-        undone: `Return undone for ${patientOf(entry).formalName}. Nothing is recorded.`,
+        undone: `Undone: Return for ${patientOf(entry).formalName} · Nothing is recorded`,
       },
     );
   }
@@ -492,7 +503,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       {
         success: sentNotice,
         undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
-        undone: `Return undone for ${patientOf(entry).formalName}. Nothing is recorded.`,
+        undone: `Undone: Return for ${patientOf(entry).formalName} · Nothing is recorded`,
       },
     );
   }
@@ -525,7 +536,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         success: agreedNotice,
         undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
         // Undo takes back only the agreement: the sent plan stays, awaiting the receiving ward.
-        undone: `Ward agreement undone for ${patientOf(entry).formalName}. The return plan is back to awaiting the receiving ward.`,
+        undone: `Undone: Ward agreement for ${patientOf(entry).formalName} · The return plan is back to awaiting the receiving ward`,
       },
     );
   }
@@ -537,9 +548,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     runStep(
       { type: "FLAG_RETURN_EARLY", role: "coordinator", now, admissionId, homeHospital },
       {
-        success: `Flagged early for ${patientOf(entry).formalName}. The receiving ward at ${hospital}, the home team and Transport can see it.`,
+        success: `Flagged early for ${patientOf(entry).formalName}. The receiving ward at ${hospital}, the home team and Transport can see it`,
         undo: (at) => ({ type: "UNDO_FLAG_RETURN_EARLY", role: "coordinator", now: at, admissionId }),
-        undone: `Early return flag undone for ${patientOf(entry).formalName}.`,
+        undone: `Undone: Flagged early for ${patientOf(entry).formalName}`,
       },
     );
   }
@@ -548,7 +559,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     const admissionId = entry.admission.id;
     runStep(
       { type: "UNDO_FLAG_RETURN_EARLY", role: "coordinator", now, admissionId },
-      { success: `Early return flag undone for ${patientOf(entry).formalName}.` },
+      { success: `Undone: Flagged early for ${patientOf(entry).formalName}` },
     );
   }
 
@@ -710,6 +721,33 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       <SrOnly>Out of area:</SrOnly> {entries.length} away <span className={pageTop.titleSoft}>from home</span>
     </>
   );
+  const shareMenu = (
+    <Menu
+      label="Share"
+      align="end"
+      items={[
+        {
+          id: "copy",
+          label: <span data-testid="ward-out-of-area-copy">Copy for bed meeting</span>,
+          icon: ClipboardCopy,
+          onSelect: copySummary,
+        },
+        {
+          id: "export",
+          label: <span data-testid="ward-out-of-area-export">Export list</span>,
+          icon: Download,
+          onSelect: exportList,
+        },
+      ]}
+      trigger={(props) => (
+        <button type="button" {...props} className={heroChipClassName} data-testid="ward-out-of-area-share">
+          <Icon icon={Share2} size={16} />
+          <span>Share</span>
+          <Icon icon={ChevronDown} size={14} />
+        </button>
+      )}
+    />
+  );
   const heroAside = (
     <>
       {toolNote && !isPhone ? (
@@ -717,6 +755,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           {toolNote}
         </span>
       ) : null}
+      {isPhone ? null : shareMenu}
       <LiveChip state="live" onHero age={formatInstant(now)} />
     </>
   );
@@ -742,7 +781,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
               pressed: highlight === "noplan",
               testId: "ward-out-of-area-figure-noplan",
             },
-            { id: "bed-days", value: bedDays, label: bedDays === 1 ? "bed day" : "bed days" },
           ]}
         />
       }
@@ -764,28 +802,25 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         )
       }
       chips={
-        <HeroQuickChips
-          label="Out of area actions"
-          items={[
-            {
-              id: "copy",
-              label: isPhone ? "Copy for bed meeting" : "Copy bed meeting summary",
-              icon: <ClipboardCopy strokeWidth={1.75} aria-hidden="true" />,
-              onClick: copySummary,
-              testId: "ward-out-of-area-copy",
-            },
-            {
-              id: "export",
-              label: isPhone ? "Export list" : "Export list as CSV",
-              icon: <Download strokeWidth={1.75} aria-hidden="true" />,
-              onClick: exportList,
-              testId: "ward-out-of-area-export",
-            },
-          ]}
-        />
+        // Design review (27 Nov 2026): on a tablet or laptop Share sits at the title row's right end
+        // (in the hero's aside), so only the phone keeps it as a chip row.
+        isPhone ? (
+          <HeroQuickChips
+            label="Out of area actions"
+            // Audit two #28: Copy summary and Export are one Share chip.
+            items={[{ id: "share", label: "Share", node: shareMenu }]}
+          />
+        ) : undefined
       }
       band={
-        <DaysAwayBand entries={entries} now={now} longest={longest} highlight={highlight} onToggle={toggleHighlight} />
+        <DaysAwayBand
+          entries={entries}
+          now={now}
+          bedDays={bedDays}
+          longest={longest}
+          highlight={highlight}
+          onToggle={toggleHighlight}
+        />
       }
     />
   );
@@ -834,6 +869,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             onClose={() => setSelectedId(null)}
             toolNote={toolNote}
             renderPlan={(entry) => renderPlan(entry, undefined, "ward-out-of-area-phone-plan")}
+            history={<HistoryList records={repatriations} entries={entries} patientOf={patientOf} now={now} />}
+            historyCount={repatriations.length}
             shift={
               <ShiftCard
                 idPrefix="ward-out-of-area-phone"
@@ -975,14 +1012,14 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
               { id: "history", label: "History", count: repatriations.length || undefined },
             ]}
           />
-          {tab === "now" ? (
+          {tab === "now" &&
+          (["air", "road", "notagreed", "bed"] as const).some((key) => countOf(key) > 0 || highlight === key) ? (
             <>
               <span className={folderTabClasses.rule} aria-hidden="true" />
               <div className={cx(folderTabClasses.filters, styles.pills)} role="group" aria-label="Highlight people">
-                {pill("due", "Date passed")}
+                {/* Audit two #69: Date passed and No plan are the hero's figures, so they are not repeated here. */}
                 {pill("air", "Air only")}
                 {pill("road", TRAVEL_SHORT.three_hours_or_more)}
-                {pill("noplan", "No plan")}
                 {pill("notagreed", "Not agreed")}
                 {pill("bed", "Awaiting home bed")}
               </div>
@@ -990,281 +1027,303 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           ) : null}
         </FolderTabs>
 
-        <div className={styles.layout}>
-          <Card
-            className={styles.registerCard}
-            aria-labelledby="ward-out-of-area-entries-title"
-            data-testid="ward-out-of-area-entries"
-          >
-            <h2 id="ward-out-of-area-entries-title" className="sr-only">
-              Away from home register
-            </h2>
-            <div className={styles.toolbar}>
-              {tab === "now" ? (
-                <span className={styles.toolbarTools}>
-                  <TextInput
-                    ref={searchRef}
-                    icon={Search}
-                    boxClassName={styles.searchBox}
-                    placeholder="Name, UMRN or ward"
-                    aria-label="Highlight people by name, UMRN or ward"
-                    value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    onClear={() => setSearchQuery("")}
-                  />
-                  <Segmented
-                    label="Sort placements"
-                    value={sortOrder}
-                    onChange={setSortOrder}
-                    items={[
-                      { id: "ledger", label: "Ledger" },
-                      { id: "days", label: "Days away" },
-                      { id: "patient", label: "Name" },
-                    ]}
-                  />
+        {tab === "now" && entries.length === 0 ? (
+          // Audit three #68 (mock-up): nobody away, so every figure is zero. The register and the three
+          // overview cards give way to one empty state; the hero stays, and so does the line that says
+          // how many have no travel time recorded (D-174).
+          <Card className={styles.emptyCard} data-testid="ward-out-of-area-empty-state">
+            <EmptyState
+              icon={MapIcon}
+              title="Nobody is in a bed far from home"
+              meta={
+                <span data-testid="ward-out-of-area-empty">
+                  {notBanded > 0
+                    ? `${notBanded} ${notBanded === 1 ? "person has" : "people have"} no travel time recorded. Checked at ${formatInstant(now)}.`
+                    : `Every record has a travel time. Checked at ${formatInstant(now)}.`}
                 </span>
-              ) : null}
-            </div>
-            {counts}
-
-            {tab === "history" ? (
-              <div
-                role="tabpanel"
-                id="ward-out-of-area-view-panel-history"
-                aria-labelledby="ward-out-of-area-view-tab-history"
-              >
-                <HistoryList records={repatriations} entries={entries} patientOf={patientOf} now={now} />
-              </div>
-            ) : (
-              <div role="tabpanel" id="ward-out-of-area-view-panel-now" aria-labelledby="ward-out-of-area-view-tab-now">
-                <div className={styles.hlLine}>
-                  <span aria-live="polite">
-                    {anyHighlight ? (
-                      <>
-                        <b className={styles.mono}>{highlightedCount}</b> of {entries.length}{" "}
-                        <SrOnly>synthetic records</SrOnly> highlighted, all rows stay
-                      </>
-                    ) : (
-                      <>{entries.length} synthetic records</>
-                    )}
-                    {legalMissing > 0 ? (
-                      <span data-testid="ward-out-of-area-legal-missing">
-                        {" "}
-                        · Legal not recorded for <b className={styles.mono}>{legalMissing}</b>
-                      </span>
-                    ) : null}
+              }
+              action={
+                repatriations.length > 0 ? (
+                  <Button variant="sec" size="sm" onClick={() => setTab("history")}>
+                    {repatriations.length === 1 ? "See 1 return" : `See ${repatriations.length} returns`}
+                  </Button>
+                ) : undefined
+              }
+            />
+          </Card>
+        ) : (
+          <div className={styles.layout}>
+            <Card
+              className={styles.registerCard}
+              aria-labelledby="ward-out-of-area-entries-title"
+              data-testid="ward-out-of-area-entries"
+            >
+              <h2 id="ward-out-of-area-entries-title" className="sr-only">
+                Away from home register
+              </h2>
+              <div className={styles.toolbar}>
+                {tab === "now" ? (
+                  <span className={styles.toolbarTools}>
+                    <TextInput
+                      ref={searchRef}
+                      icon={Search}
+                      boxClassName={styles.searchBox}
+                      placeholder="Name, UMRN or ward"
+                      aria-label="Highlight people by name, UMRN or ward"
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      onClear={() => setSearchQuery("")}
+                    />
+                    <Segmented
+                      label="Sort placements"
+                      value={sortOrder}
+                      onChange={setSortOrder}
+                      items={[
+                        { id: "ledger", label: "Ledger" },
+                        { id: "days", label: "Days away" },
+                        { id: "patient", label: "Name" },
+                      ]}
+                    />
                   </span>
-                  {anyHighlight ? (
-                    <Button variant="ghost" size="sm" onClick={clearHighlights}>
-                      Clear
-                    </Button>
-                  ) : null}
-                  <span className={styles.keys} aria-hidden="true" data-kbd-hint="">
-                    Press <kbd>/</kbd> to search, <kbd>J</kbd> <kbd>K</kbd> to move
-                  </span>
-                </div>
-                {entries.length === 0 ? (
-                  <p className={styles.emptyNote} data-testid="ward-out-of-area-empty">
-                    {outOfAreaEmptyLine(notBanded)}
-                  </p>
                 ) : (
-                  <WardTable
-                    className={cx(tableClasses.table, styles.table)}
-                    wrapperClassName={styles.tableScroll}
-                    testId="ward-out-of-area-table"
-                    ariaLabel="Out-of-area placement register"
-                  >
-                    <colgroup>
-                      <col className={styles.colPatient} />
-                      <col className={styles.colRegion} />
-                      <col className={styles.colPlace} />
-                      <col className={styles.colDischarge} />
-                      {planVaries ? <col className={styles.colReturn} /> : null}
-                      <col className={styles.colDays} />
-                    </colgroup>
-                    <thead>
-                      <tr>
-                        <th scope="col">Patient</th>
-                        <th scope="col">Home region</th>
-                        <th scope="col">Placement</th>
-                        <th scope="col">Discharge</th>
-                        {planVaries ? <th scope="col">Return</th> : null}
-                        <th scope="col" className={cx(tableClasses.num, styles.daysHead)}>
-                          Days away
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sorted.map((entry) => {
-                        const info = patientOf(entry);
-                        const href = getPatientProfileHref(info);
-                        const site = siteByCode(entry.unit.siteCode);
-                        const isSelected = entry.admission.id === selectedId;
-                        const lit = isHighlighted(entry);
-                        const offset = offsetOf(entry);
-                        const status = statusOf(entry);
-                        const record = recordOf(entry.admission.id);
-                        return (
-                          <tr
-                            key={entry.admission.id}
-                            data-testid={`ward-out-of-area-row-${entry.admission.id}`}
-                            data-highlighted={lit || undefined}
-                            data-dim={anyHighlight && !lit ? "true" : undefined}
-                            className={cx(styles.row, isSelected && tableClasses.selected)}
-                            aria-selected={isSelected}
-                            tabIndex={0}
-                            aria-label={`View placement detail for ${info.formalName} (${info.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
-                            onClick={(event) => selectPlacement(entry.admission.id, event.currentTarget)}
-                            onKeyDown={(event) => {
-                              if (
-                                event.target === event.currentTarget &&
-                                (event.key === "Enter" || event.key === " ")
-                              ) {
-                                event.preventDefault();
-                                selectPlacement(entry.admission.id, event.currentTarget);
-                              }
-                            }}
-                          >
-                            <td>
-                              <span className={styles.two}>
-                                <b title={info.formalName}>{info.formalName}</b>
-                                <span className={styles.legalUmrn}>
-                                  {/* UX audit (21 Oct 2026): a stay with none recorded says so in the table,
+                  // Gate r10 FIX 7: the History card's head names its list instead of an empty band.
+                  <h3 className={styles.toolbarTitle}>Returns this session</h3>
+                )}
+              </div>
+              {counts}
+
+              {tab === "history" ? (
+                <div
+                  role="tabpanel"
+                  id="ward-out-of-area-view-panel-history"
+                  aria-labelledby="ward-out-of-area-view-tab-history"
+                >
+                  <HistoryList records={repatriations} entries={entries} patientOf={patientOf} now={now} />
+                </div>
+              ) : (
+                <div
+                  role="tabpanel"
+                  id="ward-out-of-area-view-panel-now"
+                  aria-labelledby="ward-out-of-area-view-tab-now"
+                >
+                  <div className={styles.hlLine}>
+                    <span aria-live="polite">
+                      {anyHighlight ? (
+                        <>
+                          <b className={styles.mono}>{highlightedCount}</b> of {entries.length}{" "}
+                          <SrOnly>synthetic records</SrOnly> highlighted, all rows stay
+                        </>
+                      ) : (
+                        <>{entries.length} synthetic records</>
+                      )}
+                      {legalMissing > 0 ? (
+                        <span data-testid="ward-out-of-area-legal-missing">
+                          {" "}
+                          · Legal not recorded for <b className={styles.mono}>{legalMissing}</b>
+                        </span>
+                      ) : null}
+                    </span>
+                    {anyHighlight ? (
+                      <Button variant="ghost" size="sm" onClick={clearHighlights}>
+                        Clear
+                      </Button>
+                    ) : null}
+                    <span className={styles.keys} aria-hidden="true" data-kbd-hint="">
+                      Press <kbd>/</kbd> to search, <kbd>J</kbd> <kbd>K</kbd> to move
+                    </span>
+                  </div>
+                  {entries.length === 0 ? (
+                    <p className={styles.emptyNote} data-testid="ward-out-of-area-empty">
+                      {outOfAreaEmptyLine(notBanded)}
+                    </p>
+                  ) : (
+                    <WardTable
+                      className={cx(tableClasses.table, styles.table)}
+                      wrapperClassName={styles.tableScroll}
+                      testId="ward-out-of-area-table"
+                      ariaLabel="Out-of-area placement register"
+                    >
+                      <colgroup>
+                        <col className={styles.colPatient} />
+                        <col className={styles.colRegion} />
+                        <col className={styles.colPlace} />
+                        <col className={styles.colDischarge} />
+                        {planVaries ? <col className={styles.colReturn} /> : null}
+                        <col className={styles.colDays} />
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th scope="col">Patient</th>
+                          <th scope="col">Home region</th>
+                          <th scope="col">Placement</th>
+                          <th scope="col">Discharge</th>
+                          {planVaries ? <th scope="col">Return</th> : null}
+                          <th scope="col" className={cx(tableClasses.num, styles.daysHead)}>
+                            Days away
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sorted.map((entry) => {
+                          const info = patientOf(entry);
+                          const href = getPatientProfileHref(info);
+                          const site = siteByCode(entry.unit.siteCode);
+                          const isSelected = entry.admission.id === selectedId;
+                          const lit = isHighlighted(entry);
+                          const offset = offsetOf(entry);
+                          const status = statusOf(entry);
+                          const record = recordOf(entry.admission.id);
+                          return (
+                            <tr
+                              key={entry.admission.id}
+                              data-testid={`ward-out-of-area-row-${entry.admission.id}`}
+                              data-highlighted={lit || undefined}
+                              data-dim={anyHighlight && !lit ? "true" : undefined}
+                              className={cx(styles.row, isSelected && tableClasses.selected)}
+                              aria-selected={isSelected}
+                              tabIndex={0}
+                              aria-label={`View placement detail for ${info.formalName} (${info.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
+                              onClick={(event) => selectPlacement(entry.admission.id, event.currentTarget)}
+                              onKeyDown={(event) => {
+                                if (
+                                  event.target === event.currentTarget &&
+                                  (event.key === "Enter" || event.key === " ")
+                                ) {
+                                  event.preventDefault();
+                                  selectPlacement(entry.admission.id, event.currentTarget);
+                                }
+                              }}
+                            >
+                              <td>
+                                <span className={styles.two}>
+                                  <b title={info.formalName}>{info.formalName}</b>
+                                  <span className={styles.legalUmrn}>
+                                    {/* UX audit (21 Oct 2026): a stay with none recorded says so in the table,
                                       so the gap shows before a return trip is planned. Design audit B18
                                       (5 Nov 2026), drawer review (6 Nov 2026): the dot stays with the legal
                                       words, so a wrapped line never starts with a dot. */}
-                                  {/* Josh, 9 Nov 2026: "Legal not recorded" is said once above the table
+                                    {/* Josh, 9 Nov 2026: "Legal not recorded" is said once above the table
                                       with its count, not on every row; a recorded status still shows here. */}
-                                  {legalOf(entry) ? (
-                                    <>
-                                      <span className={styles.umrnPair}>
-                                        {legalOf(entry)}
-                                        <span aria-hidden="true"> ·</span>
-                                      </span>{" "}
-                                    </>
-                                  ) : null}
-                                  <span className={styles.umrnPair}>
-                                    {href ? (
-                                      <Link
-                                        href={href}
-                                        className={styles.umrnLink}
-                                        onClick={(event) => event.stopPropagation()}
-                                        title={`Open profile for ${info.formalName} (${info.umrn})`}
-                                      >
-                                        {info.umrn}
-                                      </Link>
-                                    ) : (
-                                      <span className={styles.mono}>{info.umrn}</span>
-                                    )}
+                                    {legalOf(entry) ? (
+                                      <>
+                                        <span className={styles.umrnPair}>
+                                          {legalOf(entry)}
+                                          <span aria-hidden="true"> ·</span>
+                                        </span>{" "}
+                                      </>
+                                    ) : null}
+                                    <span className={styles.umrnPair}>
+                                      {href ? (
+                                        <Link
+                                          href={href}
+                                          className={styles.umrnLink}
+                                          onClick={(event) => event.stopPropagation()}
+                                          title={`Open profile for ${info.formalName} (${info.umrn})`}
+                                        >
+                                          {info.umrn}
+                                        </Link>
+                                      ) : (
+                                        <span className={styles.mono}>{info.umrn}</span>
+                                      )}
+                                    </span>
                                   </span>
                                 </span>
-                              </span>
-                            </td>
-                            <td>
-                              <span className={styles.two}>
-                                <span className={styles.cellText}>{entry.admission.homeRegion}</span>
-                                <span className={styles.travel} title={TRAVEL_BAND_LABELS[entry.band]}>
-                                  <TravelIcon entry={entry} />
-                                  <span aria-hidden="true">{TRAVEL_SHORT[entry.band]}</span>
-                                  <SrOnly>{TRAVEL_BAND_LABELS[entry.band]}</SrOnly>
-                                </span>
-                              </span>
-                            </td>
-                            <td>
-                              <span className={styles.two}>
-                                <span className={styles.cellText} title={entry.unit.name}>
-                                  {entry.unit.name}
-                                </span>
-                                <span title={site?.name}>{site ? shortSiteName(site.code) : "Site not recorded"}</span>
-                              </span>
-                            </td>
-                            <td>
-                              <span className={styles.two}>
-                                <span className={cx(styles.status, offset !== null && offset < 0 && styles.inkWarning)}>
-                                  {offset === null ? (
-                                    <StatusGlyph tone="neutral" size={9} />
-                                  ) : offset < 0 ? (
-                                    <StatusGlyph tone="warning" size={9} />
-                                  ) : null}
-                                  {dischargeText(offset)}
-                                </span>
-                                <span title={entry.admission.blockReason ?? undefined}>
-                                  {entry.admission.blockReason ??
-                                    (entry.admission.expectedDischargeAt === null
-                                      ? "Not set"
-                                      : dateOf(entry.admission.expectedDischargeAt, dayZero))}
-                                </span>
-                              </span>
-                            </td>
-                            {planVaries ? (
-                              <td>
-                                <ReturnCell
-                                  status={status}
-                                  record={record}
-                                  left={missingAnswers(draftFor(entry.admission.id)).length}
-                                />
                               </td>
-                            ) : null}
-                            <td className={cx(tableClasses.num, styles.away)}>{sinceArrivalLabel(entry, now)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </WardTable>
-                )}
-                <CardFoot
-                  meta={
-                    <span className={styles.footNote}>
-                      <StatusGlyph tone="neutral" size={9} />
-                      <span>
-                        <b>{bedDays}</b> {bedDays === 1 ? "bed day" : "bed days"} across {entries.length}{" "}
-                        {entries.length === 1 ? "person" : "people"}
-                      </span>
-                    </span>
-                  }
-                >
-                  <Button variant="sec" size="sm" icon={Download} onClick={exportList} disabled={entries.length === 0}>
-                    Export list
-                  </Button>
-                </CardFoot>
-              </div>
-            )}
-          </Card>
+                              <td>
+                                <span className={styles.two}>
+                                  <span className={styles.cellText}>{entry.admission.homeRegion}</span>
+                                  <span className={styles.travel} title={TRAVEL_BAND_LABELS[entry.band]}>
+                                    <TravelIcon entry={entry} />
+                                    <span aria-hidden="true">{TRAVEL_SHORT[entry.band]}</span>
+                                    <SrOnly>{TRAVEL_BAND_LABELS[entry.band]}</SrOnly>
+                                  </span>
+                                </span>
+                              </td>
+                              <td>
+                                <span className={styles.two}>
+                                  <span className={styles.cellText} title={entry.unit.name}>
+                                    {entry.unit.name}
+                                  </span>
+                                  <span title={site?.name}>
+                                    {site ? shortSiteName(site.code) : "Site not recorded"}
+                                  </span>
+                                </span>
+                              </td>
+                              <td>
+                                <span className={styles.two}>
+                                  <span
+                                    className={cx(styles.status, offset !== null && offset < 0 && styles.inkWarning)}
+                                  >
+                                    {offset === null ? (
+                                      <StatusGlyph tone="neutral" size={9} />
+                                    ) : offset < 0 ? (
+                                      <StatusGlyph tone="warning" size={9} />
+                                    ) : null}
+                                    {dischargeText(offset)}
+                                  </span>
+                                  <span title={entry.admission.blockReason ?? undefined}>
+                                    {entry.admission.blockReason ??
+                                      (entry.admission.expectedDischargeAt === null
+                                        ? "Not set"
+                                        : dateOf(entry.admission.expectedDischargeAt, dayZero))}
+                                  </span>
+                                </span>
+                              </td>
+                              {planVaries ? (
+                                <td>
+                                  <ReturnCell
+                                    status={status}
+                                    record={record}
+                                    left={missingAnswers(draftFor(entry.admission.id)).length}
+                                  />
+                                </td>
+                              ) : null}
+                              <td className={cx(tableClasses.num, styles.away)}>{sinceArrivalLabel(entry, now)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </WardTable>
+                  )}
+                </div>
+              )}
+            </Card>
 
-          {/* Drawer review (6 Nov 2026): the overview cards sit in a row under the register, not a
+            {/* Drawer review (6 Nov 2026): the overview cards sit in a row under the register, not a
               sticky rail with its own scroll, so the register keeps the full width. A chosen person's
               plan opens in the drawer over the page. */}
-          <div className={styles.side}>
-            <ShiftCard
-              idPrefix="ward-out-of-area"
-              label={shiftLabel(now)}
-              returns={shiftReturns}
-              leaving={leavingToday.length}
-              dueSoon={dueSoon}
-              onPick={(id) => selectPlacement(id)}
-            />
-            <HomeBedsCard
-              idPrefix="ward-out-of-area"
-              rows={regionRows}
-              region={region}
-              onRegion={toggleRegion}
-              foldUnchosen
-            />
-            {/* Pressing Date passed lights the same people in the register, so the list steps aside. */}
-            {highlight === "due" ? null : (
-              <ReadyCard
+            <div className={styles.side}>
+              <ShiftCard
                 idPrefix="ward-out-of-area"
-                // The open plan drawer carries the subject test id while a person is chosen.
-                testId={selected ? "ward-out-of-area-ready" : "ward-out-of-area-subject"}
-                bodyTestId="ward-out-of-area-subject-empty"
-                rows={readyRows}
-                started={startedRows}
+                label={shiftLabel(now)}
+                returns={shiftReturns}
+                leaving={leavingToday.length}
+                dueSoon={dueSoon}
                 onPick={(id) => selectPlacement(id)}
               />
-            )}
+              <HomeBedsCard
+                idPrefix="ward-out-of-area"
+                rows={regionRows}
+                region={region}
+                onRegion={toggleRegion}
+                foldUnchosen
+              />
+              {/* Pressing Date passed lights the same people in the register, so the list steps aside. */}
+              {highlight === "due" ? null : (
+                <ReadyCard
+                  idPrefix="ward-out-of-area"
+                  // The open plan drawer carries the subject test id while a person is chosen.
+                  testId={selected ? "ward-out-of-area-ready" : "ward-out-of-area-subject"}
+                  bodyTestId="ward-out-of-area-subject-empty"
+                  rows={readyRows}
+                  started={startedRows}
+                  onPick={(id) => selectPlacement(id)}
+                />
+              )}
+            </div>
+            {planDrawer}
           </div>
-          {planDrawer}
-        </div>
+        )}
 
         <WardPrototypeFooter
           testId="ward-out-of-area-governance"
@@ -1317,17 +1376,20 @@ const DAYS_AWAY_SHORT: Record<string, string> = { under7: "<7", week: "7–29", 
 
 /**
  * Days away, in the four display groups, as the hero's band (page tops, 9 Nov 2026). Each cell
- * highlights its rows; the aside names the longest stay away.
+ * highlights its rows; the aside holds the bed days (once a hero figure and the register's foot
+ * line) and names the longest stay away.
  */
 function DaysAwayBand({
   entries,
   now,
+  bedDays,
   longest,
   highlight,
   onToggle,
 }: {
   entries: OutOfAreaEntry[];
   now: Instant;
+  bedDays: number;
   longest: number;
   highlight: HighlightKey | null;
   onToggle: (key: HighlightKey) => void;
@@ -1337,9 +1399,10 @@ function DaysAwayBand({
       title="Days away"
       testId="ward-out-of-area-days-away"
       aside={
-        <>
-          longest <b>{longest}</b> {longest === 1 ? "day" : "days"}
-        </>
+        <span data-testid="ward-out-of-area-bed-days">
+          <b>{bedDays}</b> {bedDays === 1 ? "bed day" : "bed days"} · longest <b>{longest}</b>{" "}
+          {longest === 1 ? "day" : "days"}
+        </span>
       }
       cells={DAYS_AWAY_GROUPS.map((group) => {
         const key = `age:${group.id}` as HighlightKey;

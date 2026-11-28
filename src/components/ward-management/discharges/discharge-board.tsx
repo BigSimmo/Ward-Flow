@@ -1,16 +1,29 @@
 "use client";
 
 import { WardPeekButton } from "@/components/ward-management/board/ward-peek";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
-import { ChevronDown, ChevronRight, Copy, FileText, Filter, Printer, Send, TrendingUp, Ambulance } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Download,
+  FileText,
+  Filter,
+  Printer,
+  Send,
+  Share2,
+  TrendingUp,
+  Ambulance,
+} from "lucide-react";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
+import { type LeavingDestination } from "@/components/ward-management/ward-admissions";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { MINUTES_PER_DAY, formatInstant, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
+import { DownloadRefusedError } from "@/components/ward-management/ward-download";
 import {
   Button,
   Card,
@@ -24,7 +37,10 @@ import {
   HeroFigures,
   HeroQuickChips,
   HeroTop,
+  heroChipClassName,
+  Icon,
   LiveChip,
+  Menu,
   PanelDrawer,
   PhoneSheet,
   ShowMoreRow,
@@ -84,12 +100,13 @@ import {
 } from "./discharge-detail-panes";
 import { useDischargeDeskView } from "./discharge-desk-view";
 import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
-import { useDischargeDepartureField } from "./discharge-departure-field";
+import { DischargeRecordDeparture, useDischargeDepartureField } from "./discharge-departure-field";
 import { dischargeChartDays } from "./discharge-chart-days";
 // Closing-the-loop package B (24 Oct 2026): the weekend and holiday list. Since the redesign (approved
 // 31 Oct 2026) it is a compact notice ABOVE the list, so it loads with the board: loaded lazily, the
 // server's copy vanished on hydration and came back, and the whole list jumped (layout shift 0.21).
 import { DischargeWeekendPrep } from "./discharge-weekend-prep";
+import { DischargeWeekendCard } from "./discharge-weekend-card";
 import { DischargeWeekendReview } from "./discharge-weekend-review-card";
 import { weekendReviewLeads } from "./discharge-weekend-review";
 import { DischargeSlippingList } from "./discharge-slipping-list";
@@ -185,12 +202,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     barrierCounts: nowView ? heldUpByReason(groups.blocked) : base.barrierCounts,
   };
   // Josh, 30 Oct: a row's button opens the release panel on the part it names.
-  const openCounter = useRef(0);
+  const [slippingOpen, setSlippingOpen] = useState(false);
   const [openOn, setOpenOn] = useState<{ releaseId: string; part: ReleasePanelPart; n: number } | null>(null);
   const openReleaseOn = (releaseId: string, opener: HTMLElement, part: ReleasePanelPart) => {
     base.selectRelease(releaseId, opener);
-    openCounter.current += 1;
-    setOpenOn({ releaseId, part, n: openCounter.current });
+    setOpenOn((current) => ({ releaseId, part, n: (current?.n ?? 0) + 1 }));
     // Confirm date's control ("New expected out") sits in the release's arrangements, beside its barriers.
     base.setDrawerTab(part === "date" ? "barriers" : part);
   };
@@ -255,7 +271,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     barrierCounts,
     highlightOn,
     highlightedCount,
-    bedDaysPast,
     copySummary,
   } = s;
   // ROLE BRANCHES (approved 31 Oct 2026). Nurse in charge: the own ward's name replaces the statewide
@@ -388,21 +403,18 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           ? `Nothing held up${nextPlace} · ${counts.confirmed} confirmed ${noun(counts.confirmed)} to see out`
           : `Nothing held up${nextPlace}`,
     // CodeRabbit (#1380): the status counts are open records, not Recorded's list, so no action there.
+    // Audit four 55 (A2-115, Josh 28 Nov): "Open next" opens the first person in that group, as on
+    // every other page, instead of selecting the tab just below.
     action:
-      nextKey === null || !nowView
+      nextKey === null || !nowView || groups[nextKey].length === 0
         ? undefined
         : {
-            label:
-              status === nextKey
-                ? "Show all"
-                : nextKey === "blocked"
-                  ? `Show ${HELD_UP.toLowerCase()}`
-                  : "Show confirmed",
-            pressed: status === nextKey,
+            label: "Open next",
             testId: "ward-discharge-next-action",
             onClick: () => {
-              setStatus(status === nextKey ? "all" : nextKey);
-              s.clearSelection();
+              const first = groups[nextKey][0];
+              const opener = document.activeElement instanceof HTMLElement ? document.activeElement : document.body;
+              openReleaseOn(first.id, opener, nextKey === "blocked" ? "barriers" : "milestones");
             },
           },
   };
@@ -413,54 +425,89 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     : detailRelease
       ? releaseDrawerHead(s, detailRelease)
       : null;
+  // Audit four #31: the kit pager in the drawer head steps through the list the row was opened from:
+  // the shown groups on Now (in their order), the Recorded list on Recorded. A record opened from the
+  // slipped-dates list over Now is not in either list, so it shows no pager.
+  const pagerReleases = nowView ? visibleReleaseGroups.flatMap((key) => shownGroups[key]) : [];
+  const drawerPager = (() => {
+    if (detailRelease && nowView) {
+      const index = pagerReleases.findIndex((release) => release.id === detailRelease.id);
+      if (pagerReleases.length < 2 || index < 0) return undefined;
+      return {
+        index,
+        total: pagerReleases.length,
+        noun: "discharge",
+        onStep: (delta: -1 | 1) => {
+          const next = pagerReleases[(index + delta + pagerReleases.length) % pagerReleases.length];
+          if (next) base.selectRelease(next.id, base.triggerRef.current ?? document.body);
+        },
+      };
+    }
+    if (activeRecord && !nowView) {
+      const index = recorded.findIndex((record) => record.admissionId === activeRecord.admissionId);
+      if (recorded.length < 2 || index < 0) return undefined;
+      return {
+        index,
+        total: recorded.length,
+        noun: "discharge",
+        onStep: (delta: -1 | 1) => {
+          const next = recorded[(index + delta + recorded.length) % recorded.length];
+          if (next) openRecord(next);
+        },
+      };
+    }
+    return undefined;
+  })();
   // The phone shows the release's panes together (no tabs); a record keeps its tabs at every width.
-  const drawerTabs = drawerHead && (activeRecord || !isPhone) ? dischargeDrawerTabs(drawerHead.hasBlocker) : undefined;
+  const drawerTabs =
+    drawerHead && (activeRecord || !isPhone) ? dischargeDrawerTabs(drawerHead.hasBlocker, !activeRecord) : undefined;
   // "Going to" sits in the body, beside the facts, so the foot keeps one primary and one secondary.
   const departure = useDischargeDepartureField(
     canRecordDeparture ? detailRelease : undefined,
     departureDestination,
     setDeparture,
   );
+  const recordDepartureTo = (destination: LeavingDestination, awaitingTransport: boolean) => {
+    if (!detailRelease) return;
+    const who = linkedReleaseRecord ? recordName(linkedReleaseRecord) : "The person";
+    const admissionId = detailRelease.admissionId;
+    const completion = recordWardDeparture(
+      admissionId,
+      detailRelease.unitId,
+      destination,
+      s.releaseActor.role === "coordinator" ? "coordinator" : "ward",
+      { awaitingTransport },
+    );
+    // The completion carries this command's accepted Undo record, including shared saves.
+    offerDeparture(
+      {
+        success: awaitingTransport
+          ? `Recorded: ${who} has left the ward and is waiting for transport.`
+          : `Recorded: ${who} has left the ward.`,
+        undo: (at) => ({
+          type: "UNDO_DEPARTURE",
+          role: s.releaseActor.role,
+          now: at,
+          admissionId,
+          ...(s.releaseActor.role === "ward" ? { actingUnitId: s.releaseActor.actingUnitId } : {}),
+        }),
+        undone: `Undone: ${who} is back in their bed`,
+      },
+      { completion },
+    );
+  };
   const recordDeparture = (variant: "pri" | "sec") =>
     canRecordDeparture && detailRelease ? (
-      <Button
+      <DischargeRecordDeparture
         variant={variant}
-        className={variant === "pri" ? pageStyles.drawerPrimary : undefined}
-        data-testid="ward-discharge-record-departure"
-        disabled={departure.unanswered}
-        onClick={() => {
-          // F-45: the button stays disabled until a destination is chosen; this guard keeps the type honest.
-          if (departureDestination === "") return;
-          const who = linkedReleaseRecord ? recordName(linkedReleaseRecord) : "The person";
-          const admissionId = detailRelease.admissionId;
-          const completion = recordWardDeparture(
-            admissionId,
-            detailRelease.unitId,
-            departureDestination,
-            s.releaseActor.role === "coordinator" ? "coordinator" : "ward",
-            { awaitingTransport: departure.awaitingTransport },
-          );
-          // The completion carries this command's accepted Undo record, including shared saves.
-          offerDeparture(
-            {
-              success: departure.awaitingTransport
-                ? `Recorded: ${who} has left the ward and is waiting for transport.`
-                : `Recorded: ${who} has left the ward.`,
-              undo: (at) => ({
-                type: "UNDO_DEPARTURE",
-                role: s.releaseActor.role,
-                now: at,
-                admissionId,
-                ...(s.releaseActor.role === "ward" ? { actingUnitId: s.releaseActor.actingUnitId } : {}),
-              }),
-              undone: `Undone. ${who} is back in their bed.`,
-            },
-            { completion },
-          );
+        destination={departureDestination}
+        departure={departure}
+        onChoose={(destination) => {
+          setDeparture({ releaseId: detailRelease.id, destination });
+          if (!departure.asksFor(destination)) recordDepartureTo(destination, false);
         }}
-      >
-        Record discharge
-      </Button>
+        onRecord={recordDepartureTo}
+      />
     ) : null;
   // The next step: Clear hold-up on a phone, Record discharge once confirmed, otherwise the row's own
   // action (Chase opens Held up, Confirm date the date control).
@@ -469,22 +516,72 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
       ? releaseActionLabel(detailRelease, canChangeDate)
       : null;
   // Feature 14 (Josh, 9 Nov 2026): Weekend discharges leads on Thu and Fri, else sits under the list; filtered too.
-  const weekendReview =
-    guarded.status === "allowed" && population === "releases" ? (
-      <DischargeWeekendReview
-        records={records.filter(
-          (record) =>
-            s.scopedUnits.some((unit) => unit.id === record.unitId) && (ward === "all" || record.unitId === ward),
-        )}
+  const weekendShown = guarded.status === "allowed" && population === "releases";
+  const weekendRecords = records.filter(
+    (record) => s.scopedUnits.some((unit) => unit.id === record.unitId) && (ward === "all" || record.unitId === ward),
+  );
+  // DC3 (Josh, 3 Nov 2026): the closed services follow the Service and Ward filters, as the list does.
+  const weekendReleases = s.bedReleases.filter(
+    (release) =>
+      s.scopedUnits.some((unit) => unit.id === release.unitId) && (ward === "all" || release.unitId === ward),
+  );
+  const weekendReviewFor = (embedded: boolean) => (
+    <DischargeWeekendReview
+      records={weekendRecords}
+      releases={s.bedReleases}
+      units={units}
+      now={now}
+      dayZero={dayZero}
+      actorFor={s.recordActorFor}
+      dispatch={dispatch}
+      embedded={embedded}
+    />
+  );
+  const weekendPrepFor = (embedded: boolean) => (
+    <DischargeWeekendPrep
+      releases={weekendReleases}
+      units={units}
+      nameFor={(release) => {
+        const record = records.find((candidate) => candidate.admissionId === release.admissionId);
+        return record ? recordName(record) : null;
+      }}
+      umrnFor={(release) => {
+        const record = records.find((candidate) => candidate.admissionId === release.admissionId);
+        return record?.identity.kind === "linked" ? record.identity.patient.umrn : null;
+      }}
+      now={now}
+      dayZero={dayZero}
+      onOpen={(id, opener) => openReleaseOn(id, opener, "barriers")}
+      foldable={isPhone}
+      embedded={embedded}
+    />
+  );
+  const weekendReview = weekendShown ? weekendReviewFor(false) : null;
+  const weekendReviewFirst = weekendReviewLeads(now, dayZero);
+  // Thread C mock-up (26 Nov 2026): on Thu and Fri the people to review and the services closing
+  // over the weekend are one card, review first. An empty section hides; other days are unchanged.
+  const weekendCard =
+    weekendShown && weekendReviewFirst ? (
+      <DischargeWeekendCard
+        records={weekendRecords}
         releases={s.bedReleases}
-        units={units}
+        weekendReleases={weekendReleases}
         now={now}
         dayZero={dayZero}
-        actorFor={s.recordActorFor}
-        dispatch={dispatch}
+        review={weekendReviewFor(true)}
+        prep={weekendPrepFor(true)}
       />
     ) : null;
-  const weekendReviewFirst = weekendReviewLeads(now, dayZero);
+  // Thread C mock-up: one Share chip holds the page's three outputs (copy, CSV, print).
+  const exportFromMenu = () =>
+    void exportList().catch((error: unknown) => {
+      if (error instanceof DownloadRefusedError) {
+        base.setCopyNote("Export is not available in this browser.");
+        return;
+      }
+      console.error("List export failed", error);
+      base.setCopyNote("Export failed. Try again.");
+    });
   const drawerPrimary =
     phoneClearBlocker && detailRelease ? (
       <Button
@@ -530,7 +627,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           openRecord(linkedReleaseRecord, e.currentTarget);
         }}
       >
-        Discharge record
+        {/* Audit three #1: a name that cannot be read as "Record discharge"; it opens the stay's record. */}
+        Discharge summary
       </Button>
     ) : null;
   // Phone (drawer review): one primary and one secondary. A wider screen keeps the record link too.
@@ -559,7 +657,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         <p className={pageStyles.printScope}>
           {population === "records" ? "Admission records" : "Discharges by bed"} · Identifiers may be included
           {" · "}
-          {ownWard ? ownWard.name : (siteName ?? (service === "all" ? "All services" : service))}
+          {ownWard ? ownWard.name : (siteName ?? (service === "all" ? "Statewide" : service))}
           {" · "}
           {ownWard
             ? "Own ward only"
@@ -629,12 +727,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       value: overdueOpen.length,
                       label: overdueOpen.length === 1 ? "date overdue" : "dates overdue",
                       testId: "ward-discharge-figure-overdue",
-                    },
-                    {
-                      id: "bed-days",
-                      value: bedDaysPast,
-                      label: bedDaysPast === 1 ? "overdue bed day" : "overdue bed days",
-                      testId: "ward-discharge-bed-days-past",
+                      // #127: the figure shows or folds the Slipping list; it starts folded.
+                      onClick: () => setSlippingOpen((open) => !open),
+                      pressed: slippingOpen,
                     },
                   ]}
                 />
@@ -666,11 +761,18 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                   tone={nextKey === "blocked" ? "danger" : "calm"}
                   title={heroNext.answer}
                   titleTestId="hero-next-answer"
+                  sub={
+                    base.openOnCto > 0 ? (
+                      <span data-testid="ward-discharge-cto-note">
+                        {base.openOnCto} on a CTO: tell their community team or GP
+                      </span>
+                    ) : undefined
+                  }
                   action={
                     heroNext.action
                       ? {
                           label: heroNext.action.label,
-                          phoneLabel: heroNext.action.pressed ? "Show all" : "Show",
+                          phoneLabel: "Open next",
                           pressed: heroNext.action.pressed,
                           onClick: heroNext.action.onClick,
                           testId: heroNext.action.testId,
@@ -703,8 +805,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                           id: "per-day",
                           label: "Per day",
                           icon: <TrendingUp strokeWidth={1.75} aria-hidden="true" />,
-                          count: phoneOverdue,
-                          countTone: phoneOverdue > 0 ? ("warning" as const) : ("quiet" as const),
                           // CB-3: the name starts with the chip's visible words (axe label-content-name-mismatch).
                           ariaLabel: `Per day, ${phoneOverdue} overdue, ${phoneToday} today. Expected discharges per day, overdue and the next ${chartDays.filter((day) => day.key !== "past").length} days`,
                           onClick: () => setPhoneChart("days"),
@@ -712,35 +812,87 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                         },
                       ]
                     : []),
-                  {
-                    id: "copy",
-                    label: "Copy counts",
-                    icon: <Copy strokeWidth={1.75} aria-hidden="true" />,
-                    onClick: nowView ? copySummary : copyRecorded,
-                    testId: "ward-discharge-copy",
-                  },
-                  isPhone
-                    ? {
-                        id: "filter",
-                        label: filtersActive ? "Filters on" : "Filter",
-                        icon: <Filter strokeWidth={1.75} aria-hidden="true" />,
-                        onClick: () => setPhoneFiltersOpen(true),
-                        testId: "ward-discharge-phone-filters",
-                      }
-                    : {
-                        id: "print",
-                        label: "Print list",
-                        // A privacy cue: the paper copy may carry identifiers.
-                        ariaLabel: "Print list (may include identifiers)",
-                        icon: <Printer strokeWidth={1.75} aria-hidden="true" />,
-                        onClick: () => window.print(),
-                        testId: "ward-discharge-print",
-                      },
+                  // The phone has one output, so it keeps Copy counts as its own chip beside Filter.
+                  ...(isPhone
+                    ? [
+                        {
+                          id: "copy",
+                          label: "Copy counts",
+                          icon: <Copy strokeWidth={1.75} aria-hidden="true" />,
+                          onClick: nowView ? copySummary : copyRecorded,
+                          testId: "ward-discharge-copy",
+                        },
+                        {
+                          id: "filter",
+                          label: filtersActive ? "Filters on" : "Filter",
+                          icon: <Filter strokeWidth={1.75} aria-hidden="true" />,
+                          onClick: () => setPhoneFiltersOpen(true),
+                          testId: "ward-discharge-phone-filters",
+                        },
+                      ]
+                    : [
+                        {
+                          id: "share",
+                          label: "Share",
+                          node: (
+                            <Menu
+                              label="Share"
+                              align="end"
+                              items={[
+                                {
+                                  id: "copy",
+                                  label: <span data-testid="ward-discharge-copy">Copy counts</span>,
+                                  icon: Copy,
+                                  onSelect: nowView ? copySummary : copyRecorded,
+                                },
+                                {
+                                  id: "export",
+                                  label: <span data-testid="ward-discharge-export">Export list</span>,
+                                  icon: Download,
+                                  disabled: exportCount === 0,
+                                  meta: exportCount === 0 ? "Nothing shown" : undefined,
+                                  onSelect: () => {
+                                    if (exportCount > 0) exportFromMenu();
+                                  },
+                                },
+                                {
+                                  id: "print",
+                                  // A privacy cue: the paper copy may carry identifiers.
+                                  label: (
+                                    <span data-testid="ward-discharge-print">
+                                      Print list<span className="sr-only"> (may include identifiers)</span>
+                                    </span>
+                                  ),
+                                  icon: Printer,
+                                  onSelect: () => window.print(),
+                                },
+                              ]}
+                              trigger={(props) => (
+                                <button
+                                  type="button"
+                                  {...props}
+                                  className={heroChipClassName}
+                                  data-testid="ward-discharge-share"
+                                >
+                                  <Icon icon={Share2} size={16} />
+                                  <span>Share</span>
+                                  <Icon icon={ChevronDown} size={14} />
+                                </button>
+                              )}
+                            />
+                          ),
+                        },
+                      ]),
                 ]}
               />
             }
             band={
-              nowView && guarded.status === "allowed" && reasons.length > 0 ? (
+              nowView &&
+              guarded.status === "allowed" &&
+              reasons.length > 0 &&
+              // Audit three #61 (mock): the reasons strip shows with the Held up tab, the one list it
+              // narrows (and while one of its reasons is on). A phone, with no such tab, keeps it.
+              (isPhone || statusHighlight === "blocked" || highlight?.kind === "barrier") ? (
                 // Redesign (Josh, 30 Oct): held-up releases by reason; a reason highlights its rows.
                 <HeroBand
                   title="Held up by reason"
@@ -796,12 +948,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           ) : null}
         </FolderTabs>
         {isPhone ? (
-          <PhoneSheet
-            open={phoneFiltersOpen}
-            onClose={() => setPhoneFiltersOpen(false)}
-            title="Filters"
-            description="Filters narrow the list. Highlights never hide anyone."
-          >
+          <PhoneSheet open={phoneFiltersOpen} onClose={() => setPhoneFiltersOpen(false)} title="Filters">
             {filterCard}
           </PhoneSheet>
         ) : null}
@@ -812,7 +959,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             open={phoneChart === "days"}
             onClose={() => setPhoneChart(null)}
             title="Expected discharges per day"
-            description="Tap to highlight people in the list. Nobody is hidden."
             height="tall"
             data-testid="ward-discharge-phone-chart-sheet"
           >
@@ -829,35 +975,13 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         ) : null}
         {/* Josh, 30 Oct: the weekend and holiday cut-offs are a compact notice above the list, not a
             panel under about 60 rows. */}
-        {weekendReviewFirst ? weekendReview : null}
-        {guarded.status === "allowed" && population === "releases" ? (
-          <DischargeWeekendPrep
-            // DC3 (Josh, 3 Nov 2026): the card follows the Service and Ward filters, as the list does.
-            releases={s.bedReleases.filter(
-              (release) =>
-                s.scopedUnits.some((unit) => unit.id === release.unitId) && (ward === "all" || release.unitId === ward),
-            )}
-            units={units}
-            nameFor={(release) => {
-              const record = records.find((candidate) => candidate.admissionId === release.admissionId);
-              return record ? recordName(record) : null;
-            }}
-            umrnFor={(release) => {
-              const record = records.find((candidate) => candidate.admissionId === release.admissionId);
-              return record?.identity.kind === "linked" ? record.identity.patient.umrn : null;
-            }}
-            now={now}
-            dayZero={dayZero}
-            onOpen={(id, opener) => openReleaseOn(id, opener, "barriers")}
-            foldable={isPhone}
-          />
-        ) : null}
+        {weekendReviewFirst ? weekendCard : weekendShown ? weekendPrepFor(false) : null}
         {/* Feature 6 (9 Nov 2026): stays whose expected date has slipped past the flag, most slipped first.
             A row opens its bed release when that release is on the Now list. Otherwise (no release yet, or
             one due in 2+ days that the list leaves out) it opens the stay's discharge record in the drawer,
             and the page stays on Now (walk C item 6). A14-12: the Now drawer only opened a release in view,
             and only Admission records opened a record, so both used to show the error. */}
-        {guarded.status === "allowed" && population === "releases" ? (
+        {guarded.status === "allowed" && population === "releases" && slippingOpen ? (
           <DischargeSlippingList
             records={visibleRecords}
             units={units}
@@ -926,15 +1050,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       ? `${toWorkCount} to work${counts.departed > 0 ? ` · ${counts.departed} discharged` : ""}`
                       : `${shown} shown`}
               </span>
-              {/* Export (feature 44) sits with the list it exports, not in the page top (page-tops v6). */}
-              {isPhone ? null : (
-                <ListExportButton
-                  load={exportList}
-                  variant="ghost"
-                  disabled={exportCount === 0}
-                  testId="ward-discharge-export"
-                />
-              )}
+              {/* Thread C mock-up: Export moved into the hero's Share chip with Copy counts and Print. */}
             </header>
             {isPhone ? null : <DischargeFilterCard s={s} bare />}
             <div
@@ -1417,7 +1533,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                   <span>
                     {followUpToCheck} of {recorded.length} follow-ups to check
                   </span>
-                  <span className={pageStyles.footNote}>Held up and expected discharges are on Now</span>
                 </>
               )}
             </footer>
@@ -1449,6 +1564,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             titleId="discharge-detail-heading"
             subtitle={drawerHead?.subtitle}
             tag={drawerHead?.tag}
+            pager={drawerPager}
             tabs={drawerTabs}
             tab={drawerTab}
             onTabChange={setDrawerTab}
@@ -1490,10 +1606,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           </div>
         ) : null}
         {weekendReviewFirst ? null : weekendReview}
-        <WardPrototypeFooter
-          testId="ward-discharge-governance"
-          note="This board shows only what a ward has recorded — a release expected, confirmed or discharged, and whether it is currently blocked — and it never adds an expected or unreleased bed into the Ready figure · Not approved for clinical use"
-        />
+        <WardPrototypeFooter testId="ward-discharge-governance" />
       </main>
     </div>
   );

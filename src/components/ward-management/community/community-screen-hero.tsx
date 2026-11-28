@@ -8,8 +8,8 @@
  */
 
 import Link from "next/link";
-import { ChevronDown, ChevronRight, Clock, House, Ellipsis, Phone, Plus, Search } from "lucide-react";
-import { Button, Hero, HeroStat, Icon, Menu, Drawer, SrOnly, TextInput } from "@/components/wf";
+import { ChevronDown, ChevronRight, Clock, House, MapPin, Phone, Plus, Search } from "lucide-react";
+import { Button, Hero, HeroStat, Icon, Drawer, SrOnly, TextInput } from "@/components/wf";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { communityTeamSuburbCounts } from "@/components/ward-management/community/community-vocabulary";
 import { communityTeamHref } from "@/components/ward-management/shell/ward-facade";
@@ -289,7 +289,6 @@ export function CommunityScreenTabRow({
     waitingCount,
     caseloadRows,
     setActiveModalType,
-    setActiveDrawer,
   } = view;
   const f = DEMO_FIGURES;
   const counts: Partial<Record<CommunityTeamSection, number>> = view.midlandDemo
@@ -345,23 +344,11 @@ export function CommunityScreenTabRow({
         <Button variant="ghost" size="sm" icon={Phone} onClick={() => setActiveModalType("contact")}>
           Record contact
         </Button>
-        <Menu
-          label="More team actions"
-          align="end"
-          items={[
-            { id: "cto", label: "CTO register", onSelect: () => openTeamSection("caseload") },
-            { id: "counts", label: "Catchment counts", onSelect: () => setActiveModalType("handover") },
-            { id: "reach", label: "How to reach the team", onSelect: () => openTeamSection("home") },
-            { id: "activity", label: "Activity sample", onSelect: () => setActiveDrawer("activityDrawer") },
-            { id: "tasks", label: "Alerts sample", onSelect: () => setActiveDrawer("tasksDrawer") },
-            { id: "tools", label: "Tools sample", onSelect: () => setActiveDrawer("toolsDrawer") },
-          ]}
-          trigger={(props) => (
-            <Button {...props} variant="ghost" size="sm" icon={Ellipsis}>
-              More
-            </Button>
-          )}
-        />
+        {/* #19 (audit two, 27 Nov 2026): "CTO register" and "How to reach the team" only jumped to tabs in
+            this row, so the More menu goes and its one real action is a plain button in its slot. */}
+        <Button variant="ghost" size="sm" icon={MapPin} onClick={() => setActiveModalType("handover")}>
+          Catchment counts
+        </Button>
       </div>
     </nav>
   );

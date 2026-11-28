@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
-import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
+import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { UNDO_WINDOW_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
+import { undoWindowUntil, untilToastTitle } from "@/components/ward-management/ward-undo-until";
 import { confirmedWardCommand } from "@/components/ward-management/ward-command-completion";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
-import { Button, Dialog, useOptionalToast } from "@/components/wf";
+import { Button, useOptionalToast } from "@/components/wf";
 
 /**
  * P019 (Josh, 27 Oct 2026, 10:02 PM AWST, "approve the Release wording exactly as shown"): once the
@@ -46,10 +47,16 @@ function ReleaseOwnershipControl({
     raiseRef.current = raise;
   }, [raise]);
   const toast = useOptionalToast();
-  const [asking, setAsking] = useState(false);
+  // D-192: the toast names one clock time, counted on the board clock from the press.
+  const now = useWardFlowClock();
+  const nowRef = useRef(now);
+  useEffect(() => {
+    nowRef.current = now;
+  }, [now]);
 
+  // Simplification R2 (mock-up, 26 Nov 2026): Hand back is one tap. The toast's Undo takes the
+  // alert again, so the "Hand <alert> back to the queue?" question is no longer asked first.
   function confirm() {
-    setAsking(false);
     const inboxItemId = item.id;
     const complete = (result: ReturnType<WardCommandDispatch>, accepted: (outcome: WardCommandOutcome) => void) => {
       const failed = () => toast?.push({ tone: "warning", title: SAVE_NOT_CONFIRMED });
@@ -76,9 +83,10 @@ function ReleaseOwnershipControl({
     complete(raiseRef.current("RELEASE_INBOX_ITEM_OWNERSHIP", { inboxItemId }), (outcome) => {
       toast?.push({
         tone: "success",
-        title: `Released ${item.title}`,
+        title: untilToastTitle(`Released ${item.title}`),
         undo: {
-          durationMs: UNDO_TOAST_MS,
+          until: undoWindowUntil(nowRef.current),
+          durationMs: UNDO_WINDOW_TOAST_MS,
           onUndo: () => {
             if (outcome.isCurrent && !outcome.isCurrent()) {
               toast.push({
@@ -110,19 +118,10 @@ function ReleaseOwnershipControl({
         disabledReason={disabledReason}
         reasonDisplay="tooltip"
         aria-label={`Hand back ${subjectLine}`}
-        onClick={() => setAsking(true)}
+        onClick={confirm}
       >
         Hand back
       </Button>
-      <Dialog
-        open={asking}
-        onClose={() => setAsking(false)}
-        title={`Hand ${item.title} back to the queue?`}
-        size="sm"
-        primary={{ label: "Hand back", onAction: confirm }}
-        secondary={[{ label: "Cancel", onAction: () => setAsking(false) }]}
-        data-testid="alerts-release-ownership-confirm"
-      />
     </>
   );
 }

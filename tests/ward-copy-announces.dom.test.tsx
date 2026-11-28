@@ -77,7 +77,8 @@ const sheets: [string, () => ReactNode, string][] = [
         />
       </WardFlowProvider>
     ),
-    "Copy summary",
+    // Audit four #98: the drawer foot's filled step names what the copy is for.
+    "Copy for handover",
   ],
   [
     // R5 fold (Josh, 3 Nov 2026): the bed meeting's referrals and their Copy list live on the agenda.

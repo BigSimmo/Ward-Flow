@@ -37,7 +37,8 @@ export type ComingRowUndo = { until: Date; now: number; run: () => void };
 export type ComingAndGoingProps = {
   /** Phone: the card sits in the page between the squares and the round. */
   phone: boolean;
-  updated: ReactNode;
+  /** Fix 7 (audit three, 28 Nov 2026): Ward home no longer passes the board time here. */
+  updated?: ReactNode;
   arrivals: ComingRow[];
   /** Review P4-4: accepted people expected on a later day, left off "Arrivals · today" and counted here. */
   laterArrivals?: number;
@@ -64,6 +65,11 @@ export type ComingAndGoingProps = {
   onOpenBed: (bedNumber: number) => void;
   onOpenArrivals?: () => void;
   onOpenDischarges?: () => void;
+  /**
+   * Fold the Bed board into Ward (item 13): people who have left the ward and are still waiting for
+   * transport (item 18), each with the board's Collected step. Their bed was freed when they left.
+   */
+  waitingForTransport?: { key: string; name: string; since: string; onCollected: () => void }[];
 };
 
 function rangeEnd(value: number): string {
@@ -267,7 +273,20 @@ export function WardComingAndGoing(props: ComingAndGoingProps) {
     );
   }
 
-  const arrivalRows = [...arrivals, ...backFromLeave];
+  // Fold the Bed board into Ward (item 13): "Pulled, not arrived", the board's figure, as the first
+  // row group of the arrivals; the rest follow under their own quiet label.
+  const pulledRows = arrivals.filter((row) => row.hasPulledBed);
+  // Audit four item 15: people back from leave sit under their own small head, so "0 Arrivals" never
+  // heads a row with a person in it (the hero's Arrivals figure stays 0 too, D-191 item 9).
+  const notPulledRows = arrivals.filter((row) => !row.hasPulledBed);
+  const transportWait = props.waitingForTransport ?? [];
+  // Audit three #23 (28 Nov 2026): a group at zero goes, as the hero and tabs already say it. Referrals
+  // stays: it is the focus and tour anchor (#ward-awaiting-answer) and carries the decline notice.
+  // Gate r10 (2 upgrade 7): Back from leave is its own group, a peer of Arrivals with the same head,
+  // so Arrivals shows only for arrivals (a group at zero goes, audit three #23).
+  const showArrivals = pulledRows.length + notPulledRows.length > 0 || (props.laterArrivals ?? 0) > 0;
+  const showLook = needsALook.rows.length > 0;
+  const showOut = dischargesToday.length > 0;
   return (
     <Card
       className={cx(styles.card, phone && styles.phone)}
@@ -276,33 +295,56 @@ export function WardComingAndGoing(props: ComingAndGoingProps) {
       data-testid="ward-coming-and-going"
     >
       <CardHead id="ward-coming-and-going" title="Coming and going" meta={props.updated} />
-      <section className={styles.group} aria-labelledby="ward-coming-arrivals">
-        <GroupHead
-          id="ward-coming-arrivals"
-          n={arrivals.length}
-          title="Arrivals"
-          window="today"
-          aside={backFromLeave.length > 0 ? `+ ${backFromLeave.length} back from leave` : undefined}
-        />
-        {arrivalRows.length === 0 ? (
-          <p className={styles.empty}>Nobody expected today.</p>
-        ) : (
-          renderRows("ward-coming-arrivals", arrivalRows)
-        )}
-        {props.laterArrivals ? (
-          <p className={styles.empty} data-testid="ward-coming-later">
-            {props.laterArrivals} more on later days
-            {props.onOpenArrivals ? (
-              <>
-                {" · "}
-                <button type="button" className={styles.footLink} onClick={props.onOpenArrivals}>
-                  All arrivals<SrOnly>, including later days</SrOnly>
-                </button>
-              </>
-            ) : null}
-          </p>
-        ) : null}
-      </section>
+      {showArrivals ? (
+        <section className={styles.group} aria-labelledby="ward-coming-arrivals">
+          <GroupHead id="ward-coming-arrivals" n={arrivals.length} title="Arrivals" window="today" />
+          {pulledRows.length + notPulledRows.length === 0 ? (
+            <p className={styles.empty}>Nobody expected today.</p>
+          ) : pulledRows.length === 0 ? (
+            notPulledRows.length > 0 ? (
+              renderRows("ward-coming-arrivals", notPulledRows)
+            ) : null
+          ) : (
+            <>
+              <h4 className={styles.subHead} data-testid="ward-coming-pulled">
+                <b className={styles.n}>{pulledRows.length}</b> Pulled, not arrived
+              </h4>
+              {renderRows("ward-coming-pulled", pulledRows)}
+              {notPulledRows.length > 0 ? (
+                <>
+                  <h4 className={styles.subHead}>
+                    <b className={styles.n}>{notPulledRows.length}</b> Bed not pulled yet
+                  </h4>
+                  {renderRows("ward-coming-arrivals", notPulledRows)}
+                </>
+              ) : null}
+            </>
+          )}
+          {props.laterArrivals ? (
+            <p className={styles.empty} data-testid="ward-coming-later">
+              {props.laterArrivals} more on later days
+              {props.onOpenArrivals ? (
+                <>
+                  {" · "}
+                  <button type="button" className={styles.footLink} onClick={props.onOpenArrivals}>
+                    All arrivals<SrOnly>, including later days</SrOnly>
+                  </button>
+                </>
+              ) : null}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+      {backFromLeave.length > 0 ? (
+        <section
+          className={styles.group}
+          aria-labelledby="ward-coming-back-from-leave"
+          data-testid="ward-coming-back-from-leave"
+        >
+          <GroupHead id="ward-coming-back-from-leave" n={backFromLeave.length} title="Back from leave" window="today" />
+          {renderRows("ward-coming-back-from-leave", backFromLeave)}
+        </section>
+      ) : null}
       <section className={styles.group} aria-labelledby="ward-coming-referrals">
         <GroupHead
           id="ward-coming-referrals"
@@ -313,29 +355,61 @@ export function WardComingAndGoing(props: ComingAndGoingProps) {
         />
         {props.referrals}
       </section>
-      <section className={styles.group} aria-labelledby="ward-coming-look">
-        <GroupHead
-          id="ward-coming-look"
-          n={needsALook.rows.length}
-          title="Needs a look"
-          window="now"
-          aside={needsALook.rows.length > 0 ? needsALookNote(needsALook) : undefined}
-        />
-        {needsALook.rows.length === 0 ? (
-          <p className={styles.empty}>Nothing held up or past its date.</p>
-        ) : (
-          renderRows("ward-coming-look", needsALook.rows)
-        )}
-      </section>
-      <section className={styles.group} aria-labelledby="ward-coming-out">
-        <GroupHead id="ward-coming-out" n={dischargesToday.length} title="Expected to leave" window="today" />
-        {dischargesToday.length === 0 ? (
-          <p className={styles.empty}>{["None still due today.", props.lastFreed].filter(Boolean).join(" ")}</p>
-        ) : (
-          renderRows("ward-coming-out", dischargesToday)
-        )}
-      </section>
+      {showLook ? (
+        <section className={styles.group} aria-labelledby="ward-coming-look">
+          <GroupHead
+            id="ward-coming-look"
+            n={needsALook.rows.length}
+            title="Needs a look"
+            window="now"
+            aside={needsALook.rows.length > 0 ? needsALookNote(needsALook) : undefined}
+          />
+          {renderRows("ward-coming-look", needsALook.rows)}
+        </section>
+      ) : null}
+      {showOut ? (
+        <section className={styles.group} aria-labelledby="ward-coming-out">
+          <GroupHead id="ward-coming-out" n={dischargesToday.length} title="Expected to leave" window="today" />
+          {renderRows("ward-coming-out", dischargesToday)}
+        </section>
+      ) : null}
+      {transportWait.length > 0 ? (
+        <section
+          className={styles.group}
+          aria-labelledby="ward-coming-transport"
+          data-testid="ward-coming-transport-wait"
+        >
+          <GroupHead
+            id="ward-coming-transport"
+            n={transportWait.length}
+            title="Waiting for transport"
+            window="now"
+            aside="Left the ward; bed freed"
+          />
+          <ul className={styles.rows}>
+            {transportWait.map((entry) => (
+              <li key={entry.key} className={styles.row} data-testid={`ward-coming-transport-${entry.key}`}>
+                <span className={styles.rowGlyph}>
+                  <StatusGlyph tone="info" size={9} />
+                </span>
+                <div className={styles.rowMain}>
+                  <p className={styles.rowTop}>
+                    <span className={styles.rowName}>{entry.name}</span>
+                  </p>
+                  <p className={cx(styles.rowLine, styles.ink3)}>Waiting since {entry.since}</p>
+                </div>
+                <div className={styles.rowAct}>
+                  <Button variant="sec" size="sm" onClick={entry.onCollected}>
+                    Collected <SrOnly>{entry.name}</SrOnly>
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       <div className={styles.foot}>
+        {!showOut && props.lastFreed ? <p data-testid="ward-coming-last-freed">{props.lastFreed}</p> : null}
         {props.outlook ? (
           <p data-testid="ward-tomorrow-line">
             <span className={styles.footLabel}>Tomorrow</span> {tomorrowLine(props.outlook)}

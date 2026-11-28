@@ -58,6 +58,8 @@ export const STATISTICS_HOME_HREF = "/bedchart/statistics";
 export const STATISTICS_OVERVIEW_HREF = "/bedchart/statistics/overview";
 
 export const STATISTICS_COMPARE_HREF = "/bedchart/statistics/compare";
+/** Compare opened on its EDs: the desktop scrolls to ED comparison, a phone opens on EDs. */
+export const STATISTICS_COMPARE_EDS_HREF = `${STATISTICS_COMPARE_HREF}#eds`;
 
 /** The four index pages (Statistics A, 9 Oct 2026): every service, ward, ED and team on one page. */
 export const STATISTICS_SERVICES_HREF = "/bedchart/statistics/services";
@@ -87,7 +89,10 @@ export const WARD_STAY_CARD_ID = "ward-stay";
  * comparison exists and had to scroll to find the list — and a test asserting the bare href had
  * blessed it. A constant is what makes the correct link the cheap one to write.
  */
-export const STATISTICS_UNIT_CHOOSER_HREF = `${STATISTICS_HOME_HREF}#${STATISTICS_UNIT_CHOOSER_ID}`;
+// Audit two (#118, amends D-91): the unit finder went. Each chooser link opens Network's Browse card
+// on its own segment (the old index address presets it), at the card's own anchor.
+export const STATISTICS_BROWSE_ID = "browse";
+export const STATISTICS_UNIT_CHOOSER_HREF = `${STATISTICS_WARDS_HREF}#${STATISTICS_BROWSE_ID}`;
 
 /**
  * The id of the health-service chooser on the statistics hub, and the link to it — the fourth
@@ -98,7 +103,7 @@ export const STATISTICS_UNIT_CHOOSER_HREF = `${STATISTICS_HOME_HREF}#${STATISTIC
  */
 export const STATISTICS_SERVICE_CHOOSER_ID = "choose-a-health-service";
 
-export const STATISTICS_SERVICE_CHOOSER_HREF = `${STATISTICS_HOME_HREF}#${STATISTICS_SERVICE_CHOOSER_ID}`;
+export const STATISTICS_SERVICE_CHOOSER_HREF = `${STATISTICS_SERVICES_HREF}#${STATISTICS_BROWSE_ID}`;
 
 /**
  * The id of the community-team chooser on the statistics hub, and the link to it — the fifth
@@ -108,7 +113,7 @@ export const STATISTICS_SERVICE_CHOOSER_HREF = `${STATISTICS_HOME_HREF}#${STATIS
  */
 export const STATISTICS_COMMUNITY_CHOOSER_ID = "choose-a-community-team";
 
-export const STATISTICS_COMMUNITY_CHOOSER_HREF = `${STATISTICS_HOME_HREF}#${STATISTICS_COMMUNITY_CHOOSER_ID}`;
+export const STATISTICS_COMMUNITY_CHOOSER_HREF = `${STATISTICS_TEAMS_HREF}#${STATISTICS_BROWSE_ID}`;
 
 type StatisticsSectionId = "overview" | "compare" | "units" | "service" | "community";
 
@@ -150,8 +155,7 @@ export const STATISTICS_SECTIONS: readonly StatisticsSection[] = [
   {
     id: "units",
     label: "One ward or emergency department in detail",
-    description:
-      "Everything the model can honestly say about a single named unit, chosen from the unit finder on this page.",
+    description: "Everything the model can honestly say about a single named unit, chosen from Browse on Network.",
     href: STATISTICS_UNIT_CHOOSER_HREF,
   },
   {

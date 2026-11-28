@@ -171,3 +171,16 @@
   gap: var(--wf-s-2);
   min-width: 0;
 }
+
+/* Sweep fix (26 Nov 2026), phone: the name has its own line and wraps between words; the wait sits
+   under it instead of beside a wrapped "Surname, / Given". */
+@media (max-width: 46.4375rem) {
+  .personLine {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .person {
+    overflow-wrap: break-word;
+  }
+}

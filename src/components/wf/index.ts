@@ -92,6 +92,8 @@ export {
   PanelDrawer,
   DrawerFacts,
   DrawerFootRow,
+  DrawerPager,
+  type DrawerPagerProps,
   type PanelDrawerProps,
   type DrawerTab,
   type DrawerFact,
@@ -146,7 +148,7 @@ export { PortraitList, PortraitRail, type PortraitGroup } from "./portrait";
 
 export { RadioGroup } from "./radio-group";
 // Kit standard (lane C, from the #1118 mock-ups; Josh, 30-31 October 2026).
-export { ShowMoreRow, SHOW_MORE_MIN_HIDDEN, foldHidden, foldLimit } from "./show-more-row";
+export { ShowMoreRow, SHOW_MORE_MIN_HIDDEN, foldHidden, foldLimit, showMoreWords } from "./show-more-row";
 export { SearchField, type SearchFieldProps } from "./search-field";
 export { TimePresets, timePresetClockText } from "./time-presets";
 export { phoneRows } from "./phone-rows";
@@ -179,3 +181,4 @@ export { RowUndo } from "./row-undo";
 export { SyntheticMark } from "./synthetic-mark";
 // The tap-to-open ⓘ that replaces hover-only tips (D-224).
 export { InfoTip } from "./info-tip";
+export { Umrn } from "./umrn";

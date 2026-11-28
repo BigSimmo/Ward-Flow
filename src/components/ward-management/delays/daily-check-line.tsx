@@ -410,7 +410,7 @@ export function DailyCheckLine({ initiallyOpen = false }: { initiallyOpen?: bool
           </ul>
           {items.length > CHECK_LIMIT ? (
             <ShowMoreRow onClick={() => setAll((current) => !current)} expanded={all} controls={listId}>
-              {all ? "Show fewer" : `Show ${items.length - CHECK_LIMIT} more`}
+              {all ? "Show fewer" : `Show all ${items.length}`}
             </ShowMoreRow>
           ) : null}
           {checked ? (

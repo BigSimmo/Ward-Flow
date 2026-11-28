@@ -290,13 +290,8 @@ export const WARD_NAV: readonly WardNavItem[] = [
     group: "role",
     exampleOnly: true,
   },
-  {
-    id: "board",
-    href: "/bedchart/board/rph-adult-secure",
-    label: "Example bed board",
-    group: "role",
-    exampleOnly: true,
-  },
+  // Batch 3 (one bed record, 26 Nov 2026 mock-up): "Example bed board" is gone; /board redirects to
+  // the Example ward's Grid view. The "board" id stays in `WardNavId` for its icon map.
   { id: "officer", href: "/bedchart/transport/officer", label: "Transport", group: "role" },
   {
     id: "ed",
@@ -327,7 +322,7 @@ export const WARD_NAV: readonly WardNavItem[] = [
    * derives its destination list from `WARD_VIEWS` alone, and a second chat was editing that array
    * at the time. Belonging here is why this is right; missing that guard is only a bonus.
    */
-  { id: "hub", href: "/bedchart/hub", label: "Places", group: "board" },
+  { id: "hub", href: "/bedchart/hub", label: "Find", group: "board" },
   { id: "discharges", href: "/bedchart/discharges", label: "Discharges", group: "board" },
   /*
    * 🔴 **LISTED, NOT HIDDEN — AND THAT IS A JUDGEMENT ABOUT A DANGEROUS SCREEN.**
@@ -838,7 +833,7 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (isUnder("/bedchart/ed")) return "All EDs";
   if (isUnder("/bedchart/community")) return "Community";
   // PL1: Catchments is a tab of Places, so the header keeps the page's name.
-  if (isUnder("/bedchart/hub")) return "Places";
+  if (isUnder("/bedchart/hub")) return "Find";
   if (isUnder("/bedchart/movements")) return "Movements";
   if (isUnder("/bedchart/statistics")) return "Statistics";
   if (isUnder("/bedchart/waiting") || isUnder("/bedchart/delays") || normalized === "/bedchart/queue") return "Waiting";

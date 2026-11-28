@@ -414,10 +414,53 @@ function ToastCard({
  *
  * Alt+N (`toast-keyboard.ts`) takes focus to the newest notice's first control and back.
  */
+/** Phone width (the kit's phone query, overlay.module.css). */
+const PHONE_QUERY = "(max-width: 46.4375rem)";
+/** Gap between a phone toast and the open sheet's foot (audit two B19). */
+const SHEET_FOOT_GAP = 8;
+
+/**
+ * Audit two B19: on a phone, a toast shown while a sheet is open rests 8px above that sheet's foot,
+ * clear of the facts in its body, instead of a fixed lift that landed on the body. Measured from the
+ * topmost open modal's foot (kit drawer, phone sheet or sheet footer) each time a toast arrives or
+ * the viewport changes; with no foot the region keeps its CSS lift.
+ */
+function useSheetFootLift(regionRef: { current: HTMLDivElement | null }, count: number) {
+  useLayoutEffect(() => {
+    const region = regionRef.current;
+    if (!region || count === 0 || typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const measure = () => {
+      const modals = document.querySelectorAll<HTMLElement>(
+        '[role="dialog"][aria-modal="true"], [role="alertdialog"][aria-modal="true"]',
+      );
+      const top = modals.length ? modals[modals.length - 1] : null;
+      const feet = top?.querySelectorAll<HTMLElement>(
+        "[data-drawer-foot], [data-phone-sheet-footer], [data-sheet-footer]",
+      );
+      const foot = feet && feet.length ? feet[feet.length - 1] : null;
+      const box = foot?.getBoundingClientRect();
+      if (!window.matchMedia(PHONE_QUERY).matches || !box || box.height === 0) {
+        region.style.removeProperty("--wf-toast-sheet-lift");
+        return;
+      }
+      const lift = Math.max(0, Math.round(window.innerHeight - box.top + SHEET_FOOT_GAP));
+      region.style.setProperty("--wf-toast-sheet-lift", `${lift}px`);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    window.visualViewport?.addEventListener("resize", measure);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.visualViewport?.removeEventListener("resize", measure);
+    };
+  }, [regionRef, count]);
+}
+
 function ToastRegion() {
   const context = useContext(ToastContext);
   const regionRef = useRef<HTMLDivElement>(null);
   useToastJumpKey(regionRef);
+  useSheetFootLift(regionRef, context?.toasts.length ?? 0);
   if (!context) return null;
   const { toasts, dismiss, undoAndDismiss } = context;
 

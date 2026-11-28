@@ -2159,6 +2159,13 @@
   white-space: nowrap;
 }
 
+/* States review 11h (27 Nov 2026): a disabled foot button with its lock line (the kit's reason
+   wrapper) fills its share of the row, as r7 drew it and as the primary does at 1440; the reason
+   stays under it. */
+html .drawerFootRow > :has(> [data-wf-reason]) {
+  align-items: stretch;
+}
+
 /* ---- Page tops (Josh approved, 9 Nov 2026) ----
    Now and Recorded as the shared folder tabs; the status
    highlights as quiet filters after them (desktop and tablet). */
@@ -2248,5 +2255,35 @@
 @media (min-width: 46.5rem) and (pointer: coarse) {
   .filterTab.filterTab {
     height: 36px;
+  }
+}
+
+/* States B review: the phone Filters sheet stacks Service, Ward, Held up by and Sort as four
+   full-width rows (Sort floated alone beside Ward, and the picks were ragged widths). */
+@media (max-width: 46.4375rem) {
+  html .filterCard .filters,
+  html .filterCard .filterPills {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  /* The Sort cell's auto left margin would stop it stretching. */
+  html .filterCard .filters > span {
+    margin-left: 0;
+  }
+
+  html .filterCard .filters span:has(> button[aria-haspopup]) {
+    display: flex;
+  }
+
+  html .filterCard .filters span > button[aria-haspopup] {
+    flex: 1 1 auto;
+    justify-content: flex-start;
+  }
+
+  html .filterCard .filters span > button[aria-haspopup] > svg:last-child {
+    margin-left: auto;
   }
 }

@@ -7,49 +7,6 @@
 import { useEffect, useState } from "react";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { type Movement } from "@/components/ward-management/ward-model";
-import { createBrowserStore } from "@/lib/client-store-factory";
-
-/*
- * Audit A3-14: the board opens on Longest wait (forms due first, then longest wait) and remembers
- * the viewer's own choice in this browser. Same safe localStorage pattern as the wallboard store:
- * a blocked or private store never throws, and the server snapshot is the default.
- */
-const DELAYS_ORDER_STORAGE_KEY = "ward_flow_delays_order";
-const DELAYS_ORDER_CHANGE_EVENT = "ward_flow_delays_order_change";
-let delaysOrderFallback: boolean | undefined;
-
-export function readDelaysFlat(): boolean {
-  try {
-    return window.localStorage.getItem(DELAYS_ORDER_STORAGE_KEY) !== "blocker";
-  } catch {
-    return delaysOrderFallback ?? true;
-  }
-}
-
-export function writeDelaysFlat(flat: boolean): void {
-  try {
-    window.localStorage.setItem(DELAYS_ORDER_STORAGE_KEY, flat ? "longest" : "blocker");
-  } catch {
-    // Private browsing or a blocked store: the choice lasts for this page only.
-    delaysOrderFallback = flat;
-  }
-  try {
-    window.dispatchEvent(new Event(DELAYS_ORDER_CHANGE_EVENT));
-  } catch {
-    // Nothing else depends on the notification.
-  }
-}
-
-function subscribeDelaysOrder(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  window.addEventListener(DELAYS_ORDER_CHANGE_EVENT, onChange);
-  return () => {
-    window.removeEventListener("storage", onChange);
-    window.removeEventListener(DELAYS_ORDER_CHANGE_EVENT, onChange);
-  };
-}
-
-export const useDelaysFlatStore = createBrowserStore(subscribeDelaysOrder, readDelaysFlat, true);
 
 /**
  * Audit A3-16: a collected patient is on the road, not in the ED. Their row says so; the waiting

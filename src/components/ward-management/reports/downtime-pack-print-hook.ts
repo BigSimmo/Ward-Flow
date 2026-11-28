@@ -18,7 +18,7 @@ import type { DowntimePack } from "./downtime-pack";
 const PACK_PRINTED_QUESTION: ConfirmRequest = {
   title: "Did it print?",
   message: "Record the print time only if the pack printed or the PDF saved.",
-  confirmLabel: "Yes",
+  confirmLabel: "Record print time",
   cancelLabel: "Not yet",
   confirmTone: "default",
 };

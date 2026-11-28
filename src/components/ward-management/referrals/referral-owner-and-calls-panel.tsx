@@ -171,7 +171,7 @@ function OwnerAndCalls({
               }}
               data-testid={`ward-referral-assign-${referral.id}`}
             >
-              {coordinator ? "Assign" : "Take this referral"}
+              {coordinator ? "Hand to" : "Take this referral"}
             </Button>
             {assignRefusal ? <DisabledReason id={`${baseId}-assign-why`}>{assignRefusal}</DisabledReason> : null}
           </div>
@@ -182,7 +182,7 @@ function OwnerAndCalls({
             </p>
           ) : null}
           <fieldset className={styles.call}>
-            <legend className={styles.heading}>Log a call</legend>
+            <legend className={styles.heading}>Record a call</legend>
             <div className={styles.row}>
               <Field label="Who was rung" className={styles.field}>
                 <Select
@@ -249,7 +249,7 @@ function OwnerAndCalls({
                 }}
                 data-testid={`ward-referral-call-log-${referral.id}`}
               >
-                Log a call
+                Record a call
               </Button>
               {callRefusal ? <DisabledReason id={`${baseId}-call-why`}>{callRefusal}</DisabledReason> : null}
               {callFailure ? (

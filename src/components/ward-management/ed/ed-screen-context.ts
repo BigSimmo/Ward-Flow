@@ -7,6 +7,7 @@ import type { DueSoonThresholds, Instant } from "@/components/ward-management/wa
 import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { edById, siteByCode } from "@/components/ward-management/ward-sites";
+import type { After3EReason } from "@/components/ward-management/ward-legal-after-3e";
 import type { EdStepEvent } from "./ed-screen-model";
 import type { edScreenActions } from "./ed-screen-actions";
 import type { deriveEdScreen } from "./ed-screen-derivations";
@@ -37,6 +38,14 @@ type EdScreenRecords = {
   boardTable: boolean;
   needsRailSlides: boolean;
   recordEdStep: (event: EdStepEvent) => void;
+  /** Audit two #94: the "Record a form" sheet's save, with the form's written time, for the table's Form cell. */
+  saveWrittenForm: (input: {
+    movementId: string;
+    formCode: string;
+    writtenAt: Instant;
+    region?: "metro" | "country";
+    after3EReason?: After3EReason;
+  }) => boolean | string | Promise<boolean | string>;
   /**
    * Opens the patient page for a registry patient id, or the movement id where none is linked
    * (A12-04). Optional only because the redesign mock-up's board builds this context too and keeps

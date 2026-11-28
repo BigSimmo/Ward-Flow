@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { BedSingle, Check, ChevronRight, Download, ListFilter, Minus, Plus, X } from "lucide-react";
+import { BedSingle, Check, ChevronRight, Download, ListFilter, X } from "lucide-react";
 
 import {
   Button,
@@ -26,6 +26,7 @@ import type { BedRelease, HealthService, LeaveBed, Unit } from "../ward-model";
 import { statisticsChartScale } from "./statistics-chart-scale";
 import { downloadCsv } from "./statistics-csv";
 import { StatCard } from "./statistics-hero";
+import { useShareOutput } from "./statistics-share";
 import styles from "./statistics-capacity-chart.module.css";
 import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
@@ -200,7 +201,9 @@ function CapacityChartView({
   const [service, setService] = useState("all");
   const [overOnly, setOverOnly] = useState(false);
   const [sort, setSort] = useState<SortKey>("ready");
-  const [alertLine, setAlertLine] = useState(BED_ALERT_THRESHOLD_PERCENT);
+  // Simplification mock-up (26 Nov 2026): the alert line is the house 85% line (D-109), shown as a
+  // quiet label; the stepper that moved it for one visit is gone.
+  const alertLine = BED_ALERT_THRESHOLD_PERCENT;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -314,6 +317,12 @@ function CapacityChartView({
       scope: `Capacity ${scopeLabel}; all matching rows; ${service === "all" ? "all services highlighted" : `${service} highlighted`}${overOnly ? `, only rows at or above the ${alertLine}% alert line` : ""}; grouped by ${groupBy}`,
     });
   }
+
+  // On a page with a second output, Chart CSV is an item of the page's Share menu.
+  const chartCsvShared = useShareOutput(
+    { id: "capacity-chart", kind: "csv", label: "Export bed chart", order: 1, disabled: rows.length === 0 },
+    exportCsv,
+  );
 
   const sortItems: MenuItem[] = (Object.keys(SORT_LABELS) as SortKey[]).map((key) => ({
     id: key,
@@ -469,25 +478,7 @@ function CapacityChartView({
           <span className={styles.alertLine}>
             <span className={styles.alertKey} aria-hidden="true" />
             <span>Alert line</span>
-            <span className={styles.stepper} role="group" aria-label="Alert line">
-              <button
-                type="button"
-                aria-label="Lower the alert line"
-                disabled={alertLine <= 50}
-                onClick={() => setAlertLine((value) => Math.max(50, value - 5))}
-              >
-                <Icon icon={Minus} size={14} />
-              </button>
-              <output aria-live="polite">{alertLine}%</output>
-              <button
-                type="button"
-                aria-label="Raise the alert line"
-                disabled={alertLine >= 100}
-                onClick={() => setAlertLine((value) => Math.min(100, value + 5))}
-              >
-                <Icon icon={Plus} size={14} />
-              </button>
-            </span>
+            <output className={styles.alertValue}>{alertLine}%</output>
           </span>
         ) : null}
       </div>
@@ -647,9 +638,11 @@ function CapacityChartView({
             Reset view
           </Button>
         ) : null}
-        <Button size="sm" variant="ghost" icon={Download} onClick={exportCsv} disabled={!rows.length}>
-          Chart CSV
-        </Button>
+        {chartCsvShared ? null : (
+          <Button size="sm" variant="ghost" icon={Download} onClick={exportCsv} disabled={!rows.length}>
+            Chart CSV
+          </Button>
+        )}
       </CardFoot>
     </StatCard>
   );

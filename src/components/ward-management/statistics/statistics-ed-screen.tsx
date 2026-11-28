@@ -10,14 +10,14 @@ import {
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, ChevronDown, Clock, Hospital, ListOrdered, Scale, Stethoscope, Timer, Users, X } from "lucide-react";
+import { Activity, ChevronDown, Clock, Hospital, ListOrdered, Scale, Stethoscope, Users, X } from "lucide-react";
 
 import {
   Card,
   CardBody,
   CardFoot,
   ColumnChart,
-  HeroStat,
+  HeroFigures,
   Icon,
   Menu,
   Meter,
@@ -30,6 +30,7 @@ import {
   durMinutes,
   tableClasses,
   useIsPhone,
+  type HeroFigureItem,
 } from "@/components/wf";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
@@ -41,6 +42,7 @@ import {
 } from "@/components/ward-management/statistics/statistics-ed-waits";
 import {
   statisticsSectionById,
+  STATISTICS_COMPARE_EDS_HREF,
   STATISTICS_COMPARE_HREF,
   STATISTICS_EDS_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
@@ -272,6 +274,7 @@ function OperationalStatisticsEdScreen({
           countsOnly={countsOnly}
           longestName={longestWait ? nameOf(longestWait.movement) : ""}
           longestText={longestWait ? splitDuration(longestWait.waitMinutes) : ""}
+          nextToCross={nextToCross}
         />
       }
       personNext={
@@ -406,12 +409,12 @@ function EdPresentation({
   model,
   personPhone,
   personWaiting,
-  personNext,
   personSwarm,
 }: {
   model: EdPresentationModel;
   personPhone?: ReactNode;
   personWaiting?: ReactNode;
+  /** No longer drawn on a desktop: Next to cross is marked in the Waiting card (audit two #100). */
   personNext?: ReactNode;
   personSwarm?: ReactNode;
 }) {
@@ -566,6 +569,40 @@ function EdPresentation({
       </CardBody>
     </StatCard>
   );
+  // Audit two (#109): the kit hero figures. The longest wait's tone follows the same wait lines.
+  const longestTone: HeroFigureItem["tone"] =
+    longestWaitMinutes !== null && longestWaitMinutes >= VERY_LONG_WAIT_MINUTES
+      ? "danger"
+      : longestWaitMinutes !== null && longestWaitMinutes >= LONG_WAIT_MINUTES
+        ? "warning"
+        : undefined;
+  const onTheListFigure: HeroFigureItem = {
+    id: "on-the-list",
+    value: <span data-testid="ward-stat-ed-on-the-list">{small(onTheList)}</span>,
+    label: "open ED movements",
+  };
+  const longestFigure: HeroFigureItem = {
+    id: "longest",
+    value: longestWaitMinutes !== null ? splitDuration(longestWaitMinutes) : "none",
+    label: "longest",
+    tone: longestTone,
+  };
+  const edFigures = {
+    phone: [onTheListFigure, longestFigure, { id: "unplaced", value: small(unplaced), label: "no ward yet" }],
+    desk: [
+      onTheListFigure,
+      longestFigure,
+      { id: "median", value: median === null ? "none" : splitDuration(Math.round(median)), label: "median" },
+      { id: "urgent", value: small(urgent), label: "flagged urgent" },
+      // Role view (as ED clinician): marked as Longest is, since it counts the same long waits.
+      {
+        id: "over-24",
+        value: small(over24h),
+        label: `over ${longHours}h`,
+        tone: edCountsDesk && exactStatisticsCount(over24h) !== 0 ? "warning" : undefined,
+      },
+    ],
+  } satisfies Record<"phone" | "desk", HeroFigureItem[]>;
   return (
     <StatisticsPage
       section={section}
@@ -598,7 +635,7 @@ function EdPresentation({
           ) : null}
           {model.canOpenCompare ? (
             <HeroTool
-              href={STATISTICS_COMPARE_HREF}
+              href={STATISTICS_COMPARE_EDS_HREF}
               icon={<Scale size={14} aria-hidden="true" />}
               testId="ward-statistics-ed-compare"
             >
@@ -646,62 +683,11 @@ function EdPresentation({
           (edCountsDesk ? " · Counts only" : ""),
         title: `${shortName(department.name)} ED`,
         sub: `Median ${median === null ? "none" : splitDuration(Math.round(median))} · ${small(urgent)} flagged urgent`,
-        stats: (
-          <>
-            <HeroStat
-              value={<span data-testid="ward-stat-ed-on-the-list">{small(onTheList)}</span>}
-              label="Open ED movements"
-            />
-            <HeroStat
-              value={longestWaitMinutes !== null ? splitDuration(longestWaitMinutes) : "none"}
-              label="Longest"
-              tone={
-                longestWaitMinutes !== null && longestWaitMinutes >= VERY_LONG_WAIT_MINUTES
-                  ? "danger"
-                  : longestWaitMinutes !== null && longestWaitMinutes >= LONG_WAIT_MINUTES
-                    ? "warning"
-                    : undefined
-              }
-            />
-            <HeroStat value={small(unplaced)} label="No ward yet" />
-          </>
-        ),
+        stats: <HeroFigures label="ED figures" items={edFigures.phone} />,
       }}
-      stats={
-        <>
-          <HeroStat
-            value={<span data-testid="ward-stat-ed-on-the-list">{small(onTheList)}</span>}
-            label="Open ED movements"
-          />
-          <HeroStat
-            value={longestWaitMinutes !== null ? splitDuration(longestWaitMinutes) : "none"}
-            label={
-              <span className={styles.flagged}>
-                {longestWaitMinutes !== null && longestWaitMinutes >= VERY_LONG_WAIT_MINUTES ? (
-                  <StatusGlyph tone="danger" size={9} />
-                ) : longestWaitMinutes !== null && longestWaitMinutes >= LONG_WAIT_MINUTES ? (
-                  <StatusGlyph tone="warning" size={9} />
-                ) : null}
-                Longest
-              </span>
-            }
-          />
-          <HeroStat value={median === null ? "none" : splitDuration(Math.round(median))} label="Median" />
-          <HeroStat value={small(urgent)} label="Flagged urgent" />
-          {/* Role view (as ED clinician): marked as Longest is, since it counts the same long waits. */}
-          <HeroStat
-            value={small(over24h)}
-            label={
-              <span className={styles.flagged}>
-                {edCountsDesk && exactStatisticsCount(over24h) !== 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                {`Over ${longHours}h`}
-              </span>
-            }
-          />
-          {/* Five figures at most (v10). No ward yet is the wait list's own No ward filter count,
-              so the hero leaves it out; the export still carries it. */}
-        </>
-      }
+      // Five figures at most (v10). No ward yet is the wait list's own No ward filter count, so the
+      // desktop hero leaves it out; the export still carries it.
+      stats={<HeroFigures label="ED figures" items={edFigures.desk} />}
     >
       {/* Role view (as ED clinician): the split is Time since opening's aside, so no loose line here. */}
       {edCountsDesk ? null : (
@@ -749,12 +735,10 @@ function EdPresentation({
                 </StatCard>
               )}
             </Follow>
+            {/* Audit two (#100): Next to cross joins the Waiting card, each of the three nearest to the
+                line marked in its row, so this column is the bands, declines and clearance cards, the
+                last stretching to end level. */}
             <FlushStack>
-              <StatCard icon={Timer} title={`Next to cross ${longHours}h`} aside="Count down" id="ed-next">
-                <CardBody className={styles.bodyStack}>
-                  {personNext ?? <PeopleNotListed testId="ward-statistics-ed-next-not-listed" />}
-                </CardBody>
-              </StatCard>
               {bandsCard}
               {declinesCard}
               {clearanceCard}
@@ -965,7 +949,9 @@ function EdPhone({
                     // No stripe or tinted fill (audit stats-8): the red triangle on the wait carries the tone.
                     leading={
                       movement.atsCategory === undefined ? undefined : (
-                        <span className={phone.tier}>{`T${movement.atsCategory}`}</span>
+                        // B2 (audit two): the triage scale prints "ATS 3" as plain text, as Home and
+                        // Referrals do, so it never reads as urgency tier T3.
+                        <span className={phone.ats}>{`ATS ${movement.atsCategory}`}</span>
                       )
                     }
                     name={nameOf(movement)}
@@ -1049,6 +1035,7 @@ function Waits({
   countsOnly,
   longestName,
   longestText,
+  nextToCross,
 }: {
   waiting: readonly { movement: Movement; waitMinutes: number }[];
   nameOf: (movement: Movement) => string;
@@ -1061,8 +1048,11 @@ function Waits({
   countsOnly: boolean;
   longestName: string;
   longestText: string;
+  /** The three nearest to the long-wait line, marked in their rows (audit two #100). */
+  nextToCross?: readonly { movement: Movement; waitMinutes: number }[];
 }) {
   const [filter, setFilter] = useState<WaitFilter>("all");
+  const nextIds = new Set((nextToCross ?? []).map((entry) => entry.movement.id));
   const [sort, setSort] = useState<"longest" | "name">("longest");
   const longHours = LONG_WAIT_MINUTES / 60;
   const veryLongHours = VERY_LONG_WAIT_MINUTES / 60;
@@ -1201,6 +1191,11 @@ function Waits({
                             )}
                             {movement.acceptedUnitId !== undefined ? "Ward accepted" : "No ward yet"}
                             {movement.flaggedUrgent ? <span className={styles.code}>urgent</span> : null}
+                            {nextIds.has(movement.id) ? (
+                              <span className={styles.code} data-testid={`ward-stat-ed-next-${movement.id}`}>
+                                {`${longHours}h in ${durMinutes(LONG_WAIT_MINUTES - waitMinutes)}`}
+                              </span>
+                            ) : null}
                           </span>
                         </td>
                         <td className={detail.meterCell}>

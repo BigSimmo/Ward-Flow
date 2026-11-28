@@ -1,5 +1,3 @@
-import { useId } from "react";
-
 import { SrOnly, StatusGlyph, durMinutes } from "@/components/wf";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { JourneyStage } from "./movements-derivations";
@@ -29,19 +27,24 @@ import styles from "./stage-pipeline.module.css";
  * Compact pass (Josh, 18 Nov 2026, D-265): each stage is one line (number, name, count, share), the
  * wait bar, then the longest wait with any past-target chip beside it. On a tablet the six stages
  * stay in one row that scrolls sideways instead of wrapping to two rows.
+ *
+ * Simplification mock-up (26 Nov 2026): the rail is the worklist's filter. Pressing a stage shows
+ * only that stage's movements, longest wait first; pressing it again shows every stage. The chosen
+ * stage takes the accent tint and ring, and is a pressed toggle for assistive technology.
  */
 export function StagePipeline({
   stages,
   now,
   accessTarget,
-  highlight,
+  selected,
   onToggle,
 }: {
   stages: readonly JourneyStage[];
   now: Instant;
   /** The configured ED access target, in minutes. */
   accessTarget: number;
-  highlight: string | null;
+  /** The stage the worklist is filtered to, or null for every stage. */
+  selected: JourneyStage["id"] | null;
   onToggle: (stageId: JourneyStage["id"]) => void;
 }) {
   const longest = (stage: (typeof stages)[number]) =>
@@ -51,33 +54,27 @@ export function StagePipeline({
     undefined,
   );
   const worstStageId = worst !== undefined && longest(worst) >= accessTarget ? worst.id : undefined;
-  // The persistent highlight is spoken too, not only drawn (it is no longer a pressed toggle).
-  const highlightedNoteId = useId();
   const totalOpen = stages.reduce((sum, stage) => sum + stage.movements.length, 0);
   const pastOf = (stage: JourneyStage) =>
     stage.movements.filter((movement) => now - movement.openedAt >= accessTarget).length;
   const targetLabel = accessTarget % 60 === 0 ? `${accessTarget / 60}h` : durMinutes(accessTarget);
   return (
     <nav className={styles.pipeline} aria-label="Stages">
-      {stages.some((stage) => highlight === `stage:${stage.id}`) ? (
-        <span id={highlightedNoteId} className="sr-only">
-          Highlighted in worklist
-        </span>
-      ) : null}
       <div className={styles.head}>
         {/* D-265 (18 Nov 2026): the heading sits on the card edge with no icon tile, in line with the
             tabs above and the traffic bar below, and names the longest wait itself. */}
         <h2 className={styles.title}>
           Stages
-          <span className={styles.summary}>
-            {totalOpen} open
-            {worst !== undefined && worstStageId !== undefined
-              ? ` · longest wait in ${STAGE_SHORT[worst.id]}, ${durMinutes(longest(worst))}`
-              : ""}
-          </span>
+          {/* The hero's "Open movements" figure says the total; this line keeps only the longest wait. */}
+          {worst !== undefined && worstStageId !== undefined ? (
+            <span
+              className={styles.summary}
+            >{`Longest wait in ${STAGE_SHORT[worst.id]}, ${durMinutes(longest(worst))}`}</span>
+          ) : null}
         </h2>
         {/* Each stage's tooltip still gives its count in each wait band (Note 7, 9 Nov 2026). */}
         <span className={styles.aside}>
+          {selected === null ? null : <span className={styles.hint}>Choose it again to show every stage</span>}
           <span className={styles.keyBands} aria-label="Wait bands">
             <span className={styles.keyLabel}>Wait</span>
             {WAIT_BANDS.map((band, index) => (
@@ -108,9 +105,8 @@ export function StagePipeline({
               <button
                 type="button"
                 className={styles.stage}
-                aria-haspopup="dialog"
-                data-highlighted={highlight === `stage:${stage.id}` ? "true" : undefined}
-                aria-describedby={highlight === `stage:${stage.id}` ? highlightedNoteId : undefined}
+                aria-pressed={selected === stage.id}
+                data-highlighted={selected === stage.id ? "true" : undefined}
                 onClick={() => onToggle(stage.id)}
                 title={`${stage.blurb} ${WAIT_BANDS.map((band, bandIndex) => `${band}: ${bands[bandIndex]}`).join(", ")}.`}
               >
@@ -139,7 +135,7 @@ export function StagePipeline({
                   </span>
                   {/* D-265: only a stage with waits past target says so; "On target" is gone. */}
                   {pastTarget > 0 ? (
-                    <span className={styles.stagePast}>{`${pastTarget} past ${targetLabel}`}</span>
+                    <span className={styles.stagePast}>{`${pastTarget} over ${targetLabel}`}</span>
                   ) : null}
                 </span>
               </button>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useShareOutput } from "./statistics-share";
+import { useEffect, useMemo, useState } from "react";
 import { Download, Pin, Search, X } from "lucide-react";
 
 import {
@@ -10,10 +11,9 @@ import {
   CardFoot,
   Field,
   FilterChip,
-  HeroStat,
+  HeroFigures,
   Icon,
   Menu,
-  SearchField,
   Segmented,
   Select,
   SrOnly,
@@ -22,6 +22,7 @@ import {
   tableClasses,
   useIsPhone,
   type BarListRow,
+  type HeroFigureItem,
 } from "@/components/wf";
 import { statisticsSectionById } from "./statistics-sections";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -45,7 +46,6 @@ import { wardReferralTally } from "./statistics-ward-referrals";
 import { PhoneBody, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import compare from "./statistics-compare.module.css";
 import { CompareSheetRow } from "./statistics-compare-sheet-row";
-import { FindUnitLink } from "./statistics-view-switch";
 import { FIRST_ROWS, ShowAllLink, ShowAllRow } from "./statistics-compare-show-all";
 import {
   Foot,
@@ -65,7 +65,6 @@ import {
 } from "./statistics-small-numbers";
 import { SMALL_NUMBER_NOT_SHOWN } from "../ward-access-scope";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
-import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { HELD_UP_ANY_DATE_LABEL } from "@/components/ward-management/ward-held-up";
 
 /**
@@ -316,14 +315,17 @@ function ComparePresentation({
   paused: boolean;
   onTogglePause?: () => void;
 }) {
+  // Opened on its EDs ("Compare EDs"): bring ED comparison in once the page has settled.
+  useEffect(() => {
+    if (window.location.hash !== "#eds") return;
+    const timer = window.setTimeout(() => document.getElementById("eds")?.scrollIntoView?.({ block: "start" }), 400);
+    return () => window.clearTimeout(timer);
+  }, []);
   const {
     units,
     emergencyDepartments,
     totalBeds,
     readyBeds,
-    pendingPreparationBeds,
-    networkAvgStay,
-    totalBlockers,
     totalLongStays,
     stillOpenCount,
     urgentCount,
@@ -334,6 +336,43 @@ function ComparePresentation({
   } = model;
   const isPhone = useIsPhone();
   const readyPct = totalBeds > 0 ? Math.round((readyBeds / totalBeds) * 100) : 0;
+
+  // Audit two (#119, a Josh decision): the hero answers this page's own question, read against the
+  // reference lines its charts draw (the mean of wards and of EDs, and wards over 1 SD), then Ready
+  // and Still open, so it keeps five figures. Each figure comes from the rows the charts read.
+  const occupancyValues = knownValues(wardRows.map((row) => row.occupancy));
+  const occupancyReference = referenceMean(wardRows.map((row) => row.occupancy));
+  const meanOccupancy = exactValue(occupancyReference);
+  const overSpread = meanOccupancy === null ? null : meanOccupancy + standardDeviation(occupancyValues);
+  const wardsOverSpread = overSpread === null ? null : occupancyValues.filter((value) => value > overSpread).length;
+  const edWaitingReference = referenceMean(
+    edRows.map((entry) => entry.row.onTheList),
+    true,
+  );
+  const meanEdWaiting = exactValue(edWaitingReference);
+  const referenceWord = (reference: ComparisonValue) =>
+    reference === null ? "Not recorded" : String(statisticsCountText(reference));
+  const comparisonFigures: HeroFigureItem[] = [
+    meanOccupancy === null
+      ? { id: "mean-occupancy", value: referenceWord(occupancyReference), word: true, label: "mean ward occupancy" }
+      : { id: "mean-occupancy", value: Math.round(meanOccupancy), unit: "%", label: "mean ward occupancy" },
+    meanEdWaiting === null
+      ? { id: "mean-ed", value: referenceWord(edWaitingReference), word: true, label: "mean waiting per ED" }
+      : { id: "mean-ed", value: meanEdWaiting.toFixed(1), label: "mean waiting per ED" },
+    {
+      id: "over-sd",
+      value: wardsOverSpread ?? "none",
+      word: wardsOverSpread === null,
+      label: wardsOverSpread === 1 ? "ward over 1 SD" : "wards over 1 SD",
+    },
+    { id: "ready", value: readyBeds, label: `ready, ${readyPct}% of ${totalBeds} beds` },
+    {
+      id: "still-open",
+      value: statisticsCountText(stillOpenCount),
+      label: `still open, ${statisticsCountText(urgentCount)} urgent`,
+      tone: exactStatisticsCount(stillOpenCount) ? "warning" : undefined,
+    },
+  ];
 
   const section = statisticsSectionById("compare");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'compare' section");
@@ -349,44 +388,18 @@ function ComparePresentation({
       now={now}
       paused={paused}
       onTogglePause={onTogglePause}
-      // D-91: one unit finder. This tab row's "Open a unit" opens the Summary's, already open.
-      tools={<FindUnitLink testId="ward-statistics-compare-tool-open-unit" />}
       phone={{
         title: `${units.length} ${units.length === 1 ? "ward" : "wards"}, ${emergencyDepartments.length} EDs`,
         sub: `${statisticsCountText(totalLongStays)} ${totalLongStays === 1 ? "stay" : "stays"} over 3 months`,
+        // Design review (27 Nov 2026): three equal phone columns, a long label wraps instead of cutting.
         stats: (
-          <>
-            <HeroStat value={readyBeds} label="Ready" />
-            <HeroStat
-              value={networkAvgStay === null ? "Not recorded" : `${networkAvgStay.toFixed(1)} days`}
-              label="Average completed stay"
-            />
-            <HeroStat value={statisticsCountText(totalBlockers)} label="Discharges held up" />
-          </>
+          <div className={compare.phoneFigures}>
+            <HeroFigures label="Comparison figures" items={comparisonFigures.slice(0, 3)} />
+          </div>
         ),
       }}
-      stats={
-        <>
-          {/* the five figures a comparison is read against (redesign, Josh 1 Nov 2026); the ward
-              count is in the card heads. Each names its noun first ("26 Ready · 8.6% of 304 beds"). */}
-          <HeroStat value={readyBeds} label={`Ready · ${readyPct}% of ${totalBeds} beds`} />
-          {pendingPreparationBeds > 0 ? <HeroStat value={pendingPreparationBeds} label="Being made ready" /> : null}
-          <HeroStat
-            value={networkAvgStay === null ? "Not recorded" : `${networkAvgStay.toFixed(1)} days`}
-            label="Average completed stay"
-          />
-          <HeroStat
-            value={statisticsCountText(totalBlockers)}
-            label="Discharges held up"
-            tone={exactStatisticsCount(totalBlockers) ? "warning" : undefined}
-          />
-          <HeroStat
-            value={statisticsCountText(stillOpenCount)}
-            label={`Still open · ${statisticsCountText(urgentCount)} urgent`}
-            tone={exactStatisticsCount(stillOpenCount) ? "warning" : undefined}
-          />
-        </>
-      }
+      // Audit four #49: the desktop hero shows the three comparison figures, as the phone does.
+      stats={<HeroFigures label="Comparison figures" items={comparisonFigures.slice(0, 3)} />}
     >
       {isPhone ? (
         <ComparePhone wardRows={wardRows} edRows={edRows} />
@@ -415,7 +428,9 @@ function ComparePresentation({
  * the network mean, highest first. Two chosen wards open in a sheet beside the network.
  */
 function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCompareRow[] }) {
-  const [kind, setKind] = useState<"wards" | "eds">("wards");
+  const [kind, setKind] = useState<"wards" | "eds">(() =>
+    typeof window !== "undefined" && window.location.hash === "#eds" ? "eds" : "wards",
+  );
   const [wardMetric, setWardMetric] = useState<WardMetric>("occupancy");
   const [edMetric, setEdMetric] = useState<EdMetric>("open");
   const [showAll, setShowAll] = useState(false);
@@ -646,8 +661,8 @@ function sortRows<T extends { name: string; value: ComparisonValue }>(rows: T[],
 type View = "chart" | "data";
 
 const VIEW_ITEMS: { id: View; label: string }[] = [
-  { id: "chart", label: "Chart" },
-  { id: "data", label: "Data" },
+  { id: "chart", label: "Graph" },
+  { id: "data", label: "Table" },
 ];
 
 type WardMetric = "occupancy" | "stay" | "blocked" | "long";
@@ -678,15 +693,11 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
   // highest first, as the redesign draws it (Josh, 1 Nov 2026): the sort switch went, A to Z is the Data table's.
   const order: SortOrder = "high";
   const [group, setGroup] = useState<WardGroup | "all">("all");
-  const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
 
-  const needle = query.trim();
-  const shown = rows.filter(
-    (row) =>
-      (group === "all" || row.group === group) &&
-      (!needle || fieldsMatchEveryWord(needle, [row.unit.name, row.site?.name, row.unit.siteCode])),
-  );
+  // Audit two (#14): no name field here; the header search and Browse find a ward, and the two
+  // card heads sit level, each with one measure row.
+  const shown = rows.filter((row) => group === "all" || row.group === group);
 
   // The mean and spread are the whole network's, so a filter never moves the line it is read against.
   const measurements = rows.map((row) => wardMetricValue(row, metric));
@@ -731,6 +742,12 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
     );
   }
 
+  // With the other comparison's CSV, both are items of the page's Share menu.
+  const csvShared = useShareOutput(
+    { id: "compare-wards", kind: "csv", label: "Export ward comparison", order: 1, disabled: shown.length === 0 },
+    exportCsv,
+  );
+
   return (
     <StatCard
       id="wards"
@@ -740,9 +757,11 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
       action={
         <span className={compare.headControls}>
           <Segmented label="Ward comparison view" value={view} onChange={setView} items={VIEW_ITEMS} />
-          <Button size="sm" variant="ghost" icon={Download} onClick={exportCsv} disabled={shown.length === 0}>
-            CSV
-          </Button>
+          {csvShared ? null : (
+            <Button size="sm" variant="ghost" icon={Download} onClick={exportCsv} disabled={shown.length === 0}>
+              CSV
+            </Button>
+          )}
         </span>
       }
     >
@@ -752,12 +771,6 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
           value={metric}
           onChange={setMetric}
           items={(Object.keys(WARD_METRICS) as WardMetric[]).map((id) => ({ id, label: WARD_METRICS[id].label }))}
-        />
-        <SearchField
-          value={query}
-          onValueChange={setQuery}
-          label="Filter wards by name or hospital"
-          placeholder="Name or site"
         />
       </div>
       <div className={redesign.chips} role="group" aria-label="Ward group">
@@ -912,6 +925,12 @@ function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
     );
   }
 
+  // With the other comparison's CSV, both are items of the page's Share menu.
+  const csvShared = useShareOutput(
+    { id: "compare-eds", kind: "csv", label: "Export ED comparison", order: 2, disabled: rows.length === 0 },
+    exportCsv,
+  );
+
   return (
     <StatCard
       id="eds"
@@ -921,9 +940,11 @@ function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
       action={
         <span className={compare.headControls}>
           <Segmented label="ED comparison view" value={view} onChange={setView} items={VIEW_ITEMS} />
-          <Button size="sm" variant="ghost" icon={Download} onClick={exportCsv} disabled={rows.length === 0}>
-            CSV
-          </Button>
+          {csvShared ? null : (
+            <Button size="sm" variant="ghost" icon={Download} onClick={exportCsv} disabled={rows.length === 0}>
+              CSV
+            </Button>
+          )}
         </span>
       }
     >

@@ -112,6 +112,26 @@
   box-shadow: inset 0 0 0 2px var(--wf-accent);
 }
 
+/* Simplification mock-up (26 Nov 2026): the chosen stage filters the worklist; its name and step take
+   the accent ink beside the tint and ring. */
+.stage[data-highlighted="true"] .nameText,
+.stage[data-highlighted="true"] .step {
+  color: var(--wf-accent-ink);
+}
+
+.hint {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+/* Below a laptop the header would wrap for the hint, so it goes; the stages still press. */
+@media (max-width: 56.25rem) {
+  .hint {
+    display: none;
+  }
+}
+
 .stage:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
@@ -214,5 +234,38 @@
 
   .item {
     scroll-snap-align: start;
+  }
+
+  .flow {
+    -webkit-mask-image: linear-gradient(90deg, black calc(100% - 32px), transparent);
+    mask-image: linear-gradient(90deg, black calc(100% - 32px), transparent);
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .flow {
+      -webkit-mask-image: linear-gradient(90deg, black calc(100% - var(--wf-strip-fade)), transparent);
+      mask-image: linear-gradient(90deg, black calc(100% - var(--wf-strip-fade)), transparent);
+      animation: stripFadeEnd 1ms linear both;
+      animation-timeline: scroll(self inline);
+    }
+  }
+}
+
+/* Audit four #97 (28 Nov 2026): the edge fade the phone chip rows have, so a strip cut at the right
+   edge shows that it scrolls. The fade lifts once the strip reaches its end (scroll-driven), and a
+   strip that fits keeps a full face: the fade only covers the last 32px of an overflowing row. */
+@property --wf-strip-fade {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes stripFadeEnd {
+  0%,
+  92% {
+    --wf-strip-fade: 32px;
+  }
+  100% {
+    --wf-strip-fade: 0px;
   }
 }

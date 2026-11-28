@@ -30,8 +30,11 @@ export function dueWindowLabel(minutes: number): string {
 type HomeEdPressureProps = {
   now: Instant;
   movements: Movement[];
-  selectedEdId: string | undefined;
-  onSelectEd: (edId: string | undefined) => void;
+  /**
+   * Simplification mock-up (area 2 item 1): each department opens Waiting filtered to it, since Home
+   * no longer has a Flow list for the tile to filter.
+   */
+  edHref: (edId: string) => string;
   /** The chosen health service (`null` is All services). An ED with no resolvable service stays shown. */
   service: HealthService | null;
   /**
@@ -57,15 +60,7 @@ type HomeEdPressureProps = {
  *
  * These tiles measure physical inpatient-bed waits; Home's hero separately retains open journeys through transit.
  */
-export function HomeEdPressure({
-  now,
-  movements,
-  selectedEdId,
-  onSelectEd,
-  service,
-  onHero = false,
-  population,
-}: HomeEdPressureProps) {
+export function HomeEdPressure({ now, movements, edHref, service, onHero = false, population }: HomeEdPressureProps) {
   // A longest wait past the configured ED access target is red; past the severe line it is amber.
   const thresholds = useDueSoonThresholds();
   const { configuration } = useWardFlowSelect("configuration");
@@ -89,7 +84,7 @@ export function HomeEdPressure({
   // first. One with nobody waiting and no one on forms folds into one quiet "KEMH, PCH: no wait" tile,
   // unless it is the one the queue is filtered to, so the filter can always be turned off.
   const needsSomething = (row: (typeof sorted)[number]) =>
-    row.waiting > 0 || row.breaching > 0 || row.ed.id === selectedEdId || openFor(row.ed.id).some(isUnderAForm);
+    row.waiting > 0 || row.breaching > 0 || openFor(row.ed.id).some(isUnderAForm);
   const rows = sorted.filter(needsSomething);
   const clear = sorted.filter((row) => !needsSomething(row));
   const clearCodes = clear.map((row) => row.ed.siteCode).join(", ");
@@ -100,7 +95,6 @@ export function HomeEdPressure({
   const list = (
     <ul className={onHero ? heroStyles.edStrip : styles.edGrid}>
       {rows.map((row) => {
-        const selected = row.ed.id === selectedEdId;
         const rawService = siteByCode(row.ed.siteCode)?.service ?? edHealthService(row.ed.id);
         const serviceAcronym = healthServiceAcronym(rawService);
         const open = openFor(row.ed.id);
@@ -183,20 +177,17 @@ export function HomeEdPressure({
 
         return (
           <li key={row.ed.id} className={c.edCell}>
-            <button
-              type="button"
+            <Link
+              href={edHref(row.ed.id)}
               data-testid={`ward-ed-${row.ed.id}`}
               className={c.edButton}
               data-service={serviceAcronym || undefined}
-              data-selected={selected ? "true" : undefined}
               data-breaching={row.breaching}
               data-longest-minutes={row.longestWaitMinutes}
               data-waiting={row.waiting}
               data-forms={outline}
-              aria-pressed={selected}
-              aria-label={spoken.join(", ")}
+              aria-label={`${spoken.join(", ")}. Opens Waiting for this department`}
               title={`${row.ed.name}${rawService ? ` (${rawService})` : ""}${onHero && deadline.spoken ? `: ${deadline.spoken}` : ""}`}
-              onClick={() => onSelectEd(selected ? undefined : row.ed.id)}
             >
               <span className={c.edTop} aria-hidden="true">
                 <strong className={c.edCode}>{row.ed.siteCode}</strong>
@@ -229,7 +220,7 @@ export function HomeEdPressure({
                 </span>
               ) : null}
               {onHero ? <> {waitingCount}</> : null}
-            </button>
+            </Link>
           </li>
         );
       })}

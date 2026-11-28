@@ -58,6 +58,7 @@ export default function ReferralSheetRecord({
       now={now}
       recorded={recordedFacts(referral, movements, referrals)}
       initialTab={tab}
+      patientId={person.patient?.id}
     />
   );
 }

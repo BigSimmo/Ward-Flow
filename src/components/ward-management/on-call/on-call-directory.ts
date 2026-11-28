@@ -156,13 +156,13 @@ export function entryMatchesQuery(entry: DirectoryEntry, query: string): boolean
   return query.trim() !== "" && fieldsMatchEveryWord(query, entrySearchFields(entry));
 }
 
-/** Directory order: the metro services, then children's, country and private. */
+/** Directory order (audit two #8): North, South, East, then WACHS, CAHS and private, as every service filter. */
 export const SERVICE_ORDER: readonly HealthService[] = [
   "North Metro",
-  "East Metro",
   "South Metro",
-  "CAHS",
+  "East Metro",
   "WACHS",
+  "CAHS",
   "Private",
 ];
 
@@ -975,7 +975,7 @@ export function groupRows(
     return [{ service: null, groups }];
   }
   if (tab === "mine")
-    return [{ service: null, groups: rows.length ? [{ key: "mine", title: "My list", rows: [...rows] }] : [] }];
+    return [{ service: null, groups: rows.length ? [{ key: "mine", title: "Mine", rows: [...rows] }] : [] }];
   const order = tab === "statewide" ? (["Statewide"] as const) : SERVICE_ORDER;
   return order
     .map((service) => {

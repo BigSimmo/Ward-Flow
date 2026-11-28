@@ -18,7 +18,7 @@ import { openReferrals, recordMidlandContact, todaysMidlandContacts, useMidlandD
 import { teamReferralsToAnswer } from "./team-referral-count";
 import { useMidlandBoardMoment } from "./use-midland-board-moment";
 import { Initials } from "./parts";
-import { MIDLAND_ACT_NOW_ATTR } from "./midland-top";
+import { MIDLAND_ACT_NOW_ATTR, MIDLAND_ACT_NOW_STEP_ATTR } from "./midland-top";
 import t from "./team-2026.module.css";
 import { referenceTeamDetail } from "@/components/ward-management/reference/ward-reference-teams";
 
@@ -40,6 +40,8 @@ function ListRow(props: {
   whenSub: string;
   action: string;
   primary?: boolean;
+  /** A row of the Act now group: its button is the step Open next presses. */
+  actNowStep?: boolean;
   go: () => void;
 }) {
   const day = useMidlandDay();
@@ -56,7 +58,12 @@ function ListRow(props: {
         <b className={t.mono}>{day(props.when)}</b>
         <span>{props.whenSub}</span>
       </span>
-      <Button variant={props.primary ? "pri" : "sec"} size="sm" onClick={props.go}>
+      <Button
+        variant={props.primary ? "pri" : "sec"}
+        size="sm"
+        onClick={props.go}
+        {...(props.actNowStep ? { [MIDLAND_ACT_NOW_STEP_ATTR]: "" } : {})}
+      >
         {props.action}
         <SrOnly> {props.name}</SrOnly>
       </Button>
@@ -190,6 +197,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                 <ListGroup tone="danger" title="Act now" hint="needs someone today" actNow>
                   {[
                     <ListRow
+                      actNowStep
                       key="a"
                       tone={cleoContact ? "success" : "danger"}
                       title={
@@ -210,6 +218,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                     ...(sallowfieldOpen
                       ? [
                           <ListRow
+                            actNowStep
                             key="b"
                             tone="warning"
                             title="Referral past its answer time"
@@ -224,6 +233,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                         ]
                       : []),
                     <ListRow
+                      actNowStep
                       key="c"
                       tone="warning"
                       title="Leaving hospital, no follow-up booked"

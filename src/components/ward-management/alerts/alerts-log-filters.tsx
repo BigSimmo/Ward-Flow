@@ -68,17 +68,18 @@ export function useAlertsHashTab(setTab: (tab: AlertsTab) => void) {
   }
 }
 
-/** The kinds the Open view already groups by. "All" shows every group, as before. */
-type OpenFilter = "all" | "act" | "wait" | "forecast" | "reminders" | "notices" | "snoozed" | "yours";
+/**
+ * The kinds the Open view filters by. "All" shows every group, as before. Expected, Reminders and
+ * Snoozed are not chips (Thread B plan 4): their groups stay under All, each with its count in the
+ * group heading.
+ */
+type OpenFilter = "all" | "act" | "wait" | "notices" | "yours";
 
 const FILTER_LABEL: Record<OpenFilter, string> = {
   all: "All",
   act: "Act now",
   wait: "Waiting",
-  forecast: "Expected",
-  reminders: "Reminders",
   notices: "Notices",
-  snoozed: "Snoozed",
   yours: "Yours",
 };
 
@@ -86,10 +87,7 @@ const FILTER_LABEL: Record<OpenFilter, string> = {
 const FILTER_SECTIONS: Record<Exclude<OpenFilter, "all">, readonly string[]> = {
   act: ["act"],
   wait: ["wait", "running"],
-  forecast: ["forecast"],
-  reminders: ["reminders"],
   notices: ["notices"],
-  snoozed: ["snoozed"],
   yours: ["act", "wait", "running", "snoozed"],
 };
 
@@ -102,8 +100,6 @@ function keepsEntry(filter: OpenFilter, entry: QueueEntry): boolean {
       return entry.group === "act";
     case "wait":
       return entry.group !== "act" && entry.snooze === undefined;
-    case "snoozed":
-      return entry.snooze !== undefined;
     case "yours":
       return entry.mine;
     default:
@@ -117,17 +113,14 @@ type OpenFilterCounts = Partial<Record<Exclude<OpenFilter, "all">, number>>;
 type OpenFilterFigures = {
   act: number;
   wait: number;
-  forecast: number | undefined;
-  reminders: number;
   notices: number;
-  snoozed: number;
   yours: number | undefined;
 };
 
 /**
  * The Open view's filter. Each chip shows the same figure as its group's heading. Act now and
- * Waiting always have a chip; Forecast and Yours only on a desk with them; Reminders, Notices and
- * Snoozed only while there are some. A quiet ward has no chips. A chosen filter whose chip goes
+ * Waiting always have a chip; Yours only on a desk with it; Notices only while there are some. A
+ * quiet ward has no chips. A chosen filter whose chip goes
  * (its last reminder done, say) falls back to All.
  */
 export function useOpenFilter(quiet: boolean, figures: OpenFilterFigures) {
@@ -135,10 +128,7 @@ export function useOpenFilter(quiet: boolean, figures: OpenFilterFigures) {
   if (!quiet) {
     counts.act = figures.act;
     counts.wait = figures.wait;
-    if (figures.forecast !== undefined) counts.forecast = figures.forecast;
-    if (figures.reminders > 0) counts.reminders = figures.reminders;
     if (figures.notices > 0) counts.notices = figures.notices;
-    if (figures.snoozed > 0) counts.snoozed = figures.snoozed;
     if (figures.yours !== undefined) counts.yours = figures.yours;
   }
   const [chosen, setFilter] = useState<OpenFilter>("all");
@@ -304,7 +294,7 @@ export function AlertsViewTabs({
         <>
           <span className={folderTabClasses.rule} aria-hidden="true" />
           <div className={folderTabClasses.filters}>
-            <OpenFilters lens={lens} omit={["yours"]} allCount={tabs.find((tab) => tab.id === "now")?.count} inTabs />
+            <OpenFilters lens={lens} allCount={tabs.find((tab) => tab.id === "now")?.count} inTabs />
           </div>
         </>
       ) : null}

@@ -1,18 +1,12 @@
 "use client";
 // Settings by role (Josh, 3 Nov 2026, ST1): the Display section. Help, the tour and the shortcut list
-// live in Help; the Page tips switch, a display choice for this device, sits here. The round 3 "New for this browser" proposals
+// live in Help. The Sidebar row and Page tips switch were removed in audit two (#68, #46). The round 3 "New for this browser" proposals
 // (Open Ward Flow on, Text size) are not built: nothing in the app reads them yet (D-72).
 // Settings overhaul (Josh, 16 Nov 2026): a phone has no "On this phone" block any more, so Theme and
 // Row density live here on every device, stacked full width on a phone.
 
-import { useSyncExternalStore } from "react";
 import { Palette } from "lucide-react";
 
-import {
-  helpTipsOff,
-  setHelpTipsOff,
-  subscribeHelpTipsOff,
-} from "@/components/ward-management/help-content/ward-help-tips-off";
 import type { RowDensity } from "@/components/ward-management/settings/row-density";
 import { THEME_CHOICES, type ThemeChoice } from "@/components/ward-management/settings/settings-panes";
 import { Button, Card, CardHead, Segmented, SrOnly, Switch } from "@/components/wf";
@@ -36,8 +30,6 @@ function RowSwitch({
 export function SettingsDisplayPane({
   theme,
   onThemeChange,
-  railOpen,
-  onRailChange,
   reducedMotion,
   onReducedMotionChange,
   highContrast,
@@ -48,12 +40,9 @@ export function SettingsDisplayPane({
   onCharacterShortcutsChange,
   phoneQuick = false,
   onRestore,
-  restoresRules,
 }: {
   theme: ThemeChoice;
   onThemeChange: (next: ThemeChoice) => void;
-  railOpen: boolean;
-  onRailChange: (open: boolean) => void;
   reducedMotion: boolean;
   onReducedMotionChange: (next: boolean) => void;
   highContrast: boolean;
@@ -64,12 +53,9 @@ export function SettingsDisplayPane({
   onCharacterShortcutsChange: (next: boolean) => void;
   /** On a phone the choices stack full width and the computer-only rows (shortcuts) are left out. */
   phoneQuick?: boolean;
-  /** Opens the restore dialog. Every desk can put this browser back; only the rule editor the rules. */
+  /** Opens the restore dialog for this browser only. The rules are restored from the Rules tab (audit two #44). */
   onRestore: () => void;
-  restoresRules: boolean;
 }) {
-  // G3: the page tips' on/off choice for this device. The server reads tips as on.
-  const tipsOff = useSyncExternalStore(subscribeHelpTipsOff, helpTipsOff, () => false);
   return (
     <Card aria-labelledby="display-title">
       <CardHead iconPlain id="display-title" icon={Palette} title="Display" />
@@ -81,24 +67,6 @@ export function SettingsDisplayPane({
           items={[...THEME_CHOICES]}
           value={theme}
           onChange={onThemeChange}
-        />
-      </SettingRow>
-      <SettingRow
-        setting="sidebar"
-        title="Sidebar"
-        sub={railOpen ? "Full, names and counts" : "Compact, icons only"}
-        subTestId="ward-settings-rail-now"
-        testId="ward-settings-rail"
-      >
-        <Segmented
-          className={styles.pillSeg}
-          label="Sidebar"
-          items={[
-            { id: "full", label: "Full" },
-            { id: "compact", label: "Compact" },
-          ]}
-          value={railOpen ? "full" : "compact"}
-          onChange={(choice) => onRailChange(choice === "full")}
         />
       </SettingRow>
       <SettingRow setting="density" title="Row density" stacked={phoneQuick} testId="ward-settings-density">
@@ -131,15 +99,12 @@ export function SettingsDisplayPane({
       <SettingRow setting="high-contrast" title="High contrast" sub="Stronger edges and ink">
         <RowSwitch name="High contrast" checked={highContrast} onCheckedChange={onHighContrastChange} />
       </SettingRow>
-      <SettingRow setting="help-tips" title="Page tips" sub="A short tip the first time you open each page">
-        <RowSwitch name="Page tips" checked={!tipsOff} onCheckedChange={(on) => setHelpTipsOff(!on)} />
-      </SettingRow>
       {/* Audit (31 Oct 2026): one restore, which puts back every setting this card and the alerts
                 card keep in this browser, so no preference is left behind. */}
       <SettingRow
         setting="restore"
-        title="Restore defaults"
-        sub={restoresRules ? "Rules, and this browser if you choose" : "Every setting on this device"}
+        title="Restore this browser"
+        sub="Puts every setting on this device back. The rules are restored from the Rules tab."
       >
         <Button variant="sec" onClick={onRestore} aria-haspopup="dialog" data-testid="btn-restore-baseline">
           Restore…

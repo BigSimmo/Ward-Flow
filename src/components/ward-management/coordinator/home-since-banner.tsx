@@ -5,12 +5,13 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { Button, Card, Sheet, SrOnly, StatusGlyph } from "@/components/wf";
+import { Button, Card, SrOnly, StatusGlyph } from "@/components/wf";
+import { SinceLastLookSheet } from "@/components/ward-management/since-last-look-pill";
 
 import { SINCE_BANNER_MAX_PARTS, sinceBannerCounts, sinceBannerLeadParts, sinceBannerText } from "./home-since-text";
 import styles from "./home-pinned.module.css";
 import type { ChangesSinceLastLook } from "./since-last-look";
-import { SinceLastLookSheetBody, sinceLastLookCount, useSinceLastLook } from "./since-last-look-panel";
+import { sinceLastLookCount, useSinceLastLook } from "./since-last-look-panel";
 
 /**
  * Home's "What changed since my last shift" line (feature 40, 9 Nov 2026), first in Home's work
@@ -121,17 +122,20 @@ export function HomeSinceBanner({ now, inline = false }: { now: Instant; inline?
           </Button>
         </Card>
       ) : null}
-      <Sheet
+      {/* Audit two #36 (O23): the one shared sheet, titled "Since HH:MM" as on Ward, ED and Handover. */}
+      <SinceLastLookSheet
         open={open}
         onClose={() => setReview(null)}
-        title={review?.basis === "shift" ? "Since the previous shift started" : "Since you were last here"}
-        description={`Changes since ${formatInstantWithDay(review?.since ?? changes.since, now)}${preview ? "" : " · now marked seen"}`}
+        changes={open ? review : undefined}
+        since={review?.since ?? changes.since}
+        now={now}
+        note={[review?.basis === "shift" ? "From the previous shift's start" : null, preview ? null : "Now marked seen"]
+          .filter(Boolean)
+          .join(" · ")}
         bodyTabIndex={0}
         bodyLabel="Changes since your last review"
         resolveReturnFocusTarget={returnFocusTarget}
-      >
-        <SinceLastLookSheetBody changes={open ? review : undefined} />
-      </Sheet>
+      />
     </div>
   );
 }

@@ -228,3 +228,31 @@
   gap: var(--wf-s-2) var(--wf-s-3);
   margin-top: var(--wf-s-3);
 }
+
+/* Audit two (#109): the hero's figures are the kit `HeroFigures` row, one item in the band's stats
+   slot. On a tablet and a phone the slot is a grid of figure cells, so the row spans all of it. */
+.figuresSlot {
+  display: flex;
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+/* Audit four #8: on a tablet the Network hero's act banner ("14 wards at or over 85%" and Show wards)
+   takes its own full-width row under the figures, instead of being squeezed beside them. */
+/* r10: scoped to the Statistics hero (Network's page wrapper is another module's .page) and to the
+   Network act only; Ward statistics' short act ("No pulled beds waiting to arrive") stays beside the
+   figures, as it fits on one line there. */
+@media (min-width: 46.5rem) and (max-width: 63.99rem) {
+  .statsHero [class*="hero-top_answer"]:has(> [data-testid="ward-statistics-pressure-act"]) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--wf-s-3);
+  }
+}
+
+/* Audit four #27: on a tablet the figures row starts at the hero's left edge (not at mid width), under
+   the title, as the other Statistics tabs' figures do. */
+@media (min-width: 46.5rem) and (max-width: 63.99rem) {
+  .statsHero [role="group"][aria-label="Figures"] {
+    justify-content: flex-start;
+  }
+}

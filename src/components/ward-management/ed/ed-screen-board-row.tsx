@@ -217,7 +217,7 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
             ? {
                 // Worded apart from the row menu's Transport booked, like Record exam beside
                 // Record examination, so the sheet never shows two buttons with one name.
-                label: "Log transport booking",
+                label: "Record booking",
                 blocked: transportBlocked,
                 describedBy: `ward-ed-book-transport-unavailable-${movement.id}`,
                 expanded: transportOpen,
@@ -345,7 +345,8 @@ export function renderEdBoardRow(
   const controls = renderEdRowControls(row, ctx, facts);
   // Josh (31 Oct 2026): the phone person sheet's actions take the desktop menu's groups and fold.
   const nextGroupBody = renderEdRowNextGroup(row, ctx, menuItems, facts, (parts) => (
-    <EdActionList menu={false} testId={`ward-ed-phone-actions-${movement.id}`} {...parts} />
+    // Controls 4 (26 Nov 2026): only the sheet lists these, under its pinned next step.
+    <EdActionList menu={false} dropNextStep testId={`ward-ed-phone-actions-${movement.id}`} {...parts} />
   ));
   const expandedCards = renderEdRowExpandedCards(row, ctx);
   const subFormContent = renderEdRowForms(row, ctx);
@@ -401,7 +402,7 @@ export function renderEdBoardRow(
   }
   return (
     <Fragment key={movement.id}>
-      {renderEdBoardPhoneRow(row, ctx, { personSheet, phoneBay })}
+      {renderEdBoardPhoneRow(row, ctx, { personSheet })}
       {handoverCheck}
     </Fragment>
   );

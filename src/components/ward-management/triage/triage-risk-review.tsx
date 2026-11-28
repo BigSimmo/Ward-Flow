@@ -190,7 +190,7 @@ function ReferrerLine({ form }: { form: FormApi }) {
         ) : null}
         {referral ? (
           <Button variant="ghost" size="sm" onClick={() => form.openSummary("patient")}>
-            View referral
+            Open referral
           </Button>
         ) : null}
       </span>
@@ -476,7 +476,7 @@ export function AssessmentBody({ form }: { form: FormApi }) {
   return (
     <>
       {/* A signed triage keeps codes only, so there is no earlier history text to insert. */}
-      <GuideBox groups={GUIDES.note} text={state.text.note} onHeading={box.onHeading} textRef={noteRef} />
+      <GuideBox id="note" groups={GUIDES.note} text={state.text.note} onHeading={box.onHeading} />
       <Textarea
         ref={noteRef}
         aria-label="Assessment"

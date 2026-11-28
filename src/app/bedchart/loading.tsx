@@ -1,16 +1,10 @@
-import { WardLoadingShape, type WardLoadingShapePaths } from "@/components/ward-management/shell/ward-loading-shape";
+import { WardLoadingShape } from "@/components/ward-management/shell/ward-loading-shape";
 import { wardLoadingShapeRows } from "@/components/ward-management/shell/ward-loading-shape-rows";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./loading.module.css";
 import { WardLoadingStatus } from "./loading-status";
-
-/** The three pages whose placeholder takes their shape. */
-const SHAPED_PAGES: WardLoadingShapePaths = {
-  home: "/bedchart",
-  capacity: "/bedchart/capacity",
-  waiting: "/bedchart/waiting",
-};
+import { HERO_PAGES, SHAPED_PAGES } from "./loading-routes";
 
 /**
  * shell-10 (13 Oct 2026): on slow signal a Menu or dock tap used to leave the old page up, with no
@@ -29,7 +23,7 @@ export default function WardFlowLoading() {
   return (
     <main id="main-content" className={styles.main} aria-busy="true" data-testid="ward-flow-loading">
       <WardLoadingStatus />
-      <WardLoadingShape paths={SHAPED_PAGES} rows={wardLoadingShapeRows()} />
+      <WardLoadingShape paths={SHAPED_PAGES} heroPaths={HERO_PAGES} rows={wardLoadingShapeRows()} />
       <WardPrototypeFooter />
     </main>
   );

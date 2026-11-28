@@ -36,6 +36,8 @@ import { isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
 import { announceToWardShell } from "./ward-live-region";
 import {
   BED_FINDER_MENU_ID as BED_FINDER_ID,
+  findHolds,
+  foldLoneWhere,
   isActiveRailEntry,
   railEntries,
   roleMenu,
@@ -199,10 +201,15 @@ function phoneMenuModel(
   // Q268 (Josh, 2 Nov 2026): the dock's queue slot reads Alerts and opens the Alerts screen, so the
   // Menu does not list Alerts a second time (Q177's extra row went with its "Tasks" name).
   const main = menu.main.filter((item) => !shown.has(item.id));
-  const groups = [
-    { label: roleLabel, entries: main },
-    ...menu.more.map((group) => ({ ...group, entries: group.entries.filter((entry) => !shown.has(entry.id)) })),
-  ].filter((group) => group.entries.length > 0);
+  const groups = foldLoneWhere(
+    [
+      { label: roleLabel, entries: main },
+      ...menu.more.map((group) => ({
+        ...group,
+        entries: group.entries.filter((entry) => !shown.has(entry.id) && !findHolds(role, entry.id)),
+      })),
+    ].filter((group) => group.entries.length > 0),
+  );
   return { entries, byId, dock, dockRight, needs, groups };
 }
 

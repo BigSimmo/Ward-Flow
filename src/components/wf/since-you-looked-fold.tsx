@@ -48,7 +48,7 @@ export function SinceYouLookedFold({
       onClose={() => setOpen(false)}
       title={title}
       description={sheetDescription}
-      primary={onCopy ? { label: "Copy as handover text", onAction: onCopy } : undefined}
+      primary={onCopy ? { label: "Copy for handover", onAction: onCopy } : undefined}
       data-testid="wf-since-sheet"
     >
       {sheetBody ?? children}

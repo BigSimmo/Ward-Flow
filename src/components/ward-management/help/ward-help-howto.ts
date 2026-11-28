@@ -214,7 +214,7 @@ const JOBS: readonly HowTo[] = [
     title: "Accept or decline a referral",
     keywords: "decide answer approve reject refuse referral",
     answer:
-      "Press Decide on the referral and read it, with the destination's own checks. Then press Accept referral (Accept in principle on a ward) or choose a reason and Decline referral. A decline needs a reason. Only the ward or team it was sent to can answer for itself.",
+      "Press Decide on the referral and read it, with the destination's own checks. Then press Accept (Accept in principle on a ward) or choose a reason and Decline referral. A decline needs a reason. Only the ward or team it was sent to can answer for itself.",
     desks: ["coordinator", "ward", "community"],
     acts: ["ACCEPT_REFERRAL", "DECLINE_REFERRAL"],
     go: "home",
@@ -244,10 +244,10 @@ const JOBS: readonly HowTo[] = [
           tidStart("ward-accept-"),
           tidStart("ward-referral-match-accept-"),
           tid("ward-referral-match-phone-accept"),
-          { sel: "#main-content button", text: "Accept referral" },
+          { sel: "#main-content button", text: "Accept" },
         ],
         title: "Accept",
-        body: "Accept referral, or Accept in principle on a ward. The bed coordinator then pulls the bed.",
+        body: "Accept, or Accept in principle on a ward. The bed coordinator then pulls the bed.",
       },
       {
         target: [
@@ -349,14 +349,14 @@ const JOBS: readonly HowTo[] = [
     title: "Book transport",
     keywords: "ambulance car transfer move patient escort",
     answer:
-      "Book by phone first. Then open a movement whose next step is Book transport, press Log booking on its Transport step and fill in the booking: who is collecting, the CAD number, the time, escort and legal status. Save transport booking. BedChart records it for the transport officer; it does not order the vehicle.",
+      "Book by phone first. Then open a movement whose next step is Record transport booking, press Record booking on its Transport step and fill in the booking: who is collecting, the CAD number, the time, escort and legal status, then press Record booking. BedChart records it for the transport officer; it does not order the vehicle.",
     desks: ["coordinator"],
     acts: ["BOOK_TRANSPORT"],
     go: "movements",
     showMe: [
       {
         target: [
-          { sel: '#main-content a[href^="/bedchart/movements/"]', text: "Book transport" },
+          { sel: '#main-content a[href^="/bedchart/movements/"]', text: "Record transport booking" },
           // Movements whose bed is pulled are the ones waiting for transport.
           { sel: "#main-content button", text: "Pulled" },
         ],
@@ -365,11 +365,11 @@ const JOBS: readonly HowTo[] = [
       },
       {
         target: [
-          { sel: '[data-testid="ward-patient-gate-transport"] button', text: "Log booking" },
-          { sel: '[data-testid="ward-patient-phone-action-bar"] button', text: "Log booking" },
+          { sel: '[data-testid="ward-patient-gate-transport"] button', text: "Record booking" },
+          { sel: '[data-testid="ward-patient-phone-action-bar"] button', text: "Record booking" },
           tid("ward-shortlist-book-transport"),
         ],
-        title: "Log booking",
+        title: "Record booking",
         body: "On the movement's Transport step. Greyed until the movement is ready for transport, with the reason under it.",
       },
       {
@@ -391,7 +391,7 @@ const JOBS: readonly HowTo[] = [
     title: "Book transport",
     keywords: "ambulance car transfer move patient escort",
     answer:
-      "Book by phone first. On My ED board, open the patient's actions and choose Log transport booking. Fill in who is collecting, the CAD number, the time, escort and legal status, then Save transport booking. BedChart records it; it does not order a vehicle.",
+      "Book by phone first. On My ED board, open the patient's actions and choose Record transport booking. Fill in who is collecting, the CAD number, the time, escort and legal status, then press Record booking. BedChart records it; it does not order a vehicle.",
     desks: ["ed"],
     acts: ["BOOK_TRANSPORT"],
     go: "home",
@@ -403,7 +403,7 @@ const JOBS: readonly HowTo[] = [
       },
       {
         target: { sel: '[data-testid^="ward-ed-book-transport-toggle-"]' },
-        title: "Log transport booking",
+        title: "Record transport booking",
         body: "Shown once the bed is pulled. It opens the booking form for the call you made.",
       },
       ...BOOKING_FORM,
@@ -415,7 +415,7 @@ const JOBS: readonly HowTo[] = [
     title: "Book transport",
     keywords: "ambulance car transfer move patient escort",
     answer:
-      "On My team, find the patient's row and choose Log transport booking (Log transport on a phone). Fill in who is collecting, the CAD number, the time, escort and legal status, then Save transport booking. BedChart records the booking made by phone; it does not order a vehicle.",
+      "On My team, find the patient's row and choose Record transport booking (Record booking on a phone). Fill in who is collecting, the CAD number, the time, escort and legal status, then press Record booking. BedChart records the booking made by phone; it does not order a vehicle.",
     desks: ["community"],
     acts: ["BOOK_TRANSPORT"],
     go: "home",
@@ -423,9 +423,9 @@ const JOBS: readonly HowTo[] = [
       {
         target: [
           { sel: '[data-testid^="ward-community-book-transport-"]' },
-          { sel: "#main-content button", text: "Log transport" },
+          { sel: "#main-content button", text: "Record booking" },
         ],
-        title: "Log transport booking",
+        title: "Record transport booking",
         body: "On the patient's row, once a bed is pulled. Record the booking made by phone.",
       },
       ...BOOKING_FORM,
@@ -442,7 +442,7 @@ const JOBS: readonly HowTo[] = [
     title: "Book transport",
     keywords: "ambulance car transfer move patient escort",
     answer:
-      "Open the patient from Coming and going, press the Destination row, then Record transport booking. Fill in the booking made by phone and press Save transport booking. You may record a booking for a journey your ward sent. BedChart records the booking; it does not order a vehicle.",
+      "Open the patient from Coming and going, press the Destination row, then Record transport booking. Fill in the booking made by phone and press Record booking. You may record a booking for a journey your ward sent. BedChart records the booking; it does not order a vehicle.",
     desks: ["ward"],
     acts: ["BOOK_TRANSPORT"],
     go: "movements",
@@ -617,7 +617,7 @@ const JOBS: readonly HowTo[] = [
       {
         target: tidStart("ward-referral-assign-"),
         title: "The owner desk",
-        body: "Assign gives the referral to a desk, so everyone knows who is chasing it.",
+        body: "Hand to gives the referral to a desk, so everyone knows who is chasing it.",
       },
       {
         target: tidStart("ward-referral-call-who-"),
@@ -647,7 +647,7 @@ const JOBS: readonly HowTo[] = [
     title: "Raise a new referral",
     keywords: "refer send create start new referral",
     answer:
-      "Press New referral. Choose Refer to, find or add the patient, check the catchment, then work down the steps; Before you send lists what is still needed. Several destinations can go at once and each answers on its own. Send referral, then Confirm and send. Save draft keeps it in this tab.",
+      "Press New referral. Choose Refer to, find or add the patient, check the catchment, then work down the steps; Before you send lists what is still needed. Several destinations can go at once and each answers on its own. Review and send, then Confirm and send. Save draft keeps it in this tab.",
     desks: ["coordinator", "ed", "community", "ward"],
     acts: ["RAISE_REFERRAL"],
     showMe: [
@@ -710,15 +710,15 @@ const JOBS: readonly HowTo[] = [
     title: "Print the handover sheet",
     keywords: "print paper copy present meeting",
     answer:
-      "Open Handover and choose Print handover. Choose what to include, the paper (A4 landscape or portrait) and any highlight, review the pages, then press Print or save PDF. Back to handover returns without printing.",
+      "Open Handover, press Share and choose Print handover. Choose what to include, the paper (A4 landscape or portrait) and any highlight, review the pages, then press Print or save PDF. Back to handover returns without printing.",
     desks: ["coordinator", "ward", "bed_manager"],
     go: "handover",
     computerOnly: true,
     showMe: [
       {
-        target: { sel: '[data-testid="ward-handover-print"]' },
-        title: "Print handover",
-        body: "Opens the print sheet, a live preview of the pages.",
+        target: { sel: '[data-testid="ward-handover-share"]' },
+        title: "Share, then Print handover",
+        body: "Print handover is in the Share menu. It opens the print sheet, a live preview of the pages.",
       },
       {
         target: { sel: '[data-testid="ward-handover-print-sheet"] section', text: "Include" },
@@ -879,7 +879,7 @@ const JOBS: readonly HowTo[] = [
     title: "Put the ward or bed meeting on a TV",
     keywords: "tv television screen display wall big screen meeting",
     answer:
-      "For the bed meeting, open Capacity and choose Open on TV under the arrow beside Bed meeting sheet. For one ward, use On TV on the ward's home. Open the same link on the TV's browser. The TV view is read only and shows names in full, so check who can see the screen.",
+      "For the bed meeting, open Capacity, open the Bed meeting sheet and choose Open on TV in its footer. For one ward, use On TV on the ward's home. Open the same link on the TV's browser. The TV view is read only and shows names in full, so check who can see the screen.",
     desks: ["coordinator", "ward", "bed_manager"],
     // Capacity's Bed meeting menu (it holds Open on TV) for the desks that open Capacity; a ward's own page has its own.
     go: ["capacity", "home"],
@@ -888,15 +888,15 @@ const JOBS: readonly HowTo[] = [
       {
         target: { sel: '[data-testid="capacity-bed-meeting"], [data-testid="ward-open-tv"]' },
         title: "Bed meeting sheet",
-        body: "On Capacity, the Bed meeting sheet opens the printable sheet. On a ward's home, On TV opens the ward's own TV view.",
+        body: "On Capacity, the Bed meeting sheet opens the printable sheet, with Open on TV in its footer. On a ward's home, On TV opens the ward's own TV view.",
       },
       {
         target: [tid("capacity-bed-meeting-more"), tid("ward-open-tv")],
         title: "More bed meeting views",
-        body: "The arrow beside Bed meeting sheet holds Open on TV and, for some desks, the meeting agenda.",
+        body: "The arrow beside Bed meeting sheet holds the meeting agenda, for some desks.",
       },
       {
-        target: [{ sel: '[role="menu"] [role="menuitem"]', text: "Open on TV" }, tid("ward-open-tv")],
+        target: [{ sel: '[data-testid="bed-meeting-sheet-dialog"] button', text: "Open on TV" }, tid("ward-open-tv")],
         title: "Open on TV",
         body: "Opens the large-type view. Open the same link on the TV's browser; it is read only and shows names in full.",
       },
@@ -963,7 +963,7 @@ const JOBS: readonly HowTo[] = [
     title: "Refer a patient from the ED",
     keywords: "ed emergency raise referral board patient",
     answer:
-      "On your ED board, open the patient and use New referral. Choose Refer to and the destinations, then work through the steps until Send referral; press Confirm and send. The ED's waiting list stays in wait order; flags highlight a row but never move it.",
+      "On your ED board, open the patient and use New referral. Choose Refer to and the destinations, then work through the steps until Review and send; press Confirm and send. The ED's waiting list stays in wait order; flags highlight a row but never move it.",
     desks: ["ed"],
     acts: ["RAISE_REFERRAL"],
     go: "home",
@@ -1074,7 +1074,7 @@ const JOBS: readonly HowTo[] = [
     title: "See alerts for my desk",
     keywords: "alerts tasks notifications bell to do",
     answer:
-      "Press Alerts in the header. Shift+T opens it on a keyboard. Each alert opens the record it is about. Open alerts at the foot of the panel goes to the full Alerts page.",
+      "Press Alerts in the header. Shift+T opens it on a keyboard. Each alert opens the record it is about. Open alerts at the foot of the panel goes to the full Alerts page. An alert in Needs attention leaves when it is no longer true; a commitment leaves when it is marked done.",
     desks: EVERY_DESK,
     needs: "alerts",
     showMe: [
@@ -1090,7 +1090,7 @@ const JOBS: readonly HowTo[] = [
       },
       {
         target: tid("ward-tasks-sort"),
-        title: "Order",
+        title: "Sort",
         body: "Change how the alerts are ordered.",
       },
       {

@@ -36,10 +36,10 @@ export function PatientPeekSheet({ movementId, onClose }: { movementId: string; 
     >
       <div data-ward-design="v6" className={styles.body}>
         <Link className={styles.pageLink} href={href} data-testid="patient-peek-full-page">
-          Open full Patient page
+          Patient page
           <ArrowUpRight size={14} aria-hidden="true" />
         </Link>
-        <PatientTransitOperations key={movement.id} movement={movement} bare />
+        <PatientTransitOperations key={movement.id} movement={movement} bare hideIdentity />
       </div>
     </PhoneSheet>
   );

@@ -1,3 +1,6 @@
+/* Audit two B21: every table cell rule here starts with `html`, one element more than the kit's
+   `.table td` and `.table th`, so the page's own cell rules win in the production build as in dev,
+   whatever order the two style sheets load in. Order among this file's own rules is unchanged. */
 /* Seclusion, restraint and incidents, operational view only (D-72). Tokens only. */
 .main {
   display: flex;
@@ -89,8 +92,8 @@
 }
 
 /* Review point 6: cells wrap rather than cut a ward name short. */
-.table th,
-.table td {
+html .table th,
+html .table td {
   white-space: normal;
   overflow: visible;
   max-width: none;

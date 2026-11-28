@@ -24,6 +24,8 @@ export function howToHref(
   }
   if (go === "home") return home;
   if (go.startsWith("settings#")) return `/bedchart/settings#${go.slice("settings#".length)}`;
+  // Audit two #124: Governance opened on one tab (`governance?tab=audit`), for a desk that opens it.
+  if (go.startsWith("governance?")) return ROLE_SCREENS[role].governance ? `/bedchart/${go}` : undefined;
   const entry = railEntries().find((candidate) => candidate.id === go);
   const screen = entry ? screenForPath(entry.href)?.screen : undefined;
   if (!entry || !screen || !ROLE_SCREENS[role][screen]) return undefined;

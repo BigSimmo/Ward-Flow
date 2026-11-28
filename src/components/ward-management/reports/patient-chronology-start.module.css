@@ -198,3 +198,136 @@
 .eventSelected > td {
   background: var(--wf-selected);
 }
+
+/* Thread C mock-up (26 Nov 2026): the start page opens on the lookup. The two cards stand level; the
+   left one centres one sentence and a quiet count under its tile, the right one lists what a
+   chronology holds, a glyph tile beside each line. */
+.start {
+  align-items: stretch;
+}
+
+.startCard {
+  height: 100%;
+}
+
+.openBlock {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-6) var(--wf-s-4);
+  text-align: center;
+}
+
+.openTile {
+  margin-bottom: var(--wf-s-1);
+}
+
+.openLine {
+  max-width: 30rem;
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.openCount {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.holdsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+}
+
+/* The Share menu closes the filter bar on the right. */
+.shareEnd {
+  display: inline-flex;
+  flex: none;
+  margin-inline-start: auto;
+}
+
+/* Review fixes (27 Nov 2026): the left card holds as much as the old list did. A 40px search tile,
+   then under hairlines the people opened this session and how a chronology reads. */
+@media (min-width: 64.0625rem) {
+  .startCard {
+    min-height: 360px;
+  }
+}
+
+.openTile.openTile {
+  width: 40px;
+  height: 40px;
+  flex-basis: 40px;
+}
+
+.openTile svg {
+  width: 20px;
+  height: 20px;
+}
+
+.recentBlock,
+.stepsBlock {
+  border-top: 1px solid var(--wf-line);
+}
+
+.recentBlock .people {
+  border-top: 0;
+}
+
+.blockHead {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-4);
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.stepText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stepLabel {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.stepLine {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+@media (max-width: 46.4375rem) {
+  .steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Gate r10 look upgrade 6: beside the taller start card, the four "holds" rows space evenly to the
+   card's full height, so the pair finishes level. */
+.startCard > .holdsList {
+  flex: 1 1 auto;
+  align-content: space-between;
+}

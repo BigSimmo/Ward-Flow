@@ -6,6 +6,7 @@
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { LeavingDestination } from "@/components/ward-management/ward-admissions";
 import { leftWardAllowedFor, type WaitingForTransportEntry } from "@/components/ward-management/ward-left-ward";
+import { stepToastTitle, undoneToastTitle } from "@/components/ward-management/use-undoable-step";
 import styles from "./board.module.css";
 
 export function WardBoardTransportWait({
@@ -87,11 +88,11 @@ function leavingConfirmWords(confirm: { kind: string; offerTransport?: boolean; 
   const leaving = confirm.kind === "leaving";
   return {
     title: confirm.offerTransport
-      ? "Confirm left the ward"
+      ? "Record discharge"
       : leaving
-        ? "Confirm discharge"
+        ? "Record discharge"
         : "Confirm emergency department transfer",
-    action: confirm.awaitingTransport ? "Record left ward" : leaving ? "Record discharge" : "Record ED transfer",
+    action: confirm.awaitingTransport || leaving ? "Record discharge" : "Record ED transfer",
   };
 }
 
@@ -129,7 +130,7 @@ export function transportConfirm(
 /** Item 18: the Collected step's message and Undo, for the board's undoable departure runner. */
 export function collectedStep(admissionId: string, actingUnitId: string, who: string) {
   return {
-    success: `Collected: ${who} has gone.`,
+    success: stepToastTitle("Collected", who),
     undo: (at: Instant) => ({
       type: "UNDO_DEPARTURE" as const,
       role: "ward" as const,
@@ -137,6 +138,6 @@ export function collectedStep(admissionId: string, actingUnitId: string, who: st
       admissionId,
       actingUnitId,
     }),
-    undone: `Undone. ${who} is back on the Waiting for transport list.`,
+    undone: undoneToastTitle("Collected", who),
   };
 }

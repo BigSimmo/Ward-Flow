@@ -20,6 +20,7 @@ import {
 } from "./ward-inbox-snooze";
 import { RED_ROW_SNOOZE_CAP_MINUTES } from "./ward-operational-defaults";
 
+import overlay from "@/components/wf/overlay.module.css";
 import styles from "./inbox-snooze-control.module.css";
 
 /**
@@ -88,19 +89,29 @@ export function InboxSnoozeControl({
 }
 
 /**
+ * Audit three #71 (Josh, 28 Nov 2026: keep the reason, remember the last one). The reason stays
+ * required and is still the person's own tap; the one they chose last, in this tab, is listed first
+ * and marked. Held in memory only, so nothing new is saved.
+ */
+let lastSnoozeReason: InboxSnoozeReason | undefined;
+
+/**
  * The picker lives inside the popover panel or the phone sheet, which unmount on every close, so an
  * abandoned time choice (Escape, an outside press or the trigger) never carries over to the next open.
  */
-function SnoozePicker({
+export function SnoozePicker({
   actNow,
   now,
   onSnooze,
   close,
+  inset = true,
 }: {
   actNow: boolean;
   now: Instant;
   onSnooze: (until: Instant, reason: InboxSnoozeReason) => void;
   close: () => void;
+  /** False inside a kit Dialog, whose body already holds the inset (gate r10 F6). */
+  inset?: boolean;
 }) {
   const backInId = useId();
   const reasonId = useId();
@@ -114,7 +125,7 @@ function SnoozePicker({
   const capReason = `Act now: ${splitDuration(RED_ROW_SNOOZE_CAP_MINUTES)} at most`;
   const capped = presets.some((preset) => !preset.allowed);
   return (
-    <div className={styles.body}>
+    <div className={styles.body} data-inset={inset ? undefined : "none"}>
       <div className={styles.section}>
         <p className={styles.eyebrow} id={backInId}>
           Back in
@@ -128,7 +139,9 @@ function SnoozePicker({
               aria-pressed={selected?.id === preset.id}
               title={`Back at ${formatInstantWithDay(preset.until, now)}`}
               disabledReason={preset.allowed ? undefined : capReason}
-              reasonDisplay="tooltip"
+              // States B review: the line under the row already gives the cap, so no chip draws its
+              // own copy on a phone (they pushed 4 h and End of shift off the row).
+              reasonDisplay="page"
               onClick={() => {
                 if (!preset.allowed) return;
                 setChosenPreset(preset.id);
@@ -151,21 +164,26 @@ function SnoozePicker({
             Snooze because
           </p>
           <div className={styles.reasons} role="group" aria-labelledby={reasonId}>
-            {SNOOZE_REASONS.map((entry) => (
-              <Button
-                key={entry.id}
-                size="sm"
-                variant="ghost"
-                className={styles.reason}
-                iconEnd={ChevronRight}
-                onClick={() => {
-                  onSnooze(selected.until, entry.id);
-                  close();
-                }}
-              >
-                {entry.label}
-              </Button>
-            ))}
+            {[...SNOOZE_REASONS]
+              .sort((a, b) => (a.id === lastSnoozeReason ? -1 : b.id === lastSnoozeReason ? 1 : 0))
+              .map((entry) => (
+                // Audit four #33: the reasons are kit menu rows (the Menu's own row, label and meta),
+                // not hand-built ghost buttons; one tap still records the snooze.
+                <button
+                  key={entry.id}
+                  type="button"
+                  className={overlay.item}
+                  onClick={() => {
+                    lastSnoozeReason = entry.id;
+                    onSnooze(selected.until, entry.id);
+                    close();
+                  }}
+                >
+                  <span className={overlay.itemLabel}>{entry.label}</span>
+                  {entry.id === lastSnoozeReason ? <span className={overlay.itemMeta}>Last used</span> : null}
+                  <ChevronRight size={16} strokeWidth={1.75} className={styles.reasonChevron} aria-hidden="true" />
+                </button>
+              ))}
           </div>
         </div>
       ) : null}

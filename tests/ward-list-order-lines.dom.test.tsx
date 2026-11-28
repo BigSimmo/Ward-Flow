@@ -34,7 +34,6 @@ const ALL_LINES = [
   waitingOrderLine(true),
   waitingOrderLine(false),
   alertsOrderLine("urgency"),
-  alertsOrderLine("lanes"),
   alertsOrderLine("owner"),
   ...(["records", "releases"] as const).flatMap((population) =>
     (["list", "barriers"] as const).flatMap((view) =>

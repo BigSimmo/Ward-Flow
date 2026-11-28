@@ -333,3 +333,59 @@
     min-height: 36px;
   }
 }
+
+/* Thread C mock-up (Thu and Fri): the closed services as the second section of the one Weekend
+   discharges card. A quiet section label as To review has, then the two facts beside the pills. */
+.embedded {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-top: var(--wf-s-3);
+}
+.embedded:not(:first-of-type) {
+  border-top: 1px solid var(--wf-line);
+}
+.embeddedHead {
+  margin: 0;
+  padding: 0 var(--wf-s-4) var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.embeddedRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-1) var(--wf-s-4) var(--wf-s-3);
+}
+
+/* Audit four 96 (820): the words take the full width on one line, and the service chips sit on one
+   row under them, instead of a squeezed three-line column beside two rows of chips. */
+@media (min-width: 46.5rem) and (max-width: 64rem) {
+  .embeddedRow {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+  .embeddedRow .pills {
+    justify-content: flex-start;
+  }
+}
+
+/* r10 (audit four 96, the desk strip at 820): the head becomes two rows under the tile: the words on
+   one full-width line, then the three service chips on one row, starting at the words' edge. */
+@media (min-width: 46.5rem) and (max-width: 64rem) {
+  .weekend[data-strip] .head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    row-gap: var(--wf-s-2);
+    padding-block: var(--wf-s-3);
+  }
+  .weekend[data-strip] .pills {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}

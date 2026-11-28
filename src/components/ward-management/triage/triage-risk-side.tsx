@@ -48,7 +48,6 @@ export function SignRail({
   percent,
   signed,
   signedLine,
-  doneLine,
   onJump,
   onSummary,
   signButton,
@@ -108,7 +107,6 @@ export function SignRail({
                 // Needed items first, then the ones to check, each in the form's order.
                 const ordered = [...open.filter((r) => r.blocks), ...open.filter((r) => !r.blocks)];
                 const first = ordered[0];
-                const line = state.done && !ordered.length ? doneLine(s.id) : "";
                 return (
                   <li key={s.id}>
                     <button
@@ -124,9 +122,7 @@ export function SignRail({
                       </span>
                       <span className={styles.text}>
                         <span className={styles.title}>{s.label}</span>
-                        <span className={styles.line}>
-                          {ordered.length ? <OpenNames items={ordered} /> : line || "Done"}
-                        </span>
+                        <span className={styles.line}>{ordered.length ? <OpenNames items={ordered} /> : "Done"}</span>
                       </span>
                       {state.needed ? (
                         <span className={styles.count}>

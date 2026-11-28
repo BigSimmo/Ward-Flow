@@ -37,6 +37,8 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import { undoWindowUntil } from "@/components/ward-management/ward-undo-until";
+import { UNDO_WINDOW_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import {
   useCommunityScopedReferrals,
@@ -87,7 +89,6 @@ import { MidlandPhone } from "./team-2026/midland-phone";
 import { MidlandTop } from "./team-2026/midland-top";
 import { CommunityScreenSentTab } from "./community-screen-sent-tab";
 import {
-  CommunityOtherTeams,
   CommunityScreenDesktopHero,
   CommunityScreenSwitchDrawer,
   CommunityScreenTabRow,
@@ -403,7 +404,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
         now: at,
         referralId,
       }),
-      undone: "Decision undone. The referral is back in the queue.",
+      undone: "Undone: Decision · The referral is back in the queue",
     }),
     [],
   );
@@ -493,10 +494,15 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
         title,
         body: "Sample referral only: taken off this list, nothing is saved.",
         testId: "community-action-toast",
-        action: { label: "Undo", onAction: () => restoreDemoReferral(referralId) },
+        // B9 (audit two, 27 Nov 2026): the standard timed Undo with its clock time, as every other step.
+        undo: {
+          until: undoWindowUntil(now),
+          durationMs: UNDO_WINDOW_TOAST_MS,
+          onUndo: () => restoreDemoReferral(referralId),
+        },
       });
     },
-    [answerDemoReferral, restoreDemoReferral, toast],
+    [answerDemoReferral, restoreDemoReferral, toast, now],
   );
 
   const handleCompleteContact = useCallback((ptId: string) => {
@@ -1228,13 +1234,9 @@ export function CommunityScreen(props: CommunityScreenProps) {
             switchTriggerRef={view.switchTriggerRef}
             find={{ value: find, set: setFind }}
             age={formatInstant(view.now)}
+            // #19 (audit two, 27 Nov 2026): the two tab jumps go; the one action left draws as a plain button.
             moreItems={[
-              { id: "cto", label: "CTO register", onSelect: () => view.openTeamSection("caseload") },
               { id: "counts", label: "Catchment counts", onSelect: () => view.setActiveModalType("handover") },
-              { id: "reach", label: "How to reach the team", onSelect: () => view.openTeamSection("home") },
-              { id: "activity", label: "Activity sample", onSelect: () => view.setActiveDrawer("activityDrawer") },
-              { id: "tasks", label: "Alerts sample", onSelect: () => view.setActiveDrawer("tasksDrawer") },
-              { id: "tools", label: "Tools sample", onSelect: () => view.setActiveDrawer("toolsDrawer") },
             ]}
           />
         ) : (
@@ -1350,8 +1352,8 @@ export function CommunityScreen(props: CommunityScreenProps) {
               {communityNoticesSection(view)}
               {communityCoveragePanel(view)}
             </CommunityAboutThisData>
-
-            <CommunityOtherTeams view={view} />
+            {/* #41 (audit two, 27 Nov 2026): no Other teams list under the page; the Switch team drawer
+                and Find's Teams tab are the ways across. */}
           </div>
         )}
 

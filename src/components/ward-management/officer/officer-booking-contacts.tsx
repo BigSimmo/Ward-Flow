@@ -11,7 +11,11 @@ import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
-import type { TransportProvider, TravelMode } from "@/components/ward-management/ward-model";
+import {
+  BOOKABLE_TRANSPORT_PROVIDERS,
+  type TransportProvider,
+  type TravelMode,
+} from "@/components/ward-management/ward-model";
 import { directoryEntryById, windowText } from "@/components/ward-management/on-call/on-call-directory";
 
 import own from "./officer-booking-contacts.module.css";
@@ -74,16 +78,27 @@ export function ProviderNumber({ provider }: { provider: string | undefined }) {
 export function OfficerBookingContacts({
   selected,
   onPick,
-  note = "Choose the one you booked and it fills Who is collecting.",
+  note,
   headingId = "ward-officer-contacts-heading",
   className,
+  everyProvider = false,
 }: {
   selected?: TransportProvider;
   onPick?: (provider: TravelMode) => void;
   note?: string;
   headingId?: string;
   className?: string;
+  /**
+   * Audit three #37: the list is the form's only provider picker, so it also lists the ways to travel
+   * with no number to call (police escort, ward escort, family or carer).
+   */
+  everyProvider?: boolean;
 }) {
+  const shownNote =
+    note ?? (everyProvider ? "Choose who is collecting." : "Choose the one you booked and it fills Who is collecting.");
+  const others = everyProvider
+    ? BOOKABLE_TRANSPORT_PROVIDERS.filter((provider) => !CONTACTS.some((contact) => contact.provider === provider))
+    : [];
   const [copied, setCopied] = useState<string | null>(null);
   const copy = (number: string) => {
     void copyTextToClipboard(number).then(
@@ -94,7 +109,7 @@ export function OfficerBookingContacts({
   return (
     <section className={className ? `${styles.contacts} ${className}` : styles.contacts} aria-labelledby={headingId}>
       <h3 id={headingId} className={styles.contactsHead}>
-        Call a provider
+        {everyProvider ? "Who is collecting" : "Call a provider"}
         <span className={styles.contactsTag}>Synthetic numbers</span>
       </h3>
       <ul className={styles.contactsList}>
@@ -112,6 +127,7 @@ export function OfficerBookingContacts({
                 aria-pressed={chosen}
                 onClick={() => onPick?.(contact.provider)}
                 data-testid={`ward-officer-contact-${contact.provider}`}
+                data-provider-pick=""
               >
                 <span className={styles.contactText}>
                   <b>
@@ -138,8 +154,31 @@ export function OfficerBookingContacts({
             </li>
           );
         })}
+        {others.map((provider) => {
+          const chosen = selected === provider;
+          return (
+            <li key={provider} className={`${styles.contactRow} ${own.row}`} data-chosen={chosen ? "true" : undefined}>
+              <button
+                type="button"
+                className={own.pick}
+                aria-pressed={chosen}
+                onClick={() => onPick?.(provider)}
+                data-testid={`ward-officer-contact-${provider}`}
+                data-provider-pick=""
+              >
+                <span className={styles.contactText}>
+                  <b>
+                    {chosen ? <Check size={14} strokeWidth={1.75} aria-hidden="true" /> : null}
+                    {provider}
+                  </b>
+                  <span>No number to call</span>
+                </span>
+              </button>
+            </li>
+          );
+        })}
       </ul>
-      <p className={own.note}>{note}</p>
+      <p className={own.note}>{shownNote}</p>
     </section>
   );
 }

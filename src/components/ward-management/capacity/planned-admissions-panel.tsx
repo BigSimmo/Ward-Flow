@@ -459,7 +459,7 @@ export function PlannedAdmissionsPanel({
         closeForm();
         offerUndo(
           {
-            success: `Planned admission cancelled for ${cancelled.label}.`,
+            success: `Planned admission cancelled for ${cancelled.label}`,
             undo: (at) => ({
               type: "UNDO_RELEASE_STEP",
               role,
@@ -467,7 +467,7 @@ export function PlannedAdmissionsPanel({
               now: at,
               plannedAdmissionId: cancelled.id,
             }),
-            undone: "Undone. The booking is back.",
+            undone: "Undone: The booking is back",
           },
           { completion },
         );
@@ -582,11 +582,7 @@ export function PlannedAdmissionsPanel({
           <Button variant="sec" size="sm" icon={CalendarPlus} onClick={openBook} data-testid="ward-planned-book">
             Book
           </Button>
-        ) : (
-          <span className={styles.none} data-testid="ward-planned-book-role">
-            Your role cannot book.
-          </span>
-        )
+        ) : undefined
       }
     >
       <div className={listSlot ? undefined : styles.body}>
@@ -659,7 +655,19 @@ export function PlannedAdmissionsPanel({
                           Arrived
                         </Button>
                       ) : null}
-                      {canChange || canCancel ? (
+                      {/* Simplification R4 (mock-up, 26 Nov 2026): one action is a plain button with its
+                          own label; the More menu stays only when it holds both. */}
+                      {canChange !== canCancel ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          aria-label={`${canChange ? "Change" : "Cancel"} booking for ${whoText(planned)}`}
+                          onClick={() => (canChange ? openChange(planned) : openCancel(planned))}
+                          data-testid={`ward-planned-${canChange ? "change" : "cancel"}-${planned.id}`}
+                        >
+                          {canChange ? "Change booking" : "Cancel booking"}
+                        </Button>
+                      ) : canChange && canCancel ? (
                         <Menu
                           label={`More for ${whoText(planned)}`}
                           align="end"

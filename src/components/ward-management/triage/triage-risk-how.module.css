@@ -202,3 +202,45 @@
   text-overflow: clip;
   vertical-align: top;
 }
+
+/* Audit two (#82): the shared shortcuts look, as on Referrals. */
+.keysGroup {
+  margin: var(--wf-s-4) 0 var(--wf-s-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+section:first-child > .keysGroup {
+  margin-top: 0;
+}
+
+.keys {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--wf-s-2) var(--wf-s-4);
+  margin: 0;
+}
+
+.keys > div {
+  display: contents;
+}
+
+.keys dt {
+  display: inline-flex;
+  gap: var(--wf-s-1);
+}
+
+.keys dd {
+  margin: 0;
+  color: var(--wf-ink-2);
+}
+
+.keys kbd {
+  min-width: 1.5rem;
+  padding: 0 var(--wf-s-1);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface-2);
+  font: 600 var(--wf-fs-12) / 1.5rem var(--wf-mono);
+  text-align: center;
+}

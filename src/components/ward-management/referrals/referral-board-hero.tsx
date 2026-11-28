@@ -3,12 +3,14 @@
 // The Referrals board's desktop hero words and highlight pills, one place for every desk's
 // branches (Josh, 31 Oct 2026): the coordinator, the nurse in charge (ward), the ED clinician, the
 // community clinician and the site bed manager. Moved out of `referral-board.tsx` for its line cap.
-import { X } from "lucide-react";
+import Link from "next/link";
+import { ListOrdered, X } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral } from "@/components/ward-management/ward-model";
-import { StatusGlyph, cx, durMinutes } from "@/components/wf";
+import { StatusGlyph, cx } from "@/components/wf";
+import { BED_MEETING_REFERRALS_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 
 import { communityEyebrow, communityQueueTitle, type CommunityDesk } from "./referral-community-desk";
 import { EdHeroMeta } from "./referral-ed-raised-section";
@@ -28,13 +30,15 @@ export type DeskHeroInput = {
   /** ROLE BRANCH (bed_manager): the site's name, and whether its queue is empty. */
   site?: { name: string | undefined; empty: boolean };
   oldest: string | undefined;
+  /** Coordinator's desktop hero: the oldest wait is its own figure, so the line says only the median. */
+  oldestAsFigure?: boolean;
   medianDecision: number | undefined;
   decidedCount: number;
 };
 
 /** The hero's eyebrow, title and the line beside the title, worded for the desk. */
 export function deskHeroWords(input: DeskHeroInput): { eyebrow: string; title: string; titleMeta: ReactNode } {
-  const { queuedCount, ed, community, ward, site, oldest, medianDecision, decidedCount } = input;
+  const { queuedCount, ed, community, ward, site, oldest, oldestAsFigure } = input;
   const awaiting = `${queuedCount} awaiting decision`;
   // ROLE BRANCH (bed_manager): headed with the site; read only is said once, in the detail pane.
   const eyebrow = ed
@@ -54,12 +58,6 @@ export function deskHeroWords(input: DeskHeroInput): { eyebrow: string; title: s
         : site?.empty
           ? "Nothing awaiting a decision"
           : awaiting;
-  const median =
-    medianDecision === undefined ? null : (
-      <>
-        decided in <b>{durMinutes(medianDecision)}</b> (median)
-      </>
-    );
   let titleMeta: ReactNode;
   if (ed) {
     // ED desk view: its longest wait and the ED reviews asked of it; no median.
@@ -67,29 +65,39 @@ export function deskHeroWords(input: DeskHeroInput): { eyebrow: string; title: s
   } else if (ward?.empty) {
     // ROLE BRANCH (ward): "Oldest none" only repeats an empty ward queue.
     titleMeta = undefined;
-  } else if (site?.empty || (community && oldest === undefined)) {
-    // Community desk and ROLE BRANCH (bed_manager): no "Oldest none" over an empty list; the median stays.
-    titleMeta =
-      medianDecision === undefined ? undefined : (
-        <span className={cx(a.heroMeta, panel.heroMeta)}>
-          Decided in <b>{durMinutes(medianDecision)}</b> (median)
-        </span>
-      );
+  } else if (site?.empty || (community && oldest === undefined) || oldestAsFigure) {
+    // Community desk and ROLE BRANCH (bed_manager): no "Oldest none" over an empty list.
+    // Simplification 26 Nov 2026: the coordinator's oldest wait is a hero figure, said once.
+    // Audit two (#62): the median "Decided in" is on the History tab head, not under the title.
+    titleMeta = undefined;
   } else {
     titleMeta = (
       <span className={cx(a.heroMeta, panel.heroMeta)}>
-        {/* Round 4: shorter. The full median wording stays in its tooltip. */}
         Oldest <b>{oldest ?? "none"}</b>
-        {median ? (
-          <span className={a.heroMedian} title={`Median time to decide across ${decidedCount} decided referrals`}>
-            {" "}
-            · {median}
-          </span>
-        ) : null}
       </span>
     );
   }
   return { eyebrow, title, titleMeta };
+}
+
+/**
+ * Simplification 26 Nov 2026 (Referrals plan): the bed meeting agenda as the chip row's first quick
+ * link, as on the coordinator's top, in place of a second on-hero button. It opens the agenda's
+ * Referrals list; the count is the referrals waiting in the header's service.
+ */
+export function MeetingPill({ count }: { count: number }) {
+  return (
+    <Link
+      href={BED_MEETING_REFERRALS_HREF}
+      className={cx(a.pill, a.pillLink, panel.pill)}
+      data-testid="ward-referral-meeting"
+      aria-label={count > 0 ? `Bed meeting agenda, ${count} waiting` : "Bed meeting agenda"}
+    >
+      {count > 0 ? <span className={a.pillCount}>{count}</span> : null}
+      <ListOrdered size={14} strokeWidth={1.75} aria-hidden="true" />
+      Bed meeting
+    </Link>
+  );
 }
 
 export type HighlightPill<K extends string> = { key: K; label: string; count: number };
@@ -102,13 +110,17 @@ export function HighlightPills<K extends string>({
   pills,
   highlight,
   onToggle,
+  lead,
 }: {
   pills: readonly HighlightPill<K>[];
   highlight: K | null;
   onToggle: (key: K) => void;
+  /** A quick link before the highlights (the bed meeting agenda), as the coordinator's chip row leads. */
+  lead?: ReactNode;
 }) {
   return (
     <div className={cx(a.pills, panel.pills)} role="group" aria-label="Highlight referrals">
+      {lead}
       {pills.map(({ key, label, count }) => {
         if (count === 0 && highlight !== key) return null;
         return (

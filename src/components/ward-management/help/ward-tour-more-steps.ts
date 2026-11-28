@@ -200,7 +200,7 @@ function deskMoreSteps(role: TourRole, device: "desk" | "tablet"): MoreStep[] {
           "waiting",
           railLink("/waiting"),
           "Who is waiting and why",
-          "Waiting, in your menu, groups everyone still waiting for a bed by the cause. All EDs, below it, lists each emergency department's waits.",
+          "Waiting, in your menu, groups everyone still waiting for a bed by the cause. Find, below it, holds the EDs, with each emergency department's waits.",
         ),
         { ...ACTIVITY_STEP, after: "tasks" },
         learnStep(role, device, false),
@@ -556,14 +556,6 @@ const FURTHER: Readonly<Record<TourRole, readonly Further[]>> = {
         `Referrals, ${where}, holds the referrals waiting for an answer and those decided recently. Open one to see each destination's answer.`,
     },
     {
-      id: "eds",
-      screen: "ed",
-      desk: { menu: "/ed" },
-      title: "All EDs",
-      body: (where) =>
-        `All EDs, ${where}, lists every emergency department with the people there waiting for a mental health bed. Past target finds EDs with someone past the access target.`,
-    },
-    {
       id: "discharges",
       screen: "discharges",
       desk: "more",
@@ -574,10 +566,10 @@ const FURTHER: Readonly<Record<TourRole, readonly Further[]>> = {
     {
       id: "places",
       screen: "hub",
-      desk: "more",
+      desk: { menu: "/hub" },
       title: "Places",
       body: (where) =>
-        `Places, ${where}, lists every ward, ED and community team. Catchments, on its band, finds the team that covers a suburb.`,
+        `Find, ${where}, opens Places: every ward, ED and community team, with Show to narrow it to EDs. Catchments, on its band, finds the team that covers a suburb.`,
     },
     SETTINGS,
     TRY_A_DESK,

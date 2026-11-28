@@ -41,6 +41,15 @@
   gap: var(--wf-s-2);
 }
 
+/* Audit three review: "Recent" leads a row of suburbs looked up on this device. */
+.picksHeading {
+  flex: none;
+  align-self: center;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
 /* No side edges (Josh, 31 Oct 2026): the picked suburb takes the selected tint with a neutral
    border, never an accent-coloured edge. */
 .pick[aria-pressed="true"] {
@@ -263,4 +272,30 @@
   .plainOnPhone .body {
     padding: 0;
   }
+
+  /* Final r10 F7: on a phone with no card round it, the empty hint sat loose on the page ground. The
+     page's own search already says "Suburb, alias or postcode", so a frameless card with nothing
+     typed and no field of its own draws nothing until the reader types. */
+  .plainOnPhone.plainOnPhone:has(.answer[data-empty]):not(:has(input)) {
+    display: none;
+  }
+}
+
+/* Gate r10 FIX 2: with nothing typed, the answer spans the card (no blank left column) and the hint
+   is the kit's quiet empty line, not a dashed box. */
+.bar > .answer[data-empty] {
+  grid-column: 1 / -1;
+}
+
+.hint.hintEmpty {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: 0;
+  border: 0;
+  color: var(--wf-ink-3);
+}
+
+.hintEmpty > svg {
+  flex: none;
 }

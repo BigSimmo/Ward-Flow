@@ -56,6 +56,8 @@ type PriorityFlag = {
   why: string;
   when: string;
   actionLabel?: string;
+  /** The button's full name when its short label leans on the row's title (gate r10, item 71). */
+  actionAriaLabel?: string;
   onAction?: () => void;
 };
 
@@ -414,7 +416,9 @@ export function deriveEdScreen({
         meta: `${m.cohort} · ${m.sex}`,
         why: `${m.acceptedUnitId ? (units.find((u) => u.id === m.acceptedUnitId)?.name ?? m.acceptedUnitId) + " has pulled the bed" : "A bed is pulled"} and no transport is booked. The handover cannot be marked ready until it is.`,
         when: `waiting ${splitDuration(Math.max(now - m.openedAt, 0))}`,
-        actionLabel: "Book transport",
+        // Audit four item 71 (gate r10 FIX 6): the row title already says "Transport not booked".
+        actionLabel: "Record booking",
+        actionAriaLabel: `Record transport booking for ${flagPatientInfo.formalName}`,
         onAction: () => toggleBookTransport(m.id),
       });
     }
@@ -484,8 +488,11 @@ export function deriveEdScreen({
         recordId: m.id,
         personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${urgencyTierLabel(m.urgency)}`,
-        why: `Waiting in the emergency department for ${splitDuration(now - m.openedAt)}, past ${LONG_WAIT_MINUTES / 60} hours (${OPERATIONAL_DEFAULT_LABEL}).`,
+        why: `Waiting in the emergency department for ${splitDuration(now - m.openedAt)}, over ${LONG_WAIT_MINUTES / 60} hours (${OPERATIONAL_DEFAULT_LABEL}).`,
         when: `waiting ${splitDuration(now - m.openedAt)}`,
+        // Fix 3 (audit three, 28 Nov 2026): the row has its step, as the rows above it do.
+        actionLabel: "Open next",
+        onAction: () => setPhoneSheetFor(m.id),
       });
     }
   }
@@ -676,6 +683,7 @@ export function deriveEdScreen({
     person: flag.personName ?? flag.recordId,
     when: flag.when,
     actionLabel: flag.actionLabel,
+    actionAriaLabel: flag.actionAriaLabel,
     onAction: flag.onAction,
     onOpen: patients.some((patient) => patient.id === flag.recordId)
       ? () => setPhoneSheetFor(flag.recordId)

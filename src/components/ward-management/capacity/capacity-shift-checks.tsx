@@ -113,7 +113,7 @@ export function ShiftChecks({
               aria-label={HELD_UP_LINK_LABEL}
               className={buttonClass({ variant: "ghost", size: "sm" })}
             >
-              See all
+              Open Discharges
             </Link>
           ) : null}
         </div>

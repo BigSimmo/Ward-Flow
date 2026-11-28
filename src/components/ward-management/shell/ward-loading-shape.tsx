@@ -6,21 +6,22 @@ import type { ReactNode } from "react";
 import type { WardLoadingShapeRows } from "./ward-loading-shape-rows";
 import styles from "./ward-loading-shape.module.css";
 
-type Shape = "home" | "capacity" | "waiting" | "plain";
+type Shape = "home" | "capacity" | "waiting" | "hero" | "plain";
 
 /**
  * The addresses of the three pages with a page-shaped placeholder. The route-level `loading.tsx`
  * passes them in, so shell/ types no route of its own and this boundary, which loads on every
  * navigation, imports nothing heavier than its own styles.
  */
-export type WardLoadingShapePaths = Readonly<Record<Exclude<Shape, "plain">, string>>;
+export type WardLoadingShapePaths = Readonly<Record<Exclude<Shape, "hero" | "plain">, string>>;
 
 /** Which page the placeholder stands in for, read from the address the navigation is going to. */
-function shapeOf(pathname: string, paths: WardLoadingShapePaths): Shape {
+function shapeOf(pathname: string, paths: WardLoadingShapePaths, heroPaths: readonly string[]): Shape {
   const path = pathname.replace(/\/+$/u, "");
   if (path === paths.home) return "home";
   if (path === paths.capacity) return "capacity";
   if (path === paths.waiting) return "waiting";
+  if (heroPaths.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) return "hero";
   return "plain";
 }
 
@@ -97,16 +98,40 @@ function WaitingShape({ table }: { table: ReactNode }) {
  * list-shaped blocks hold grey rows (`WardLoadingRows`); the others are filled with the track. The
  * server draws those rows (`wardLoadingShapeRows`) and passes them in, so they add no client code.
  */
-export function WardLoadingShape({ paths, rows }: { paths: WardLoadingShapePaths; rows: WardLoadingShapeRows }) {
-  const shape = shapeOf(usePathname() ?? "", paths);
+export function WardLoadingShape({
+  paths,
+  rows,
+  heroPaths = [],
+}: {
+  paths: WardLoadingShapePaths;
+  rows: WardLoadingShapeRows;
+  /**
+   * Audit four #83: the other pages whose loaded top is the navy hero. Their placeholder keeps the
+   * plain rows under a hero-coloured band joined to the status row, so a slow load never flashes pale.
+   */
+  heroPaths?: readonly string[];
+}) {
+  const shape = shapeOf(usePathname() ?? "", paths, heroPaths);
   return (
-    <div className={styles.blocks} aria-hidden="true" data-shape={shape}>
+    <div
+      className={styles.blocks}
+      aria-hidden="true"
+      data-shape={shape}
+      // Gate r10 (1b F6): a hero-shaped placeholder marks itself as a band hero, so the shell bar
+      // above it paints the bar navy exactly as it does over the loaded hero.
+      data-wf-hero={shape === "plain" ? undefined : "band"}
+    >
       {shape === "home" ? (
         <HomeShape list={rows.home} />
       ) : shape === "capacity" ? (
         <CapacityShape forecast={rows.capacity} />
       ) : shape === "waiting" ? (
         <WaitingShape table={rows.waiting} />
+      ) : shape === "hero" ? (
+        <>
+          <Block className={styles.bandPage} />
+          {rows.plain}
+        </>
       ) : (
         <>
           <Block className={styles.plain} />

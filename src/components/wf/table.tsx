@@ -95,11 +95,24 @@ export function DataRow({
 export function TierTile({
   tier,
   label = "Tier",
+  size = "md",
   className,
   ...rest
-}: Omit<ComponentPropsWithoutRef<"span">, "children"> & { tier: number; label?: string }) {
+}: Omit<ComponentPropsWithoutRef<"span">, "children"> & {
+  tier: number;
+  label?: string;
+  /**
+   * Audit two #77 (K12): `sm` for a table cell or an inline mark beside text, 18px high (the 13px
+   * text line), centred on the line, so a list and the drawer it opens draw the same tile.
+   */
+  size?: "md" | "sm";
+}) {
   return (
-    <span {...rest} className={cx(styles.sq, tier === 1 && styles.t1, className)}>
+    <span
+      {...rest}
+      className={cx(styles.sq, tier === 1 && styles.t1, size === "sm" && styles.sqSmall, className)}
+      data-size={size === "sm" ? "sm" : undefined}
+    >
       <SrOnly>
         {label} {tier}
       </SrOnly>

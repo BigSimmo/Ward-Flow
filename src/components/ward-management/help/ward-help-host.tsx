@@ -18,10 +18,6 @@ const WardShowMe = dynamic(withLoadRetry(() => import("./ward-show-me").then((m)
 const WardTourAutoStart = dynamic(
   withLoadRetry(() => import("./ward-tour-auto-start").then((m) => m.WardTourAutoStart)),
 );
-const WardHelpHints = dynamic(
-  withLoadRetry(() => import("../help-content/ward-help-hints").then((m) => m.WardHelpHints)),
-);
-const WardWhatsNew = dynamic(withLoadRetry(() => import("./ward-whats-new").then((m) => m.WardWhatsNew)));
 const WardHelpAccountMemory = dynamic(
   withLoadRetry(() => import("./ward-help-account-memory").then((m) => m.WardHelpAccountMemory)),
 );
@@ -106,11 +102,9 @@ export function WardHelpHost() {
         />
       );
     return signedIn ? (
-      <>
-        <WardTourAutoStart onStart={startTour} />
-        <WardWhatsNew />
-        <WardHelpHints />
-      </>
+      // Audit two (#46): only the tour offers itself on a first visit. The What's new corner card and
+      // the page tips no longer appear unasked; What's new stays a tab in Help.
+      <WardTourAutoStart onStart={startTour} />
     ) : null;
   }
 }

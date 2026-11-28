@@ -11,3 +11,20 @@
   font-size: var(--t-2);
   font-weight: 700;
 }
+
+/* Audit two #92: three figure cells in one row (value 20, label 12), then the caveat as a quiet note. */
+.figures.figures {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.figures dd {
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  margin: var(--wf-s-2) 0 var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}

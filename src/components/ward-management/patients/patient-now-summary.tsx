@@ -19,7 +19,7 @@ function bedTypeChipText(security: Security | undefined): string {
   return security === undefined ? "Bed type not recorded" : `${securityWord(security)} bed`;
 }
 import Link from "next/link";
-import { BedSingle, Check, ClipboardList, Clock, Copy, FileText } from "lucide-react";
+import { BedSingle, Check, ChevronDown, ClipboardList, Clock, Copy, FileText } from "lucide-react";
 import { PatientFlightHeader } from "./patient-flight-header";
 import { absenceStepsFor } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
@@ -34,6 +34,9 @@ import {
   CardHead,
   HeroFigures,
   HeroQuickChips,
+  Icon,
+  Menu,
+  heroChipClassName,
   LiveChip,
   StatusGlyph,
   buttonClass,
@@ -172,7 +175,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     stateTag,
     careSteps,
     onOpenHistory,
-    onOpenForms,
     tabValue,
   } = props;
   // The placement's seven stages stay one tap away behind the journey (Josh chose the slim band).
@@ -263,7 +265,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
   /* Page tops (Josh, 9 Nov 2026): a live movement's band leads with two figures, the wait (amber
      past the tier's target, in the page's words) and how many move conditions are clear, the
      status card's count. Tier, bed type and constant observation become small tags on the
-     identity line; Copy handover and Forms are the band's chips. Nothing here is new: every
+     identity line; Copy for handover and Forms are the band's chips. Nothing here is new: every
      figure is one the page already showed. */
   const movementTop = isLiveBedflow && liveMovement ? liveMovement : undefined;
   // Audit M5, D-210 (Josh, 14 Nov 2026): the tier target counts from the referral, as the values
@@ -338,40 +340,55 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     <HeroQuickChips
       label="Patient actions"
       items={[
-        {
-          id: "copy",
-          label: copied ? "Copied" : "Copy handover",
-          icon: <ClipboardList size={16} strokeWidth={1.75} aria-hidden="true" />,
-          onClick: handleCopySummary,
-          testId: "ward-patient-copy-handover",
-        },
-        ...(transferNotes
-          ? [
-              {
-                id: "copy-notes",
-                label: notesCopied ? "Copied" : "Copy to notes",
-                icon: <Copy size={16} strokeWidth={1.75} aria-hidden="true" />,
-                onClick: copyTransferNotes,
-                testId: "ward-patient-copy-transfer-notes",
-              },
-            ]
-          : []),
+        transferNotes
+          ? {
+              id: "copy",
+              label: "Copy",
+              node: (
+                <Menu
+                  label="Copy"
+                  items={[
+                    {
+                      id: "handover",
+                      label: (
+                        <span data-testid="ward-patient-copy-handover">{copied ? "Copied" : "Copy for handover"}</span>
+                      ),
+                      icon: ClipboardList,
+                      onSelect: handleCopySummary,
+                    },
+                    {
+                      id: "notes",
+                      label: (
+                        <span data-testid="ward-patient-copy-transfer-notes">
+                          {notesCopied ? "Copied" : "Copy to notes"}
+                        </span>
+                      ),
+                      icon: Copy,
+                      onSelect: copyTransferNotes,
+                    },
+                  ]}
+                  trigger={(props) => (
+                    <button type="button" {...props} className={heroChipClassName} data-testid="ward-patient-copy-menu">
+                      <Icon icon={Copy} size={16} />
+                      <span>Copy</span>
+                      <Icon icon={ChevronDown} size={14} />
+                    </button>
+                  )}
+                />
+              ),
+            }
+          : {
+              id: "copy",
+              label: copied ? "Copied" : "Copy for handover",
+              icon: <ClipboardList size={16} strokeWidth={1.75} aria-hidden="true" />,
+              onClick: handleCopySummary,
+              testId: "ward-patient-copy-handover",
+            },
         ...(pinChip ? [pinChip] : []),
-        ...(onOpenForms
-          ? [
-              {
-                id: "forms",
-                label: "Forms",
-                icon: <FileText size={16} strokeWidth={1.75} aria-hidden="true" />,
-                onClick: onOpenForms,
-                testId: "ward-patient-forms-chip",
-              },
-            ]
-          : []),
       ]}
     />
   ) : undefined;
-  // Redesign (12 Nov 2026): a stay's top matches a movement's. Copy summary, Pin and Forms are the
+  // Redesign (12 Nov 2026): a stay's top matches a movement's. Copy for handover, Pin and Forms are the
   // same chip row (D-159: one chip row, at most one on-hero button), not two buttons by the name.
   const stayChips =
     !movementTop && !isPhone ? (
@@ -380,23 +397,12 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
         items={[
           {
             id: "copy",
-            label: copied ? "Copied" : mode === "awol" ? "Copy missing person summary" : "Copy summary",
+            label: copied ? "Copied" : mode === "awol" ? "Copy missing person summary" : "Copy for handover",
             icon: <Copy size={16} strokeWidth={1.75} aria-hidden="true" />,
             onClick: handleCopySummary,
             testId: "ward-patient-copy-summary",
           },
           ...(pinChip ? [pinChip] : []),
-          ...(onOpenForms
-            ? [
-                {
-                  id: "forms",
-                  label: "Forms",
-                  icon: <FileText size={16} strokeWidth={1.75} aria-hidden="true" />,
-                  onClick: onOpenForms,
-                  testId: "ward-patient-forms-chip",
-                },
-              ]
-            : []),
         ]}
       />
     ) : undefined;

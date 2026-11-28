@@ -36,8 +36,12 @@ type MissingValueReason =
 
 export type MissingValueProps = {
   reason: MissingValueReason;
-  /** "cell" tightens spacing for dense tables; the phrase is never abbreviated. */
-  density?: "inline" | "cell";
+  /**
+   * "cell" tightens spacing for dense tables; the phrase is never abbreviated. "tight" (audit two
+   * #76, K11) is the short form for narrow cells such as a drawer head or a peek: the cell's own size
+   * and line, in ink-3, and it wraps onto a second line rather than ever becoming a dash.
+   */
+  density?: "inline" | "cell" | "tight";
   className?: string;
 };
 
@@ -79,7 +83,9 @@ export function MissingValue({ reason, density = "inline", className }: MissingV
       className={cn(
         density === "cell"
           ? "text-xs text-[color:var(--wf-ink-3)] whitespace-normal break-words"
-          : "text-sm text-[color:var(--text-muted)]",
+          : density === "tight"
+            ? "text-[length:inherit] leading-[inherit] text-[color:var(--wf-ink-3)] whitespace-normal break-words"
+            : "text-sm text-[color:var(--text-muted)]",
         className,
       )}
     >

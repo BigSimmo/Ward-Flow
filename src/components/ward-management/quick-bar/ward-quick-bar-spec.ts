@@ -32,7 +32,7 @@ const referral: QuickControl = { kind: "referral", label: "New referral", detail
  */
 export const QUICK_BAR: Record<WardAccessRole, readonly QuickControl[]> = {
   coordinator: [
-    tool("quick-actions", "Ward updates", "Not confirmed"),
+    tool("quick-actions", "Check counts", "Not confirmed"),
     tool("bed-finder", "Find a bed", "Ready now"),
     tool("contacts", "Call and contacts", "Who is on"),
     { kind: "link", href: "/bedchart/handover", label: "Handover", detail: "Shift handover" },
@@ -40,14 +40,12 @@ export const QUICK_BAR: Record<WardAccessRole, readonly QuickControl[]> = {
   bed_manager: [
     tool("bed-finder", "Find a bed", "Ready now"),
     tool("update-bed", "Update a bed", "Open or close"),
-    tool("quick-actions", "Quick actions", "Broadcast and more"),
     tool("leave-due", "Due back", "Back today"),
     tool("messages", "Bed summary", "Copy for email"),
     tool("remind", "Remind me", "A nudge"),
   ],
   ward: [
     tool("leave-due", "Due back", "Back today"),
-    tool("quick-actions", "Quick actions", "Confirm beds and more"),
     referral,
     tool("form-times", "Form times", "Form expiry"),
     tool("contacts", "On-call", "Who is on"),

@@ -278,3 +278,15 @@
     overflow: visible;
   }
 }
+
+/* Design review (27 Nov 2026): on a phone the four hero figures share four equal columns and a long
+   label ("over 24 h") wraps to a second line instead of running off the right edge. */
+@media (max-width: 46.4375rem) {
+  .main [role="group"]:has(> [data-wf-hero-figure]) {
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
+  .main [data-wf-hero-figure] > :not(b) {
+    white-space: normal;
+  }
+}

@@ -6,7 +6,8 @@ import { useWardRaise } from "../ward-flow-raise";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useLegalFormsCopy } from "./use-legal-forms-copy";
-import { BookOpen, ClipboardCopy, ClipboardList, Ellipsis, Plus } from "lucide-react";
+import { BookOpen, ClipboardCopy, ClipboardList, Copy, Plus, UserRound } from "lucide-react";
+import Link from "next/link";
 import {
   Button,
   Card,
@@ -14,6 +15,7 @@ import {
   CardHead,
   DataRow,
   Drawer,
+  DrawerFootRow,
   FolderTabs,
   Hero,
   HeroAct,
@@ -21,13 +23,14 @@ import {
   HeroQuickChips,
   HeroTop,
   LiveChip,
-  Menu,
+  PanelDrawer,
   PhoneListRow,
   PhoneSheet,
   Segmented,
   StackBar,
   SrOnly,
   StatusGlyph,
+  buttonClass,
   cx,
   folderTabClasses,
   tableClasses,
@@ -52,6 +55,8 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { ROLE_SCREENS } from "@/components/ward-management/ward-role-access";
 import { SeclusionFormsView } from "@/components/ward-management/restrictive-practice/seclusion-forms-view-lazy";
 import type { SeclusionAsk } from "@/components/ward-management/restrictive-practice/seclusion-forms-view";
@@ -117,6 +122,7 @@ import {
 } from "./legal-forms-view";
 import { currentLegalPosition } from "./legal-form-progression";
 import { PhoneChecklist } from "./legal-forms-phone-checklist";
+import { nextStep } from "./legal-forms-next-step";
 import type { LegalFormDetailsSave } from "./legal-form-details";
 import styles from "./legal-forms.module.css";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
@@ -247,6 +253,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     />
   );
   const isPhone = useIsPhone();
+  const canOpenHref = useCanOpenHref();
   // Forms in force (v10): the three most common types as chips on one line, the rest behind "+N".
   const [allCodes, setAllCodes] = useState(false);
   const openMovements = movements.filter(isOpen);
@@ -397,7 +404,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       {
         success: `Form marked received for ${nameOf(movement)}`,
         undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
-        undone: `Received mark undone for ${nameOf(movement)}.`,
+        undone: `Undone: Received mark for ${nameOf(movement)}`,
       },
     );
   };
@@ -563,7 +570,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       {
         success: `Form time recorded for ${nameOf(target)}`,
         undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
-        undone: `Form time undone for ${nameOf(target)}.`,
+        undone: `Undone: Form time for ${nameOf(target)}`,
       },
       { completion },
     );
@@ -599,12 +606,10 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       key={selected.id}
       movement={selected}
       name={nameOf(selected)}
-      umrn={umrnOf(selected)}
       edName={edNameOf(selected)}
       wardName={wardNameOf(selected)}
       now={now}
       dayZero={dayZero}
-      onClose={() => setSelectedId(null)}
       focusGap={focusGap}
       refusal={lastWrittenRefusal?.reason}
       onSaveWritten={(written) => saveWritten(selected, written)}
@@ -615,12 +620,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       markReceivedUnavailable={receivedUnavailable(selected)}
       onExtend={() => setExtendId(selected.id)}
       extendUnavailable={extendGate.reason}
-      onRecordNext={() => openRecord(selected.id)}
       onSaveDetails={(details) => saveDetails(selected, details)}
       detailsUnavailable={recordGate.reason}
       onRequirements={(code) => setRequirementsCode(code)}
-      onCopy={copySelectedSummary}
-      copied={copied === "summary"}
     />
   ) : null;
 
@@ -637,7 +639,8 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const phonePrimary =
     selected && nextGap
       ? {
-          label: GAP_ACTION[nextGap],
+          // Audit four #98: the drawer foot has the room for the full words the task strip shortens.
+          label: nextGap === "received" ? "Mark received" : GAP_ACTION[nextGap],
           disabledReason:
             nextGap === "received"
               ? (receivedUnavailable(selected) ?? typedReceipt(receivedTextOf(selected.id), now).problem)
@@ -652,20 +655,92 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
           },
         }
       : undefined;
-  // v10 phone: the sheet foot always pins the next step. With no gap left to record it is the
-  // panel's own "Record next form", and Copy sits beside it, so neither floats mid-sheet.
+  // v10 phone, audit four #98 at every width: the drawer foot always pins the next step. With no gap
+  // left to record it is the form's own next step ("Record Form 3"), else "Record next form".
+  const selectedStep = selected ? nextStep(selected, now, dayZero) : undefined;
   const phoneSheetPrimary =
     phonePrimary ??
     (selected
       ? {
-          label: "Record next form",
+          label: selectedStep?.action === "next-form" ? selectedStep.title : "Record next form",
           disabledReason: recordGate.reason,
           onAction: () => openRecord(selected.id),
         }
       : undefined);
-  const phoneSheetSecondary = selected
-    ? { label: copied === "summary" ? "Copied" : "Copy", onAction: copySelectedSummary }
+
+  // Audit four #98: the form drawer's head and foot, one kit PanelDrawer at every width. Line two
+  // of the foot is quiet: the person's own page (when the move links to a patient record this desk
+  // may open), the move, and Copy to notes.
+  const selectedPatient = selected ? patientOf(selected).patient : undefined;
+  const selectedPatientHref = selectedPatient ? patientHref(selectedPatient.id) : null;
+  const selectedIndex = selected ? rows.findIndex((movement) => movement.id === selected.id) : -1;
+  const formPager = selected
+    ? {
+        index: selectedIndex,
+        total: rows.length,
+        noun: "form",
+        onStep: (delta: -1 | 1) => {
+          if (rows.length === 0) return;
+          const from = selectedIndex < 0 ? (delta > 0 ? -1 : 0) : selectedIndex;
+          const next = rows.at((from + delta + rows.length) % rows.length);
+          if (next) select(next);
+        },
+      }
     : undefined;
+  const formWhere = selected ? `${edNameOf(selected)}${wardNameOf(selected) ? ` to ${wardNameOf(selected)}` : ""}` : "";
+  const formFoot =
+    selected && phoneSheetPrimary ? (
+      <>
+        <Button
+          variant="pri"
+          className={styles.drawerMain}
+          disabledReason={phoneSheetPrimary.disabledReason}
+          onClick={phoneSheetPrimary.onAction}
+          data-testid="ward-legal-form-next"
+        >
+          {phoneSheetPrimary.label}
+        </Button>
+        <DrawerFootRow className={styles.drawerRow}>
+          {selectedPatientHref && canOpenHref(selectedPatientHref) ? (
+            <Link className={buttonClass({ variant: "sec" })} href={selectedPatientHref}>
+              <UserRound size={14} aria-hidden="true" />
+              Patient page
+            </Link>
+          ) : null}
+          <Link className={buttonClass({ variant: "sec" })} href={movementHref(selected.id)}>
+            Open move
+          </Link>
+          <Button variant="sec" icon={Copy} onClick={copySelectedSummary}>
+            {copied === "summary" ? "Copied" : isPhone ? "Copy" : "Copy to notes"}
+          </Button>
+        </DrawerFootRow>
+      </>
+    ) : null;
+  const formDrawer = (
+    <PanelDrawer
+      open={selected !== null}
+      onClose={() => setSelectedId(null)}
+      title={selected ? nameOf(selected) : "Form"}
+      tag={selected?.legalForm ? <span className={styles.code}>{selected.legalForm.code}</span> : undefined}
+      subtitle={
+        selected
+          ? [
+              <span className={styles.mono} key="umrn">
+                {umrnOf(selected)}
+              </span>,
+              formWhere,
+            ]
+          : undefined
+      }
+      pager={formPager}
+      tagBelow
+      testId="ward-legal-form-sheet"
+      bodyClassName={styles.formDrawerBody}
+      foot={formFoot}
+    >
+      {focusPanel}
+    </PanelDrawer>
+  );
 
   // Read aloud on both layouts: desktop no longer shows the strip that used to carry it (D-77 change 5).
   const breakdownNote = (
@@ -734,7 +809,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                 <SrOnly>{allCodes ? " form types" : " more form types"}</SrOnly>
               </button>
             ) : null}
-            <span className={styles.stripTotal}>{rows.length} total</span>
           </div>
           {breakdownNote}
         </CardBody>
@@ -957,24 +1031,17 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       more={
         // Phone: three tabs and More, as on Home (History moves behind More).
         isPhone && shownView !== "history" ? (
-          <Menu
-            label="More legal forms views"
-            align="end"
-            items={[
-              { id: "history", label: `History (${closedWithForms.length})`, onSelect: () => setView("history") },
-            ]}
-            trigger={(props) => (
-              <Button
-                {...props}
-                variant="ghost"
-                size="sm"
-                iconOnly
-                icon={Ellipsis}
-                className={folderTabClasses.more}
-                aria-label="More legal forms views"
-              />
-            )}
-          />
+          // Simplification R4 (mock-up, 26 Nov 2026): the menu held History alone, so History is a
+          // plain button with its own label.
+          <Button
+            variant="ghost"
+            size="sm"
+            className={folderTabClasses.more}
+            onClick={() => setView("history")}
+            data-testid="ward-legal-history-tab"
+          >
+            History ({closedWithForms.length})
+          </Button>
         ) : undefined
       }
     >
@@ -1105,25 +1172,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             <PhoneSheet open={tasksOpen} onClose={() => setTasksOpen(false)} title="Record and tell">
               {taskStrip}
             </PhoneSheet>
-            <PhoneSheet
-              open={selected !== null}
-              onClose={() => setSelectedId(null)}
-              title={selected ? nameOf(selected) : "Form"}
-              description={
-                selected ? (
-                  <>
-                    <span className={styles.mono}>{umrnOf(selected)}</span>
-                    {selected.legalForm ? ` · ${formTitle(selected.legalForm.code)}` : ""}
-                  </>
-                ) : undefined
-              }
-              height="tall"
-              primary={phoneSheetPrimary}
-              secondary={phoneSheetSecondary}
-            >
-              {/* v10 phone: the sheet's own header names the person, so the panel drops its head. */}
-              <div className={styles.phoneFocus}>{focusPanel}</div>
-            </PhoneSheet>
+            {formDrawer}
           </>
         ) : (
           <>
@@ -1249,21 +1298,8 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                 {shownView === "history" ? historyList : null}
               </Card>
 
-              {selected ? (
-                // D-77 change 5: the list keeps the full width and the form opens as a drawer over it.
-                <Drawer
-                  open
-                  onClose={() => setSelectedId(null)}
-                  title={nameOf(selected)}
-                  description={`${umrnOf(selected)}${selected.legalForm ? ` · ${formTitle(selected.legalForm.code)}` : ""}`}
-                  testId="ward-legal-form-sheet"
-                  // The panel runs edge to edge and anchors its own action bar at the bottom.
-                  bodyClassName="flex flex-col p-0 sm:p-0"
-                >
-                  {/* As on the phone sheet, the drawer's own header names the person, so the panel drops its head. */}
-                  <div className={cx(styles.phoneFocus, "flex flex-1 flex-col")}>{focusPanel}</div>
-                </Drawer>
-              ) : null}
+              {/* D-77 change 5: the list keeps the full width and the form opens as a drawer over it. */}
+              {formDrawer}
               <Drawer
                 open={tasksOpen}
                 onClose={() => setTasksOpen(false)}
@@ -1310,7 +1346,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                 {
                   success: `Form ${formCode} recorded for ${nameOf(movement)}`,
                   undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
-                  undone: `Form ${formCode} record undone for ${nameOf(movement)}.`,
+                  undone: `Undone: Form ${formCode} record for ${nameOf(movement)}`,
                 },
                 { completion: outcome },
               );
@@ -1359,7 +1395,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                 {
                   success: `Form ${movement.legalForm?.code ?? ""} extended for ${nameOf(movement)}`,
                   undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
-                  undone: `Form extension undone for ${nameOf(movement)}.`,
+                  undone: `Undone: Form extension for ${nameOf(movement)}`,
                 },
                 { completion: outcome },
               );

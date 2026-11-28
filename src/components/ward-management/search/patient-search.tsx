@@ -12,8 +12,9 @@ import {
   useRef,
   useState,
   type MouseEvent as ReactMouseEvent,
+  type ReactNode,
 } from "react";
-import { ClipboardList, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import {
   Card,
   FolderTabs,
@@ -80,7 +81,6 @@ import { LONG_WAIT_MINUTES, LONG_WAIT_TEXT } from "@/components/ward-management/
 
 import { recordSearch, type AccessEntry } from "./access-record";
 import { handOffTypedPatientQuery, isNewTabClick, takeHandedOffPatientSearchText } from "./patient-query-handoff";
-import { RecordPreview, type PreviewSelection } from "./record-preview";
 import { refusalFor } from "./search-refusals";
 import { movementOriginService, movementSearchState, referralOriginService } from "./search-operational-state";
 import {
@@ -102,6 +102,7 @@ import {
   buildCensus,
   censusLine,
   parseDob,
+  splitTypedDob,
   sortCensusRows,
   type CensusGroup,
   type CensusHighlight,
@@ -112,12 +113,11 @@ import {
   CensusDetailDrawer,
   CensusEmpty,
   CensusHistory,
+  CensusShareMenu,
   CensusTable,
   type CensusScrollPosition,
   countPeople,
   PhoneCensus,
-  DobField,
-  DobToggle,
   ShiftSummary,
 } from "./patient-census-view";
 
@@ -134,7 +134,7 @@ import {
 } from "./patient-states";
 import { EdPlacementPrintSheet } from "./census-print";
 import { usePrinting, usePrintScope } from "@/components/ward-management/use-printing";
-import { ListPrintMenu, patientPrintChoices } from "@/components/ward-management/ward-list-print-menu";
+import { patientPrintChoices } from "@/components/ward-management/ward-list-print-menu";
 import {
   LONG_WAIT_HOURS,
   SHORT_WAIT_HOURS,
@@ -145,7 +145,7 @@ import {
   resultId,
   waitedHours,
 } from "./patient-search-model";
-import { AccessRecordPanel, PeopleSection, ResultsSection } from "./patient-search-sections";
+import { ResultsSection } from "./patient-search-sections";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
 import { aboriginalOrTorresStraitIslanderIdentityLabel } from "@/components/ward-management/ward-patient-aboriginal-status";
@@ -238,7 +238,21 @@ interface UnifiedCaseloadPatient {
   originalSubject: PatientSearchResult | { kind: "person"; patient: Patient };
 }
 
-export function PatientSearchPage() {
+export function PatientSearchPage({
+  pageSwitch,
+  heroTabs,
+  initialQuery,
+  onQueryChange,
+}: {
+  /** Find (mock-up, 26 Nov 2026): the Find tabs, drawn first in this page's tab row; the page is unchanged. */
+  pageSwitch?: ReactNode;
+  /** Find (mock-up): the Find tabs, drawn at the top of the hero. */
+  heroTabs?: ReactNode;
+  /** Find: words carried from another tab's search box, in memory only (never the address). */
+  initialQuery?: string;
+  /** Find: the search box's words, handed back so the next tab can carry them. */
+  onQueryChange?: (query: string) => void;
+} = {}) {
   const zone = useClockZoneLabel();
   const printing = usePrinting();
   const printScope = usePrintScope();
@@ -255,10 +269,17 @@ export function PatientSearchPage() {
   const registerAccess = useEffectiveWardAccess();
   const now = useWardFlowClock();
   // shell-6: a "Person not found" page can hand a UMRN over in memory, never in the address.
-  const [typedText, setText] = useState(() => takeHandedOffPatientSearchText() ?? "");
+  const [typedText, setText] = useState(() => takeHandedOffPatientSearchText() ?? initialQuery ?? "");
+  useEffect(() => {
+    onQueryChange?.(typedText);
+  }, [typedText, onQueryChange]);
   // Search audit, 8 Nov 2026: the census, its stage counts and the people list re-scan every record
   // per keystroke, so they read a deferred copy and the field itself never waits on them.
-  const text = useDeferredValue(typedText);
+  // Audit three #62: a date of birth is typed into the same box; the rest of the words are the name.
+  const typedSplit = splitTypedDob(typedText);
+  const text = useDeferredValue(typedSplit.rest);
+  const dob = typedSplit.dob ?? "";
+  const dobOn = typedSplit.dob !== null;
   // Return to your place (usability item 3, 24 Oct 2026): null unless Back brought us here.
   const returned = useReturnedView<PatientsPlace>(PATIENTS_ROUTE);
   const [stage, setStage] = useState<MovementStage | "">(returned?.stage ?? "");
@@ -272,16 +293,12 @@ export function PatientSearchPage() {
   const [tierFilter, setTierFilter] = useState<string>(returned?.tierFilter ?? "all");
   // The legacy list's order. The census sorts itself (`censusSort`); this keeps the inert record list stable.
   const sortBy = "wait-desc" as "wait-desc" | "tier-asc" | "form-asc" | "name-asc" | "urm-asc" | "opened-desc";
-  const viewMode = "cards" as "cards" | "dense";
-  const [requestedPreview, setPreview] = useState<PreviewSelection | null>(null);
   const [requestedSelectedId, setSelectedId] = useState<string | null>(null);
   const [copyNote, setCopyNote] = useState<string | null>(null);
   const [accessRecord, setAccessRecord] = useState<AccessEntry[]>([]);
   // Drawer review (6 Nov 2026): a chosen row opens in the kit right drawer at every width above the
   // phone, and the kit Sheet hands focus back to the row on close.
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [dobOn, setDobOn] = useState(false);
-  const [dob, setDob] = useState("");
   const [highlight, setHighlight] = useState<CensusHighlight | null>(returned?.highlight ?? null);
   const [censusSort, setCensusSort] = useState<CensusSort>(returned?.censusSort ?? "wait");
   const [tab, setTab] = useState<"now" | "history">(returned?.tab ?? "now");
@@ -720,8 +737,6 @@ export function PatientSearchPage() {
     setTierFilter("all");
     setPresenceFilter("all");
     setActiveKpiFacet("all");
-    setDob("");
-    setDobOn(false);
     setPatientState("all");
   };
 
@@ -832,6 +847,8 @@ export function PatientSearchPage() {
   // Page tops (Josh, 9 Nov 2026): the switch is the page's folder tabs under the hero, at every width.
   const stateTabs = (
     <FolderTabs label="Where people are now" value={patientState} className={ct.folder} testId="ward-patient-states">
+      {/* Find (mock-up): the page's own switch keeps its folder tab look; Find's pinned and recent
+          places (drawn only once used) take their own line under it. */}
       <Segmented<PatientStateFilter>
         className={folderTabClasses.switch}
         label="Where people are now"
@@ -840,6 +857,7 @@ export function PatientSearchPage() {
         onChange={chooseState}
         items={stateItems}
       />
+      {pageSwitch}
     </FolderTabs>
   );
 
@@ -858,30 +876,11 @@ export function PatientSearchPage() {
     visibleRows.find((row) => row.key === requestedSelectedId) ??
     (searching && visibleRows.length === 1 ? visibleRows[0]! : null);
   const selectedId = selectedCensus?.key ?? null;
-  const selectedRow = unifiedCaseload.find((row) => row.id === selectedId) ?? null;
   // The drawer belongs to the row that opened it. If that row leaves the results the drawer closes,
   // and the open flag is cleared here (during render, not in an effect) so the shortcut comes back
   // and the drawer cannot reopen by itself if the row later returns.
   const drawerOpen = !isPhone && detailsOpen && requestedSelectedId !== null && selectedId === requestedSelectedId;
   if (detailsOpen && !drawerOpen) setDetailsOpen(false);
-
-  const preview: PreviewSelection | null =
-    selectedRow === null
-      ? requestedPreview?.kind === "person"
-        ? {
-            kind: "person",
-            patient: patients.find((patient) => patient.id === requestedPreview.patient.id) ?? requestedPreview.patient,
-          }
-        : null
-      : requestedPreview && (requestedSelectedId === null || selectedId === requestedSelectedId)
-        ? requestedPreview.kind === "person"
-          ? {
-              kind: "person",
-              patient:
-                patients.find((patient) => patient.id === requestedPreview.patient.id) ?? requestedPreview.patient,
-            }
-          : selectedRow.originalSubject
-        : selectedRow.originalSubject;
 
   const selectRow = (row: CensusRow) => {
     rememberReturnRow(PATIENTS_ROUTE, row.key);
@@ -889,18 +888,6 @@ export function PatientSearchPage() {
     setExpandedKey((current) => (current === row.key ? null : row.key));
     // The phone opens its own sheet from the expanded row; every wider page uses the drawer.
     if (!isPhone) setDetailsOpen(true);
-    const movement = row.kind === "movement" ? movements.find((m) => m.id === row.key) : undefined;
-    const referral = row.kind === "referral" ? referrals.find((r) => r.id === row.key) : undefined;
-    const person = row.patientRecordId ? patients.find((p) => p.id === row.patientRecordId) : undefined;
-    setPreview(
-      movement
-        ? { kind: "movement", movement }
-        : referral
-          ? { kind: "referral", referral }
-          : person
-            ? { kind: "person", patient: person }
-            : null,
-    );
   };
 
   // "This shift" shortcuts (longest wait, first expired pull) open the person and bring the row
@@ -1037,17 +1024,19 @@ export function PatientSearchPage() {
       role="search"
       onSubmit={(event) => {
         event.preventDefault();
-        const words = `${typedText} ${dobOn ? dob : ""}`.trim();
+        const words = typedText.trim();
         if (words.length === 0) return;
-        setAccessRecord((l) => recordSearch(l, { words, text: typedText, dob: dobOn ? dob : undefined, at: now }));
+        setAccessRecord((l) =>
+          recordSearch(l, { words, text: typedSplit.rest, dob: dobOn ? dob : undefined, at: now }),
+        );
       }}
     >
       {/* D-91: the kit's one page search field, with the date of birth beside it and the count under it. */}
       <div className={cs.searchRow}>
         <SearchField
           className={cs.searchMain}
-          label="Find a person by name, UMRN or place"
-          placeholder={dobOn ? "Family or given name" : "Name, UMRN or place"}
+          label="Find a person by name, UMRN, place or date of birth"
+          placeholder={isPhone ? "Name, UMRN, place or DOB" : "Name, UMRN, place or DOB (DD/MM/YYYY)"}
           value={typedText}
           onValueChange={(next) => {
             setText(next);
@@ -1067,10 +1056,7 @@ export function PatientSearchPage() {
               : undefined
           }
         />
-        {dobOn && !isPhone ? <DobField dob={dob} onDob={setDob} /> : null}
-        <DobToggle dobOn={dobOn} onDobToggle={() => setDobOn((on) => !on)} />
       </div>
-      {isPhone && dobOn ? <DobField dob={dob} onDob={setDob} phone /> : null}
     </form>
   );
 
@@ -1080,9 +1066,7 @@ export function PatientSearchPage() {
       closed={census.closedToday}
       now={now}
       onRerun={(entry) => {
-        setText(entry.text ?? entry.words);
-        setDob(entry.dob ?? "");
-        setDobOn(entry.dob !== undefined);
+        setText(entry.text === undefined ? entry.words : [entry.text, entry.dob].filter(Boolean).join(" "));
         setTab("now");
       }}
     />
@@ -1123,6 +1107,8 @@ export function PatientSearchPage() {
             className={cx(cs.censusHero, titles.hero, folderTabClasses.hero, isPhone && cs.heroPhone)}
             // WF-11 (live test, 4 Nov 2026): the title names the desk's real scope, since the counts are
             // that scope's, not the state's. Page tops (Josh, 9 Nov 2026): "Find a patient statewide".
+            eyebrow={heroTabs}
+            phoneEyebrow={heroTabs ? "show" : undefined}
             title={
               <>
                 Find a patient <span className={titles.soft}>{scopeWords}</span>
@@ -1171,17 +1157,18 @@ export function PatientSearchPage() {
                             },
                           ]
                         : []),
+                      // #28 (audit two, 27 Nov 2026): Copy list and Print are one Share chip.
                       {
-                        id: "copy",
-                        label: "Copy list",
-                        icon: <ClipboardList size={16} strokeWidth={1.75} aria-hidden="true" />,
-                        onClick: copyList,
-                        testId: "ward-patient-search-copy-list",
-                      },
-                      {
-                        id: "print",
-                        label: "Print",
-                        node: <ListPrintMenu look="chip" choices={printChoices} testId="ward-patient-search-print" />,
+                        id: "share",
+                        label: "Share",
+                        node: (
+                          <CensusShareMenu
+                            look="chip"
+                            onCopyList={copyList}
+                            printChoices={printChoices}
+                            testId="ward-patient-search-share"
+                          />
+                        ),
                       },
                     ]}
                   />
@@ -1373,58 +1360,6 @@ export function PatientSearchPage() {
           ) : null}
         </div>
 
-        {/* The people, movement and referral sections, the full record preview and the session's
-            search record. `inert` (25 Sept 2026): out of the tab order and the accessibility tree,
-            so the results are not read twice. */}
-        <div className="sr-only" inert>
-          <PeopleSection
-            people={people}
-            query={text}
-            otherMatches={results.length}
-            onPreview={(p) => {
-              setSelectedId(p.id);
-              setPreview({ kind: "person", patient: p });
-            }}
-            selectedPatientId={preview?.kind === "person" ? preview.patient.id : null}
-            referrals={referrals}
-            movements={movements}
-          />
-          {!refusal && (
-            <ResultsSection
-              results={results}
-              units={units}
-              now={now}
-              viewMode={viewMode}
-              patients={patients}
-              referrals={referrals}
-              onPreviewMovement={(m) => {
-                setSelectedId(m.id);
-                setPreview({ kind: "movement", movement: m });
-              }}
-              selectedMovementId={preview?.kind === "movement" ? preview.movement.id : null}
-              onPreviewReferral={(r) => {
-                setSelectedId(r.id);
-                setPreview({ kind: "referral", referral: r });
-              }}
-              selectedReferralId={preview?.kind === "referral" ? preview.referral.id : null}
-            />
-          )}
-          {preview && (
-            <RecordPreview
-              selection={preview}
-              referrals={referrals}
-              movements={movements}
-              patients={patients}
-              units={units}
-              admissions={admissions}
-              now={now}
-              dayZero={dayZero}
-              onClose={() => setPreview(null)}
-            />
-          )}
-          <AccessRecordPanel entries={accessRecord} now={now} />
-        </div>
-
         {isPhone ? (
           <PhoneCensus
             rows={stateRows}
@@ -1520,6 +1455,27 @@ export function PatientSearchPage() {
           onCopy={copyRow}
           copyNote={copyNote}
           testId="ward-patient-search-details"
+          // Audit three #34: previous and next through the people shown.
+          pager={
+            selectedCensus
+              ? (() => {
+                  const index = stateRows.findIndex((row) => row.key === selectedCensus.key);
+                  return {
+                    index,
+                    total: stateRows.length,
+                    noun: "person",
+                    onStep: (delta: -1 | 1) => {
+                      const next = stateRows[(Math.max(index, 0) + delta + stateRows.length) % stateRows.length];
+                      if (next) {
+                        rememberReturnRow(PATIENTS_ROUTE, next.key);
+                        setSelectedId(next.key);
+                        setExpandedKey(next.key);
+                      }
+                    },
+                  };
+                })()
+              : undefined
+          }
         />
 
         {printing && printScope === "ed-placement" ? (

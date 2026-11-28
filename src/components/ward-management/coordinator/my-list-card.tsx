@@ -114,9 +114,10 @@ function AlertAction({ entry, handlers }: { entry: QueueEntry; handlers: QueueHa
     <Link
       className={buttonClass({ size: "sm" })}
       href={patientHref}
-      aria-label={`Open patient for ${entry.subject.displayName}`}
+      aria-label={`Patient page for ${entry.subject.displayName}`}
     >
-      Open patient
+      {/* Audit two #4 (O24): a link to the patient page says so. */}
+      Patient page
     </Link>
   );
 }
@@ -411,7 +412,7 @@ export function MyListCard({
   );
   const decideGroup = (
     <section className={alertStyles.group} aria-label="Referrals to decide">
-      <GroupHead tone="info" label="Referrals to decide" count={referrals.length} aside="oldest first" />
+      <GroupHead tone="info" label="Referrals to decide" count={referrals.length} aside="longest wait first" />
       {referrals.length > 0 ? referralRows : <CalmEmpty>No referral is waiting on a decision.</CalmEmpty>}
       {referralCap !== undefined && referrals.length > referralCap ? (
         <button
@@ -420,7 +421,7 @@ export function MyListCard({
           aria-expanded={allReferrals}
           onClick={() => setAllReferrals((open) => !open)}
         >
-          {allReferrals ? "Show fewer" : `Show ${referrals.length - referralCap} more`}
+          {allReferrals ? "Show fewer" : `Show all ${referrals.length}`}
         </button>
       ) : null}
     </section>

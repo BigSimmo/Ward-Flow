@@ -646,7 +646,7 @@ export function RecordPreview({
               <>
                 {linkedMovement ? (
                   <Link href={movementHref(linkedMovement.id)} className={styles.btnPrimary}>
-                    <span>View movement</span>
+                    <span>Open movement</span>
                     <ChevronRight size={12} strokeWidth={1.75} aria-hidden="true" />
                   </Link>
                 ) : (
@@ -1110,7 +1110,7 @@ export function RecordPreview({
         {/* 7. Coordinator Action Bar */}
         <div className={styles.dossierActionBar}>
           <Link href={movementHref(movement.id)} className={styles.btnPrimary}>
-            <span>View movement</span>
+            <span>Open movement</span>
             <ChevronRight size={12} strokeWidth={1.75} aria-hidden="true" />
           </Link>
           <button

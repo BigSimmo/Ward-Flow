@@ -1,3 +1,6 @@
+/* Audit two B21: every table cell rule here starts with `html`, one element more than the kit's
+   `.table td` and `.table th`, so the page's own cell rules win in the production build as in dev,
+   whatever order the two style sheets load in. Order among this file's own rules is unchanged. */
 /*
  * Capacity for the Executive desk (wave 4, C7, notes item 7, D-191): the slate hero, then the kit
  * table "Beds by ward" grouped by service, or a read-only bed-squares list on a phone. Tokens only;
@@ -91,8 +94,8 @@
   font-size: var(--wf-fs-13);
 }
 
-.table.table th,
-.table.table td {
+html .table.table th,
+html .table.table td {
   padding: var(--wf-s-2) var(--wf-s-4);
   border-bottom: 1px solid var(--wf-line);
   text-align: left;
@@ -102,14 +105,14 @@
 }
 
 /* Sentence-case heads, not uppercase mono (notes self-critique round 1). */
-.table.table thead th {
+html .table.table thead th {
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-ink-2);
   white-space: nowrap;
 }
 
-.table.table tbody th,
-.table.table tfoot th {
+html .table.table tbody th,
+html .table.table tfoot th {
   font-family: var(--wf-font);
   font-size: var(--wf-fs-13);
   font-weight: 600;
@@ -118,7 +121,7 @@
 
 /* A figure sits under its head: `.table.table td` above sets every cell left, so the figure cell's
    selector must out-rank it (check B3: the numbers sat about 50 px left of their heads). */
-.table.table th[class*="num"],
+html .table.table th[class*="num"],
 .table.table .num {
   text-align: right;
   font-family: var(--wf-mono);
@@ -126,7 +129,7 @@
   white-space: nowrap;
 }
 
-.table.table thead th[class*="num"] {
+html .table.table thead th[class*="num"] {
   font-family: var(--wf-font);
 }
 
@@ -148,20 +151,20 @@
   min-width: 160px;
 }
 
-.groupRow th {
+html .groupRow th {
   background: var(--wf-surface-2);
   font: 650 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
-.totalRow th,
-.totalRow td {
+html .totalRow th,
+html .totalRow td {
   font-weight: 700;
   border-bottom: 0;
   border-top: 1px solid var(--wf-line-3);
 }
 
-.table.table .totalRow th,
-.table.table .totalRow td {
+html .table.table .totalRow th,
+html .table.table .totalRow td {
   border-bottom: 0;
 }
 

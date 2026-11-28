@@ -474,7 +474,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "transport",
           { sel: '[data-testid^="ward-community-open-dossier-"]' },
           "Open a person's record",
-          "Select a person's row to open their record. When a move needs transport, Log transport booking appears beside it.",
+          "Select a person's row to open their record. When a move needs transport, Record transport booking appears beside it.",
         ),
         step(
           "Finding your way",
@@ -547,8 +547,8 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "Your daily work",
           "booking",
           { sel: '[data-testid="ward-officer-hero-log-booking"]' },
-          "Log a booking",
-          "Log booking shows while a job still needs transport booked. It opens the booking for the first of them.",
+          "Record a booking",
+          "Record booking shows while a job still needs transport booked. It opens the booking for the first of them.",
         ),
         step(
           "Your daily work",
@@ -563,7 +563,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "copy",
           { sel: '[data-testid="ward-officer-copy-handover"]' },
           "Hand over your jobs",
-          "Copy handover copies a plain text summary of the open jobs, ready to paste for the next shift.",
+          "Copy for handover copies a plain text summary of the open jobs, ready to paste for the next shift.",
         ),
         step(
           "Finding your way",
@@ -610,7 +610,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "meeting",
           { sel: '[data-testid="capacity-bed-meeting"]' },
           "The bed meeting",
-          "Bed meeting sheet opens the sheet in one tap. The arrow beside it holds Open on TV for the meeting room screen, and Open the meeting agenda.",
+          "Bed meeting sheet opens the sheet in one tap. Open on TV is in the sheet's footer, for the meeting room screen. The arrow beside it, where shown, holds Open the meeting agenda.",
         ),
         step(
           "Your daily work",
@@ -677,9 +677,11 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Finding your way",
           "export",
-          { sel: '[data-testid="ward-statistics-export"], [data-testid="ward-statistics-tools-menu"]' },
+          {
+            sel: '[data-testid="ward-statistics-share"], [data-testid="ward-statistics-export"], [data-testid="ward-statistics-tools-menu"]',
+          },
           "Take the figures with you",
-          "Export the figures downloads the figures at the top of the page as a spreadsheet, for a report or briefing.",
+          "Export, in the Share menu, saves the figures at the top of the page as a spreadsheet, for a report or briefing.",
         ),
         step(
           "Finding your way",
@@ -788,7 +790,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
               : ` ${count(f.referralsWaiting, "referral is", "referrals are")} waiting for a decision.`
           } Flow lists every open movement, and Later today what is planned for the rest of the shift.`,
         ),
-        phoneCreate("New referral, New triage, Log a delay, Update a bed and Add patient"),
+        phoneCreate("New referral, New triage, Record a delay, Update a bed and Add patient"),
         phoneDock(
           `Home, Capacity, Alerts and Tools. Referrals${f.referralsWaiting === undefined ? "" : `, with ${f.referralsWaiting} awaiting a decision,`} is in the menu.`,
         ),
@@ -843,7 +845,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "Referrals to answer",
           `Referrals sent to ${place ?? "your ward"} wait here for your answer.`,
         ),
-        phoneCreate("New referral, New triage, Log a delay, Update a bed and Add patient"),
+        phoneCreate("New referral, New triage, Record a delay, Update a bed and Add patient"),
         phoneDock(
           "My ward, Referrals, Alerts and Coming and going. Handover, the sheet you pass to the next nurse in charge, is in the menu.",
         ),
@@ -880,7 +882,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "Tier, bay, time in ED and the next step.",
           "Tap a row to see that person's details.",
         ),
-        phoneCreate("New referral, New triage, Log a delay and Add patient"),
+        phoneCreate("New referral, New triage, Record a delay and Add patient"),
         phoneDock("My ED, Referrals, Alerts and Find a bed."),
         step(
           "Finding your way",
@@ -925,7 +927,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "One row per person",
           "The ward, legal status and days in the bed, with how long the person was with your team before.",
         ),
-        phoneCreate("New referral, New triage, Log a delay and Add patient"),
+        phoneCreate("New referral, New triage, Record a delay and Add patient"),
         phoneDock("My team, Referrals, Alerts and Movements."),
         PHONE_HELP,
       ];
@@ -937,7 +939,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "hero",
           HERO,
           "Your jobs at a glance",
-          `${f.activeJobs === undefined ? "" : `${count(f.activeJobs, "job is", "jobs are")} still on the road. `}The chips count jobs to accept, jobs past the ward's ETA and jobs that need forms. Copy handover, under the job list, copies the list for the next shift.`,
+          `${f.activeJobs === undefined ? "" : `${count(f.activeJobs, "job is", "jobs are")} still on the road. `}The chips count jobs to accept, jobs past the ward's ETA and jobs that need forms. Copy for handover, under the job list, copies the list for the next shift.`,
         ),
         step(
           "Your daily work",
@@ -1024,7 +1026,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "review",
           HERO,
           "What is waiting",
-          "Overrides, refused actions and record access checks. Review next opens the next item when there is one.",
+          "Overrides, refused actions and record access checks. Open newest opens the newest item when there is one.",
         ),
         ...ACCESS_STEPS,
         phoneDock("Governance and Activity."),

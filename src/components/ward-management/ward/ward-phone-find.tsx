@@ -11,7 +11,16 @@ import { Button, TextInput } from "@/components/wf";
 
 import styles from "./ward-phone-find.module.css";
 
-export function WardPhoneFind({ value, onChange }: { value: string; onChange: (next: string) => void }) {
+export function WardPhoneFind({
+  value,
+  onChange,
+  iconClassName,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  /** Audit four item 25: the tab row passes its own More ink, so the icon reads on the band. */
+  iconClassName?: string;
+}) {
   const [opened, setOpened] = useState(false);
   const open = opened || value !== "";
   const inputRef = useRef<HTMLInputElement>(null);
@@ -55,6 +64,7 @@ export function WardPhoneFind({ value, onChange }: { value: string; onChange: (n
           icon={Search}
           // Review EH-4: the kit's icon-only button, drawn 40 px with a 48 x 48 px tap cover on a phone.
           iconOnly
+          className={iconClassName}
           aria-label="Find a bed or person on this ward"
           onClick={() => setOpened(true)}
           data-testid="ward-find-open"

@@ -3,16 +3,17 @@
 import { minutesInEd, minutesSinceReferral } from "@/components/ward-management/ward-shared-figures";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useSyncExternalStore, type ComponentProps } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, type ComponentProps, type ReactNode } from "react";
 
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
-import { Check, Eye, Phone, Search, SlidersHorizontal, Users } from "lucide-react";
+import { ArrowDownUp, Check, Eye, Phone, Search, Users } from "lucide-react";
 
 import {
   Button,
   Card,
-  Drawer,
+  PanelDrawer,
   EmptyState,
+  FilterChip,
   GroupHead,
   FolderTabs,
   Hero,
@@ -20,6 +21,7 @@ import {
   HeroFigures,
   HeroQuickChips,
   HeroTop,
+  Menu,
   PhoneListRow,
   PhoneSheet,
   ScrollRow,
@@ -32,6 +34,7 @@ import {
   folderTabClasses,
   useIsPhone,
   BarList,
+  RowSpark,
   RowTrend,
 } from "@/components/wf";
 import {
@@ -87,9 +90,9 @@ type ServiceFilter = "all" | HealthService;
 type StatusFilter = "all" | "past-target" | "waiting" | "clear";
 const SERVICE_FILTERS: readonly ServiceFilter[] = ["all", ...HEALTH_SERVICES];
 const STATUS_FILTERS: readonly StatusFilter[] = ["all", "past-target", "waiting", "clear"];
-type OrderBy = "longest" | "most" | "service";
+type OrderBy = "longest" | "most";
 type ViewMode = "cards" | "table" | "lanes";
-const ORDERS: readonly OrderBy[] = ["longest", "most", "service"];
+const ORDERS: readonly OrderBy[] = ["longest", "most"];
 const VIEWS: readonly ViewMode[] = ["cards", "table", "lanes"];
 // Device audit 11 Oct 2026: By service left the phone; its figures are the service chips.
 type PhoneView = "list" | "lanes" | "snapshot";
@@ -148,7 +151,15 @@ function rowClock(row: EdRow): WaitClock {
  * "…", and departments with nobody waiting share one line with an Open button each, rather than a
  * full empty card.
  */
-export function EdIndex() {
+export function EdIndex({
+  pageSwitch,
+  heroTabs,
+}: {
+  /** Find (mock-up, 26 Nov 2026): the Find tabs, drawn first in this page's tab row; the page is unchanged. */
+  pageSwitch?: ReactNode;
+  /** Find (mock-up): the Find tabs, drawn at the top of the hero. */
+  heroTabs?: ReactNode;
+} = {}) {
   const { movements, patients, referrals, units, configuration } = useWardFlowSelect(
     "movements",
     "patients",
@@ -168,7 +179,6 @@ export function EdIndex() {
   const [highlight, setHighlight] = useState<Highlight | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [phoneView, setPhoneView] = useState<PhoneView>("list");
-  const [phoneFiltersOpen, setPhoneFiltersOpen] = useState(false);
   const isPhone = useIsPhone();
 
   // D-91: the keyword box over these ~15 EDs went in the search and forms review (Josh, 30 Oct
@@ -245,8 +255,6 @@ export function EdIndex() {
   const serviceRank = (row: EdRow) => ED_HOME_SERVICE_BAND_ORDER.indexOf(row.summary.service);
   const ordered = [...rows].sort((a, b) => {
     if (order === "most") return b.summary.waiting - a.summary.waiting || serviceRank(a) - serviceRank(b);
-    if (order === "service")
-      return serviceRank(a) - serviceRank(b) || b.summary.longestWaitMinutes - a.summary.longestWaitMinutes;
     return b.summary.longestWaitMinutes - a.summary.longestWaitMinutes || serviceRank(a) - serviceRank(b);
   });
   const shown = ordered.filter(isShown);
@@ -299,36 +307,47 @@ export function EdIndex() {
     const next = shown[(index + delta + shown.length) % shown.length];
     if (next) setPreviewId(next.summary.ed.id);
   };
-  const pickService = (id: HealthService) => setService(service === id ? "all" : id);
 
-  const statusControl = (
-    <Segmented
-      label="Status"
-      items={[
-        { id: "all" as StatusFilter, label: "All" },
-        { id: "past-target" as StatusFilter, label: "Past target" },
-        { id: "waiting" as StatusFilter, label: "Has waiting" },
-        { id: "clear" as StatusFilter, label: "Clear" },
-      ]}
-      value={status}
-      onChange={setStatus}
-    />
-  );
   const orderControl = (
     <Segmented
-      label="Order"
+      label="Sort"
       items={[
         { id: "longest" as OrderBy, label: "Longest wait" },
         { id: "most" as OrderBy, label: "Most waiting" },
-        { id: "service" as OrderBy, label: "Service" },
       ]}
       value={order}
       onChange={setOrder}
     />
   );
+  // Review (390): on a phone Sort is a compact menu at the chip row's right end, not a second row.
+  const ORDER_LABEL: Record<OrderBy, string> = { longest: "Longest wait", most: "Most waiting" };
+  const phoneOrderMenu = (
+    <Menu
+      label="Sort"
+      align="end"
+      items={ORDERS.map((id) => ({
+        id,
+        label: ORDER_LABEL[id],
+        checkable: "radio" as const,
+        checked: order === id,
+        onSelect: () => setOrder(id),
+      }))}
+      trigger={(props) => (
+        <Button
+          {...props}
+          variant="sec"
+          iconOnly
+          icon={ArrowDownUp}
+          aria-label={`Sort: ${ORDER_LABEL[order]}`}
+          className={styles.phoneFilterButton}
+          data-testid="ed-index-phone-sort"
+        />
+      )}
+    />
+  );
   const STATUS_WORDS: Record<StatusFilter, string> = {
     all: "",
-    "past-target": "Past target",
+    "past-target": "Over target",
     waiting: "Has waiting",
     clear: "Clear",
   };
@@ -346,15 +365,47 @@ export function EdIndex() {
       </span>
     </span>
   );
-  const servicePicker = (
-    <WaitingSnapshot
-      services={services}
-      rows={rows}
-      shown={shown}
-      value={service}
-      onPick={pickService}
-      onPreview={setPreviewId}
-      accessTarget={accessTarget}
+  const servicePicker = <WaitingSnapshot shown={shown} onPreview={setPreviewId} accessTarget={accessTarget} />;
+
+  const chipRow = (
+    <HeroQuickChips
+      label="Common jobs"
+      items={[
+        {
+          id: "find",
+          label: "Find a bed",
+          icon: <Search size={16} strokeWidth={1.75} aria-hidden="true" />,
+          onClick: () => requestToolsTool("bed-finder", focused()),
+          testId: "ed-index-find-bed",
+        },
+        {
+          id: "contacts",
+          label: "Call and contacts",
+          icon: <Phone size={16} strokeWidth={1.75} aria-hidden="true" />,
+          onClick: () => requestToolsTool("contacts", focused()),
+          testId: "ed-index-contacts",
+        },
+        // Audit three #53: on a computer the "Under a form" and "Accepted" filters sit on the list
+        // head with Sort, so the hero holds only actions; a phone keeps them here.
+        ...chips
+          .filter((chip) => isPhone && (chip.id === "form" || chip.id === "held"))
+          .reverse()
+          .map((chip) => ({
+            id: chip.id,
+            label: chip.label,
+            icon:
+              chip.id === "form" ? (
+                <Users size={16} strokeWidth={1.75} aria-hidden="true" />
+              ) : (
+                <Check size={16} strokeWidth={1.75} aria-hidden="true" />
+              ),
+            count: chip.value,
+            countTone: "quiet" as const,
+            pressed: highlight === chip.id,
+            onClick: () => setHighlight((value) => (value === chip.id ? null : chip.id)),
+            testId: `ed-index-chip-${chip.id}`,
+          })),
+      ]}
     />
   );
 
@@ -364,6 +415,8 @@ export function EdIndex() {
         <Hero
           level={1}
           className={`${pageTop.hero} ${folderTabClasses.hero}`}
+          eyebrow={heroTabs}
+          phoneEyebrow={heroTabs ? "show" : undefined}
           title={
             <>
               <SrOnly>All EDs, </SrOnly>
@@ -412,45 +465,7 @@ export function EdIndex() {
                 <HeroAct tone="calm" title="Nobody waiting in any ED" testId="ed-index-act" />
               )
             }
-            chips={
-              <HeroQuickChips
-                label="Common jobs"
-                items={[
-                  {
-                    id: "find",
-                    label: "Find a bed",
-                    icon: <Search size={16} strokeWidth={1.75} aria-hidden="true" />,
-                    onClick: () => requestToolsTool("bed-finder", focused()),
-                    testId: "ed-index-find-bed",
-                  },
-                  {
-                    id: "contacts",
-                    label: "Call and contacts",
-                    icon: <Phone size={16} strokeWidth={1.75} aria-hidden="true" />,
-                    onClick: () => requestToolsTool("contacts", focused()),
-                    testId: "ed-index-contacts",
-                  },
-                  ...chips
-                    .filter((chip) => chip.id === "form" || chip.id === "held")
-                    .reverse()
-                    .map((chip) => ({
-                      id: chip.id,
-                      label: chip.label,
-                      icon:
-                        chip.id === "form" ? (
-                          <Users size={16} strokeWidth={1.75} aria-hidden="true" />
-                        ) : (
-                          <Check size={16} strokeWidth={1.75} aria-hidden="true" />
-                        ),
-                      count: chip.value,
-                      countTone: "quiet" as const,
-                      pressed: highlight === chip.id,
-                      onClick: () => setHighlight((value) => (value === chip.id ? null : chip.id)),
-                      testId: `ed-index-chip-${chip.id}`,
-                    })),
-                ]}
-              />
-            }
+            chips={chipRow}
           >
             {activeChip ? (
               <span className={styles.heroNote} aria-live="polite" data-testid="ed-index-highlight-note">
@@ -479,8 +494,8 @@ export function EdIndex() {
               className={folderTabClasses.switch}
               label="Show"
               items={[
-                { id: "list" as PhoneView, label: "EDs" },
-                { id: "lanes" as PhoneView, label: "Wait lanes" },
+                { id: "list" as PhoneView, label: "Cards" },
+                { id: "lanes" as PhoneView, label: "Lanes" },
                 // E2 (3 Nov 2026): the waiting snapshot, by ED or by service, one tap away.
                 { id: "snapshot" as PhoneView, label: "Snapshot" },
               ]}
@@ -490,19 +505,7 @@ export function EdIndex() {
             />
           ) : (
             <>
-              <Segmented
-                className={folderTabClasses.switch}
-                label="View"
-                items={[
-                  { id: "cards" as ViewMode, label: "Cards" },
-                  { id: "table" as ViewMode, label: "Table" },
-                  { id: "lanes" as ViewMode, label: "Lanes" },
-                ]}
-                value={view}
-                onChange={setView}
-                size="md"
-              />
-              <span className={folderTabClasses.rule} aria-hidden="true" />
+              {/* Audit three #15: the view modes are a switch on the list head; these tabs filter. */}
               <div className={folderTabClasses.filters}>
                 <PillTabs
                   className={styles.serviceTabs}
@@ -514,12 +517,13 @@ export function EdIndex() {
               </div>
             </>
           )}
+          {/* Find (mock-up): the pinned and recent places, once used, take their own line under the row. */}
+          {pageSwitch}
         </FolderTabs>
 
         <section className={styles.filters} aria-label="Emergency department filters">
           {isPhone ? (
-            // D-91: with the keyword box gone, the status and order button sits at the end of the
-            // health service chips.
+            // Audit two #56: the old Order sheet is gone; Sort is a compact menu at the chip row's end.
             <div className={styles.phoneFilterRow}>
               <ScrollRow className={styles.phoneServices}>
                 <Segmented
@@ -530,32 +534,49 @@ export function EdIndex() {
                   size="md"
                 />
               </ScrollRow>
-              <Button
-                variant="sec"
-                iconOnly
-                icon={SlidersHorizontal}
-                aria-label={`Status and order${status !== "all" ? ", status filtered" : ""}`}
-                aria-haspopup="dialog"
-                onClick={() => setPhoneFiltersOpen(true)}
-                className={styles.phoneFilterButton}
-                data-testid="ed-index-phone-filters"
-              />
+              {phoneOrderMenu}
             </div>
           ) : (
-            // One slim row: Status, Order, then what is shown at the right end.
+            // One slim row: Sort, then what is shown at the right end.
             <div className={styles.filterRow}>
-              <span className={styles.filterLabel}>Status</span>
-              {statusControl}
-              <span className={styles.filterLabel}>Order</span>
+              <span className={styles.filterLabel}>Sort</span>
               {orderControl}
-              <span className={styles.shownCount}>
-                {isFiltered ? (
+              {/* Audit three #53: the hero's two filters, beside the list they narrow. */}
+              {chips
+                .filter((chip) => chip.id === "form" || chip.id === "held")
+                .reverse()
+                .map((chip) => (
+                  <FilterChip
+                    key={chip.id}
+                    pressed={highlight === chip.id}
+                    onPressedChange={() => setHighlight((value) => (value === chip.id ? null : chip.id))}
+                    count={chip.value}
+                  >
+                    {chip.label}
+                  </FilterChip>
+                ))}
+              {/* Audit two #21: the count says something only once a filter is on. */}
+              {isFiltered ? (
+                <span className={styles.shownCount}>
                   <Button variant="ghost" size="sm" onClick={resetFilters}>
                     Clear filters
                   </Button>
-                ) : null}
-                {matchCount}
-              </span>
+                  {matchCount}
+                </span>
+              ) : null}
+              {/* Audit three #15 (Josh, 28 Nov 2026): Cards, Table and Lanes are a kit switch at the
+                  row's right end, as Movements' Graph or Table; the service tabs stay tabs. */}
+              <Segmented
+                className={styles.viewSwitch}
+                label="View"
+                items={[
+                  { id: "cards" as ViewMode, label: "Cards" },
+                  { id: "table" as ViewMode, label: "Table" },
+                  { id: "lanes" as ViewMode, label: "Lanes" },
+                ]}
+                value={view}
+                onChange={setView}
+              />
             </div>
           )}
         </section>
@@ -647,36 +668,30 @@ export function EdIndex() {
           </div>
         )}
 
-        <Drawer
+        {/* Audit four #98: the ED preview is a record of a department, so it opens in the kit PanelDrawer
+            like the ward panel beside it: kit head with the pager, one padded scroll, the kit foot band. */}
+        <PanelDrawer
           open={previewRow !== null}
           onClose={() => setPreviewId(null)}
           title={previewRow ? previewRow.short : "ED preview"}
-          description={previewRow ? `${previewRow.summary.siteName} · ${previewRow.summary.service}` : undefined}
-          headerActions={isPhone || shown.length < 2 ? undefined : <EdPreviewSteps onStep={stepPreview} />}
-          footer={previewRow ? <EdPreviewFoot row={previewRow} /> : null}
+          subtitle={previewRow ? `${previewRow.summary.siteName} · ${previewRow.summary.service}` : undefined}
+          // Audit four #31: the kit pager, "2 of 7", at every width, in place of the hand-built steps.
+          pager={
+            shown.length < 2
+              ? undefined
+              : {
+                  index: shown.findIndex((row) => row.summary.ed.id === previewId),
+                  total: shown.length,
+                  noun: "ED",
+                  onStep: stepPreview,
+                }
+          }
+          foot={previewRow ? <EdPreviewFoot row={previewRow} /> : undefined}
+          bodyClassName={styles.previewBody}
           testId="ed-index-preview"
         >
           {previewRow ? <EdPreview row={previewRow} highlight={highlight} accessTarget={accessTarget} /> : null}
-        </Drawer>
-
-        {isPhone ? (
-          <PhoneSheet
-            open={phoneFiltersOpen}
-            onClose={() => setPhoneFiltersOpen(false)}
-            title="Status and order"
-            description={matchCount}
-            primary={{ label: "Done", onAction: () => setPhoneFiltersOpen(false) }}
-            secondary={isFiltered ? { label: "Reset filters", onAction: resetFilters } : undefined}
-            data-testid="ed-index-phone-filter-sheet"
-          >
-            <div className={styles.sheetControls}>
-              <span className={styles.filterLabel}>Status</span>
-              <ScrollRow>{statusControl}</ScrollRow>
-              <span className={styles.filterLabel}>Order</span>
-              <ScrollRow>{orderControl}</ScrollRow>
-            </div>
-          </PhoneSheet>
-        ) : null}
+        </PanelDrawer>
 
         <WardPrototypeFooter testId="ed-index-governance" note="Invented figures under real WA hospital names." />
       </main>
@@ -688,7 +703,7 @@ function Legend({ accessTarget }: { accessTarget: number }) {
   return (
     <p className={styles.legend}>
       <span>
-        <StatusGlyph tone="danger" size={9} /> Past {waitLine(accessTarget)}
+        <StatusGlyph tone="danger" size={9} /> Over {waitLine(accessTarget)}
       </span>
       <span>
         <StatusGlyph tone="warning" size={9} /> Over {waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES)}
@@ -708,7 +723,7 @@ function PeoplePips({ row, highlight }: { row: EdRow; highlight: Highlight | nul
     <div
       className={styles.pips}
       role="img"
-      aria-label={`${row.summary.waiting} waiting: ${row.pastTarget} past target, ${row.severe} over ${waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`}
+      aria-label={`${row.summary.waiting} waiting: ${row.pastTarget} over target, ${row.severe} over ${waitLine(ED_SEVERE_PRESSURE_WAIT_MINUTES)}`}
     >
       {shown.map((person) => (
         <span
@@ -814,7 +829,7 @@ function EdCard({
         <p className={styles.meta} title={summary.siteName}>
           {summary.siteName}
         </p>
-        <RowTrend values={row.trend} name={row.short} testId="ed-row-spark" span="12h" />
+        <CardTrend values={row.trend} name={row.short} />
       </div>
       <PeoplePips row={row} highlight={highlight} />
       {/* The figures wrap between figures, never mid-phrase, so none ends in "…". */}
@@ -843,6 +858,21 @@ function EdCard({
         </span>
       </div>
     </article>
+  );
+}
+
+/** Audit two #56: the card's trend reads "7 more than 12h ago" in place of "+7 in 12h". */
+function CardTrend({ values, name }: { values: readonly number[]; name: string }) {
+  const change = values.length < 2 ? 0 : values[values.length - 1] - values[0];
+  const words =
+    change === 0 ? "same as 12h ago" : change > 0 ? `${change} more than 12h ago` : `${-change} fewer than 12h ago`;
+  return (
+    <span className={styles.cardTrend}>
+      <RowSpark values={values} name={name} testId="ed-row-spark" />
+      <span className={styles.cardTrendWords} aria-hidden="true">
+        {words}
+      </span>
+    </span>
   );
 }
 
@@ -960,7 +990,12 @@ function EdLanes({
         <span>ED, waiting</span>
         <span className={styles.track}>
           {LANE_TICKS.map(([minutes, label]) => (
-            <span key={label} className={styles.tick} style={{ left: `${lanePosition(minutes)}%` }}>
+            <span
+              key={label}
+              className={styles.tick}
+              style={{ left: `${lanePosition(minutes)}%` }}
+              data-minor={minutes === 240 ? "true" : undefined}
+            >
               {label}
             </span>
           ))}
@@ -1054,7 +1089,7 @@ function EdLanes({
             label: `Open ${picked.row.short}`,
             onAction: () => router.push(edHref(picked.row.summary.ed.id)),
           }}
-          secondary={{ label: "Open patient", onAction: () => router.push(picked.person.href) }}
+          secondary={{ label: "Patient page", onAction: () => router.push(picked.person.href) }}
           data-testid="ed-index-lane-sheet"
         >
           <EdLaneFacts person={picked.person} />
@@ -1073,103 +1108,49 @@ function EdLanes({
 }
 
 /**
- * Waiting snapshot (diagnosed issues E2, Josh 3 Nov 2026): one rail with a By ED and a By service
- * switch, By ED first. By ED ranks every department with someone waiting and a bar opens that ED's
- * preview. By service keeps the v10 bars, and a bar is the service filter, which now hides the
- * other services' EDs (E1); pressing it again clears it.
+ * Waiting snapshot (E2, Josh 3 Nov 2026; audit two #120): the rail ranks every department with
+ * someone waiting, and a bar opens that ED's preview. The By ED or By service switch is gone: the
+ * health service tabs and chips already filter by service.
  */
 function WaitingSnapshot({
-  services,
-  rows,
   shown,
-  value,
-  onPick,
   onPreview,
   accessTarget,
 }: {
-  services: readonly HealthService[];
-  rows: EdRow[];
-  /** The EDs the filters keep: By ED ranks only these, so it agrees with the cards beside it. */
+  /** The EDs the filters keep: the bars rank only these, so they agree with the cards beside them. */
   shown: EdRow[];
-  value: ServiceFilter;
-  onPick: (service: HealthService) => void;
   onPreview: (edId: string) => void;
   accessTarget: number;
 }) {
-  const [by, setBy] = useState<"ed" | "service">("ed");
-  const bars = services.map((name) => ({
-    name,
-    waiting: rows.filter((row) => row.summary.service === name).reduce((sum, row) => sum + row.summary.waiting, 0),
-  }));
   const edBars = shown
     .filter((row) => row.summary.waiting > 0)
     .sort(
       (a, b) => b.summary.waiting - a.summary.waiting || b.summary.longestWaitMinutes - a.summary.longestWaitMinutes,
     );
-  const total = (by === "ed" ? shown : rows).reduce((sum, row) => sum + row.summary.waiting, 0);
-  const pool = by === "ed" ? edBars.map((row) => row.summary.waiting) : bars.map((bar) => bar.waiting);
+  const pool = edBars.map((row) => row.summary.waiting);
   const mean = pool.length ? pool.reduce((sum, n) => sum + n, 0) / pool.length : 0;
   return (
     <Card className={styles.serviceCard} as="section" aria-labelledby="ed-index-by-service">
       <div className={styles.snapHead}>
         <h2 id="ed-index-by-service" className={styles.eyebrow}>
-          Waiting {by === "ed" ? "by ED" : "by service"}
+          Waiting by ED
         </h2>
-        <span className={styles.snapTotal}>
-          <b className={styles.num}>{total}</b> {by === "ed" && shown.length < rows.length ? "shown" : "in all"}
-        </span>
       </div>
-      <Segmented
-        label="Waiting by"
-        items={[
-          { id: "ed" as const, label: "By ED" },
-          { id: "service" as const, label: "By service" },
-        ]}
-        value={by}
-        onChange={setBy}
-        size="sm"
-        className={styles.snapSwitch}
+      <BarList
+        label="Preview an ED"
+        rows={edBars.map((row) => ({
+          id: row.summary.ed.id,
+          label: row.short,
+          value: row.summary.waiting,
+          display: row.summary.waiting,
+          testId: `ed-index-ed-bar-${row.summary.ed.id}`,
+        }))}
+        mean={mean}
+        track
+        labelWidth="112px"
+        onPick={(id) => onPreview(id)}
       />
-      {by === "ed" ? (
-        <BarList
-          label="Preview an ED"
-          rows={edBars.map((row) => ({
-            id: row.summary.ed.id,
-            label: row.short,
-            value: row.summary.waiting,
-            display: row.summary.waiting,
-            testId: `ed-index-ed-bar-${row.summary.ed.id}`,
-          }))}
-          mean={mean}
-          track
-          labelWidth="112px"
-          onPick={(id) => onPreview(id)}
-        />
-      ) : (
-        <BarList
-          label="Show one health service"
-          rows={bars.map((bar) => ({
-            id: bar.name,
-            label: bar.name,
-            value: bar.waiting,
-            display: bar.waiting,
-            testId: `ed-index-service-bar-${bar.name}`,
-          }))}
-          mean={mean}
-          track
-          labelWidth="88px"
-          picked={value === "all" ? null : value}
-          onPick={(id) => {
-            const service = services.find((name) => name === id);
-            if (service) onPick(service);
-          }}
-        />
-      )}
-      <p className={styles.serviceNote}>
-        {by === "ed"
-          ? "Dashed line is the mean of the EDs shown. Press an ED to preview who is waiting."
-          : "Dashed line is the mean per service. Press a service to show only its EDs."}
-      </p>
+      <p className={styles.serviceNote}>Dashed line is the mean of the EDs shown.</p>
       <Legend accessTarget={accessTarget} />
     </Card>
   );
@@ -1312,11 +1293,6 @@ function EdPreview(props: ComponentProps<PreviewModule["EdPreview"]>) {
   const Body = loaded?.EdPreview;
   if (Body) return <Body {...props} />;
   return failed ? <PreviewLoadFailed retry={retry} /> : null;
-}
-
-function EdPreviewSteps(props: ComponentProps<PreviewModule["EdPreviewSteps"]>) {
-  const Steps = usePreviewModule().loaded?.EdPreviewSteps;
-  return Steps ? <Steps {...props} /> : null;
 }
 
 function EdPreviewFoot(props: ComponentProps<PreviewModule["EdPreviewFoot"]>) {

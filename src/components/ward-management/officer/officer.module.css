@@ -476,10 +476,6 @@
   border-bottom: 1px solid var(--wf-line);
 }
 
-.historyHead > :last-child {
-  margin-left: auto;
-}
-
 .refusals,
 .cancelledSection {
   min-width: 0;
@@ -848,10 +844,11 @@
   font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
 }
 
+/* States B review: the dot sits on the first text line (baseline), not above it. */
 .overdue,
 .diverted {
   display: flex;
-  align-items: flex-start;
+  align-items: baseline;
   gap: var(--wf-s-2);
   margin: 0;
   color: var(--wf-ink-1);
@@ -1127,6 +1124,31 @@
   color: inherit;
   font: inherit;
   cursor: pointer;
+}
+
+/* States B review: on a desktop the toast is one line, as the kit toast: the message without its own
+   bordered box, then Undo inline at button height, not a tall second row over the table. */
+@media (min-width: 46.5rem) {
+  html .toast {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+  }
+
+  html .toast > div {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  html .toast > .toastUndo {
+    flex: 0 0 auto;
+    min-height: var(--wf-h-sm);
+    margin-top: 0;
+    font-weight: 600;
+  }
 }
 
 /*
@@ -2105,7 +2127,7 @@
 
 .needRow {
   display: grid;
-  grid-template-columns: minmax(10rem, 13.5rem) minmax(0, 1fr) 4.5rem auto;
+  grid-template-columns: minmax(10rem, 13.5rem) minmax(0, 1fr) 5.5rem auto;
   gap: var(--wf-s-3);
   align-items: center;
   min-height: 3.5rem;
@@ -2113,6 +2135,7 @@
   border-top: 1px solid var(--wf-line);
 }
 
+.needCard[data-highlight="true"] .needRow,
 .needRow[aria-current="true"] {
   background: var(--wf-accent-tint);
 }
@@ -2136,6 +2159,29 @@
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+/* Final r10 F5: the phone row's wait ("6 h 50 min waiting") never breaks mid-figure. */
+.needWaitInline {
+  white-space: nowrap;
+}
+
+/* fix-5: the phone meta line ("UM100046 · Tier 1 · 6 h 50 min waiting"). The wait carries its own
+   leading dot. The line is pulled left by the dot's width and clipped there; the first line steps
+   back in by text-indent, so a wait that wraps starts line two with its dot outside the clip. */
+.needMeta {
+  --need-dot: 0.75em;
+  margin-inline-start: calc(-1 * var(--need-dot));
+  text-indent: var(--need-dot);
+  clip-path: inset(-4px -4px -4px var(--need-dot));
+}
+
+.needWaitDot {
+  display: inline-block;
+  width: 0.5em;
+  margin-inline-end: 0.25em;
+  text-align: center;
+  text-indent: 0;
+}
+
 .needGap {
   display: inline-flex;
   align-items: center;
@@ -2149,10 +2195,12 @@
   font-weight: 600;
 }
 
+/* States B review: the wait time keeps one line ("8 h 28 min"), its word under it. */
 .needWait {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  white-space: nowrap;
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
   font-variant-numeric: tabular-nums;
@@ -2281,6 +2329,12 @@
   padding: var(--wf-s-3);
   border-radius: var(--wf-r-lg);
   background: var(--wf-surface-2);
+}
+
+/* In the phone sheet the providers sit in the scrolling flow, above the form; pinned, the form's
+   fields scrolled over them. The desktop dialog's side column keeps the pin. */
+[data-phone-sheet-body] > .contacts {
+  position: static;
 }
 
 .contactsHead {
@@ -2809,4 +2863,35 @@
   background: transparent;
   color: var(--wf-ink-3);
   font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+/* Mock-up D5 line variant on a phone: the dot and the count on one centred row (8px apart), the
+   newest job wrapping beside them, the button left-aligned under the words; content inset as the
+   Next job card's (16px inside the 1px line). The class is doubled to win over the kit's own
+   `.state` padding and flex rules whatever order the two sheets load in. */
+@media (max-width: 46.4375rem) {
+  .cancelLine.cancelLine {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+
+  /* Centred on the count's first line, even when the newest job wraps below it. */
+  .cancelLine.cancelLine > :first-child {
+    flex: none;
+    margin: calc((var(--wf-lh-13) - 10px) / 2) 0 0;
+  }
+
+  /* The words take the rest of the row, so the button always starts a row of its own. */
+  .cancelLine.cancelLine > :nth-child(2) {
+    flex: 1 1 calc(100% - 10px - var(--wf-s-2));
+    min-width: 0;
+  }
+
+  .cancelLine.cancelLine > :last-child:not(:nth-child(2)) {
+    /* Under the words: past the 10px dot and the 8px gap. */
+    margin-left: calc(10px + var(--wf-s-2));
+  }
 }

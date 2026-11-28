@@ -332,7 +332,7 @@ function Queue({
           data-testid="ward-confirm-morning-rollup-btn"
           onClick={onConfirmRollup}
         >
-          Confirm bed numbers
+          Confirm numbers
         </button>
       ) : undefined,
     });
@@ -525,7 +525,6 @@ function Queue({
   // still need a decision; the track above already shows which windows are clear.
   const shiftDecidable = WINDOWS.reduce((sum, entry) => sum + itemsOf(entry.id).filter((item) => !item.info).length, 0);
   const shiftDecided = shiftDecidable - WINDOWS.reduce((sum, entry) => sum + openCount(entry.id), 0);
-  const elsewhere = WINDOWS.filter((entry) => entry.id !== chosen && openCount(entry.id) > 0);
 
   function choose(id: WindowId) {
     setChosen(id);
@@ -826,8 +825,9 @@ function Queue({
           <header className={styles.head}>
             <Icon icon={CalendarClock} size={16} className={styles.headIcon} />
             <h3 className={styles.headTitle}>{spec.title}</h3>
+            {/* Audit two #58 (P56): the head keeps the window's time; the strip cell above and the group
+                heads below already count what is left to decide. */}
             <span className={cx(styles.headHours, styles.hideNarrow)}>{spec.hours}</span>
-            <span className={styles.headMeta}>{open > 0 ? `${open} to decide` : "Nothing due"}</span>
           </header>
           {/* The staffing fact shows once: here, unless a row below already carries it. */}
           {chosen === "staffing" && staffingFact && !here.some((item) => item.sub?.includes(staffingFact)) ? (
@@ -963,41 +963,8 @@ function Queue({
               </div>
             ) : null}
           </div>
-          {elsewhere.length > 0 ? (
-            <>
-              <h3 className={styles.sideSec}>Still to decide</h3>
-              <ul className={styles.rows}>
-                {elsewhere.map((entry) => (
-                  <li key={entry.id} className={styles.row}>
-                    <StatusGlyph tone={windowTone(entry.id)} />
-                    <div className={styles.rowText}>
-                      <h4 className={styles.rowTitle}>{entry.title}</h4>
-                      <span className={styles.rowSub}>
-                        {entry.hours} · {openCount(entry.id)} to decide
-                      </span>
-                    </div>
-                    <span className={styles.rowActions}>
-                      <button
-                        type="button"
-                        className={cx(buttonClass({ variant: "sec", size: "sm" }), styles.pill)}
-                        aria-label={`Open ${entry.title} window`}
-                        onClick={() => {
-                          choose(entry.id);
-                        }}
-                      >
-                        Open
-                      </button>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            <p className={styles.sideClear}>
-              <StatusGlyph tone="success" />
-              <span>Every other window is clear</span>
-            </p>
-          )}
+          {/* Audit two #58 (P55): the other windows are the phase strip's cells above, so the card
+              ends on its bar (and the free beds projection on Discharges). */}
         </aside>
       </div>
       {bulkDialog}

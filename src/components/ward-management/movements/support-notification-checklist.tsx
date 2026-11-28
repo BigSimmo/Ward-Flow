@@ -207,7 +207,7 @@ export function SupportNotificationChecklist({
       {
         success: `${SUPPORT_NOTIFICATION_PARTY_SHORT[party]} record saved`,
         undo: (at) => ({ type: "UNDO_SUPPORT_NOTIFICATION", role, now: at, ...target }),
-        undone: "Tell record undone.",
+        undone: "Undone: Tell record",
       },
     );
   }
