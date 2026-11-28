@@ -4,6 +4,9 @@ import { PatientPeekLink } from "@/components/ward-management/patients/patient-p
 import Link from "next/link";
 import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 import { useRouter } from "next/navigation";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client-types";
+import type { Rejection } from "@/components/ward-management/ward-model";
 import {
   BedSingle,
   ChevronDown,
@@ -80,17 +83,27 @@ import { MovementLoopChecks } from "@/components/ward-management/loop-checks/loo
 const CHECK_IN_TRANSPORT_HREF = "/bedchart/transport/officer";
 
 /** The urgent flag's two changes, typed once, for the desktop pop-up and the phone sheet's More menu. */
+function flagUrgentEvent(now: Instant, movementId: string, reason: UrgentMarkReason): WardFlowEvent {
+  return { type: "FLAG_MOVEMENT_URGENT", role: "coordinator", now, movementId, reason };
+}
+
+function clearUrgentEvent(now: Instant, movementId: string): WardFlowEvent {
+  return { type: "CLEAR_MOVEMENT_URGENT_FLAG", role: "coordinator", now, movementId };
+}
+
 function flagUrgent(
   dispatch: (event: WardFlowEvent) => void,
   now: Instant,
   movementId: string,
   reason: UrgentMarkReason,
 ) {
-  dispatch({ type: "FLAG_MOVEMENT_URGENT", role: "coordinator", now, movementId, reason });
+  dispatch(flagUrgentEvent(now, movementId, reason));
 }
 
+const NO_REJECTIONS: readonly Rejection[] = [];
+
 function clearUrgentFlag(dispatch: (event: WardFlowEvent) => void, now: Instant, movementId: string) {
-  dispatch({ type: "CLEAR_MOVEMENT_URGENT_FLAG", role: "coordinator", now, movementId });
+  dispatch(clearUrgentEvent(now, movementId));
 }
 
 /**
@@ -243,12 +256,21 @@ export function MovementDrawer({
    */
   edAccessTargetMinutes: number;
   /** The same store the board behind this pop-up reads from. */
-  dispatch: (event: WardFlowEvent) => void;
+  dispatch: WardCommandDispatch;
   onClose: () => void;
 }) {
   // Audit four item 5: the flag is the phone's reason menu on every width; the reason stays
   // mandatory (item 37, 17 Sep 2026) because the menu is the reason. Undo on the toast removes it.
   const toast = useOptionalToast();
+  const rejections = useOptionalWardFlowSelect("rejections")?.rejections ?? NO_REJECTIONS;
+  const { run: runUrgentStep } = useUndoableStep({
+    dispatch,
+    requireConfirmation: true,
+    rejections,
+    now,
+    routeRole: "coordinator",
+    toast,
+  });
   const router = useRouter();
   // Phone only: the tier uses the shared TierTile; desktop keeps its own pill (owner, 2026-10-11).
   const isPhone = useIsPhone();
@@ -490,16 +512,14 @@ export function MovementDrawer({
                       id: `flag-${reason}`,
                       icon: Flag,
                       label: changeReasonLabels[reason],
-                      onSelect: () => {
-                        flagUrgent(dispatch, now, movement.id, reason);
-                        toast?.push({
-                          tone: "success",
-                          title: "Flagged urgent",
-                          body: `${changeReasonLabels[reason]}. Leads the queue ahead of every tier.`,
-                          testId: "ward-movement-drawer-urgent-toast",
-                          action: { label: "Undo", onAction: () => clearUrgentFlag(dispatch, now, movement.id) },
-                        });
-                      },
+                      // Codex review (PR #1742): success and Undo show only once the command is accepted;
+                      // a refused or unconfirmed flag says so instead of claiming the queue moved.
+                      onSelect: () =>
+                        runUrgentStep(flagUrgentEvent(now, movement.id, reason), {
+                          success: `Flagged urgent: ${changeReasonLabels[reason]}`,
+                          undo: (at) => clearUrgentEvent(at, movement.id),
+                          undone: "Urgent flag removed",
+                        }),
                     })),
                   ]
             }

@@ -261,16 +261,21 @@ export function HandoverPage() {
   /* scope, read once from the URL */
   const searchParams = useSearchParams();
   const headerService = useServiceScope();
-  const [scopeValue, setScopeValue] = useState<string>(() => {
+  // A link's scope, read once. A link naming a ward, ED or team that does not exist falls back to
+  // the whole network: a quiet empty sheet is the dangerous direction on a handover.
+  const [linkedScope] = useState<string | null>(() => {
     const requested = searchParams?.get("scope")?.trim();
-    // Audit two (#64): with no link, the header's service is the scope; the menu only narrows it.
-    if (requested === undefined || requested.length === 0)
-      return headerService === null ? NETWORK_SCOPE_VALUE : handoverScopeValue({ kind: "service", id: headerService });
-    // A link naming a ward, ED or team that does not exist falls back to the whole network: a
-    // quiet empty sheet is the dangerous direction on a handover.
+    if (requested === undefined || requested.length === 0) return null;
     const parsed = parseHandoverScope(requested);
     return handoverScopeLabel(parsed, units) === undefined ? NETWORK_SCOPE_VALUE : handoverScopeValue(parsed);
   });
+  // Audit two (#64): with no link and no choice from the menu, the header's service is the scope and
+  // follows it when it changes or arrives after hydration (Codex review, PR #1742).
+  const [chosenScope, setScopeValue] = useState<string | null>(null);
+  const scopeValue =
+    chosenScope ??
+    linkedScope ??
+    (headerService === null ? NETWORK_SCOPE_VALUE : handoverScopeValue({ kind: "service", id: headerService }));
   const scope = useMemo(() => parseHandoverScope(scopeValue), [scopeValue]);
   const scopeLabel = handoverScopeLabel(scope, units, allRecordsLabel) ?? allRecordsLabel;
 
