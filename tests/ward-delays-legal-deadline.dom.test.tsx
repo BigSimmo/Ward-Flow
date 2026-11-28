@@ -269,7 +269,7 @@ describe("the delays screen states the legal deadline it is already reacting to"
       expect(
         panel.textContent ?? "",
         `${movement.id} carries no dueAt, so no typed time may be stated for its form`,
-      ).not.toMatch(new RegExp(`${legalFormName(form!).replace(/[()]/g, "\\$&")} · ended? `, "u"));
+      ).not.toMatch(new RegExp(`${legalFormName(form!).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} · ended? `, "u"));
       expect(panel.textContent ?? "", `${movement.id}: a countdown was invented`).not.toMatch(COUNTDOWN_WORDS);
     }
   });
