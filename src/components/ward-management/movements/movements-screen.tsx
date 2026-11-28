@@ -1086,7 +1086,8 @@ export function MovementsScreen() {
                           id: stage.id,
                           label: STAGE_SHORT[stage.id],
                           value: stage.movements.length,
-                          ariaLabel: `${stage.label}: ${stage.movements.length} open, ${stageFilter === stage.id ? "showing only these, press to show every stage" : "show only these"}`,
+                          // The visible words name the cell (axe label-content-name-mismatch): short stage
+                          // name, count and longest wait; aria-pressed says the filter is on.
                           // Simplification mock-up: as on the laptop's stage rail, a cell filters the list.
                           pressed: stageFilter === stage.id,
                           onClick: () => toggleStage(stage.id),

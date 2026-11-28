@@ -721,7 +721,7 @@ export function DelaysBoard({
             type="button"
             className={`${styles.gin} ${polish.ginStack}`}
             aria-expanded={attentionOpen}
-            aria-label={`Needs attention, ${pinned.length}, ${attentionOpen ? "form due soon or no suitable bed, act on these first" : "folded"}`}
+            aria-label={`Needs attention, ${pinned.length}, ${attentionOpen ? "form due soon or no suitable bed, act first" : "folded"}`}
             onClick={() => setAttentionOpen((open) => !open)}
             data-testid="delays-attention-group"
           >
