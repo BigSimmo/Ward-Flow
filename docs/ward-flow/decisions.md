@@ -3213,7 +3213,7 @@ D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
 
 ## D-284. Three kit leaf imports join the Ward Flow seam's approved list (28 November 2026)
 
-- **Date:** 28 November 2026, 1:30 AM AWST 29 November (17:30 UTC). **Decided by:** Josh, in the project thread, choosing "Allow the three kit paths" on "Allow three more direct kit imports in the Ward Flow seam guard?"
+- **Date:** 29 November 2026, 1:30 AM AWST (28 November, 17:30 UTC). **Decided by:** Josh, in the project thread, choosing "Allow the three kit paths" on "Allow three more direct kit imports in the Ward Flow seam guard?"
 - **Decision:** `tests/ward-flow-seam.test.ts` approves `@/components/wf/menu`, `@/components/wf/overlay.module.css` and `@/components/wf/phone`, each with its reason; the approved count goes from 17 to 20.
 - **Why:** the r10 phone size trim loads the kit menu late (`menu-early.tsx`) and reads the phone sheet from its leaf, which keeps every phone page under its script budget with no limit raised. All three sit inside the already-approved kit folder, so the cost of extracting Ward Flow does not change.
 - **Boundary:** no visible change. The guard still refuses any other new shared import.
