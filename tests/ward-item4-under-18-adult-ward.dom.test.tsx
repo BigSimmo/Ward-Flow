@@ -138,7 +138,7 @@ describe("the notice on the bed record", () => {
     expect(field.value).toBe("");
     expect(notice.querySelectorAll("input:checked, [aria-checked='true'], [aria-pressed='true']")).toHaveLength(0);
     // The bed's own steps are all still offered and none waits on the notice.
-    const leave = screen.getByRole("button", { name: "Record that they have left" }) as HTMLButtonElement;
+    const leave = screen.getByRole("button", { name: "Record discharge" }) as HTMLButtonElement;
     expect(leave.disabled).toBe(false);
   });
 

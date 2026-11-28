@@ -31,7 +31,7 @@ import { Search } from "lucide-react";
 import { useId, useRef, type ComponentPropsWithRef, type Ref } from "react";
 
 import { cx } from "./cx";
-import { TextInput } from "./form";
+import { TextInput } from "./form-text";
 import { Kbd } from "./primitives";
 
 import styles from "./search-field.module.css";

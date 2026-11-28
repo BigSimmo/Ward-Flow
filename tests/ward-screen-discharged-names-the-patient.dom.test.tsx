@@ -114,7 +114,7 @@ function perthLocalBefore(dayZero: Date, minutes: number): string {
 
 function openAndChoose(admissionId: string, destination: string) {
   openAndPick(admissionId, destination);
-  fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
+  fireEvent.click(screen.getByRole("button", { name: /Record discharge/i }));
   fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
 }
 
@@ -235,10 +235,7 @@ describe("the ward screen's Discharged step names its patient and never guesses 
     expect(screen.getByTestId("ward-drawer-leave-paper")).toHaveTextContent(
       `${name} is recorded as involuntary. Record the revocation, Form 5A or Form 5B from the paper`,
     );
-    expect(screen.getByRole("button", { name: /Record that they have left/i })).toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
+    expect(screen.getByRole("button", { name: /Record discharge/i })).toHaveAttribute("aria-disabled", "true");
     expect(screen.queryByRole("button", { name: "Record discharge" })).toBeNull();
     expect(screen.getByTestId("rejections")).toHaveTextContent("0");
     expect(screen.getByTestId("named-state")).toHaveTextContent(/^occupied\|$/u);
@@ -277,7 +274,7 @@ describe("the ward screen's Discharged step names its patient and never guesses 
 
     expect(screen.getByTestId("rejections")).toHaveTextContent("0");
     expect(screen.queryByTestId("ward-drawer-leave-paper")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Record discharge/i }));
     fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
     expect(screen.getByTestId("rejections")).toHaveTextContent("0");
     expect(screen.getByTestId("named-state")).toHaveTextContent("departed|discharged-to-the-community");
@@ -316,7 +313,7 @@ describe("the ward screen's Discharged step names its patient and never guesses 
     fireEvent.click(within(form).getByRole("button", { name: "Record the paper" }));
 
     expect(screen.getByTestId("rejections")).toHaveTextContent("0");
-    fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Record discharge/i }));
     fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
     expect(screen.getByTestId("rejections")).toHaveTextContent("0");
     expect(screen.getByTestId("named-state")).toHaveTextContent("departed|left-against-advice");

@@ -12,14 +12,13 @@ import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import styles from "./board.module.css";
+import { BAND_CLASS, tileClassName } from "./ward-board-tile-class";
 import {
-  BAND_CLASS,
   BOARD_FILTERS,
   BOARD_FILTER_LABELS,
   BOARD_ORDERS,
   BOARD_ORDER_LABELS,
   BOARD_ORDER_NOTES,
-  tileClassName,
   tileDomId,
   type BoardFilter,
   type BoardOrder,

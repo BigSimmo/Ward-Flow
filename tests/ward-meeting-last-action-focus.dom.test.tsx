@@ -69,7 +69,7 @@ describe("bed meeting action keyboard handover", () => {
       it(`keeps focus beside the ${subject.kind} record after its final action completes with ${key}`, async () => {
         const user = userEvent.setup();
         setup(subject);
-        const done = await screen.findByRole("button", { name: "Mark done: Book transport" });
+        const done = await screen.findByRole("button", { name: "Mark done: Record transport booking" });
         done.focus();
         await user.keyboard(key);
 
@@ -86,7 +86,7 @@ describe("bed meeting action keyboard handover", () => {
   it("focuses the next action when another action is still open", async () => {
     const user = userEvent.setup();
     setup(subjects[0]!, true);
-    const first = await screen.findByRole("button", { name: "Mark done: Book transport" });
+    const first = await screen.findByRole("button", { name: "Mark done: Record transport booking" });
     first.focus();
     await user.keyboard("{Enter}");
 

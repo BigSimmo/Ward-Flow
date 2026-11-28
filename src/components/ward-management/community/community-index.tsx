@@ -82,9 +82,9 @@ import { SuburbLookupCard } from "./community-suburb-lookup-card";
  *
  * **Why it exists.** That dynamic route serves one page per team in `COMMUNITY_TEAM_PAGES`, and
  * before this page existed **nothing linked to it from anywhere a person could get to**.
- * `community-screen.tsx` renders an "Other community teams" switcher that links every team but the
- * one you are looking at, which only helped somebody already standing on a team page — and the way
- * onto a team page was to type its address. Every one of those pages had a single entry condition,
+ * `community-screen.tsx` once rendered an "Other community teams" switcher (cut in the last audit)
+ * that linked every team but the one you were looking at, which only helped somebody already standing
+ * on a team page — and the way onto a team page was to type its address. Every one of those pages had a single entry condition,
  * and that condition was knowing a URL. This page is what closes that.
  *
  * ⚠️ **NO COUNT OF TEAMS IS WRITTEN INTO THIS COMMENT, AND THAT IS DELIBERATE.** An earlier draft

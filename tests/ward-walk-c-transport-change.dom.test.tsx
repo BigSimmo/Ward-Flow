@@ -30,7 +30,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * Walk C item 3 (F-101 / K37, 13 Nov 2026): after "Record no transport needed" the patient page's
  * Transport row read "Not needed · Recorded on the movement" with no way back. Change sits beside the
  * badge, records that transport is needed (the same RECORD_TRANSPORT_NEED the ED row's Change sends)
- * and Log booking returns. The badge's words are unchanged. Synthetic records only.
+ * and Record booking returns. The badge's words are unchanged. Synthetic records only.
  */
 
 afterEach(cleanup);
@@ -121,7 +121,7 @@ function NeedProbe() {
 }
 
 describe("Change on the patient page brings booking back", () => {
-  it("records transport needed in one press, then Log booking shows again", () => {
+  it("records transport needed in one press, then Record booking shows again", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <RecordNotNeeded />
@@ -132,10 +132,10 @@ describe("Change on the patient page brings booking back", () => {
     act(() => fireEvent.click(screen.getByRole("button", { name: "Record synthetic no transport needed" })));
     const gate = () => screen.getByTestId("ward-patient-gate-transport");
     expect(gate()).toHaveTextContent("Not needed");
-    expect(within(gate()).queryByRole("button", { name: /Log booking/u })).not.toBeInTheDocument();
+    expect(within(gate()).queryByRole("button", { name: /Record booking/u })).not.toBeInTheDocument();
     act(() => fireEvent.click(within(gate()).getByRole("button", { name: "Change no transport needed" })));
     expect(screen.getByTestId("need-probe")).toHaveTextContent("true");
     expect(gate()).not.toHaveTextContent("Not needed");
-    expect(within(gate()).getByRole("button", { name: /Log booking/u })).toBeInTheDocument();
+    expect(within(gate()).getByRole("button", { name: /Record booking/u })).toBeInTheDocument();
   });
 });

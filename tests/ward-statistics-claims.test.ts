@@ -41,7 +41,10 @@ import {
 // and audit 24-1 decision 4 removed RELEASE_BED, the code it cited.
 // 78 -> 77 on 25 October 2026 (production audit USC-07): the back-link claim went with
 // `statistics-section-frame.tsx`, a component no page rendered, deleted with Josh's approval.
-const EXPECTED_MODEL_CLAIMS = 77;
+// 77 -> 76 on 28 November 2026: the team-screen-carries-the-other-teams-switcher claim went with the
+// switcher (`CommunityOtherTeams`, cut by r10 and deleted with Josh's approval); the community index's
+// sentence about it is now written in the past tense.
+const EXPECTED_MODEL_CLAIMS = 76;
 /*
  * 12 -> 11 on 2026-09-05. The admitted gap that left was
  * `statistics-ward-screen/computed/ward-statistics-has-no-consumer-in-the-app`, and it left because
@@ -385,7 +388,7 @@ describe("the model-claims register", () => {
     const retired = MODEL_CLAIMS.filter((claim) => claim.retiredPageProse !== undefined);
     expect(retired.map((claim) => claim.id).sort()).toEqual([...RETIRED_PAGE_CLAIM_IDS].sort());
     expect(retired).toHaveLength(53);
-    expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(24);
+    expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(23);
     for (const claim of retired) {
       expect(claim.retiredPageProse?.date).toBe(
         PRESENTATION_RETIRED_PAGE_CLAIM_IDS.has(claim.id)

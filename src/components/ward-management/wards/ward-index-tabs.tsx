@@ -17,7 +17,7 @@ type ServiceItem = { id: ServiceFilter; label: string; count: number };
  * Filters and the Cards or Table switch: at the right of All wards' service tabs, and at the right
  * of Capacity's page tabs on its Wards tab (area 3 item 1).
  */
-export function WardDirectoryActions({
+function WardDirectoryActions({
   isPhone,
   filtersOpen,
   onToggleFilters,

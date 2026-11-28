@@ -6,9 +6,9 @@ Referrals waiting for an answer, and those decided recently.
 
 ## What is on the screen
 
-1. Referrals at a glance. How many are awaiting a decision, the oldest wait, and any decision overdue.
+1. Referrals at a glance. How many are awaiting a decision, the longest wait, and any decision overdue.
 2. Next overdue. The overdue referral that has waited longest. Next overdue opens it.
-3. Highlight referrals. Ward bed, ED, More than one and Refused once highlight those referrals in the queue.
+3. Highlight referrals. Ward bed, ED, More than one and Declined once highlight those referrals in the queue.
 4. Bed meeting. Opens the bed meeting agenda at its referrals, the ones to talk through at the meeting.
 5. Since referral. Each referral's wait against its tier's decision window. Press a group to show those referrals.
 6. Beds ready. Beds ready now, by kind, so you can see what is free before asking a ward.

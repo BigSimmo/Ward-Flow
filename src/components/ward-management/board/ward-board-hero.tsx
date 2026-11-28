@@ -52,11 +52,7 @@ type BoardFigure = {
 };
 
 /** Item 5: the figure's label or cell becomes a button that lists the people it counts. */
-export function breakdownPress(
-  figure: BoardFigure | undefined,
-  now: number,
-  testId: string,
-): HeroRenderPress | undefined {
+function breakdownPress(figure: BoardFigure | undefined, now: number, testId: string): HeroRenderPress | undefined {
   const rows = figure?.rows;
   if (!figure || !rows) return undefined;
   return function BoardFigureBreakdown(press) {

@@ -122,7 +122,7 @@ describe("Record departure from the release sheet", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(probe()).toEqual([before, 0]);
-    expect(screen.getByText(/^Undone\. .+ is back in their bed\.$/u)).toBeInTheDocument();
+    expect(screen.getByText(/^Undone: .+ is back in their bed$/u)).toBeInTheDocument();
   });
 
   it("does not offer Record departure on an expected release", () => {

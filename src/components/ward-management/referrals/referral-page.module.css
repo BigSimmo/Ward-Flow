@@ -432,14 +432,17 @@ html .askNeeds.askNeeds {
      auto track let them shrink below their text in the 1% actions cell and they spilled left over
      Waiting; max-content gives the cell their real width and the answers column takes the squeeze.
      Both buttons stretch to one width, so the pair reads as one aligned stack. */
+  /* Look check F5: one fixed button track, so Chase and Escalate (and a lone button) are one width
+     on every row. */
   .offerActionRow {
     display: inline-grid;
-    grid-template-columns: max-content auto;
+    grid-template-columns: 6.5rem auto;
     justify-items: stretch;
     gap: var(--wf-s-1) var(--wf-s-2);
   }
   .offerActionRow > :not(.offerChevron) {
     grid-column: 1;
+    inline-size: 100%;
   }
   .offerActionRow > .offerChevron {
     grid-column: 2;

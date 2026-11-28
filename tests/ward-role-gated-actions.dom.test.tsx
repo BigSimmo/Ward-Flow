@@ -313,7 +313,7 @@ describe("transport booking on the ward desk (Desks-R3-10)", () => {
 });
 
 describe("gated Save buttons stay disabled while nothing is saving", () => {
-  it("keeps Save transport booking disabled, with its reason, for a role that may not book", () => {
+  it("keeps Record booking disabled, with its reason, for a role that may not book", () => {
     navigation.pathname = "/mockups/ward-flow/transport/officer";
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -327,7 +327,7 @@ describe("gated Save buttons stay disabled while nothing is saving", () => {
     expect(document.getElementById(describedBy!)).toHaveTextContent(/only/);
   });
 
-  it("leaves Save transport booking enabled for a role that may book", () => {
+  it("leaves Record booking enabled for a role that may book", () => {
     navigation.pathname = "/mockups/ward-flow/ward/rph-adult-secure";
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>

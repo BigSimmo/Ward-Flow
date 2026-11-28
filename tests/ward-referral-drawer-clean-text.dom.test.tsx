@@ -101,7 +101,7 @@ describe("P148 the drawer cleans referral text before it sends", () => {
     next("Next, wards");
     const locations = screen.getByRole("list", { name: "Destinations" });
     fireEvent.click(within(locations).getByRole("checkbox", { name: /Dabakarn/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
+    fireEvent.click(screen.getByRole("button", { name: "Review and send" }));
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: `  Demo Sender${BIDI_OVERRIDE} ` } });
     fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "sender@example.com" } });
     // A pasted phone number carrying bidi controls is cleaned before the contact check, so it is accepted.

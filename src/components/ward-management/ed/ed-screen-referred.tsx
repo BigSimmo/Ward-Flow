@@ -5,7 +5,7 @@
 import { useState } from "react";
 
 import { StatusGlyph } from "@/components/wf";
-import { ReleasePulledBedSheet } from "@/components/ward-management/release-pulled-bed-sheet";
+import { ReleasePulledBedSheet } from "@/components/ward-management/release-pulled-bed-sheet-lazy";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { arrivalTimingPhrase } from "@/components/ward-management/ward-arrival-timing";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";

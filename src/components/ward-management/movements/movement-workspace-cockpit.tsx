@@ -8,7 +8,7 @@
  */
 
 "use client";
-import { ReleasePulledBedSheet } from "@/components/ward-management/release-pulled-bed-sheet";
+import { ReleasePulledBedSheet } from "@/components/ward-management/release-pulled-bed-sheet-lazy";
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { MovementWorkflowActions } from "./movement-workflow-actions";
 import {

@@ -1,6 +1,6 @@
 "use client";
 
-import { ReleasePulledBedSheet } from "@/components/ward-management/release-pulled-bed-sheet";
+import { ReleasePulledBedSheet } from "@/components/ward-management/release-pulled-bed-sheet-lazy";
 
 import { arrivalTimingPhrase } from "@/components/ward-management/ward-arrival-timing";
 import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";

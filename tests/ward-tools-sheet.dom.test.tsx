@@ -99,7 +99,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
       expect(screen.queryByRole("button", { name: gone })).toBeNull();
       expect(screen.queryByRole("link", { name: gone })).toBeNull();
     }
-    // Item 6c (9 Nov 2026): Log a delay is a short form in Tools, not a link to Waiting.
+    // Item 6c (9 Nov 2026): Record a delay is a short form in Tools, not a link to Waiting.
     expect(screen.getByTestId("ward-tools-toggle-log-delay")).toBeTruthy();
     expect(screen.getByRole("link", { name: /Legal forms/u })).toBeTruthy();
   });
@@ -413,7 +413,7 @@ describe("Tools offers each desk only the tools its role may use (audit, 1 Nov 2
     resetWardAccessStoreForTests();
   });
 
-  it("gives the coordinator Find a bed, Key figures, Messages and Log a delay", () => {
+  it("gives the coordinator Find a bed, Key figures, Messages and Record a delay", () => {
     renderSheet();
     for (const id of NETWORK_FIGURE_TOOLS) expect(screen.getByTestId(`ward-tools-toggle-${id}`)).toBeTruthy();
     expect(screen.getByTestId("ward-tools-toggle-log-delay")).toBeTruthy();
@@ -437,7 +437,7 @@ describe("Tools offers each desk only the tools its role may use (audit, 1 Nov 2
     expect(screen.queryByTestId("ward-tools-toggle-messages")).toBeNull();
   });
 
-  it("offers Log a delay only to a desk whose role may record a delay", () => {
+  it("offers Record a delay only to a desk whose role may record a delay", () => {
     // The site bed manager may open the Waiting list but may not record a blocker there (Q97 audit
     // item 9), so it is not offered the row. It keeps the network bed figures.
     atDesk({ role: "bed_manager", scope: { kind: "site", siteCode: "FSH" } });
@@ -454,11 +454,11 @@ describe("Tools offers each desk only the tools its role may use (audit, 1 Nov 2
     );
     expect(canOpenWaiting).toBe(true);
     expect(screen.queryByTestId("ward-tools-toggle-log-delay")).toBeNull();
-    expect(screen.queryByText("Log a delay")).toBeNull();
+    expect(screen.queryByText("Record a delay")).toBeNull();
     expect(screen.getByTestId("ward-tools-toggle-bed-finder")).toBeTruthy();
   });
 
-  it("keeps Log a delay for a ward desk, which may record one", () => {
+  it("keeps Record a delay for a ward desk, which may record one", () => {
     atDesk({ role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } });
     renderSheet();
     expect(screen.getByTestId("ward-tools-toggle-log-delay")).toBeTruthy();

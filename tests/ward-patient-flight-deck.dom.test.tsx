@@ -98,7 +98,7 @@ describe("unified Patient Now clinical flight deck", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Escort required" }));
     // D-189 item 9(e): fit to travel is not recorded, so booking and handover ask for a reason.
     fireEvent.change(screen.getByRole("combobox", { name: "Reason" }), { target: { value: "urgent_to_follow" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save transport booking" }));
+    fireEvent.click(screen.getByTestId("ward-transit-book-transport-confirm-WF-012"));
     expect(screen.getByTestId("live-cad")).toHaveTextContent("CAD-SYNTHETIC-42");
     fireEvent.click(screen.getByRole("button", { name: "Mark handover ready · sending team" }));
     fireEvent.change(screen.getByTestId("ward-patient-handover-check-reason"), {

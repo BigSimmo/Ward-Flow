@@ -63,7 +63,7 @@ function Booked({ id }: { id: string }) {
   return <output data-testid="booked-job">{job ? JSON.stringify(job) : "none"}</output>;
 }
 
-describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
+describe("Record booking (A4-7, A4-6, A4-2, A4-5)", () => {
   it("shows Legal now to check against, warns a late ETA, and warns on an empty ETA", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>

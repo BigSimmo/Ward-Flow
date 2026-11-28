@@ -1412,6 +1412,7 @@ function usePhoneChipFit(barRef: RefObject<HTMLElement | null>, isPhone: boolean
     const bar = barRef.current;
     if (!bar) return;
     bar.removeAttribute("data-long-title");
+    bar.removeAttribute("data-title-wrap");
     if (!isPhone) return;
     // fix-5: scrollWidth and clientWidth are whole pixels, so a title clipped by a fraction of a
     // pixel ("Mental Health U…") read as fitting; the laid-out text is measured against the box too.
@@ -1437,11 +1438,20 @@ function usePhoneChipFit(barRef: RefObject<HTMLElement | null>, isPhone: boolean
     // spills past its squeezed chip (the button's own scrollWidth always reads wider, so edges are compared).
     const shortNode = bar.querySelector<HTMLElement>(`.${styles.scopeBadgeShort}`);
     const chipNode = shortNode?.closest<HTMLElement>(`.${styles.scopeBadgeBtn}`) ?? null;
+    // Look check F3: a title that still clips beside the short code takes a second line (up to two,
+    // in the same bar height) and keeps the code; the dot comes only if two lines still clip.
+    let titleClips = clips(titleSelector);
+    if (titleClips) {
+      bar.setAttribute("data-long-title", "wrap");
+      bar.setAttribute("data-title-wrap", "");
+      const titleNode = bar.querySelector<HTMLElement>(titleSelector);
+      titleClips = clips(titleSelector) || (titleNode !== null && titleNode.scrollHeight > titleNode.clientHeight + 1);
+    }
     const codeSpills =
       shortNode !== null &&
       chipNode !== null &&
       shortNode.getBoundingClientRect().right > chipNode.getBoundingClientRect().right + 0.5;
-    if (clips(titleSelector) || clips(`.${styles.scopeBadgeShort}`) || codeSpills) {
+    if (titleClips || clips(`.${styles.scopeBadgeShort}`) || codeSpills) {
       bar.setAttribute("data-long-title", "dot");
     }
   }, [barRef, isPhone]);

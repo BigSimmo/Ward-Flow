@@ -13,8 +13,7 @@ The coordinator's overnight page: beds ready, ED waits by Step, who is on the wa
 5. ED waits by Step. How many people are at each Step, by time in the department, with the next escalation step. Waiting opens the list.
 6. Under Step 1. People waiting who have not reached Step 1 yet. A Step is a prompt for a person to act.
 7. On the way. Everyone collected and moving to a ward, with where to and when due. Open a name for their record.
-8. Intake windows. Says Not recorded until wards record their overnight intake windows.
-9. On call now. The state desk, each service's bed flow and the crisis line, with who answers now and until when. Numbers are synthetic.
+8. On-call now. The state desk, each service's bed flow and the crisis line, with who answers now and until when. Numbers are synthetic.
 
 In BedChart, open Help and choose Show me around this screen to see each part lit in turn.
 

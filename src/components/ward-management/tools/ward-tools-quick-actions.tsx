@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState, type ReactNode } from "react";
-import { ArrowUpRight, type LucideIcon } from "lucide-react";
+import { useRef, useState } from "react";
 
 import { Button, Meter, ShowMoreRow, foldHidden, foldLimit } from "@/components/wf";
 import { useWardFlowSelect } from "../ward-flow-provider";
@@ -12,87 +11,6 @@ import { ASK_WARDS_WINDOW_TEXT } from "../ward-operational-defaults";
 import { formatInstantWithDay } from "../ward-clock";
 import { shiftConfirmations } from "../capacity/shift-confirmations";
 import styles from "./ward-tools-quick-actions.module.css";
-
-/**
- * COORDINATOR QUICK ACTIONS (Josh locked in the mock-up, 3 Nov 2026). One Tools row opens the
- * coordinator's most used actions. Ward updates lists the wards not confirmed since the shift
- * began (the Capacity check). Ask sends one alert through the shared path in alerts/ask-wards.ts.
- */
-export type QuickTile = {
-  key: string;
-  icon: LucideIcon;
-  name: string;
-  detail: string;
-  count?: number;
-  /** A tile either opens its tool under the grid (`body`) or goes to a page (`href`). */
-  title?: string;
-  body?: ReactNode;
-  href?: string;
-};
-
-/**
- * Quick actions opens from one Tools row (Josh, 3 Nov: room to grow without cluttering Tools).
- * The grid sits on top; the chosen action opens beneath it, so the coordinator never leaves Tools.
- */
-export function QuickActionsPanel({ tiles, onNavigate }: { tiles: readonly QuickTile[]; onNavigate: () => void }) {
-  const [chosen, setChosen] = useState<string | null>(tiles.find((tile) => tile.body)?.key ?? null);
-  const active = tiles.find((tile) => tile.key === chosen && tile.body);
-  // Polish (3 Nov, design brief): actions that work here lead as tiles with their live figure;
-  // shortcuts that leave Tools sit apart as a quiet row, so it is clear which tap leaves the drawer.
-  const here = tiles.filter((tile) => !tile.href);
-  const away = tiles.filter((tile) => tile.href);
-  return (
-    <div className={styles.panel}>
-      <div className={styles.set} role="group" aria-label="Quick actions">
-        <div className={styles.grid}>
-          {here.map((tile) => {
-            const Icon = tile.icon;
-            return (
-              <button
-                key={tile.key}
-                type="button"
-                className={styles.tile}
-                aria-pressed={chosen === tile.key}
-                onClick={() => setChosen(tile.key)}
-              >
-                <span className={styles.tileTop}>
-                  <span className={styles.icon} aria-hidden="true">
-                    <Icon aria-hidden="true" strokeWidth={1.75} />
-                  </span>
-                  {tile.count !== undefined ? (
-                    <b className={tile.key === "ward-updates" && tile.count > 0 ? styles.figureWarn : styles.figure}>
-                      {tile.count}
-                    </b>
-                  ) : null}
-                </span>
-                <strong>{tile.name}</strong>
-                <em>{tile.detail}</em>
-              </button>
-            );
-          })}
-        </div>
-        <div className={styles.away}>
-          {away.map((tile) => {
-            const Icon = tile.icon;
-            return (
-              <Link key={tile.key} href={tile.href!} className={styles.awayLink} onClick={onNavigate}>
-                <Icon aria-hidden="true" strokeWidth={1.75} />
-                <span>{tile.name}</span>
-                <ArrowUpRight className={styles.end} aria-hidden="true" strokeWidth={1.75} />
-                <span className="sr-only">, {tile.detail}, opens its page</span>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-      {active ? (
-        <section className={styles.chosen} aria-label={active.title ?? active.name}>
-          {active.body}
-        </section>
-      ) : null}
-    </div>
-  );
-}
 
 export function useUnconfirmedWards() {
   const { units, now } = useWardFlowSelect("units", "now");

@@ -890,6 +890,7 @@
 /* Phone (v10 bed sheet): one scrolling sheet, no tabs. Only rendered on phone. */
 @media (max-width: 46.4375rem) {
   .phoneFacts {
+    flex: none;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     overflow: hidden;
@@ -992,9 +993,22 @@
   padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
 }
 
+/* Look check F2: the kit body is a flex column; no block in it may be squeezed flat (the fact
+   tiles clip their overflow, so their minimum height would otherwise be zero). */
+.phoneBody > * {
+  flex-shrink: 0;
+}
+
 @media (max-width: 46.4375rem) {
   .bandActions :is(a, button) {
     min-height: 44px;
+  }
+
+  /* Look check F4: on a phone a ready bed's filled step is a full-width first line, with Review
+     current referrals under it. */
+  .bandSplit > :not(.bandLink) {
+    flex: 1 1 100%;
+    order: -1;
   }
 }
 

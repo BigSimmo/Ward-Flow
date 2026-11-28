@@ -35,7 +35,7 @@ function recordTwoActions() {
     const toggle = within(waits).getAllByTestId("bed-meeting-add-action")[index]!;
     press(toggle);
     fireEvent.click(
-      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Book transport" }),
+      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Record transport booking" }),
     );
     press(screen.getByTestId("bed-meeting-action-record"));
     // The form closes with its Record button; focus goes back to the row's Add action.

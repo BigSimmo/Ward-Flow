@@ -24,12 +24,11 @@ import {
   SrOnly,
 } from "@/components/wf";
 import { WardPhoneFind } from "./ward-phone-find";
-import { WardSinceYesterday } from "./ward-since-yesterday";
 import styles from "./ward.module.css";
 import pageTop from "../page-top-hero.module.css";
 import noticesSheet from "./ward-notices-sheet.module.css";
 import { useSinceLastLookReview } from "../since-last-look-pill";
-import { WardNotificationCenter } from "./ward-screen-lazy";
+import { WardNotificationCenter, WardSinceYesterday } from "./ward-screen-lazy";
 import { WardSwitchPopover } from "./ward-switch-menu";
 import { useWardStaffContact } from "../staffing/ward-staff-contact";
 import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";

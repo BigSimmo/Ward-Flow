@@ -40,7 +40,7 @@ describe("Quick actions for every desk", () => {
   it("gives the nurse in charge Confirm beds first, then Due back and the ward's own rows", () => {
     const tiles = tilesAt({ role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } });
     expect(tiles).toEqual(
-      expect.arrayContaining(["Confirm beds", "Due back", "Update a bed", "Log a delay", "Remind me"]),
+      expect.arrayContaining(["Confirm beds", "Due back", "Update a bed", "Record a delay", "Remind me"]),
     );
     expect(tiles).not.toContain("Broadcast");
   });
@@ -67,7 +67,7 @@ describe("Quick actions for every desk", () => {
     const tiles = tilesAt({ role: "bed_manager", scope: { kind: "site", siteCode: "FSH" } });
     expect(tiles).toEqual(expect.arrayContaining(["Update a bed", "Due back", "Broadcast"]));
     // The bed manager may not record a delay (Q97), so that tile drops out with its row.
-    expect(tiles).not.toContain("Log a delay");
+    expect(tiles).not.toContain("Record a delay");
   });
 
   it("keeps borrowed tiles to a short second line for phones", () => {

@@ -231,7 +231,7 @@ describe("Mark handover ready asks for a reason on the patient page", () => {
   it("books and readies the handover without a reason: both ask, neither is held, none is recorded", () => {
     pullTheBed();
     expect(screen.getByRole("combobox", { name: "Reason" })).toHaveValue("");
-    fireEvent.click(screen.getByRole("button", { name: "Save transport booking" }));
+    fireEvent.click(screen.getByTestId("ward-transit-book-transport-confirm-WF-012"));
     expect(screen.getByTestId("probe-stage")).toHaveTextContent("pulled");
     expect(screen.getByTestId("probe-exceptions")).toBeEmptyDOMElement();
 
@@ -247,7 +247,7 @@ describe("Mark handover ready asks for a reason on the patient page", () => {
     pullTheBed();
     // Booking asks too (fit to travel is not recorded on this journey).
     fireEvent.change(screen.getByRole("combobox", { name: "Reason" }), { target: { value: "urgent_to_follow" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save transport booking" }));
+    fireEvent.click(screen.getByTestId("ward-transit-book-transport-confirm-WF-012"));
     expect(screen.getByTestId("probe-exceptions")).toHaveTextContent("booked:fit_to_travel_missing:urgent_to_follow");
 
     fireEvent.click(screen.getByRole("button", { name: "Mark handover ready · sending team" }));

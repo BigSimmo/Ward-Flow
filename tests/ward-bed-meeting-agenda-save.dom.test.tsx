@@ -39,14 +39,17 @@ function openAction() {
 // The form's choices are chips and a segmented Due in (B1, Josh 3 Nov 2026), never drop-downs.
 function chooseActionOwnerAndDue() {
   const form = screen.getByTestId("bed-meeting-action-form");
-  fireEvent.click(within(form).getByRole("button", { name: "Book transport" }));
+  fireEvent.click(within(form).getByRole("button", { name: "Record transport booking" }));
   fireEvent.click(within(form).getByRole("button", { name: "ED clinician" }));
   fireEvent.click(within(form).getByRole("radio", { name: "4 h" }));
 }
 
 function expectChoicesKept() {
   const form = screen.getByTestId("bed-meeting-action-form");
-  expect(within(form).getByRole("button", { name: "Book transport" })).toHaveAttribute("aria-pressed", "true");
+  expect(within(form).getByRole("button", { name: "Record transport booking" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   expect(within(form).getByRole("button", { name: "ED clinician" })).toHaveAttribute("aria-pressed", "true");
   expect(within(form).getByRole("radio", { name: "4 h" })).toHaveAttribute("aria-checked", "true");
 }

@@ -104,7 +104,7 @@ import pageTop from "@/components/ward-management/page-top-title.module.css";
  *
  * Redesign (approved by Josh, 3 Nov 2026, WS1 and WS2): one tidy filter row (service, search,
  * Filters, Cards or Table); Status, Cohort and Order sit behind Filters as kit choices, never
- * browser menus. A ward card opens the ward's side panel (`ward-index-drawer.tsx`, Capacity's own
+ * browser menus. A ward card opens the ward's side panel (Capacity's own
  * ward panel), with Open ward at the card's foot. Card text and ward names wrap. A site bed manager's desk (D-80) sees its own site's wards in full, then every other
  * site as bed counts only (`ward-index-site-desk.tsx`).
  */
@@ -1037,8 +1037,7 @@ export function WardIndex({
 
       {isPhone ? null : (
         // Batch 3 (one Ward panel): All wards opens Capacity's ward panel, with this page's extras
-        // (Site · Service, Heading here, Ward profile) as optional props. ward-index-drawer.tsx is
-        // now unused; deleting it needs Josh's yes.
+        // (Site · Service, Heading here, Ward profile) as optional props.
         <AllWardsPanel
           unit={drawerRow?.unit}
           place={drawerRow ? `${drawerRow.siteName} · ${drawerRow.service ?? "Service not recorded"}` : ""}

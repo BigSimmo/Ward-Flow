@@ -77,7 +77,7 @@ describe("approved four-tab referral drawer journey", () => {
     // v6 (ReferralDrawer.webp): the footer always offers "Next, referral"; it checks the patient step when pressed.
     expect(screen.getByRole("button", { name: "Next, referral" })).toBeInTheDocument();
     tab("Wards");
-    fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
+    fireEvent.click(screen.getByRole("button", { name: "Review and send" }));
     // FORM-REF (Josh, 5 Nov 2026): the catchment warns in Before you send and never stops Send.
     expect(screen.getByRole("alert")).not.toHaveTextContent("catchment");
     expect(screen.getByTestId("ward-referral-send-warnings")).toHaveTextContent("Not recorded: catchment");
@@ -150,7 +150,7 @@ describe("approved four-tab referral drawer journey", () => {
     expect(screen.getByLabelText("Arrival, demo time")).toBeVisible();
     // The seeded referrals already carry authored intakes, so count from that baseline.
     const baseline = Number(screen.getByTestId("submitted-count").textContent);
-    fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
+    fireEvent.click(screen.getByRole("button", { name: "Review and send" }));
     expect(screen.getByRole("heading", { name: "Confirm and send" })).toBeVisible();
     expect(screen.getByTestId("submitted-count")).toHaveTextContent(String(baseline));
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Demo Sender" } });
@@ -238,7 +238,7 @@ describe("errors mark and move to the field at fault (DA-12)", () => {
     if (team) fireEvent.change(team, { target: { value: "Synthetic referring service" } });
     tab("Wards");
     expect(legal()).not.toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
+    fireEvent.click(screen.getByRole("button", { name: "Review and send" }));
 
     expect(screen.getByRole("alert")).toHaveTextContent(legalError);
     expect(legal()).toBeVisible();

@@ -2,9 +2,9 @@
 // Two of one ward's statistics cards, split out of statistics-ward-screen.tsx to keep it under the
 // line cap. The coordinator and the ward desk lay them out differently (statistics-ward-screen.tsx).
 
-import { BedSingle, Users } from "lucide-react";
+import { Users } from "lucide-react";
 
-import { CardBody, SrOnly, StatusGlyph, cx, durMinutes } from "@/components/wf";
+import { CardBody, SrOnly, StatusGlyph, cx } from "@/components/wf";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import type { WardDetailModel } from "./statistics-wards-index";
 import { StatCard } from "./statistics-hero";
@@ -119,82 +119,6 @@ export function ReferralsCard({
             </div>
           </div>
         ) : null}
-      </CardBody>
-    </StatCard>
-  );
-}
-
-/**
- * Beds now: the bed figures found nowhere else on the page (UX audit 21 Oct 2026). Ready, pulled and
- * closed are in the hero and the bed map legend.
- */
-export function BedsNowCard({
-  model,
-  twoByTwo = false,
-}: {
-  /** Its four tiles two by two, for a column (simplification mock-up, 26 Nov 2026). */
-  twoByTwo?: boolean;
-  model: Pick<
-    WardDetailModel,
-    "unit" | "emptyBeds" | "allocatableBeds" | "openBeds" | "pendingPreparation" | "oldestPulled"
-  >;
-}) {
-  const { unit, emptyBeds, allocatableBeds, openBeds, pendingPreparation, oldestPulled } = model;
-  return (
-    <StatCard
-      icon={BedSingle}
-      title="Beds now"
-      // Beside Length of stay: the same stacked title and caption, so the two heads are level.
-      meta={`${unit.beds} beds`}
-      className={ward.tightHead}
-      id="ward-beds"
-      data-testid="ward-statistics-ward-beds-now"
-    >
-      <CardBody className={styles.bodyStack}>
-        <dl className={cx(styles.tiles, twoByTwo && compact.tilesTwoRows)} aria-label="Current bed figures">
-          <div className={styles.tile}>
-            <dt className={styles.tileLabel}>Empty</dt>
-            <dd className={styles.tileValue} data-testid="ward-stat-capacity-empty">
-              {emptyBeds}
-            </dd>
-          </div>
-          <div className={styles.tile}>
-            <dt className={styles.tileLabel}>Allocatable</dt>
-            <dd className={styles.tileValue} data-testid="ward-stat-capacity-allocatable">
-              {allocatableBeds}
-              {allocatableBeds === 0 && <small>no free bed</small>}
-            </dd>
-          </div>
-          <div className={styles.tile}>
-            <dt className={styles.tileLabel}>Open now</dt>
-            <dd className={styles.tileValue}>{openBeds}</dd>
-          </div>
-          <div className={styles.tile}>
-            <dt className={styles.tileLabel}>Pending</dt>
-            <dd className={styles.tileValue} data-testid="ward-stat-capacity-pending-preparation">
-              {pendingPreparation}
-            </dd>
-          </div>
-        </dl>
-        {oldestPulled === null ? (
-          // In a column the line always shows, so the card says "none" rather than ending early.
-          twoByTwo ? (
-            <p className={ward.factLine}>
-              <span>Oldest pulled bed</span>
-              <span>None waiting</span>
-            </p>
-          ) : null
-        ) : (
-          <p className={ward.factLine}>
-            <span className={styles.flagged}>
-              <StatusGlyph tone="warning" size={9} />
-              Oldest pulled bed
-            </span>
-            <span>
-              <b>{durMinutes(oldestPulled)}</b> not arrived
-            </span>
-          </p>
-        )}
       </CardBody>
     </StatCard>
   );

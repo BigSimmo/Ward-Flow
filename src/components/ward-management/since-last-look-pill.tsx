@@ -5,9 +5,20 @@ import { Button, Sheet } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "./ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "./ward-flow-provider";
 import { SharedAccessContext } from "./shell/ward-shared-access-context";
-import { SinceLastLookSheetBody, sinceLastLookCount, useSinceLastLook } from "./coordinator/since-last-look-panel";
+import { sinceLastLookCount, useSinceLastLook } from "./coordinator/since-last-look-panel";
+import { loadEarly } from "./load-early";
+import { preloadWhenIdle } from "./preload-when-idle";
 import type { ChangesSinceLastLook } from "./coordinator/since-last-look";
 import styles from "./since-last-look-pill.module.css";
+
+// Phone script budget (PR #1742): the sheet's lines draw only once the Updates sheet opens, so their
+// code stays off the first load. It is fetched when the browser is idle and draws in the same render
+// once there (`loadEarly`), so an opened sheet does not wait a frame for it.
+const sheetBody = loadEarly(() =>
+  import("./coordinator/since-last-look-sheet-body").then((m) => m.SinceLastLookSheetBody),
+);
+const SinceLastLookSheetBody = sheetBody.Card;
+preloadWhenIdle(async () => sheetBody.start());
 
 /**
  * Audit two #36 (O23): the one "since you looked" sheet, titled "Since HH:MM" wherever it opens

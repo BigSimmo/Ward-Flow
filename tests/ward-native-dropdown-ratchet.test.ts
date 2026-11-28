@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 /**
  * Q36 (Josh, "yes to all", 3 Nov 2026) and DESIGN-SYSTEM.md "Choosing one of a few": every browser
  * drop-down is replaced by a kit choice, a kit Menu of radio choices or the ListPicker. The kit
- * `Select` in `wf/form.tsx` is still the browser's own drop-down, so it counts too.
+ * `Select` in `wf/form-select.tsx` is still the browser's own drop-down, so it counts too.
  *
  * The sweep runs page by page, so this guard is a one-way ratchet. A file not listed below may not
  * gain a drop-down, and a listed file may not gain more than it has. Removing drop-downs never
@@ -94,7 +94,7 @@ const KNOWN_DROPDOWNS: Readonly<Record<string, number>> = {
   "src/components/ward-management/wards/ward-index.tsx": 3,
   "src/components/ward-redesign/ed-board/ed-arrival-time-modal.tsx": 2,
   "src/components/ward-redesign/pop-alerts/alerts-drawer.tsx": 2,
-  "src/components/wf/form.tsx": 1,
+  "src/components/wf/form-select.tsx": 1,
 };
 
 const REPOSITORY_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));

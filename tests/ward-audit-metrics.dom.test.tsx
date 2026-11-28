@@ -123,7 +123,7 @@ describe("audit metrics rendered regressions", () => {
     ["moving", -100, true],
     ["moving", 0, true],
     ["moving", NOW_ANCHOR, false],
-  ] as const)("R13 notification count for %s with ETA %i is truthful", (stage, eta, late) => {
+  ] as const)("R13 notification count for %s with ETA %i is truthful", async (stage, eta, late) => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <ArrivalFixture stage={stage} eta={eta} />
@@ -131,7 +131,8 @@ describe("audit metrics rendered regressions", () => {
     );
     // Redesign (31 Oct 2026): on a desktop the Notices count sits on the More menu's Notices item.
     fireEvent.click(screen.getByTestId("ward-tools-more"));
-    const notices = screen.getByRole("menuitem", { name: /^Notices/ });
+    // The More menu's code arrives just after the page (EarlyMenu, phone script budget, PR #1742).
+    const notices = await screen.findByRole("menuitem", { name: /^Notices/ });
     expect(notices).toHaveTextContent(late ? /^Notices\s*1$/ : /^Notices$/);
   });
 

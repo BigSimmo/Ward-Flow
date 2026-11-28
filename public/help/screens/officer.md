@@ -7,8 +7,8 @@ The transport officer's jobs: who is moving, where and when.
 ## What is on the screen
 
 1. Jobs open. Jobs that need transport, need forms or are past the ward's ETA. Each figure highlights those jobs.
-2. Log booking. Records a booking already made by phone, with the CAD number and quoted ETA. It shows when a pulled bed has none.
-3. Copy handover. Copies every open job as text, with its route, ETA and forms, to paste into your handover.
+2. Record booking. Records a booking already made by phone, with the CAD number and quoted ETA. It shows when a pulled bed has none.
+3. Copy for handover. Copies every open job as text, with its route, ETA and forms, to paste into your handover.
 4. Job stages. How many jobs are at each stage, from To accept to Collected.
 5. Jobs and History. Jobs lists the open ones. History holds jobs closed today, with refusals and cancellations.
 6. Needs transport. Beds pulled with no transport logged yet, most urgent first. The list shows only while a pulled bed has none.

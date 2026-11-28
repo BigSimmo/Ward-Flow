@@ -4,8 +4,7 @@
 // Waiting pages. Three lists only: Awaiting review, Expected and Forms. Medical clearance is in the
 // handover table's Checks column and Referred is in Review, so both tabs left. Each person is one
 // row, surname first with the UMRN, under quiet capital column heads.
-import { useState } from "react";
-import { buttonClass, Segmented, StatusGlyph } from "@/components/wf";
+import { buttonClass, StatusGlyph } from "@/components/wf";
 import { formatElapsed, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { referralClocks, referralPurposeLabel } from "@/components/ward-management/ward-referrals";
@@ -27,8 +26,6 @@ import {
 import { ReferralIntakeSummary } from "@/components/ward-management/referrals/referral-intake-summary";
 import { psychReviewStage } from "./ed-psych-review";
 import handover from "./ed-handover.module.css";
-
-type ListKey = "review" | "expected" | "forms";
 
 /** What every list table shares: who a row is, the name button, and the review list, longest here first. */
 function listParts(ctx: EdScreenContext) {
@@ -69,34 +66,6 @@ export function edMyListCount(ctx: EdScreenContext) {
     counts.forms +
     ctx.outbox.length +
     ctx.answeredAll.length
-  );
-}
-
-/** The Lists card (Josh, 1 Nov 2026). The ED page now shows its tables in My list (`ed-my-list.tsx`). */
-export function EdListsCard({ ctx }: { ctx: EdScreenContext }) {
-  const [list, setList] = useState<ListKey>("review");
-  const counts = edListCounts(ctx);
-  const count = (n: number) => (n === 0 ? "none" : n);
-  return (
-    <section className={`${handover.listsCard}`} aria-labelledby="ward-ed-lists-heading" data-pane="lists">
-      <header className={handover.listsHead}>
-        <h2 id="ward-ed-lists-heading">Lists</h2>
-        <Segmented<ListKey>
-          label="Lists"
-          size="sm"
-          value={list}
-          onChange={setList}
-          items={[
-            { id: "review", label: "Awaiting review", count: count(counts.review) },
-            { id: "expected", label: "Expected", count: count(counts.expected) },
-            { id: "forms", label: "Forms", count: count(counts.forms) },
-          ]}
-        />
-      </header>
-      {list === "review" ? <EdReviewTable ctx={ctx} /> : null}
-      {list === "expected" ? <EdExpectedTable ctx={ctx} /> : null}
-      {list === "forms" ? <EdFormsTable ctx={ctx} /> : null}
-    </section>
   );
 }
 

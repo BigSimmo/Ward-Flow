@@ -8,7 +8,7 @@ import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-obse
 
 /*
  * #1476 review (5 Nov 2026): a pulled movement's next step follows its real transport record.
- * "Book transport" only while nothing is booked and nobody has said none is needed. Synthetic data.
+ * "Record transport booking" only while nothing is booked and nobody has said none is needed. Synthetic data.
  */
 function pulledJourney() {
   let state = seedWardFlowState();
@@ -77,7 +77,7 @@ const job = (extra: Partial<TransportJob> = {}): TransportJob => ({
 
 describe("a pulled movement's next step", () => {
   it("asks to book transport while none is booked or ruled out", () => {
-    expect(pulledJourney()({ transport: undefined, transportNeed: undefined })).toBe("Book transport");
+    expect(pulledJourney()({ transport: undefined, transportNeed: undefined })).toBe("Record transport booking");
   });
 
   it("asks for the handover once transport is booked", () => {
@@ -92,7 +92,7 @@ describe("a pulled movement's next step", () => {
 
   it("asks to book again when the only job was cancelled", () => {
     expect(pulledJourney()({ transport: job({ cancelledAt: NOW_ANCHOR }), transportNeed: undefined })).toBe(
-      "Book transport",
+      "Record transport booking",
     );
   });
 });

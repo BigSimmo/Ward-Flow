@@ -39,7 +39,7 @@ afterEach(() => {
  * screen's click-outside listener is for the desktop popover).
  */
 describe("phone Notices sheet", () => {
-  it("stays open when its own title is pressed, and closes from Close", () => {
+  it("stays open when its own title is pressed, and closes from Close", async () => {
     asPhone();
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -50,7 +50,7 @@ describe("phone Notices sheet", () => {
     );
     // Page tops (9 Nov 2026): the phone bell left the hero; Notices opens from the tab row's More menu.
     fireEvent.click(screen.getByTestId("ward-phone-chip-more"));
-    fireEvent.click(screen.getByRole("menuitem", { name: /^Notices/ }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: /^Notices/ }));
     const sheet = screen.getByTestId("ward-notifications-sheet");
     const title = document.getElementById(sheet.getAttribute("aria-labelledby") ?? "")!;
     expect(title).toHaveTextContent("Notices");

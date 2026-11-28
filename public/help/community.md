@@ -8,9 +8,9 @@ My team
 
 ## Jobs you do most
 
-1. Send a referral. Use New referral. For another team, choose the purpose and first contact time, then Send referral.
+1. Send a referral. Use New referral. For another team, choose the purpose and first contact time, then Review and send.
 2. Check what you sent. The Sent tab shows your referrals and whether a ward accepted.
-3. Answer a referral. Open it, then Accept referral or Decline referral.
+3. Answer a referral. Open it, then Accept or Decline referral.
 
 ## What you cannot do
 

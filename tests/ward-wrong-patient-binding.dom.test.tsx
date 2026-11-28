@@ -345,7 +345,7 @@ describe("a bed meeting task marked done stays with its own patient (Audit 1, #1
     );
     fireEvent.click(screen.getByTestId("record-both"));
     expect(events.filter((event) => event.type === "RECORD_BED_MEETING_ACTION")).toHaveLength(2);
-    const markDone = await screen.findByRole("button", { name: "Mark done: Book transport" });
+    const markDone = await screen.findByRole("button", { name: "Mark done: Record transport booking" });
     // Josh approved 9 Nov 2026: the card names whose actions these are, name and UMRN (no confirm).
     const line = (subject: BedMeetingSubject) =>
       patientIdentityLine(

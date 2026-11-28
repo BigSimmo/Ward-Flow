@@ -189,10 +189,10 @@ describe("stable bed numbers (audit A1-1)", () => {
     fireEvent.click(card as HTMLElement);
     // A9-14: nothing is chosen until the person chooses it, and the record waits for it.
     expect(document.getElementById("drawer-leaving-summary")).toHaveTextContent(/Going to Not chosen yet/);
-    fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Record discharge/i }));
     expect(screen.queryByRole("dialog", { name: "Confirm discharge" })).toBeNull();
     chooseCommunityDestination();
-    fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Record discharge/i }));
     const confirm = screen.getByRole("dialog", { name: "Confirm discharge" });
     expect(confirm).toHaveTextContent(/Going to Discharged to the community/);
     const patient = wardPatients.find(
@@ -214,7 +214,7 @@ describe("stable bed numbers (audit A1-1)", () => {
     chooseCommunityDestination();
     // The destination is shown plainly before it is recorded.
     expect(document.getElementById("drawer-leaving-summary")).toHaveTextContent(/Going to Discharged to the community/);
-    fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Record discharge/i }));
     // Audit 1 (CS-07): the drawer asks once, naming the person, before it records.
     fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
     expect(screen.getByTestId("named-state")).toHaveTextContent("departed");

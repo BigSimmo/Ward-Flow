@@ -75,7 +75,7 @@ export const MIDLAND_ACT_NOW_STEP_ATTR = "data-midland-act-now-step";
  * marked in the rows themselves, so no button is guessed from the layout; a step that is off is
  * passed over.
  */
-export function openNextActNow(): void {
+function openNextActNow(): void {
   if (typeof window === "undefined") return;
   window.requestAnimationFrame(() =>
     window.requestAnimationFrame(() => {

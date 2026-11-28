@@ -35,7 +35,7 @@ export function useOpenFindTab(): string | null {
 }
 
 /** The rail entry every Find tab lights. */
-export const FIND_RAIL_ENTRY = "hub";
+const FIND_RAIL_ENTRY = "hub";
 
 /** The rail's "is this entry the page I am on": on any Find tab, the Find entry and no other. */
 export function useIsActiveRailEntry(): (pathname: string, entry: RailEntry) => boolean {

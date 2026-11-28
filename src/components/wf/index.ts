@@ -49,7 +49,8 @@ export {
   type HeroBandCell,
   type HeroRenderPress,
 } from "./hero-top";
-export { FolderTabs, folderTabClasses } from "./folder-tabs";
+export { FolderTabs } from "./folder-tabs";
+export { folderTabClasses } from "./folder-tab-classes";
 export { useWfBandActive, useWfBandBleed, registerWfBandHero, WF_BAND_SCROLLED_PX } from "./band";
 export {
   CheckingFoot,
@@ -88,12 +89,11 @@ export {
 } from "./choice";
 export { DataRow, TierTile, tableClasses } from "./table";
 export { Sheet, Drawer } from "./sheet";
+export { DrawerPager, type DrawerPagerProps } from "./drawer-pager";
 export {
   PanelDrawer,
   DrawerFacts,
   DrawerFootRow,
-  DrawerPager,
-  type DrawerPagerProps,
   type PanelDrawerProps,
   type DrawerTab,
   type DrawerFact,
@@ -119,18 +119,13 @@ export {
   useLivePause,
   useSharedRefreshLate,
 } from "./live";
-export {
-  Field,
-  TextInput,
-  Textarea,
-  Select,
-  Checkbox,
-  Radio,
-  Switch,
-  Stepper,
-  ErrorSummary,
-  type ErrorSummaryItem,
-} from "./form";
+export { Field } from "./form-field";
+export { TextInput, Textarea } from "./form-text";
+export { Select } from "./form-select";
+export { Checkbox, Radio } from "./form-choice";
+export { Switch } from "./form-switch";
+export { Stepper } from "./form-stepper";
+export { ErrorSummary, type ErrorSummaryItem } from "./form-error-summary";
 export { Timeline, Avatar, EmptyState, StatusLine, type TimelineItem } from "./feed";
 export { BarList, ColumnChart, Donut, type BarListRow } from "./chart";
 export {
@@ -148,7 +143,7 @@ export { PortraitList, PortraitRail, type PortraitGroup } from "./portrait";
 
 export { RadioGroup } from "./radio-group";
 // Kit standard (lane C, from the #1118 mock-ups; Josh, 30-31 October 2026).
-export { ShowMoreRow, SHOW_MORE_MIN_HIDDEN, foldHidden, foldLimit, showMoreWords } from "./show-more-row";
+export { ShowMoreRow, SHOW_MORE_MIN_HIDDEN, foldHidden, foldLimit } from "./show-more-row";
 export { SearchField, type SearchFieldProps } from "./search-field";
 export { TimePresets, timePresetClockText } from "./time-presets";
 export { phoneRows } from "./phone-rows";

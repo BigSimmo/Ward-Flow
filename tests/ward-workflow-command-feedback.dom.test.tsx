@@ -174,7 +174,7 @@ describe("ward command feedback follows its own completion", () => {
       const { occupied, record } = renderWard(reply);
       fireEvent.click(occupied);
       chooseCommunityDestination();
-      const leave = screen.getByRole("button", { name: /^Record that they have left/ });
+      const leave = screen.getByRole("button", { name: /^Record discharge/ });
       // Audit 1 (CS-07): each tap asks once before it records; a second confirm still records once.
       fireEvent.click(leave);
       fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
@@ -182,10 +182,10 @@ describe("ward command feedback follows its own completion", () => {
       if (screen.queryByRole("button", { name: "Record discharge" }))
         fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
       expect(record).toHaveBeenCalledTimes(1);
-      expect(screen.getByRole("button", { name: /^Record that they have left/ })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /^Record discharge/ })).toBeInTheDocument();
       expect(screen.queryByText(/Recorded: .* has left the ward/)).not.toBeInTheDocument();
       await act(async () => reply.resolve({ commandId: "one", status, message: "Synthetic save refused" }));
-      expect(screen.getByRole("button", { name: /^Record that they have left/ })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /^Record discharge/ })).toBeInTheDocument();
       expect(screen.getByText(/Synthetic save refused/)).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /^Undo/ })).not.toBeInTheDocument();
     },
@@ -196,7 +196,7 @@ describe("ward command feedback follows its own completion", () => {
     const { occupied, record } = renderWard(reply);
     fireEvent.click(occupied);
     chooseCommunityDestination();
-    fireEvent.click(screen.getByRole("button", { name: /^Record that they have left/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Record discharge/ }));
     fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
     const admissionId = record.mock.calls[0][0] as string;
     await act(async () =>
@@ -206,7 +206,7 @@ describe("ward command feedback follows its own completion", () => {
         undoStep: { undoType: "UNDO_DEPARTURE", subjectId: admissionId, seq: 12 },
       }),
     );
-    expect(screen.queryByRole("button", { name: /^Record that they have left/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Record discharge/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /^Undo/ }));
     expect(record.mock.calls[1][0]).toMatchObject({ type: "UNDO_DEPARTURE", admissionId, recordSeq: 12 });
   });

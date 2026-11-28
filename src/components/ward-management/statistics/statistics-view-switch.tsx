@@ -1,16 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { Search, X } from "lucide-react";
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
-import { Button, Segmented } from "@/components/wf";
-import {
-  STATISTICS_COMMUNITY_CHOOSER_ID,
-  STATISTICS_HOME_HREF,
-  STATISTICS_SERVICE_CHOOSER_ID,
-  STATISTICS_UNIT_CHOOSER_ID,
-} from "./statistics-sections";
+import { Segmented } from "@/components/wf";
+import { STATISTICS_HOME_HREF, STATISTICS_UNIT_CHOOSER_ID } from "./statistics-sections";
 import type { StatisticsView } from "./statistics-view-bar";
 import { ViewSwitchHost } from "./statistics-view-switch-slot";
 
@@ -25,77 +18,6 @@ import styles from "./statistics-view-switch.module.css";
  * the Compare page is rebuilt; this is the address of the one finder, already open.
  */
 export const STATISTICS_UNIT_FINDER_HREF = `${STATISTICS_HOME_HREF}#${STATISTICS_UNIT_CHOOSER_ID}`;
-
-/** Arriving at any of the finder's anchors opens it: units, health services and community teams. */
-const FINDER_HASHES = [STATISTICS_UNIT_CHOOSER_ID, STATISTICS_SERVICE_CHOOSER_ID, STATISTICS_COMMUNITY_CHOOSER_ID].map(
-  (id) => `#${id}`,
-);
-const subscribeToHash = (onChange: () => void) => {
-  window.addEventListener("hashchange", onChange);
-  return () => window.removeEventListener("hashchange", onChange);
-};
-const finderInHash = () => FINDER_HASHES.includes(window.location.hash);
-
-/** The one finder's open state: shut until asked for, open on arrival at one of its anchors. */
-export function useUnitFinder() {
-  const atFinder = useSyncExternalStore(subscribeToHash, finderInHash, () => false);
-  const [toggled, setToggled] = useState<boolean | null>(null);
-  const open = toggled ?? atFinder;
-  useEffect(() => {
-    // The section track reaches a chooser through the app router, which changes the fragment
-    // without a `hashchange`, so a click on such a link opens the finder too.
-    const onClick = (event: MouseEvent) => {
-      const link = event.target instanceof Element ? event.target.closest("a[href*='#']") : null;
-      if (!link) return;
-      const hash = new URL(link.getAttribute("href") ?? "", window.location.href).hash;
-      if (FINDER_HASHES.includes(hash)) setToggled(true);
-    };
-    document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
-  }, []);
-  return { open, toggle: () => setToggled(!open) };
-}
-
-/** The same place on another Statistics page's tab row: a link to the one finder, opened. */
-export function FindUnitLink({ testId }: { testId?: string }) {
-  return (
-    <Link href={STATISTICS_UNIT_FINDER_HREF} className={styles.findTool} data-testid={testId}>
-      <Search size={14} aria-hidden="true" />
-      Open a unit
-    </Link>
-  );
-}
-
-/**
- * The phone Summary has no tab row, so the one finder shows there only on arrival at one of its
- * anchors, from "Open a unit" on another Statistics page (Codex review on #1145, 31 Oct 2026).
- * Close shuts it, as the desktop's "Open a unit" does; with no anchor the phone draws nothing here.
- */
-export function PhoneUnitFinder({ open, onClose, finder }: { open: boolean; onClose: () => void; finder: ReactNode }) {
-  const ref = useRef<HTMLElement>(null);
-  useEffect(() => {
-    // The finder mounts after hydration, so the browser's own jump to the anchor has missed it.
-    if (open) ref.current?.scrollIntoView?.({ block: "start" });
-  }, [open]);
-  if (!open) return null;
-  return (
-    <section
-      ref={ref}
-      id={STATISTICS_UNIT_CHOOSER_ID}
-      className={styles.phoneFinder}
-      tabIndex={-1}
-      aria-label="Open a unit"
-      data-testid="ward-statistics-phone-unit-finder"
-    >
-      <div className={styles.phoneFinderHead}>
-        <Button variant="sec" icon={X} className={styles.phoneClose} onClick={onClose}>
-          Close
-        </Button>
-      </div>
-      {finder}
-    </section>
-  );
-}
 
 /**
  * Bed board, Journey and Map as a compact switch in the head of the first card it changes (owner

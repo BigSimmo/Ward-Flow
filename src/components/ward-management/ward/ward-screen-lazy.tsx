@@ -138,6 +138,16 @@ export const WardOutageCatchUpCard = dynamic(
   },
 );
 preloadWhenIdle(loadOutageCatchUp);
+// Phone budget (PR #1742): Since yesterday draws only inside the Updates chip's sheet, so it stays off
+// the ward's first load and is fetched when the browser is idle.
+const loadSinceYesterday = () => import("./ward-since-yesterday");
+export const WardSinceYesterday = dynamic(
+  withLoadRetry(() => loadSinceYesterday().then((m) => m.WardSinceYesterday)),
+  {
+    ssr: false,
+  },
+);
+preloadWhenIdle(loadSinceYesterday);
 // Shown only after a confirmed discharge, so it loads when first needed.
 export const WardDischargeNotices = dynamic(
   withLoadRetry(() => import("./ward-discharge-notices").then((m) => m.WardDischargeNotices)),

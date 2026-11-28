@@ -1466,6 +1466,13 @@
       "after": 0,
       "reason": "Retired with the code it tested. Josh ruled to delete the switched-off budget recheck job (D-128 item 6, 10 Nov 2026), so .github/workflows/ward-flow-budget-recheck.yml and scripts/ward-ci-public/budget-recheck.mjs are deleted in the same change. The job had run with if: false, so these cases guarded nothing that ran. Budget prevention still lives in merge-latest-main.mjs and the production build's budget gate, tested by their own suites.",
       "approvedOn": "2026-11-10"
+    },
+    {
+      "path": "tests/ward-patients-redesign-census.dom.test.tsx",
+      "before": 5,
+      "after": 2,
+      "reason": "r10 folded the date of birth field and its toggle into the one search box on the Patients page, so the component tests for that field and toggle went with them.",
+      "approvedOn": "2026-11-28 Josh approved the r10 build"
     }
   ]
 }

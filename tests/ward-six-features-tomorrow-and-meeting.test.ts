@@ -69,7 +69,7 @@ describe("Run meeting summary (six features build)", () => {
       ownerText: () => "Bed coordinator",
     });
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ action: "Book transport", done: true, name: "Testperson, Synthetic" });
+    expect(rows[0]).toMatchObject({ action: "Record transport booking", done: true, name: "Testperson, Synthetic" });
   });
 
   it("leaves out actions recorded after the meeting finished", () => {
@@ -91,6 +91,6 @@ describe("Run meeting summary (six features build)", () => {
       nameOf: () => "Testperson, Synthetic",
       ownerText: () => "Bed coordinator",
     });
-    expect(rows.map((row) => row.action)).toEqual(["Book transport"]);
+    expect(rows.map((row) => row.action)).toEqual(["Record transport booking"]);
   });
 });

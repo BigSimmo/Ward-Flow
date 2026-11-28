@@ -162,6 +162,18 @@
   text-align: center;
 }
 
+/* Look check F1: a lone rich node after the tag (often block level) shares one row with the dot. */
+.metaLone {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.metaLone > * {
+  min-width: 0;
+}
+
 .subtitle:has(> .metaItem) > :first-child:not(.metaItem) {
   margin-inline-start: var(--wf-meta-dot);
 }

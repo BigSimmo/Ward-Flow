@@ -91,7 +91,7 @@ export const WARD_STAY_CARD_ID = "ward-stay";
  */
 // Audit two (#118, amends D-91): the unit finder went. Each chooser link opens Network's Browse card
 // on its own segment (the old index address presets it), at the card's own anchor.
-export const STATISTICS_BROWSE_ID = "browse";
+const STATISTICS_BROWSE_ID = "browse";
 export const STATISTICS_UNIT_CHOOSER_HREF = `${STATISTICS_WARDS_HREF}#${STATISTICS_BROWSE_ID}`;
 
 /**

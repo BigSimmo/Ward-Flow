@@ -2,7 +2,8 @@
 
 import { useState, type ReactNode } from "react";
 
-import { TextInput, useControlError, type TextInputProps } from "./form";
+import { useControlError } from "./form-field";
+import { TextInput, type TextInputProps } from "./form-text";
 import { cx } from "./cx";
 import styles from "./form.module.css";
 

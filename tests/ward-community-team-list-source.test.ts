@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { COMMUNITY_TEAMS } from "@/components/ward-management/ward-teams";
 
-import { COMMUNITY_SCREEN_FILES, communityScreenSource } from "./helpers/community-screen-sources";
+import { COMMUNITY_SCREEN_FILES } from "./helpers/community-screen-sources";
 
 /**
  * THE COMMUNITY SCREEN READS THE CATCHMENT LIST, AND MUST NEVER READ THE REGION LIST.
@@ -89,27 +89,13 @@ describe("the community team screen's list source", () => {
     });
   }
 
-  it("the catchment list is the one the screen's own team switcher walks", () => {
+  it("the screen reads the catchment list through community-derivations", () => {
     const source = readFileSync(resolve(COMMUNITY_DIR, "community-screen.tsx"), "utf8");
     const imports = importedModules(source);
 
     expect(
       imports.some((specifier) => specifier.endsWith("/community/community-derivations")),
       "community-screen.tsx no longer imports community-derivations, so it cannot be reading COMMUNITY_TEAM_PAGES",
-    ).toBe(true);
-
-    // The switcher itself moved to the hero section in the 15 Oct 2026 split, so the file that
-    // renders it must import the catchment list too, not only the screen around it.
-    const switcherFiles = COMMUNITY_SCREEN_FILES.filter((file) =>
-      readFileSync(resolve(process.cwd(), file), "utf8").includes("<nav className={styles.teamSwitcher}"),
-    );
-    expect(switcherFiles, "exactly one community screen file renders the team switcher").toHaveLength(1);
-    expect(communityScreenSource()).toContain("<nav className={styles.teamSwitcher}");
-    expect(
-      importedModules(readFileSync(resolve(process.cwd(), switcherFiles[0]!), "utf8")).some((specifier) =>
-        specifier.endsWith("/community/community-derivations"),
-      ),
-      `${switcherFiles[0]} renders the team switcher but does not import community-derivations`,
     ).toBe(true);
   });
 });

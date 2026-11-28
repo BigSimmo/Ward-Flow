@@ -74,6 +74,15 @@ transition or record effects and evidence; event names alone are insufficient. R
 are an explicit local command. Provider state, backup/restore and physical-device acceptance remain
 separate checks. The guide below is retained historical evidence rather than current instructions.
 
+Source digests re-reviewed for the r10 build (28 November 2026, simplification audit four, 46 cited files):
+
+- Each cited dispatch was compared against `origin/main`. Nothing changed an event name, a payload field, a role or a guard. Cited lines moved with the edits, and each was mapped through a line-by-line diff of the file and checked by its surrounding code, except where noted below.
+- `release-pulled-bed-sheet.tsx` (new): the one "Release pulled bed" sheet now holds the `RELEASE_PULL`, `RELEASE_HELD_BED` and `RELEASE_DIVERTED_BED` dispatches (lines 88, 90 and 91). Alerts, the movement workspace, the ward's arrivals and the ED list open it in place of the reason box in the alert drawer and the separate confirm dialogs. The reason is chosen once (or stated, for a stopped or diverted move), the button names the patient, and the toast's Undo (`UNDO_RELEASE_STEP`, which now also covers `RELEASE_DIVERTED_BED` in `ward-undo.ts`) brings the bed back. The three events' screen notes and cited sources say so.
+- `movements/movement-drawer.tsx`: the urgent flag is now a "Flag urgent" menu headed "Flag urgent because" (with a toast Undo) and "Remove" when flagged, and the phone sheet's More menu offers the same; the two dispatches are typed once in `flagUrgent` and `clearUrgentFlag` (lines 89 and 93). The `FLAG_MOVEMENT_URGENT` and `CLEAR_MOVEMENT_URGENT_FLAG` control notes were corrected.
+- `ed/ed-lists-desktop.tsx`: the medical clearance and arrival dispatches are unchanged; the clearance section now shows "Record medically cleared" and "Record not medically cleared" as two buttons (lines 224 and 423).
+- `ward/ward-screen.tsx` and `board/ward-board.tsx`: `RECORD_LEAVING` carries `awaitingTransport` only when the box is ticked, as its notes already said.
+- Toast and placeholder wording only (Undo toasts now read "Undone: ..."), layout, lazy loading, prop changes and removed lanes or hero text: `alerts/alerts-screen.tsx` (the Lanes view and the Forecast and Reminders filters are gone; Release opens the sheet), `officer/*`, `legal-forms/*`, `patients/*`, `referrals/*`, `capacity/*`, `discharges/*`, `settings/settings-screen.tsx` and the other files listed in `actions.json`. `shell/ward-facade.ts` now sends the bed board to the ward's Grid view; the state-machine anchors for it, `add-patient.tsx`, `legal-forms-*`, `patient-now-screen.tsx` and `ward-undo.ts` were re-recorded with no behaviour change.
+
 Source digests re-reviewed for D-276 (22 November 2026):
 
 - `ward/ward-screen.tsx`: the checks card's folded one-line summary is built beside the Checking line, and six unused hero inputs were removed. No dispatch, payload, role or cited line changed.

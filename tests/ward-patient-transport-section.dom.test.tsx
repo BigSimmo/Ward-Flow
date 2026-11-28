@@ -426,7 +426,7 @@ describe("Patient Transport & Transfer Coordination section", () => {
     expect(gate).toHaveTextContent("Not booked");
     expect(gate).toHaveTextContent("Needs an accepted bed");
     expect(within(gate).queryByRole("button", { name: /^Ask wards/ })).not.toBeInTheDocument();
-    const logBooking = within(gate).getByRole("button", { name: "Log booking" });
+    const logBooking = within(gate).getByRole("button", { name: "Record booking" });
     expect(logBooking).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(logBooking);
     expect(screen.queryByRole("dialog", { name: "Destination and placement" })).not.toBeInTheDocument();

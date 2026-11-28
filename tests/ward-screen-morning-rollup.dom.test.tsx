@@ -108,7 +108,7 @@ describe("WardScreen 09:30 Morning Rollup & Notification Center", () => {
     expect(confirmedBanner).toHaveTextContent("3 discharges planned today");
   });
 
-  it("opens the WardNotificationCenter from the More menu's Notices item, and Close shuts it", () => {
+  it("opens the WardNotificationCenter from the More menu's Notices item, and Close shuts it", async () => {
     render(
       <WardFlowProvider initialNow={OVERDUE_NOW}>
         <SendBuzzHelper />
@@ -124,7 +124,7 @@ describe("WardScreen 09:30 Morning Rollup & Notification Center", () => {
 
     // Open from More
     fireEvent.click(screen.getByTestId("ward-tools-more"));
-    fireEvent.click(screen.getByRole("menuitem", { name: /^Notices/ }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: /^Notices/ }));
     expect(screen.getByTestId("ward-notification-center")).toBeInTheDocument();
 
     // Close

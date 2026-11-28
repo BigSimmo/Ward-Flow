@@ -46,15 +46,3 @@ export function setHelpTipsOff(off: boolean, fromAccount = false): boolean {
   window.dispatchEvent(new CustomEvent(CHANGED_EVENT, { detail: { fromAccount } }));
   return true;
 }
-
-export function subscribeHelpTipsOff(onChange: () => void): () => void {
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === null || event.key === HELP_TIPS_OFF_KEY) onChange();
-  };
-  window.addEventListener(CHANGED_EVENT, onChange);
-  window.addEventListener("storage", onStorage);
-  return () => {
-    window.removeEventListener(CHANGED_EVENT, onChange);
-    window.removeEventListener("storage", onStorage);
-  };
-}

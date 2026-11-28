@@ -12,7 +12,7 @@ import { announceToWardShell } from "./ward-live-region";
  */
 
 // UX audit (21 Oct 2026): the same four themes as Settings, Display (settings-15 made Glare a fourth).
-export const APPEARANCE_CHOICES = [
+const APPEARANCE_CHOICES = [
   { id: "auto", label: "Auto" },
   { id: "light", label: "Light" },
   { id: "dark", label: "Dark" },
@@ -27,7 +27,7 @@ export function appearanceChoice(prefs: { appearance: "auto" | "light" | "dark";
 }
 
 /** Glare is its own preference that uses light, so picking any other theme turns it off. */
-export function chooseAppearance(next: AppearanceChoice) {
+function chooseAppearance(next: AppearanceChoice) {
   // The real bar's `applyGlare` and `applyAppearance`, inlined so the rail does not import the bar.
   if (next === "glare") {
     setGlarePreference(true);

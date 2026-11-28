@@ -51,37 +51,3 @@ export function WaitingKeys() {
     </span>
   );
 }
-
-/**
- * The same two keys as one quiet line under the whose-move tiles (26 Nov 2026), so "T1 to T3" and
- * the wait bar's colours are readable without opening the list's ⓘ.
- */
-export function WaitingKeyStrip() {
-  return (
-    <p className={styles.keyStrip} data-testid="delays-key-strip" aria-label="Keys for the list">
-      <span className={styles.keyStripGroup}>
-        <span className={styles.keyStripHead}>Tier</span>
-        {URGENCY_LEVELS.map((tier) => (
-          <span key={tier}>
-            <b>T{tier}</b> {TIER_QUALIFIER[tier]}
-          </span>
-        ))}
-      </span>
-      <span className={`${board.wlegend} ${styles.keyStripGroup}`}>
-        <span className={styles.keyStripHead}>Wait bar</span>
-        <span>
-          <i className={board.lgAct} aria-hidden="true" />
-          Active
-        </span>
-        <span>
-          <i className={board.lgQuiet} aria-hidden="true" />
-          Quiet
-        </span>
-        <span>
-          <i className={board.lgQuietLong} aria-hidden="true" />
-          {`Quiet ${SILENT_MINUTES / 60}h+`}
-        </span>
-      </span>
-    </p>
-  );
-}

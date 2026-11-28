@@ -17,7 +17,7 @@ import { ListFilter, X, type LucideIcon } from "lucide-react";
 import { OverlayPortal } from "./overlay-root";
 import { useWfBandBleed } from "./band";
 import { Button } from "./button";
-import { DrawerPager, type DrawerPagerProps } from "./drawer";
+import { DrawerPager, type DrawerPagerProps } from "./drawer-pager";
 import { useIsPhone } from "./use-is-phone";
 import { cx, present } from "./cx";
 import type { DialogAction } from "./dialog";

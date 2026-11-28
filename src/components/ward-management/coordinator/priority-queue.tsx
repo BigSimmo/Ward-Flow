@@ -72,7 +72,7 @@ export function offeredToLabel(unitIds: readonly string[], units: readonly { id:
 }
 
 /** What the hero's Overdue and Tier 1 counts highlight in the queue. */
-export type QueueHighlight = "overdue" | "tier1";
+type QueueHighlight = "overdue" | "tier1";
 
 const HIGHLIGHT_LABEL: Record<QueueHighlight, string> = { overdue: "overdue", tier1: "Tier 1" };
 

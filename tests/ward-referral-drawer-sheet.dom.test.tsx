@@ -425,10 +425,10 @@ describe("needs cards and the clearance checklist", () => {
 });
 
 describe("owner pins carried over from the retired full-page form", () => {
-  it("names Send referral in words", () => {
+  it("names Review and send in words", () => {
     renderDrawer();
     fireEvent.click(steps().getByRole("button", { name: "Wards" }));
-    expect(screen.getByRole("button", { name: "Send referral" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Review and send" })).toBeInTheDocument();
   });
 
   // New referral redesign (approved 31 Oct 2026): the catchment card's one status line says the

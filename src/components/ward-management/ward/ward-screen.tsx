@@ -81,7 +81,8 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { stepToastTitle, undoneToastTitle } from "@/components/ward-management/use-undoable-step";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { plural } from "@/components/ward-management/ward-plural";
-import { CheckingFoot, Menu, StatusGlyph, type MenuItem, useIsPhone, useOptionalToast } from "@/components/wf";
+import { CheckingFoot, StatusGlyph, type MenuItem, useIsPhone, useOptionalToast } from "@/components/wf";
+import { EarlyMenu } from "@/components/ward-management/menu-early";
 import { savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
 import { useActionToast } from "@/components/ward-management/use-action-toast";
 import { useWardUnitQueues } from "./use-ward-unit-queues";
@@ -2074,7 +2075,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       );
     }
     return (
-      <Menu
+      <EarlyMenu
         label="More ward actions"
         align="end"
         items={items}

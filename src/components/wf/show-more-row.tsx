@@ -32,7 +32,7 @@ export function foldHidden(total: number, limit: number): number {
  * Audit two #79 (K41): the fold's own words, so every list says the same thing. Folded: "Show all N"
  * (N is the whole list, `total`); open: "Show fewer". Without a total: "Show more".
  */
-export function showMoreWords(expanded: boolean | undefined, total?: number): string {
+function showMoreWords(expanded: boolean | undefined, total?: number): string {
   if (expanded) return "Show fewer";
   return total === undefined ? "Show more" : `Show all ${total}`;
 }

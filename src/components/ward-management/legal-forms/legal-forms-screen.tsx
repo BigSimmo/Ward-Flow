@@ -120,7 +120,7 @@ import {
   recentTellSubjects,
   type RecordGap,
 } from "./legal-forms-view";
-import { currentLegalPosition } from "./legal-form-progression";
+import { currentLegalPosition, NEXT_FORM_TO_RECORD } from "./legal-form-progression";
 import { PhoneChecklist } from "./legal-forms-phone-checklist";
 import { nextStep } from "./legal-forms-next-step";
 import type { LegalFormDetailsSave } from "./legal-form-details";
@@ -662,7 +662,12 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     phonePrimary ??
     (selected
       ? {
-          label: selectedStep?.action === "next-form" ? selectedStep.title : "Record next form",
+          // Look check F6: the generic "Next form to record" is a label, not an action, so the
+          // button reads "Record next form"; a specific title ("Record Form 3") stays.
+          label:
+            selectedStep?.action === "next-form" && selectedStep.title !== NEXT_FORM_TO_RECORD
+              ? selectedStep.title
+              : "Record next form",
           disabledReason: recordGate.reason,
           onAction: () => openRecord(selected.id),
         }

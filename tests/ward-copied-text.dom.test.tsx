@@ -101,7 +101,7 @@ describe("copied text from Ward Flow screens opens with the synthetic line and c
       expect(text.split("\n")[1]).toMatch(/^1\. T\d /);
     });
 
-    it("ISBAR summary: Copy summary leaves out the UMRN the sheet still shows", async () => {
+    it("ISBAR summary: Copy for handover leaves out the UMRN the sheet still shows", async () => {
       const referral = queued[0]!;
       render(
         <IsbarSheet
@@ -115,7 +115,7 @@ describe("copied text from Ward Flow screens opens with the synthetic line and c
         />,
       );
       expect(screen.getByRole("dialog")).toHaveTextContent("UM100001");
-      fireEvent.click(screen.getByRole("button", { name: "Copy summary" }));
+      fireEvent.click(screen.getByRole("button", { name: "Copy for handover" }));
       const text = await copied();
       expectSafeCopy(text);
       expect(text).not.toContain("UM100001");

@@ -254,7 +254,7 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
     card.focus();
     await user.keyboard("{Enter}");
     const drawer = screen.getByTestId("ward-capacity-ward-drawer");
-    expect(within(drawer).getByRole("link", { name: "Open ward" })).toHaveAttribute(
+    expect(within(drawer).getByRole("link", { name: `Open ${ward.unit.name}` })).toHaveAttribute(
       "href",
       `/bedchart/ward/${ward.unit.id}`,
     );

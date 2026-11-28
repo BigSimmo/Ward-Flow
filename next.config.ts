@@ -153,6 +153,9 @@ const nextConfig: NextConfig = {
     // first-load chunks (about 11 KB on Home and Ward). Two named chunks hold one copy each. Same
     // code, same behaviour; only where it is packed changes. The root layout needs only the first.
     const splitChunks = config.optimization?.splitChunks;
+    // The Statistics layout's and page's own chunks; every other page keeps its copy where it was.
+    const statisticsRouteChunk = (chunk: { name?: string | null }) =>
+      /^app[\\/]bedchart[\\/]statistics[\\/]/.test(chunk.name ?? "");
     if (!dev && !isServer && splitChunks && typeof splitChunks === "object") {
       splitChunks.cacheGroups = {
         ...splitChunks.cacheGroups,
@@ -179,6 +182,23 @@ const nextConfig: NextConfig = {
           test: /[\\/]src[\\/]components[\\/](ward-management[\\/](use-dirty-state-guard|ward-role-gate|ward-role-permissions|shell[\\/]ward-service-store|shell[\\/]ward-prototype-footer)|contextual-back-link)\.tsx?$/,
           name: "wf-desk-shared",
           chunks: "all",
+          enforce: true,
+          priority: 25,
+        },
+        // Phone size trim 4 (PR #1742, 28 Nov 2026): the kit Menu and the Statistics share menu are
+        // under the same 20 KB minimum, and the Statistics layout and page each drew a copy (about
+        // 14 KB on Statistics). One copy each; same code, same behaviour. Scripts only.
+        wfMenu: {
+          test: /[\\/]src[\\/]components[\\/]wf[\\/]menu\.tsx$/,
+          name: "wf-menu",
+          chunks: statisticsRouteChunk,
+          enforce: true,
+          priority: 25,
+        },
+        statisticsShared: {
+          test: /[\\/]src[\\/]components[\\/]ward-management[\\/]statistics[\\/]statistics-share\.tsx$/,
+          name: "statistics-shared",
+          chunks: statisticsRouteChunk,
           enforce: true,
           priority: 25,
         },

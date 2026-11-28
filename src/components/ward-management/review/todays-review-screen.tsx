@@ -445,7 +445,7 @@ export function EverythingTodayGroup() {
   );
 }
 
-export const REVIEW_HISTORY_HREF = "/bedchart/governance?tab=review";
+const REVIEW_HISTORY_HREF = "/bedchart/governance?tab=review";
 const BEFORE_HANDOVER_LIMIT = 8;
 
 /**

@@ -8,7 +8,7 @@ Capacity
 
 ## Jobs you do most
 
-1. Check beds. Check each ward's figures and who confirmed them. If one is old, ask the coordinator to request an update.
+1. Check counts. Check each ward's figures and who confirmed them. If one is old, ask the coordinator to request an update.
 2. Bed releases. Open the ward from Wards, then flag, confirm or block a bed that is due to come free.
 3. Discharges held up. Record or clear what is holding up a discharge, on Discharges.
 

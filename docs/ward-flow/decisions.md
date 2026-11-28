@@ -296,6 +296,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-280](#d-280-waitings-coordinator-pop-up-becomes-a-more-menu-28-november-2026)                                                                               | Waiting's Coordinator pop-up becomes a "More" menu                                                            | Active                                           |
 | [D-281](#d-281-names-that-read-alike-are-called-similar-names-28-november-2026)                                                                                | Names that read alike are called "Similar names"                                                              | Active                                           |
 | [D-282](#d-282-leaving-a-ward-is-record-discharge-28-november-2026)                                                                                            | Leaving a ward is "Record discharge"                                                                          | Active                                           |
+| [D-283](#d-283-code-the-audit-four-cuts-left-unused-is-deleted-28-november-2026)                                                                               | Code the audit four cuts left unused is deleted                                                               | Active                                           |
 
 ---
 
@@ -3203,4 +3204,11 @@ D-255 is reserved by other threads (PR #1700, PR #1702 and the handover).
 - **Why:** audit three chose "Record that they have left" for the bed sheet, so this swap is Josh's to confirm, and the lock confirms it.
 - **Boundary:** wording only. The criteria-led "patient told" confirm (D-60, D-64) is unchanged. No clinical rule, signed value or saved record changes.
 
-The next free number is D-283.
+## D-283. Code the audit four cuts left unused is deleted (28 November 2026)
+
+- **Date:** 28 November 2026, 10:46 PM AWST (14:46 UTC). **Decided by:** Josh, in the project thread, answering "Yes" to "May I delete the 36 now-unused pieces left by the r10 cuts in one approved run?" One owner-approved dead-code run (`DEAD_CODE_OWNER_APPROVED=1`, a single invocation, output kept with the PR).
+- **Decision:** delete the code the r10 cuts left with no user. Files: `ward-tasks-quick-jumps.tsx`, `wards/ward-index-drawer.tsx`, `ward-public-role-switcher.tsx`. Components and helpers: `AlertWho`, `CommunityOtherTeams`, `GroupTrend`, `WaitingKeyStrip`, `EdListsCard` (the ward-management one), `HandoverBedsTable`, `subscribeHelpTipsOff`, `withCarriedLegal`, `FindUnitLink`, `PhoneUnitFinder`, `useUnitFinder`, `BedsNowCard`, `QuickActionsPanel`, `QuickTile`, `ListPrintMenu`, `isFindTab`, `FindSwitch`, `PinButton` and `usePinnedPages` (the old rail's), `BED_PULL_UNDONE`, and the unused release-pulled-bed type re-exports. Un-exported because still used inside their file: `breakdownPress`, `BedMapHighlights`, `openNextActNow`, `FIND_RAIL_ENTRY`, `FIND_TABS`, `REVIEW_HISTORY_HREF`, `APPEARANCE_CHOICES`, `chooseAppearance`, `STATISTICS_BROWSE_ID`, `WardDirectoryActions`, `showMoreWords`. Code that became dead with them went too, and so did the claims-register entry and the test pins that named the removed team switcher.
+- **Why:** knip lists them as new unused items, and leaving them would put dead code in the phone scripts and the maintenance load.
+- **Boundary:** no visible change. Synthetic data only. Nothing in the pull, release, discharge or referral rules changes.
+
+The next free number is D-284.

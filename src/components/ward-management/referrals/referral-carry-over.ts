@@ -249,13 +249,3 @@ export function carriedNotesFor(
     carerContact: carriedNoteFor(carry.carerContact, current.communityNeeds.carerContact),
   };
 }
-
-/** The patient summary's legal line, showing the carried status and expiry where the record had none. */
-export function withCarriedLegal<P extends { legalStatus: string; recordedExpiry: string }>(
-  profile: P,
-  notes: CarriedNotes,
-  legalStatus: string,
-): P {
-  if (!notes.legalStatus || recorded(profile.legalStatus)) return profile;
-  return { ...profile, legalStatus, recordedExpiry: notes.legalExpiry?.value ?? "not recorded" };
-}

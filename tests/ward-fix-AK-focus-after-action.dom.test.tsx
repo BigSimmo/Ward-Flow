@@ -36,7 +36,7 @@ import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 /*
  * F-57 (Audit 9 A9-28, Audit 5 A5-18): after an action takes away the control that had focus,
  * focus goes to a sensible next place, never the start of the page. One case per audit path: the
- * Home pull, Referrals Decline, Save transport booking, Esc on the Transport panel and Mark handover
+ * Home pull, Referrals Decline, Record booking, Esc on the Transport panel and Mark handover
  * ready. Synthetic seed data only.
  */
 beforeAll(() => {
@@ -183,7 +183,7 @@ describe("F-57: the patient page's Transport panel", () => {
     fireEvent.click(save);
   }
 
-  it("Save transport booking puts focus on the panel's heading, not the page", async () => {
+  it("Record booking puts focus on the panel's heading, not the page", async () => {
     render(
       <ToastProvider>
         <WardFlowProvider initialNow={NOW_ANCHOR}>

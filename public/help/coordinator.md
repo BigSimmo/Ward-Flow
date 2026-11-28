@@ -8,7 +8,7 @@ Home
 
 ## Jobs you do most
 
-1. Decide a referral. Press Decide, read the referral, then Accept referral or Decline referral. A decline needs a reason.
+1. Decide a referral. Press Decide, read the referral, then Accept or Decline referral. A decline needs a reason.
 2. Ask more wards. Use Ask more wards and tick the wards. Wards stay in a fixed order; the app never ranks or suggests one.
 3. Pull the bed. Open the patient from Movements. Once a ward accepts, press Pull the bed. It is kept for the patient within the pull time limit.
 

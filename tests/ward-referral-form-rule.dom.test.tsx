@@ -88,7 +88,7 @@ describe("New referral form rule (FORM-REF)", () => {
     const locations = screen.getByRole("list", { name: "Destinations" });
     fireEvent.click(within(locations).getAllByRole("checkbox")[0]!);
     const baseline = Number(screen.getByTestId("submitted-count").textContent);
-    fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
+    fireEvent.click(screen.getByRole("button", { name: "Review and send" }));
     expect(screen.getByRole("heading", { name: "Confirm and send" })).toBeVisible();
     // A blank contact field says so in amber, and nothing is marked invalid or required.
     for (const label of ["Your name", "Phone number", "Your role", "Location or service"])

@@ -8,8 +8,8 @@ import { printPage } from "@/components/ward-management/use-printing";
  * A list's Print button: the browser's own print of the page as it shows, as Discharges, the call
  * sheet and the chronology already do. The page's print styles drop the controls; names print in
  * full, as on screen (D-102 keeps names out of downloaded files only). The kit's default size (36px),
- * as the Export beside it. Patients, which offers a choice of prints, uses `ListPrintMenu`
- * (ward-list-print-menu.tsx) instead, so the menu stays out of the other pages' scripts.
+ * as the Export beside it. Patients, which offers a choice of prints, uses its own print menu
+ * (patient-search.tsx) instead, so the menu stays out of the other pages' scripts.
  */
 export function ListPrintButton({
   variant = "sec",

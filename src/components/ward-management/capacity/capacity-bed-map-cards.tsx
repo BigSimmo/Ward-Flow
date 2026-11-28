@@ -53,7 +53,7 @@ const OPEN_FIRST = 2;
  * The bed map's highlight chips: each lights the wards it matches and dims the rest; none hides a
  * ward. Under the map's title on a phone; in the map's head beside Find a bed on wider screens.
  */
-export function BedMapHighlights({
+function BedMapHighlights({
   model,
   highlight,
   onHighlight,

@@ -12,7 +12,7 @@ Every bed on one ward, who is in it, who is coming in and who is going out today
 4. Also on this ward. Discharges confirmed or held up, people away at an ED, on leave or here over three months, and closed beds. Press a count to see who.
 5. Ward home and Bed board. Ward home is the ward's own page. Bed board is this one.
 6. Narrow the beds. All beds, Needs a look, Ready or No discharge due.
-7. Order the beds. Longest stay, Soonest to leave or Bed order.
+7. Sort beds. Longest stay, Soonest to leave or Bed order.
 8. Every bed. One tile per bed, with the patient and their stay so far. Choose a bed to see who is in it and record a change.
 9. Long stays. Long stays and people ready to leave who are still here, with what they are waiting for.
 10. Tomorrow's expected beds. How many of this ward's discharges count in tomorrow's expected beds, confirmed or expected.

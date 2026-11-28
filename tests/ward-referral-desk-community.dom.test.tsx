@@ -133,7 +133,7 @@ describe("the community clinician's Referrals board", () => {
     // Take this referral and Log a call are the community desk's own (ASSIGN_REFERRAL, LOG_REFERRAL_CONTACT).
     fireEvent.click(within(detail).getByRole("button", { name: /Owner and calls/ }));
     expect(await within(detail).findByTestId(`ward-referral-assign-${id}`)).toHaveTextContent("Take this referral");
-    expect(within(detail).getAllByText("Log a call").length).toBeGreaterThan(0);
+    expect(within(detail).getAllByText("Record a call").length).toBeGreaterThan(0);
   });
 
   it("does not offer the community arm's Accept and Decline, which would record the coordinator's answer", async () => {

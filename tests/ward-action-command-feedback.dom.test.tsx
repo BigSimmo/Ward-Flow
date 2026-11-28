@@ -115,8 +115,8 @@ describe("Ward command feedback", () => {
       mount(control, <WardScreen unitId={UNIT} />);
       selectOccupiedBoardBed();
       chooseCommunityDestination();
-      fireEvent.click(screen.getByRole("button", { name: "Record that they have left" }));
-      fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
+      fireEvent.click(screen.getAllByRole("button", { name: "Record discharge" })[0]!);
+      fireEvent.click(screen.getAllByRole("button", { name: "Record discharge" }).at(-1)!);
       expect(control.record.mock.calls[0]?.[0].type).toBe("RECORD_LEAVING");
       expect(screen.queryByText(/^Recorded: .* has left the ward/)).toBeNull();
       expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
@@ -155,15 +155,15 @@ describe("Ward command feedback", () => {
     mount(control, <WardScreen unitId={UNIT} />);
     selectOccupiedBoardBed();
     chooseCommunityDestination();
-    fireEvent.click(screen.getByRole("button", { name: "Record that they have left" }));
-    fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Record discharge" })[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Record discharge" }).at(-1)!);
     await act(() => control.accept());
     expect(screen.getByTestId("toast")).toHaveTextContent(/^Recorded: .* has left the ward/);
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(control.record.mock.calls[1]?.[0]).toMatchObject({ type: "UNDO_DEPARTURE" });
-    expect(screen.queryByText(/^Undone\. .* is back in their bed\./)).toBeNull();
+    expect(screen.queryByText(/^Undone: .* is back in their bed/)).toBeNull();
     await act(() => control.accept());
-    expect(screen.getByText(/^Undone\. .* is back in their bed\./)).toBeInTheDocument();
+    expect(screen.getByText(/^Undone: .* is back in their bed/)).toBeInTheDocument();
   });
 
   it("holds board placement feedback until its command is accepted, then confirms Undo separately", async () => {
@@ -226,8 +226,8 @@ describe("Referral decision feedback", () => {
     expect(screen.getByTestId("toast")).toHaveTextContent(/^Accepted at /);
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(control.record.mock.calls[1]?.[0].type).toBe("UNDO_REFERRAL_DECISION");
-    expect(screen.queryByText("Decision undone")).toBeNull();
+    expect(screen.queryByText("Undone: Decision")).toBeNull();
     await act(() => control.accept());
-    expect(screen.getByText("Decision undone")).toBeInTheDocument();
+    expect(screen.getByText("Undone: Decision")).toBeInTheDocument();
   });
 });

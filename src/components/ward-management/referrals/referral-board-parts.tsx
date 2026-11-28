@@ -9,7 +9,6 @@ import { numberedReservationBeds } from "@/components/ward-management/ward-movem
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { FileText } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -27,7 +26,7 @@ import {
   referralClocks,
   referralDestinationLabel,
 } from "@/components/ward-management/ward-referrals";
-import { Button, StatusGlyph, cx, durMinutes } from "@/components/wf";
+import { StatusGlyph, cx, durMinutes } from "@/components/wf";
 
 import { getReferralPriority } from "./referral-priority";
 import { referralInformationNeedLabel } from "./referral-information-needs";
@@ -713,15 +712,5 @@ export function ReferralTimeline({
       </ol>
       {children}
     </div>
-  );
-}
-
-/* ─── Small shared bits ─────────────────────────────────────────────────────────────────────── */
-
-export function SummaryButton({ onClick }: { onClick: () => void }) {
-  return (
-    <Button variant="ghost" size="sm" icon={FileText} onClick={onClick} title="Referral (S)">
-      Referral
-    </Button>
   );
 }

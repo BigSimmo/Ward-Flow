@@ -92,7 +92,7 @@ describe("ward board: Left the ward, waiting for transport (item 18)", () => {
     expect(screen.getAllByRole("button", { name: /^Collected/ })).toHaveLength(before + 1);
   });
 
-  it("the bed drawer's Record that they have left asks about transport too (Codex, #1608)", () => {
+  it("the bed drawer's Record discharge asks about transport too (Codex, #1608)", () => {
     const state = seedWardFlowState();
     const units = [
       ...new Set(

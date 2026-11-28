@@ -5,13 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useSyncExternalStore, type ComponentProps, type ReactNode } from "react";
 
+import dynamic from "next/dynamic";
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
+import { EarlyMenu } from "@/components/ward-management/menu-early";
 import { ArrowDownUp, Check, Eye, Phone, Search, Users } from "lucide-react";
 
 import {
   Button,
   Card,
-  PanelDrawer,
   EmptyState,
   FilterChip,
   GroupHead,
@@ -21,7 +23,6 @@ import {
   HeroFigures,
   HeroQuickChips,
   HeroTop,
-  Menu,
   PhoneListRow,
   PhoneSheet,
   ScrollRow,
@@ -322,7 +323,7 @@ export function EdIndex({
   // Review (390): on a phone Sort is a compact menu at the chip row's right end, not a second row.
   const ORDER_LABEL: Record<OrderBy, string> = { longest: "Longest wait", most: "Most waiting" };
   const phoneOrderMenu = (
-    <Menu
+    <EarlyMenu
       label="Sort"
       align="end"
       items={ORDERS.map((id) => ({
@@ -1155,6 +1156,19 @@ function WaitingSnapshot({
     </Card>
   );
 }
+
+// Phone script budget (PR #1742): the ED preview's kit drawer opens only on a press, so its code stays
+// off the first load and is fetched when the browser is idle. A closed drawer draws nothing, as before.
+const loadPanelDrawer = () => import("@/components/wf/drawer");
+const PanelDrawer = dynamic(
+  withLoadRetry(
+    () => loadPanelDrawer().then((m) => m.PanelDrawer),
+    undefined,
+    ({ open }) => !open,
+  ),
+  { ssr: false },
+);
+preloadWhenIdle(loadPanelDrawer);
 
 /** Phone: EDs as a priority list, longest wait first, with clear EDs grouped last. A row opens the preview. */
 function PhoneEdList({

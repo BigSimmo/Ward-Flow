@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef } from "react";
 
-import { HeroTrack, Segmented, folderTabClasses } from "@/components/wf";
+import { HeroTrack } from "@/components/wf";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 
 import styles from "./find-screen.module.css";
@@ -17,7 +17,7 @@ import { PLACES_CATCHMENTS_HREF, PLACES_HREF } from "./places-hrefs";
  */
 export type FindTab = "people" | "wards" | "eds" | "teams" | "suburbs";
 
-export const FIND_TABS: readonly { id: FindTab; label: string; gate: string }[] = [
+const FIND_TABS: readonly { id: FindTab; label: string; gate: string }[] = [
   // `gate` is the standalone page whose access the tab follows: a desk that may not open it does not get the tab.
   { id: "people", label: "People", gate: "/bedchart/search" },
   { id: "wards", label: "Wards", gate: "/bedchart/wards" },
@@ -26,10 +26,6 @@ export const FIND_TABS: readonly { id: FindTab; label: string; gate: string }[] 
   // The suburb lookup and Read alike, which lived at Catchments: it prevents a referral to the wrong team.
   { id: "suburbs", label: "Suburbs", gate: PLACES_CATCHMENTS_HREF },
 ];
-
-export function isFindTab(value: unknown): value is FindTab {
-  return FIND_TABS.some((tab) => tab.id === value);
-}
 
 /** People is the first tab and the bare address; the others carry `?tab=`. */
 export function findHref(tab: FindTab): string {
@@ -40,21 +36,6 @@ export function findHref(tab: FindTab): string {
 export function useFindTabs(): readonly { id: FindTab; label: string }[] {
   const canOpen = useCanOpenHref();
   return FIND_TABS.filter((tab) => canOpen(tab.gate));
-}
-
-/** The switch itself: route links, so the chosen one carries aria-current and the folder follows it. */
-export function FindSwitch({ value }: { value: FindTab }) {
-  const tabs = useFindTabs();
-  return (
-    <Segmented<FindTab>
-      className={folderTabClasses.switch}
-      // Its own landmark name: the row's nav keeps the page's, and two navs may not share one (axe).
-      label="Find"
-      size="md"
-      value={value}
-      items={tabs.map((tab) => ({ id: tab.id, label: tab.label, href: findHref(tab.id) }))}
-    />
-  );
 }
 
 /**

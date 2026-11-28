@@ -348,54 +348,11 @@ describe("claims 4 and 5 — the departure vocabulary, as it is rather than as i
 
 /**
  * ⚠️ Claims 6 and 7 — the team switcher's comment, which cited a real test for the opposite of what
- * that test records, and wrote two counts of the seed into prose.
+ * that test records. The switcher and its comment were cut in audit four (r10, 28 Nov 2026), so what
+ * is left to pin is that the screen no longer claims the rail already reaches this route, and that
+ * the nav test still explains its zero as a scan limit.
  */
-describe("claims 6 and 7 — the switcher is the way across, and carries no count", () => {
-  /**
-   * The switcher's own comment, bounded at both ends so the scan cannot widen into the file.
-   *
-   * ⚠️ **ANCHORED ON THE `<nav>` IT DOCUMENTS, NOT ON A PHRASE INSIDE ITSELF.** A prose anchor makes
-   * this region unfindable the moment somebody rewrites the comment — which is exactly the edit the
-   * scan exists to police — and the whole suite then fails to collect rather than failing on the
-   * claim. The element is pinned independently by the claims register, so anchoring here is stable
-   * for a reason outside this file.
-   */
-  const switcherComment = (() => {
-    const nav = screenSource.indexOf("<nav className={styles.teamSwitcher}");
-    expect(nav, "the team switcher's <nav> has gone — this region no longer exists").toBeGreaterThan(-1);
-    /*
-     * 🔴 **THE WHOLE RUN OF COMMENTS, NOT THE NEAREST ONE, AND THAT DISTINCTION HAD ALREADY BROKEN
-     * THIS FILE.** A single `lastIndexOf` takes the comment immediately above the `<nav>`. The
-     * second-edition port added a short note there about why this is a `<nav>` rather than a
-     * `WardPanel` — so the scan started returning 368 characters of the wrong comment, the length
-     * floor went red, and the claim assertion below reported the long comment's sentence as MISSING
-     * when it was three lines further up and entirely intact.
-     *
-     * ⚠️ **THAT IS THE DANGEROUS DIRECTION: a guard pointing at correct text and calling it false**
-     * sends the next reader to "fix" something that is already right. It walks the contiguous run
-     * now — every comment separated from the next by nothing but whitespace and the closing brace —
-     * so inserting another note above the element cannot hide the one being policed.
-     */
-    const blocks: string[] = [];
-    let cursor = nav;
-    for (;;) {
-      const end = screenSource.lastIndexOf("*/", cursor);
-      if (end === -1) break;
-      const start = screenSource.lastIndexOf("{/*", end);
-      if (start === -1) break;
-      const between = screenSource.slice(end + 2, cursor).replace(/[}\s]/gu, "");
-      if (between !== "") break;
-      blocks.unshift(screenSource.slice(start, end));
-      cursor = start;
-    }
-    expect(blocks.length, "no comment at all sits above the team switcher").toBeGreaterThan(0);
-    return blocks.join(" ");
-  })();
-
-  it("scans a comment that is really there, so the absences below mean something", () => {
-    expect(switcherComment.length, "the comment scanned is too short to be the real one").toBeGreaterThan(800);
-  });
-
+describe("claims 6 and 7 — the way across is no longer claimed as the rail's", () => {
   it("no longer claims the rail already reaches this route", () => {
     for (const phrase of [
       "records exactly that shortfall",
@@ -404,7 +361,6 @@ describe("claims 6 and 7 — the switcher is the way across, and carries no coun
     ]) {
       expect(screenProse, `the inverted reachability claim has returned: "${phrase}"`).not.toContain(phrase);
     }
-    expect(proseOf(switcherComment)).toContain("THERE IS NOW A WAY IN");
   });
 
   it("the test it cites records a scan limit, and no longer an orphan", () => {
@@ -435,34 +391,6 @@ describe("claims 6 and 7 — the switcher is the way across, and carries no coun
       "a limit of a source scan, not an orphan",
     );
     expect(nav, "the orphan wording has returned to the nav test").not.toContain("NOTHING links to it");
-    expect(
-      proseOf(switcherComment),
-      "the switcher comment has gone back to citing the bare figure as if it meant unreachable",
-    ).not.toContain("NOUGHT of its instances are reachable without state");
-  });
-
-  it("contains no count of the teams or of the pages, in any form", () => {
-    // The dates in the comment are the one legitimate run of digits, so they come out before the
-    // scan rather than being carved out of it.
-    const withoutDates = switcherComment.replace(/[0-9]{4}-[0-9]{2}-[0-9]{2}/g, "");
-    const digit = withoutDates.match(/[0123456789]/);
-    expect(
-      digit,
-      `the switcher comment now contains the numeral "${digit?.[0] ?? ""}". A count of the teams is a claim about ` +
-        `the catchment source that nothing can re-check; describe the set or render it.`,
-    ).toBeNull();
-
-    // Spelled out is the same defect, and is the form the retired claim actually took. Split into
-    // words rather than searched as substrings: "written" contains "ten", and a substring scan here
-    // would fail on prose that is perfectly correct.
-    const words = new Set(switcherComment.toLowerCase().split(/[^a-z]+/));
-    for (const word of ["nine", "ten", "eleven", "twelve", "twenty", "thirty", "forty", "fifty", "sixty", "hundred"]) {
-      expect(
-        words.has(word),
-        `the switcher comment says "${word}" — a spelled-out count of the fixture is the same defect as a numeral, ` +
-          `and it is the exact form the claim removed on 2026-09-01 took.`,
-      ).toBe(false);
-    }
   });
 });
 

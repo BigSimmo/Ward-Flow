@@ -82,7 +82,7 @@ describe.each([
     const onRecordLeft = vi.fn();
     const onClose = vi.fn();
     const { rerender } = render(drawer(occupant("adm-x", "Synthetic Person X"), onRecordLeft, onClose));
-    fireEvent.click(screen.getByRole("button", { name: "Record that they have left" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
     expect(screen.getByTestId("ward-drawer-confirm")).toBeInTheDocument();
 
     rerender(drawer(occupant("adm-y", "Synthetic Person Y"), onRecordLeft, onClose));
@@ -92,7 +92,7 @@ describe.each([
       "Synthetic Person X is no longer in bed 03. Close and reopen the bed to see who is there now.",
     );
     expect(screen.queryByTestId("ward-drawer-confirm")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Record that they have left" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Record discharge" })).not.toBeInTheDocument();
     expect(screen.queryByText("Synthetic Person Y")).not.toBeInTheDocument();
     const close = screen.getByRole("button", { name: "Close" });
     expect(close).toHaveFocus();
@@ -131,7 +131,7 @@ describe.each([
       "Someone has been placed in bed 03. Close and reopen the bed to see who is there now.",
     );
     expect(screen.queryByText("Synthetic Person Y")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Record that they have left" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Record discharge" })).not.toBeInTheDocument();
   });
 
   it("keeps showing the same person when nothing moved", () => {
@@ -139,6 +139,6 @@ describe.each([
     const { rerender } = render(drawer(occupant("adm-x", "Synthetic Person X")));
     rerender(drawer(occupant("adm-x", "Synthetic Person X")));
     expect(screen.queryByTestId("ward-drawer-person-gone")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Record that they have left" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Record discharge" })).toBeInTheDocument();
   });
 });

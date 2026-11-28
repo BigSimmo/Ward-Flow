@@ -22,11 +22,8 @@ import {
   type AlertGroup,
   type AlertSubject,
 } from "./alerts-model";
-import { UMRN_NOT_RECORDED, UMRN_NOT_SHOWN } from "@/components/ward-management/ward-patient-resolver";
-import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import styles from "./alerts.module.css";
 import homeStyles from "@/components/ward-management/coordinator/home-list.module.css";
-import parts from "./alerts-screen-parts.module.css";
 
 /** One row of the queue, everything the row, the card and the panel read, computed once. */
 export type QueueEntry = {
@@ -154,26 +151,6 @@ function rowData(entry: QueueEntry, handlers: QueueHandlers) {
   };
 }
 
-/** The row's one Open button; its hit area stretches over the whole row (see .rowOpen::after). */
-function OpenButton({ entry, handlers }: { entry: QueueEntry; handlers: QueueHandlers }) {
-  return (
-    <button
-      type="button"
-      className={styles.rowOpen}
-      aria-current={handlers.selectedId === entry.item.id ? "true" : undefined}
-      aria-label={`Open ${entry.item.title} for ${entry.subject.displayName}`}
-      data-testid="ward-alerts-open"
-      onClick={() => handlers.onSelect(entry)}
-    >
-      <span className={styles.rowOpenText}>{entry.item.title}</span>
-    </button>
-  );
-}
-
-function Who({ entry }: { entry: QueueEntry }) {
-  return <AlertWho name={entry.subject.displayName} umrn={entry.subject.umrn} />;
-}
-
 /** "10m overdue" under "10m" says the time twice; the note keeps only what it adds. */
 function ageNoteFor(entry: QueueEntry, age: string | undefined, now: Instant, dayZero: Date | undefined): string {
   // A snoozed alert says when it comes back, even a legal one with a typed end.
@@ -293,56 +270,6 @@ export function AlertRow({
   );
 }
 
-/** Lanes and phone card: title and time, patient, route, owner or state and one action. */
-export function AlertCard({
-  entry,
-  now,
-  maxAge,
-  handlers,
-}: {
-  entry: QueueEntry;
-  now: Instant;
-  maxAge: number;
-  handlers: QueueHandlers;
-}) {
-  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
-  const state = stateLine(entry, now);
-  const route = entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from;
-  const ageFrom = shownAgeFrom(entry.item, entry.raised);
-  const ended = legalTypedEnd(entry.item);
-  return (
-    <li className={styles.card} {...rowData(entry, handlers)}>
-      <span className={styles.cardTop}>
-        {entry.snooze ? <AlarmClock size={14} aria-hidden="true" className={styles.snoozeIcon} /> : null}
-        <StatusGlyph tone={glyphTone(entry)} />
-        <OpenButton entry={entry} handlers={handlers} />
-        {ageFrom !== undefined ? (
-          <span className={`${styles.mono} ${styles.quiet}`}>{minutesText(Math.max(0, now - ageFrom))}</span>
-        ) : ended !== undefined ? (
-          <span className={styles.quiet}>{typedTimeLine(ended, now, dayZero)}</span>
-        ) : null}
-      </span>
-      <span className={styles.cardLine}>
-        <Who entry={entry} />
-        {ageFrom !== undefined ? (
-          <span className={styles.ageBar} aria-hidden="true">
-            <span
-              style={{
-                width: `${Math.max(6, Math.round((100 * Math.max(0, now - ageFrom)) / Math.max(1, maxAge)))}%`,
-              }}
-            />
-          </span>
-        ) : null}
-      </span>
-      <span className={`${styles.cardLine} ${styles.quiet}`}>{route}</span>
-      <span className={styles.cardFoot}>
-        <span className={styles.cardState}>{state ?? (entry.mine ? "Yours" : entry.owner)}</span>
-        <RowAction entry={entry} handlers={handlers} />
-      </span>
-    </li>
-  );
-}
-
 export function GroupHead({
   tone,
   icon,
@@ -408,26 +335,6 @@ export function AlertPhoneRowLayout({
         {owner !== undefined ? <span className={styles.phoneRowOwner}>{owner}</span> : null}
       </span>
     </li>
-  );
-}
-
-/** A patient with their UMRN; a missing UMRN reads as plain words, not in bold mono as if it were a number. */
-export function AlertWho({ name, umrn }: { name: string; umrn: string | undefined }) {
-  // Stress test CS-7 (14 Nov 2026): the transport officer's copy holds no record number by design
-  // (role access plan, 15 Oct 2026), so a blank there is withheld, not unrecorded.
-  const withheld = useRouteRole() === "officer";
-  const missing = !umrn || umrn === UMRN_NOT_RECORDED || umrn === UMRN_NOT_SHOWN;
-  return (
-    <span className={styles.who}>
-      <strong className={styles.name}>{name}</strong>{" "}
-      {missing ? (
-        <span className={parts.umrnMissing}>
-          {umrn === UMRN_NOT_SHOWN || (withheld && !umrn) ? UMRN_NOT_SHOWN : UMRN_NOT_RECORDED}
-        </span>
-      ) : (
-        <strong className={styles.umrn}>{umrn}</strong>
-      )}
-    </span>
   );
 }
 

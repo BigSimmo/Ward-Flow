@@ -545,8 +545,7 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
       "are built inside a map (communityTeamHref in community-screen.tsx), which this scan counts as " +
       "nought concrete instances by design, so the figure above cannot move however complete the index " +
       "is. The set it really links is pinned by rendering it, in tests/ward-community-index.dom.test.tsx, " +
-      "against COMMUNITY_TEAM_PAGES. community-screen.tsx's own 'Other community teams' switcher also " +
-      "builds team hrefs, but only from a team page you already reached.",
+      "against COMMUNITY_TEAM_PAGES.",
   ],
   [
     "/bedchart/board/[unitId]",
@@ -740,8 +739,6 @@ describe("BedChart dynamic routes — what links them, and what they leave orpha
       "src/components/ward-management/movements/movement-drawer.tsx",
       "src/components/ward-management/movements/movements-stage-row.tsx",
       "src/components/ward-management/shell/ward-facade.ts",
-      // WS1 (Josh, 3 Nov 2026): All wards' ward side panel links each ward's bed board by template.
-      "src/components/ward-management/wards/ward-index-drawer.tsx",
       // The phone sheet on All wards links each ward's bed board by template.
       "src/components/ward-management/wards/ward-index.tsx",
     ]);
@@ -812,8 +809,6 @@ describe("BedChart dynamic routes — what links them, and what they leave orpha
       // Census links select a numbered ward bed through a query.
       "src/components/ward-management/search/patient-census-view.tsx",
       "src/components/ward-management/shell/ward-facade.ts",
-      // WS1 (Josh, 3 Nov 2026): All wards' ward side panel has its own Open ward link.
-      "src/components/ward-management/wards/ward-index-drawer.tsx",
       "src/components/ward-management/wards/ward-index.tsx",
     ]);
 

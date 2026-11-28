@@ -21,6 +21,7 @@ function bedTypeChipText(security: Security | undefined): string {
 import Link from "next/link";
 import { BedSingle, Check, ChevronDown, ClipboardList, Clock, Copy, FileText } from "lucide-react";
 import { PatientFlightHeader } from "./patient-flight-header";
+import { EarlyMenu } from "@/components/ward-management/menu-early";
 import { absenceStepsFor } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
 import { dayLabel, type PatientStatusContext } from "./patient-status-card";
@@ -35,7 +36,6 @@ import {
   HeroFigures,
   HeroQuickChips,
   Icon,
-  Menu,
   heroChipClassName,
   LiveChip,
   StatusGlyph,
@@ -345,7 +345,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
               id: "copy",
               label: "Copy",
               node: (
-                <Menu
+                <EarlyMenu
                   label="Copy"
                   items={[
                     {

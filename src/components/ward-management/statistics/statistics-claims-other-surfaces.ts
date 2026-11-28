@@ -21,7 +21,6 @@ import {
   WARD_NAV,
   COMMUNITY_DERIVATIONS,
   COMMUNITY_SCREEN,
-  COMMUNITY_SCREEN_HERO,
   WARD_FACADE,
   DESTINATION_OPTIONS,
   REFERRAL_ADDRESSING_BODY,
@@ -850,55 +849,6 @@ export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
         "does not close, because the directive's effect depends on being the file's FIRST statement and a substring " +
         "cannot witness position.)",
       find: '"use client";',
-      replaceWith: "",
-    },
-  },
-  {
-    id: "community-index/restraint/the-team-screen-carries-the-other-teams-switcher",
-    renderedIn: COMMUNITY_INDEX,
-    rendered: 'renders an "Other community teams" switcher',
-    claim: "The team screen does render an 'Other community teams' switcher, as this page says it does.",
-    // ⚠️ RE-POINTED 15 Oct 2026 AFTER READING THE CODE: the screen was split into sections as a pure
-    // refactor, and the switcher's markup moved unchanged into the hero section the screen renders.
-    sourceFile: COMMUNITY_SCREEN_HERO,
-    /*
-     * ⚠️ **RE-POINTED 2026-09-05 AFTER READING THE CODE, WHICH IS THE STEP THIS GATE EXISTS TO FORCE
-     * — not to turn a red test green.** The third-edition port moved the switcher into a native
-     * `details`, whose `teamSwitcherHeader` summary now carries a `teamSwitcherTitle` span reading
-     * "Change team" and the number of other teams. **The claim itself is unchanged and still true:**
-     * the `<nav>` still carries `aria-label="Other community teams"`, and its disclosed list still
-     * maps every other team to a link.
-     *
-     * ⚠️ **THE FRAGMENT DELIBERATELY RUNS ON TO `teamList`, AND TWO OF US INDEPENDENTLY RE-POINTED
-     * THIS LINE TONIGHT — one stopping at the `</h2>`.** The claim on the index page is that the
-     * switcher LINKS every other team; a fragment ending at the heading evidences a heading and
-     * nothing else, so it would keep passing the day the list itself disappeared. The longer
-     * fragment is the one that carries the claim.
-     *
-     * Verified against `community-screen.tsx` by reading the `teamSwitcher` nav itself. **No line
-     * number recorded on purpose:** the earlier version of this comment cited `:626` and the block
-     * had already moved to `:972` by the time it was folded, which is what a line number in a
-     * comment always does.
-     */
-    evidence:
-      '<nav className={styles.teamSwitcher} aria-label="Other community teams"> ' +
-      "<details className={`${styles.teamDisclosure} source-print`}> " +
-      "<summary className={styles.teamSwitcherHeader}> " +
-      "<span className={styles.teamSwitcherTitle}>Change team</span> " +
-      "<span className={styles.switchCount}>{COMMUNITY_TEAM_PAGES.length - 1} other teams</span> " +
-      "</summary> " +
-      "<div className={styles.teamPopover}> " +
-      "<div className={styles.teamPopoverHeader}> " +
-      "<span>Select team</span> " +
-      "<span className={styles.teamPopoverMeta}>{COMMUNITY_TEAM_PAGES.length - 1} other catchments</span> " +
-      "</div> " +
-      "<ul className={styles.teamList}> " +
-      "{COMMUNITY_TEAM_PAGES.filter((other) => other.id !== team.id).map((other) => {",
-    falsifiedBy: {
-      change:
-        "The switcher is removed from the team screen. (A block wrapped in a false condition would leave these " +
-        "bytes in place — a substring witnesses presence in the file, not that it renders.)",
-      find: '<nav className={styles.teamSwitcher} aria-label="Other community teams">',
       replaceWith: "",
     },
   },

@@ -6,8 +6,9 @@
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { LeavingDestination } from "@/components/ward-management/ward-admissions";
 import { leftWardAllowedFor, type WaitingForTransportEntry } from "@/components/ward-management/ward-left-ward";
-import { stepToastTitle, undoneToastTitle } from "@/components/ward-management/use-undoable-step";
 import styles from "./board.module.css";
+
+export { collectedStep } from "./ward-board-collected-step";
 
 export function WardBoardTransportWait({
   entries,
@@ -124,20 +125,5 @@ export function transportConfirm(
     awaiting,
     unanswered: offers && awaiting === undefined,
     words: leavingConfirmWords({ kind: confirm?.kind ?? "", offerTransport: offers, awaitingTransport: awaiting }),
-  };
-}
-
-/** Item 18: the Collected step's message and Undo, for the board's undoable departure runner. */
-export function collectedStep(admissionId: string, actingUnitId: string, who: string) {
-  return {
-    success: stepToastTitle("Collected", who),
-    undo: (at: Instant) => ({
-      type: "UNDO_DEPARTURE" as const,
-      role: "ward" as const,
-      now: at,
-      admissionId,
-      actingUnitId,
-    }),
-    undone: undoneToastTitle("Collected", who),
   };
 }

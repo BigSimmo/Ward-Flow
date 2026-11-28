@@ -1,6 +1,6 @@
 "use client";
 
-import { ReleasePulledBedSheet } from "@/components/ward-management/release-pulled-bed-sheet";
+import { ReleasePulledBedSheet } from "@/components/ward-management/release-pulled-bed-sheet-lazy";
 
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import {
@@ -42,7 +42,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import { useAlsoOnWardFigures, type AlsoOnWardFigure } from "../board/ward-board-also-on-ward";
 import { waitingForTransport } from "@/components/ward-management/ward-left-ward";
-import { collectedStep } from "../board/ward-board-transport-wait";
+import { collectedStep } from "../board/ward-board-collected-step";
 import { WardPlaceOrMove } from "./ward-place-or-move";
 import { pulledTileNote, tileStateLine, WardHomeTileText } from "./ward-home-tab-today";
 import { WardComingAndGoing } from "./ward-coming-and-going";

@@ -131,7 +131,7 @@ function useOptionalPathname(): string {
  * The example history switch (was "Samples"; owner polish, 3 Nov 2026). Invented 30-day charts appear
  * at the foot of the page while it is on. On by default in the demo, off in production.
  */
-export function StatisticsSamplesSwitch() {
+function StatisticsSamplesSwitch() {
   const samples = useStatisticsSamples();
   return (
     <span className={styles.samples}>

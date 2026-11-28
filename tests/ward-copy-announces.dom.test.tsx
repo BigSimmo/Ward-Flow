@@ -60,7 +60,7 @@ const sheets: [string, () => ReactNode, string][] = [
         now={NOW_ANCHOR}
       />
     ),
-    "Copy summary",
+    "Copy for handover",
   ],
   [
     "Referral summary",
@@ -124,11 +124,11 @@ describe("copy buttons announce their result", () => {
       />
     );
     const view = render(sheet(NOW_ANCHOR));
-    fireEvent.click(screen.getByRole("button", { name: "Copy summary" }));
+    fireEvent.click(screen.getByRole("button", { name: "Copy for handover" }));
     if (!deferred) await waitFor(() => expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument());
     view.rerender(sheet(NOW_ANCHOR + 60));
     if (deferred) await act(async () => finish());
-    expect(screen.getByRole("button", { name: "Copy summary" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy for handover" })).toBeInTheDocument();
   });
 
   it.each(sheets)("%s: a copy says Copied, on the button and aloud", async (_name, sheet, label) => {
