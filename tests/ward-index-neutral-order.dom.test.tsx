@@ -26,7 +26,7 @@ function renderIndex() {
 describe("All wards: neutral orders only (D-126)", () => {
   it("offers Service and A to Z, with no Most ready or Fullest", () => {
     renderIndex();
-    const order = screen.getByRole("radiogroup", { name: "Order" });
+    const order = screen.getByRole("radiogroup", { name: "Sort" });
     expect(
       within(order)
         .getAllByRole("radio")
@@ -38,7 +38,7 @@ describe("All wards: neutral orders only (D-126)", () => {
 
   it("A to Z lists the ward cards by ward name, not by ready beds", () => {
     renderIndex();
-    fireEvent.click(within(screen.getByRole("radiogroup", { name: "Order" })).getByRole("radio", { name: "A to Z" }));
+    fireEvent.click(within(screen.getByRole("radiogroup", { name: "Sort" })).getByRole("radio", { name: "A to Z" }));
     const names = screen
       .getAllByTestId(/^ward-index-link-/u)
       .map((link) => link.closest("article")?.querySelector("h2, h3")?.textContent ?? "");

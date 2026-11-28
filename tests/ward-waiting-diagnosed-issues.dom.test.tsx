@@ -46,8 +46,11 @@ describe("W2: whose-move tiles", () => {
 describe("W3: Today's follow-up", () => {
   it("titles the rail, explains the open tab and shows the no-named-person note without a tap", () => {
     inProvider(<DelaysScreen />);
-    const rail = screen.getByRole("region", { name: "Escalations and resolved" });
-    expect(within(rail).getByRole("heading", { name: "Today's follow-up" })).toBeInTheDocument();
+    // Simplification mock-up (26 Nov 2026): the rail left the page; Follow-up opens it as a side sheet
+    // that already carries the title, so the rail itself has no second heading.
+    fireEvent.click(screen.getByTestId("delays-follow-up"));
+    const sheet = screen.getByRole("dialog", { name: "Today's follow-up" });
+    const rail = within(sheet).getByRole("region", { name: "Escalations and resolved" });
     fireEvent.click(within(rail).getByRole("tab", { name: /Escalated$/u }));
     expect(rail).toHaveTextContent("Raised to another desk today.");
     expect(within(rail).getByRole("region", { name: "Delays with no named person" })).toBeInTheDocument();

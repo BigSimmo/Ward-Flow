@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
@@ -12,7 +13,8 @@ import type { EdScreenContext } from "@/components/ward-management/ed/ed-screen-
 import { MovementWorkspaceCockpit } from "@/components/ward-management/movements/movement-workspace-cockpit";
 import { DIVERSION_REASONS, TRANSPORT_WHEREABOUTS } from "@/components/ward-management/ward-change-reasons";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { ToastProvider } from "@/components/wf";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { setDeskRole } from "@/components/ward-management/ward-role-gate";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -92,44 +94,84 @@ const identity = () => ({
   umrn: "UM000001",
 });
 
+/**
+ * Simplification R1 (26 Nov 2026): every door that gives a pulled bed back opens the one shared
+ * "Release pulled bed" sheet. It still asks first, names the person with the record number, states why
+ * the bed is being released, and records nothing until its final button, which names the patient again
+ * (CT-19). The release now comes back from the toast's Undo, so "cannot be undone" is gone. The sheet
+ * dispatches through the provider, so these cases hand the provider a recording dispatch.
+ */
+function Recording({
+  dispatch,
+  rejections,
+  children,
+}: {
+  dispatch: (event: WardFlowEvent) => unknown;
+  rejections?: unknown[];
+  children: ReactNode;
+}) {
+  const state = useWardFlow();
+  const value = { ...state, dispatch, ...(rejections ? { rejections } : {}) } as unknown as typeof state;
+  return <WardFlowOverride value={value}>{children}</WardFlowOverride>;
+}
+
+const releaseButton = () => screen.getByRole("button", { name: /^Release pulled bed for / });
+
 describe("release a diverted journey's pulled bed asks first (CT-07)", () => {
-  it("on the ward arrivals corridor: names the person and ward, Keep as is records nothing", () => {
+  function renderCorridor(dispatch: (event: WardFlowEvent) => unknown, options: { earlierRejection?: boolean } = {}) {
     const { movementId, unitId, steps } = journeySteps("diverted");
     const state = reduce(steps);
     const movement = state.movements.find((m) => m.id === movementId)!;
     const unit = state.units.find((u) => u.id === unitId)!;
-    const dispatch = vi.fn();
+    const earlier = options.earlierRejection
+      ? { id: "earlier", at: NOW, movementId, attempted: "PULL_BED", reason: "Bed not ready." }
+      : undefined;
     render(
-      <WardArrivalsCorridor
-        unit={unit}
-        accepted={[movement]}
-        now={NOW}
-        resolvePatientIdentity={identity}
-        releaseOpenFor={undefined}
-        toggleRelease={vi.fn()}
-        releaseReason={undefined}
-        setReleaseReason={vi.fn()}
-        submitRelease={vi.fn()}
-        lastActionRejection={undefined}
-        dispatch={dispatch}
-        setCheckToken={vi.fn()}
-        priorRejectionCountRef={{ current: 0 }}
-        rejections={[]}
-        overrideReasonForm={() => null}
-      />,
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW}>
+          <Recording dispatch={dispatch} rejections={earlier ? [earlier] : undefined}>
+            <WardArrivalsCorridor
+              unit={unit}
+              accepted={[movement]}
+              now={NOW}
+              resolvePatientIdentity={identity}
+              releaseOpenFor={undefined}
+              toggleRelease={vi.fn()}
+              releaseReason={undefined}
+              setReleaseReason={vi.fn()}
+              submitRelease={vi.fn()}
+              lastActionRejection={earlier}
+              dispatch={dispatch as never}
+              setCheckToken={vi.fn()}
+              priorRejectionCountRef={{ current: 0 }}
+              rejections={earlier ? [earlier] : []}
+              overrideReasonForm={() => null}
+            />
+          </Recording>
+        </WardFlowProvider>
+      </ToastProvider>,
     );
+    return { movementId, unitId, unit };
+  }
+
+  it("on the ward arrivals corridor: names the person and ward, Keep as is records nothing", async () => {
+    const dispatch = vi.fn();
+    const { movementId, unitId, unit } = renderCorridor(dispatch);
     fireEvent.click(screen.getByTestId(`ward-release-diverted-bed-${movementId}`));
     expect(dispatch).not.toHaveBeenCalled();
-    const dialog = screen.getByTestId("ward-release-diverted-confirm");
-    expect(dialog).toHaveTextContent(`pulled at ${unit.name} for Synthetic patient`);
-    expect(dialog).toHaveTextContent("cannot be undone");
-    expect(screen.getByTestId("ward-release-diverted-identity")).toHaveTextContent(
-      "Check: PATIENT, Synthetic · UM000001",
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Keep as is" }));
+    const sheet = await screen.findByTestId("ward-release-pulled-bed-sheet");
+    expect(sheet).toHaveTextContent(`Bed pulled at ${unit.name}`);
+    expect(sheet).toHaveTextContent("Releasing the bed also closes the journey");
+    expect(screen.getByTestId("ward-release-pulled-bed-sheet-who")).toHaveTextContent("Synthetic patient");
+    expect(screen.getByTestId("ward-release-pulled-bed-sheet-who")).toHaveTextContent("UM000001");
+    expect(releaseButton()).toHaveAccessibleName("Release pulled bed for Synthetic patient");
+    // Closing the sheet without the final button records nothing.
+    fireEvent.click(within(sheet).getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(screen.queryByTestId("ward-release-pulled-bed-sheet")).toBeNull());
     expect(dispatch).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId(`ward-release-diverted-bed-${movementId}`));
-    fireEvent.click(screen.getByRole("button", { name: "Release pulled bed" }));
+    await screen.findByTestId("ward-release-pulled-bed-sheet");
+    fireEvent.click(releaseButton());
     expect(dispatch).toHaveBeenCalledTimes(1);
     expect(dispatch.mock.calls[0]![0]).toMatchObject({
       type: "RELEASE_DIVERTED_BED",
@@ -138,82 +180,37 @@ describe("release a diverted journey's pulled bed asks first (CT-07)", () => {
     });
   });
 
-  it("on the ward arrivals corridor: a release the save refuses is said on the card (Q93)", async () => {
-    const { movementId, unitId, steps } = journeySteps("diverted");
-    const state = reduce(steps);
-    const movement = state.movements.find((m) => m.id === movementId)!;
-    const unit = state.units.find((u) => u.id === unitId)!;
+  it("on the ward arrivals corridor: a release the save refuses is said (Q93)", async () => {
     const dispatch = vi.fn(() =>
       Promise.resolve({ commandId: "c-1", status: "refused" as const, message: "This record changed." }),
     );
-    render(
-      <WardArrivalsCorridor
-        unit={unit}
-        accepted={[movement]}
-        now={NOW}
-        resolvePatientIdentity={identity}
-        releaseOpenFor={undefined}
-        toggleRelease={vi.fn()}
-        releaseReason={undefined}
-        setReleaseReason={vi.fn()}
-        submitRelease={vi.fn()}
-        lastActionRejection={undefined}
-        dispatch={dispatch}
-        setCheckToken={vi.fn()}
-        priorRejectionCountRef={{ current: 0 }}
-        rejections={[]}
-        overrideReasonForm={() => null}
-      />,
-    );
+    const { movementId } = renderCorridor(dispatch);
     fireEvent.click(screen.getByTestId(`ward-release-diverted-bed-${movementId}`));
-    fireEvent.click(screen.getByRole("button", { name: "Release pulled bed" }));
+    await screen.findByTestId("ward-release-pulled-bed-sheet");
+    fireEvent.click(releaseButton());
     expect(dispatch).toHaveBeenCalledTimes(1);
-    expect(await screen.findByTestId(`ward-release-failure-${movementId}`)).toHaveTextContent(
-      "Release pulled bed not recorded: This record changed.",
-    );
+    // The shared sheet says a refusal on its toast, naming the engine's reason.
+    expect(await screen.findByText(/Not recorded: .*This record changed\./u)).toBeInTheDocument();
   });
 
   it("on the ward arrivals corridor: an earlier rejection never hides a new release failure", async () => {
-    const { movementId, unitId, steps } = journeySteps("diverted");
-    const state = reduce(steps);
-    const movement = state.movements.find((m) => m.id === movementId)!;
-    const unit = state.units.find((u) => u.id === unitId)!;
     const dispatch = vi.fn(() =>
       Promise.resolve({ commandId: "c-2", status: "refused" as const, message: "This record changed." }),
     );
-    const earlier = { id: "earlier", at: NOW, movementId, attempted: "PULL_BED", reason: "Bed not ready." };
-    render(
-      <WardArrivalsCorridor
-        unit={unit}
-        accepted={[movement]}
-        now={NOW}
-        resolvePatientIdentity={identity}
-        releaseOpenFor={undefined}
-        toggleRelease={vi.fn()}
-        releaseReason={undefined}
-        setReleaseReason={vi.fn()}
-        submitRelease={vi.fn()}
-        lastActionRejection={earlier}
-        dispatch={dispatch}
-        setCheckToken={vi.fn()}
-        priorRejectionCountRef={{ current: 0 }}
-        rejections={[earlier]}
-        overrideReasonForm={() => null}
-      />,
-    );
+    const { movementId } = renderCorridor(dispatch, { earlierRejection: true });
     fireEvent.click(screen.getByTestId(`ward-release-diverted-bed-${movementId}`));
-    fireEvent.click(screen.getByRole("button", { name: "Release pulled bed" }));
-    expect(await screen.findByTestId(`ward-release-failure-${movementId}`)).toHaveTextContent(
-      "Release pulled bed not recorded: This record changed.",
-    );
+    await screen.findByTestId("ward-release-pulled-bed-sheet");
+    fireEvent.click(releaseButton());
+    expect(await screen.findByText(/Not recorded: .*This record changed\./u)).toBeInTheDocument();
   });
 
-  it("on the ED Referred list: asks first and raises only after confirming", () => {
+  it("on the ED Referred list: asks first and dispatches only after confirming", async () => {
     const { movementId, unitId, steps } = journeySteps("diverted");
     const state = reduce(steps);
     const movement = state.movements.find((m) => m.id === movementId)!;
     const unit = state.units.find((u) => u.id === unitId)!;
     const raise = vi.fn();
+    const dispatch = vi.fn();
     const ctx = {
       now: NOW,
       department: { name: "Synthetic ED" },
@@ -230,18 +227,28 @@ describe("release a diverted journey's pulled bed asks first (CT-07)", () => {
       answeredAll: [],
       answered: [],
     } as unknown as EdScreenContext;
-    render(<EdReferredPanel ctx={ctx} />);
+    render(
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW}>
+          <Recording dispatch={dispatch}>
+            <EdReferredPanel ctx={ctx} />
+          </Recording>
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
     fireEvent.click(screen.getByTestId(`ward-ed-release-diverted-bed-${movementId}`));
-    expect(raise).not.toHaveBeenCalled();
-    const dialog = screen.getByTestId("ward-ed-release-diverted-confirm");
-    expect(dialog).toHaveTextContent(`pulled at ${unit.name}`);
-    expect(dialog).toHaveTextContent("cannot be undone");
-    expect(screen.getByTestId("ward-ed-release-diverted-identity")).toHaveTextContent(/^Check: /);
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(raise).not.toHaveBeenCalled();
+    expect(dispatch).not.toHaveBeenCalled();
+    const sheet = await screen.findByTestId("ward-ed-release-diverted-sheet");
+    expect(sheet).toHaveTextContent(`Bed pulled at ${unit.name}`);
+    expect(screen.getByTestId("ward-ed-release-diverted-sheet-who")).toHaveTextContent(/UM\d+/u);
+    fireEvent.click(within(sheet).getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(screen.queryByTestId("ward-ed-release-diverted-sheet")).toBeNull());
+    expect(dispatch).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId(`ward-ed-release-diverted-bed-${movementId}`));
-    fireEvent.click(screen.getByRole("button", { name: "Release pulled bed" }));
-    expect(raise).toHaveBeenCalledExactlyOnceWith("RELEASE_DIVERTED_BED", { movementId });
+    await screen.findByTestId("ward-ed-release-diverted-sheet");
+    fireEvent.click(releaseButton());
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch.mock.calls[0]![0]).toMatchObject({ type: "RELEASE_DIVERTED_BED", role: "ed", movementId });
   });
 });
 
@@ -260,37 +267,45 @@ describe("the movement cockpit asks before releasing a pulled bed (CT-07)", () =
       );
     }
     render(
-      <WardFlowProvider initialNow={NOW}>
-        <Drive />
-        <MovementWorkspaceCockpit movementId={movementId as never} />
-      </WardFlowProvider>,
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW}>
+          <Drive />
+          <MovementWorkspaceCockpit movementId={movementId as never} />
+        </WardFlowProvider>
+      </ToastProvider>,
     );
     fireEvent.click(screen.getByTestId("test-drive"));
     return movementId;
   }
 
-  it("diverted: Keep as is records nothing; confirming releases the bed and closes the journey", () => {
+  it("diverted: closing records nothing; confirming releases the bed and closes the journey", async () => {
     renderCockpit("diverted");
     fireEvent.click(screen.getByTestId("ward-console-release-diverted-bed"));
-    expect(screen.getByTestId("ward-console-release-bed-confirm")).toHaveTextContent("cannot be undone");
-    expect(screen.getByTestId("ward-console-release-bed-identity")).toHaveTextContent(/^Check: /);
-    fireEvent.click(screen.getByRole("button", { name: "Keep as is" }));
+    const sheet = await screen.findByTestId("ward-console-release-bed-sheet");
+    expect(sheet).toHaveTextContent("Releasing the bed also closes the journey");
+    expect(screen.getByTestId("ward-console-release-bed-sheet-who")).toHaveTextContent(/UM\d+/u);
+    fireEvent.click(within(sheet).getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(screen.queryByTestId("ward-console-release-bed-sheet")).toBeNull());
     expect(screen.getByTestId("live-held")).toHaveTextContent("held");
     fireEvent.click(screen.getByTestId("ward-console-release-diverted-bed"));
-    fireEvent.click(screen.getByRole("button", { name: "Release pulled bed" }));
-    expect(screen.getByTestId("live-held")).toHaveTextContent("released");
+    await screen.findByTestId("ward-console-release-bed-sheet");
+    fireEvent.click(releaseButton());
+    await waitFor(() => expect(screen.getByTestId("live-held")).toHaveTextContent("released"));
     expect(screen.getByTestId("live-closed")).toHaveTextContent("closed");
   });
 
-  it("stopped: Keep as is records nothing; confirming releases the held bed", () => {
+  it("stopped: closing records nothing; confirming releases the held bed", async () => {
     renderCockpit("stopped");
     fireEvent.click(screen.getByTestId("ward-console-release-held-bed"));
-    expect(screen.getByTestId("ward-console-release-bed-confirm")).not.toHaveTextContent("cannot be undone");
-    fireEvent.click(screen.getByRole("button", { name: "Keep as is" }));
+    const sheet = await screen.findByTestId("ward-console-release-bed-sheet");
+    expect(sheet).toHaveTextContent("Transport was stopped after collection");
+    fireEvent.click(within(sheet).getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(screen.queryByTestId("ward-console-release-bed-sheet")).toBeNull());
     expect(screen.getByTestId("live-held")).toHaveTextContent("held");
     fireEvent.click(screen.getByTestId("ward-console-release-held-bed"));
-    fireEvent.click(screen.getByRole("button", { name: "Release pulled bed" }));
-    expect(screen.getByTestId("live-held")).toHaveTextContent("released");
+    await screen.findByTestId("ward-console-release-bed-sheet");
+    fireEvent.click(releaseButton());
+    await waitFor(() => expect(screen.getByTestId("live-held")).toHaveTextContent("released"));
   });
 });
 

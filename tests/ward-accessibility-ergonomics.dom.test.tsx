@@ -56,7 +56,7 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
       expect(main).toHaveAttribute("id", "main-content");
       expect(within(main).getAllByRole("heading", { level: 1 })).toHaveLength(1);
       expect(within(main).getByRole("heading", { level: 1, name: "Ward answer" })).toBeInTheDocument();
-      expect(within(main).getByRole("status")).toHaveTextContent("Loading ward answer…");
+      expect(within(main).getByRole("status")).toHaveTextContent("Loading ward answer");
     });
 
     it("renders bed cells as native buttons with aria-label, enabled when vacant, disabled when occupied", () => {
@@ -127,14 +127,16 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
       expect(secondCard.className).toContain("selected");
       expect(secondCard).toHaveAttribute("aria-selected", "true");
       expect(firstCard).toHaveAttribute("aria-selected", "false");
-      expect(screen.getByTestId("ward-patient-search-preview")).toBeInTheDocument();
+      // The record preview is now the census detail drawer.
+      expect(screen.getByTestId("ward-patient-search-details")).toBeInTheDocument();
 
       // First row re-selected via Space
       fireEvent.keyDown(firstCard, { key: " " });
       expect(firstCard.className).toContain("selected");
       expect(firstCard).toHaveAttribute("aria-selected", "true");
       expect(secondCard).toHaveAttribute("aria-selected", "false");
-      expect(screen.getByTestId("ward-patient-search-preview")).toBeInTheDocument();
+      // The record preview is now the census detail drawer.
+      expect(screen.getByTestId("ward-patient-search-details")).toBeInTheDocument();
       expect(screen.getByTestId("ward-patient-search-details")).toHaveTextContent(
         firstCard.querySelector("b")?.textContent ?? "",
       );
@@ -142,7 +144,7 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
   });
 
   describe("3. ArrivalTimeModal focus trap", () => {
-    it("traps Tab navigation within dialog bounds", () => {
+    it("traps Tab navigation within dialog bounds", async () => {
       // jsdom has no layout; the shared modal trap only cycles through controls that have client rects.
       const rects = vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue({
         length: 1,
@@ -173,8 +175,8 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
 
-      // Initial focus inside modal
-      expect(dialog.contains(document.activeElement)).toBe(true);
+      // Initial focus inside modal (the kit dialog moves focus in from the next frame).
+      await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
 
       // Tab on last element wraps to first
       last.focus();

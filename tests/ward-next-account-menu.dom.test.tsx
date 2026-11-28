@@ -1,5 +1,5 @@
 // DK1 (Josh, 3 Nov 2026): the rail's person opens an account menu, not "Go to a desk". It names the
-// person, then Settings, Help, Switch desk (an account with more than one membership) or, in the
+// person, then Settings, Switch desk (an account with more than one membership) or, in the
 // local demo, "Try another desk (demo)", and Sign out when signed in. The phone Menu's who row names
 // the person and the same account actions are plain rows. All data here is synthetic.
 import "@testing-library/jest-dom/vitest";
@@ -90,13 +90,13 @@ describe("rail account menu (DK1)", () => {
     expect(trigger.getAttribute("aria-label")).not.toMatch(/Go to a desk/u);
   });
 
-  it("in the local demo offers Settings, Help and Try another desk (demo), and no Sign out", () => {
+  it("in the local demo offers Settings and Try another desk (demo), and no Sign out", () => {
     const openDesk = vi.fn();
     renderRail(null, openDesk);
     const menu = openAccountMenu();
     expect(within(menu).getByText("Dr S. Orlenby")).toBeInTheDocument();
     expect(within(menu).getByText(/^Bed coordinator/u)).toBeInTheDocument();
-    expect(itemNames(menu)).toEqual(["Settings", expect.stringMatching(/^Help/u), "Try another desk (demo)"]);
+    expect(itemNames(menu)).toEqual(["Settings", "Try another desk (demo)"]);
     expect(within(menu).queryByRole("menuitem", { name: /Sign out/u })).toBeNull();
 
     fireEvent.click(within(menu).getByRole("menuitem", { name: "Try another desk (demo)" }));
@@ -118,7 +118,7 @@ describe("rail account menu (DK1)", () => {
 
     let menu = openAccountMenu();
     expect(within(menu).getByText("synthetic-coordinator@example.invalid")).toBeInTheDocument();
-    expect(itemNames(menu)).toEqual(["Settings", expect.stringMatching(/^Help/u), "Switch desk", "Sign out"]);
+    expect(itemNames(menu)).toEqual(["Settings", "Switch desk", "Sign out"]);
     expect(within(menu).getByRole("separator")).toBeInTheDocument();
     fireEvent.click(within(menu).getByRole("menuitem", { name: "Switch desk" }));
     expect(signedIn.switchRole).toHaveBeenCalledTimes(1);
@@ -131,7 +131,7 @@ describe("rail account menu (DK1)", () => {
   it("signed in with one membership: no Switch desk and no demo desk", () => {
     renderRail(session());
     const menu = openAccountMenu();
-    expect(itemNames(menu)).toEqual(["Settings", expect.stringMatching(/^Help/u), "Sign out"]);
+    expect(itemNames(menu)).toEqual(["Settings", "Sign out"]);
   });
 
   // Live audit item 22 (11 Nov 2026): on a front-door site the public demo offers Leave the demo,
@@ -147,11 +147,10 @@ describe("rail account menu (DK1)", () => {
       const menu = openAccountMenu();
       expect(itemNames(menu)).toEqual([
         "Settings",
-        expect.stringMatching(/^Help/u),
         "Try another desk (demo)",
-        "Leave the demo",
+        expect.stringMatching(/^Leave the demo/u),
       ]);
-      fireEvent.click(within(menu).getByRole("menuitem", { name: "Leave the demo" }));
+      fireEvent.click(within(menu).getByRole("menuitem", { name: /^Leave the demo/u }));
       await vi.waitFor(() => expect(replace).toHaveBeenCalledWith("/sign-in"));
       expect(fetchMock).toHaveBeenCalledWith("/api/session", expect.objectContaining({ method: "DELETE" }));
     } finally {
@@ -173,7 +172,7 @@ describe("rail account menu (DK1)", () => {
     vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, replace } as Location);
     try {
       renderRail();
-      fireEvent.click(within(openAccountMenu()).getByRole("menuitem", { name: "Leave the demo" }));
+      fireEvent.click(within(openAccountMenu()).getByRole("menuitem", { name: /^Leave the demo/u }));
       expect(await screen.findByText("The demo could not end")).toBeInTheDocument();
       expect(replace).not.toHaveBeenCalled();
     } finally {
@@ -197,7 +196,7 @@ describe("rail account menu (DK1)", () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     try {
       renderRail();
-      fireEvent.click(within(openAccountMenu()).getByRole("menuitem", { name: "Leave the demo" }));
+      fireEvent.click(within(openAccountMenu()).getByRole("menuitem", { name: /^Leave the demo/u }));
       await act(async () => {
         await vi.advanceTimersByTimeAsync(8_000);
       });
@@ -209,7 +208,7 @@ describe("rail account menu (DK1)", () => {
       });
       cleanup();
       renderRail();
-      expect(itemNames(openAccountMenu())).toContain("Leave the demo");
+      expect(itemNames(openAccountMenu())).toContainEqual(expect.stringMatching(/^Leave the demo/u));
       expect(replace).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();

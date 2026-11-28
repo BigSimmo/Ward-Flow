@@ -1,5 +1,6 @@
 // Codex P1 on #585 (22 Oct 2026): a Notices "Open request" link names its request in `?movement=`, and
 // the Answer view opens on that request, not on the oldest one waiting. Synthetic seed data only.
+import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -70,8 +71,11 @@ describe("ward answer view opens the request a link names", () => {
     expect(await shownId()).toBe(LATER);
   });
 
-  it("falls back to the oldest when the name is not a request waiting here", async () => {
+  // Simplification 26 Nov 2026 (REPAIR 1): a named request that is not waiting here says so and never
+  // swaps for another person's request, even when others are waiting.
+  it("says so, and never swaps in another request, when the name is not a request waiting here", async () => {
     renderAnswerAt("?movement=not-a-record");
-    expect(await shownId()).toBe(OLDEST);
+    expect(await screen.findByTestId("ward-answer-selection-left")).toBeInTheDocument();
+    expect(screen.queryByTestId(/^ward-incoming-/)).toBeNull();
   });
 });

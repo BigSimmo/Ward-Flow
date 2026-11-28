@@ -30,6 +30,12 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";
 import { setForceDynamicLoading } from "./setup/jsdom.setup";
+import { chooseSampleReferralPerson } from "./helpers/referral-drawer-person";
+
+// The kit Dialog's one filled button (it has no test id of its own).
+const dialogPrimary = (testId: string, name: RegExp) =>
+  within(screen.getByTestId(testId)).getByRole("button", { name });
+const recordPrimary = () => dialogPrimary("upload-forms-dialog", /^Record document details$/u);
 
 describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
   describe("Option 0 & Option 4: Patient Now Screen - Pulled Bed Banner, Arrival Time & Forms Modals", () => {
@@ -46,8 +52,8 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       trigger.focus();
       fireEvent.click(trigger);
       const pending = screen.getByRole("dialog", { name: /Record document details/i });
-      expect(within(pending).getByRole("status").textContent).toBe("Loading document details…");
-      expect(screen.queryByTestId("confirm-upload-form-button") === null).toBe(true);
+      expect(within(pending).getByRole("status").textContent).toBe("Loading document details");
+      expect(screen.queryByTestId("upload-forms-dialog") === null).toBe(true);
       fireEvent.keyDown(pending, { key: "Escape" });
       expect(screen.queryByRole("dialog", { name: /Record document details/i }) === null).toBe(true);
       await waitFor(() => expect(document.activeElement === trigger).toBe(true));
@@ -58,7 +64,7 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       fireEvent.click(trigger);
       expect(
         within(screen.getByRole("dialog", { name: /Record document details/i })).getByRole("status").textContent,
-      ).toBe("Loading document details…");
+      ).toBe("Loading document details");
       setForceDynamicLoading(false);
       view.rerender(page());
       const opened = await screen.findByRole("dialog", { name: /Record document details/i });
@@ -86,14 +92,14 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       fireEvent.change(within(dialog).getByLabelText("Select a file to record its details"), {
         target: { files: [new File(["synthetic"], "synthetic-draft.pdf", { type: "application/pdf" })] },
       });
-      expect(screen.getByTestId("confirm-upload-form-button").getAttribute("aria-disabled")).toBeNull();
+      expect(recordPrimary().getAttribute("aria-disabled")).toBeNull();
       fireEvent.keyDown(document.activeElement!, { key: "Escape" });
       expect(screen.queryByRole("dialog", { name: /Record document details/i }) === null).toBe(true);
       await waitFor(() => expect(document.activeElement === trigger).toBe(true));
       fireEvent.click(trigger);
       const reopened = await screen.findByRole("dialog", { name: /Record document details/i });
       expect((within(reopened).getByRole("combobox") as HTMLSelectElement).value === initialKind).toBe(true);
-      expect(screen.getByTestId("confirm-upload-form-button").getAttribute("aria-disabled")).toBe("true");
+      expect(recordPrimary().getAttribute("aria-disabled")).toBe("true");
       expect((within(reopened).getByLabelText("Select a file to record its details") as HTMLInputElement).value).toBe(
         "",
       );
@@ -126,7 +132,7 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       fireEvent.click(updateBtn);
 
       // Modal is open
-      expect(screen.getByRole("dialog", { name: /Update Arrival Time/i })).toBeDefined();
+      expect(screen.getByRole("dialog", { name: /Update arrival time/i })).toBeDefined();
 
       // WT-13: the travel mode opens blank, so it is chosen first.
       fireEvent.change(screen.getByLabelText("How they are travelling"), { target: { value: "rfds" } });
@@ -139,7 +145,7 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       fireEvent.click(screen.getByRole("button", { name: /^\+1h/u }));
 
       // Submit
-      const confirmBtn = screen.getByTestId("save-arrival-plan-button");
+      const confirmBtn = dialogPrimary("arrival-time-dialog", /^Save arrival plan$/u);
       fireEvent.click(confirmBtn);
 
       // Verify banner updated with tracking info
@@ -163,16 +169,15 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       expect(dialog).toHaveTextContent("The file name and contents are not stored or sent");
 
       // Submit form
-      const submitBtn = screen.getByTestId("confirm-upload-form-button");
-      expect(submitBtn).toHaveAttribute("aria-disabled", "true");
+      expect(recordPrimary()).toHaveAttribute("aria-disabled", "true");
       fireEvent.change(within(dialog).getByLabelText("Select a file to record its details"), {
         target: { files: [new File(["synthetic"], "synthetic-transfer.pdf", { type: "application/pdf" })] },
       });
       // The document type opens blank: with a file but no type, Record stays unavailable.
-      expect(submitBtn).toHaveAttribute("aria-disabled", "true");
+      expect(recordPrimary()).toHaveAttribute("aria-disabled", "true");
       fireEvent.change(within(dialog).getByRole("combobox"), { target: { value: "Form 4A Transport order" } });
-      expect(submitBtn).not.toHaveAttribute("aria-disabled", "true");
-      fireEvent.click(submitBtn);
+      expect(recordPrimary()).not.toHaveAttribute("aria-disabled", "true");
+      fireEvent.click(recordPrimary());
 
       // Verify attached forms section updated
       expect(screen.getByTestId("ward-patient-uploaded-forms")).toBeDefined();
@@ -227,26 +232,25 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
   });
 
   describe("Option 3: Pre-Admission Medical Clearance Checkpoint", () => {
-    it("opens Documentation from the clearance summary and records the clearance draft", () => {
+    it("opens the Clearance step and records the clearance draft", () => {
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <WardReferralDrawer onClose={() => {}} />
         </WardFlowProvider>,
       );
+      chooseSampleReferralPerson();
 
-      // Pre-admission medical clearance toggle button
-      const toggleBtn = screen.getByTestId("ward-referral-medical-clearance-toggle");
-      expect(toggleBtn).toBeDefined();
-      // v6 (ReferralDrawer.webp): before the question is answered the status reads "Not answered".
-      expect(screen.getByTestId("ward-referral-clearance-status").textContent).toContain("Not answered");
-
-      // The summary opens Documentation; a draft does not alter the live movement.
-      fireEvent.click(toggleBtn);
-      expect(screen.getByTestId("ward-referral-clearance-status").textContent).toContain("Not answered");
+      // The clearance now has its own step (the summary toggle on the patient step is gone).
+      fireEvent.click(
+        within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", { name: "Clearance" }),
+      );
+      const card = screen.getByRole("heading", { name: "Medical clearance" }).closest("section")!;
+      // Before the question is answered the status reads "Not answered".
+      expect(card.textContent).toContain("Not answered");
       const clearance = screen.getByRole("group", { name: "Has the patient been medically cleared?" });
       fireEvent.click(within(clearance).getByLabelText("Yes"));
-      expect(screen.getByTestId("ward-referral-clearance-status").textContent).toContain("Cleared");
-      expect(screen.getByText(/Fit for Admission & Travel/i)).toBeDefined();
+      expect(card.textContent).toContain("Cleared");
+      // The "Fit for admission & travel" line sat on the old summary toggle, which r10 removed.
     });
   });
 
@@ -263,10 +267,10 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
     });
   });
 
-  // Refined Handover A (Josh, 9 Oct 2026) folded the 16:30 rollup into the Beds tab: long stays,
-  // discharges held up and accepted beds now sit by ward beside the grouped patient table.
+  // Refined Handover A (Josh, 9 Oct 2026) put the rollup on the Beds tab; audit four r10 cut the by-ward
+  // table, so the tab is now the "Beds now" tiles and the way across to Capacity.
   describe("Option 5: Handover Beds tab", () => {
-    it("shows long stays and held-up discharges by ward on the Beds tab", () => {
+    it("shows the beds-now tiles with the past-time-limit check on the Beds tab", () => {
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <HandoverPage />
@@ -275,8 +279,10 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
 
       fireEvent.click(screen.getByRole("tab", { name: /Beds/ }));
       const beds = screen.getByTestId("ward-handover-beds");
-      expect(beds.textContent).toMatch(/stays of 7 days or more/i);
-      expect(beds.textContent).toContain("Discharges held up");
+      expect(within(beds).getByTestId("ward-handover-beds-now-tiles")).toBeInTheDocument();
+      expect(beds.textContent).toMatch(/Expected out today/i);
+      expect(beds.textContent).toMatch(/past EDD/i);
+      expect(beds.textContent).toMatch(/past their time limit/i);
     });
   });
 });

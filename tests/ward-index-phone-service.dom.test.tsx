@@ -50,13 +50,18 @@ describe("All wards service control on a phone (shell-15)", () => {
     const eastMetro = allUnits().filter((unit) => unitHealthService(unit) === "East Metro").length;
     expect(eastMetro).toBeGreaterThan(0);
     expect(screen.getByTestId("ward-index-count-note")).toHaveTextContent(
-      new RegExp(`^Every ward${eastMetro} of \\d+ wards highlighted`, "u"),
+      new RegExp(`^Every ward${eastMetro} of \\d+ wards`, "u"),
     );
   });
 
   it("keeps the desktop chips", () => {
     renderIndex(false);
-    expect(screen.getByLabelText("Health service")).toBeInTheDocument();
+    // Audit three review: with a lone All tab there is nothing to switch, so the row shows a plain count.
+    const tabs = screen.getByTestId("ward-index-tabs");
+    expect(
+      within(tabs).queryByRole("radiogroup", { name: "Health service" }) ??
+        within(tabs).getByTestId("ward-index-tab-count"),
+    ).toBeInTheDocument();
   });
 
   it("names desktop card percentages as beds in use", () => {
@@ -73,7 +78,7 @@ describe("All wards service control on a phone (shell-15)", () => {
     const toggle = screen.getByRole("button", { name: "Filters" });
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
-    for (const label of ["Status", "Cohort", "Order"]) {
+    for (const label of ["Status", "Cohort", "Sort"]) {
       const row = screen.getByRole("group", { name: `${label} choices` });
       expect(within(row).getByRole("radiogroup", { name: label })).toBeVisible();
     }

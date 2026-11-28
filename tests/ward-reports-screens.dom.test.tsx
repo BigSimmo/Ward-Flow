@@ -278,6 +278,8 @@ describe("read-only report screens", () => {
     expect(within(page).getAllByText(/Synthetic demo data/u).length).toBeGreaterThan(0);
     const table = screen.getByTestId("ward-chronology-table");
     expect(within(table).getAllByRole("row").length).toBeGreaterThan(1);
+    // Audit two #15: Copy rows, Export CSV and Print sit in the one Share menu.
+    fireEvent.click(screen.getByTestId("ward-chronology-share"));
     expect(screen.getByTestId("ward-chronology-csv")).toBeTruthy();
     expect(screen.getByTestId("ward-chronology-print")).toBeTruthy();
   });
@@ -303,7 +305,7 @@ describe("read-only report screens", () => {
     }
   });
 
-  it("on a phone keeps record kind and the role view one tap away, in a sheet", () => {
+  it("on a phone keeps record kind one tap away, in a sheet", () => {
     route.pathname = "/bedchart/reports/chronology";
     vi.stubGlobal(
       "matchMedia",
@@ -318,55 +320,57 @@ describe("read-only report screens", () => {
       inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
       // Ops-19: the hero repeats no count the source tabs already carry.
       expect(screen.queryByText("From records")).toBeNull();
+      // The role view ("View as" Ward manager) left the page in r10; the real desk role still narrows the sources.
       const filters = screen.getByTestId("ward-chronology-phone-filters");
-      expect(filters).toHaveTextContent("Every record kind · Bed coordinator");
+      expect(filters).toHaveTextContent("Record kind: Every record kind");
       fireEvent.click(within(filters).getByRole("button"));
-      const sheet = screen.getByRole("dialog", { name: "Record kind and view" });
-      expect(within(sheet).getByRole("radiogroup", { name: "View as" })).toBeTruthy();
-      fireEvent.click(within(sheet).getByRole("radio", { name: "Ward manager" }));
-      fireEvent.click(within(sheet).getByRole("button", { name: "Done" }));
-      expect(screen.getByTestId("ward-chronology-phone-filters")).toHaveTextContent("Ward manager");
-      expect(screen.getByTestId("ward-chronology-nurse-view")).toBeTruthy();
+      const sheet = screen.getByRole("dialog", { name: "Record kind" });
+      expect(within(sheet).getByRole("list", { name: "Record kind" })).toBeTruthy();
+      expect(within(sheet).queryByRole("radiogroup", { name: "View as" })).toBeNull();
+      const kinds = within(within(sheet).getByRole("list", { name: "Record kind" })).getAllByRole("listitem");
+      expect(kinds.length).toBeGreaterThan(1);
+      expect(kinds[0]).toHaveTextContent("Every record kind");
     } finally {
       vi.unstubAllGlobals();
     }
   });
 
   // Renders every synthetic patient's chronology in turn; slower CI runners need the headroom.
-  it("lists patients Family, Given in family-name order, and groups each board day once (ops-24, ops-18)", () => {
+  // Simplification 26 Nov 2026: the A to Z start list went; the start page is a search plus a count, so
+  // each patient is opened by searching their UMRN (the order of the options is still Family, Given).
+  it("opens each patient by search as Family, Given, and groups each board day once (ops-24, ops-18)", () => {
     route.pathname = "/bedchart/reports/chronology";
     inProvider(<PatientChronologyScreen />);
-    // The start list shows 6, then one Show more, then points to the search (Josh, 31 Oct 2026).
-    expect(screen.getAllByTestId("ward-chronology-start-patient")).toHaveLength(6);
-    expect(screen.getByTestId("ward-chronology-start-count")).toHaveTextContent(/^\d+ patients, A to Z$/u);
-    fireEvent.click(screen.getByRole("button", { name: /^Show \d+ more$/u }));
-    const people = screen.getAllByTestId("ward-chronology-start-patient").map((row) => ({
-      name: row.children[0]!.textContent!,
-      umrn: row.children[1]!.textContent!,
-    }));
-    expect(people.length).toBeGreaterThan(6);
-    expect(screen.getByText(/ of \d+ · search for anyone else$/u)).toBeInTheDocument();
-    const names = people.map((person) => person.name);
-    for (const name of names) expect(name).toMatch(/^[^,]+, [^,]+$/u);
-    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
-    // Every day heading appears once per patient, whatever the device's time zone.
+    expect(screen.queryAllByTestId("ward-chronology-start-patient")).toHaveLength(0);
+    expect(screen.getByTestId("ward-chronology-start-count")).toHaveTextContent(
+      /^\d+ patients have records on the board$/u,
+    );
+    const umrns = seedWardFlowState()
+      .patients.map((patient) => patient.umrn)
+      .filter((umrn) => umrn !== "");
+    let opened = 0;
     let headings = 0;
-    for (const person of people) {
+    for (const umrn of umrns) {
       const search = screen.getByTestId("ward-chronology-patient");
       fireEvent.focus(search);
-      fireEvent.change(search, { target: { value: person.umrn } });
+      fireEvent.change(search, { target: { value: umrn } });
       const option = Array.from(document.querySelectorAll('[role="option"]')).find((item) =>
-        item.textContent?.includes(person.umrn),
+        item.textContent?.includes(umrn),
       );
-      fireEvent.mouseDown(option!);
+      // A person with no record of their own is not offered, as the start count says.
+      if (!option) continue;
+      expect(option.textContent).toMatch(/^[^,]+, [^,]+/u);
+      fireEvent.mouseDown(option);
+      opened += 1;
       // A plain selector, not *ByRole: role queries over every patient's table took minutes in CI.
       const days = Array.from(document.querySelectorAll('[scope="rowgroup"]')).map(
         (cell) => cell.firstElementChild?.firstChild?.textContent ?? "",
       );
-      expect(new Set(days).size, `${person.umrn}: ${days.join(" | ")}`).toBe(days.length);
+      expect(new Set(days).size, `${umrn}: ${days.join(" | ")}`).toBe(days.length);
       headings += days.length;
     }
-    expect(headings).toBeGreaterThan(people.length);
+    expect(opened).toBeGreaterThan(5);
+    expect(headings).toBeGreaterThan(opened);
   }, 90_000);
 
   it("asks for a patient before showing any chronology", () => {
@@ -374,7 +378,13 @@ describe("read-only report screens", () => {
     expect(screen.queryByTestId("ward-chronology-table")).toBeNull();
     expect(screen.queryByTestId("ward-chronology-csv")).toBeNull();
     expect(screen.getByText("What a chronology holds")).toBeTruthy();
-    fireEvent.click(screen.getAllByTestId("ward-chronology-start-patient")[0]!);
+    const umrn = seedWardFlowState().patients.find((patient) => patient.id === "PT-013")!.umrn;
+    const search = screen.getByTestId("ward-chronology-patient");
+    fireEvent.focus(search);
+    fireEvent.change(search, { target: { value: umrn } });
+    fireEvent.mouseDown(
+      Array.from(document.querySelectorAll('[role="option"]')).find((item) => item.textContent?.includes(umrn))!,
+    );
     expect(screen.getByTestId("ward-chronology-table")).toBeTruthy();
   });
 
@@ -779,15 +789,18 @@ describe("read-only report screens", () => {
     expect(screen.getByTestId("ward-chronology-count").textContent).toBe(`${records} of ${all} shown`);
   });
 
-  it("opens a clicked event in the side panel and narrows the sources for the ward nurse view", () => {
+  // The "View as" Ward manager switch left the page in r10; the route's real desk role does the narrowing.
+  it("opens a clicked event in the side panel, and a ward desk is not shown the audit trail", () => {
     route.pathname = "/bedchart/reports/chronology";
     inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
     const table = within(screen.getByTestId("ward-chronology-table"));
     fireEvent.click(table.getAllByRole("button")[0]);
     expect(screen.getByRole("button", { name: "Copy row" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Next" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("radio", { name: "Ward manager" }));
-    expect(screen.getByTestId("ward-chronology-nurse-view")).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Audit" })).toBeTruthy();
+    cleanup();
+    route.pathname = "/bedchart/ward/rph-adult-secure/reports/chronology";
+    inProvider(<PatientChronologyScreen initialPatientId="PT-013" />);
     expect(screen.queryByRole("radio", { name: "Audit" })).toBeNull();
   });
 

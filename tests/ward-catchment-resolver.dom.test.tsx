@@ -383,7 +383,8 @@ describe("Suburb lookup card (the Tools sheet's Suburb lookup, D-91)", () => {
   it("opens empty, and a quick pick fills the box and answers with that suburb's team", () => {
     render(<SuburbLookupCard picks={["Morley", "Fremantle"]} />);
     expect(field().value).toBe("");
-    expect(screen.getByText("Type a suburb or a 4-digit postcode.")).toBeDefined();
+    // #25 (audit two): with quick picks, the empty card shows the picks only, no "Type a suburb" hint.
+    expect(screen.queryByText("Type a suburb or a 4-digit postcode.")).toBeNull();
     const morley = screen.getByRole("button", { name: "Morley" });
     expect(morley).toHaveAttribute("aria-pressed", "false");
 
@@ -406,7 +407,7 @@ describe("Suburb lookup card (the Tools sheet's Suburb lookup, D-91)", () => {
     expect(screen.getAllByRole("region", { name: /Alexander Heights|Girrawheen|Koondoola|Marangaroo/u })).toHaveLength(
       3,
     );
-    fireEvent.click(screen.getByRole("button", { name: /Show 1 more suburbs/u }));
+    fireEvent.click(screen.getByRole("button", { name: "Show all 4" }));
     for (const suburb of ["Alexander Heights", "Girrawheen", "Koondoola", "Marangaroo"]) {
       expect(screen.getByRole("region", { name: suburb })).toBeDefined();
     }

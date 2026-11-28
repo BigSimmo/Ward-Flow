@@ -68,9 +68,11 @@ describe("each ward's part in tomorrow's forecast (forecast integration, 27 Oct 
 
     const panel = getByTestId("ward-board-forecast-share");
     expect(within(panel).getByRole("heading", { name: "Your part in tomorrow's expected beds" })).toBeTruthy();
-    expect(getByTestId("ward-board-forecast-share-counted").textContent).toMatch(
-      / on this ward counts? towards tomorrow's expected beds: /,
-    );
+    // Audit two #92: three small figures; the sentence stays as the group's spoken summary.
+    const counted = getByTestId("ward-board-forecast-share-counted");
+    expect(counted.getAttribute("aria-label")).toMatch(/ on this ward counts? towards tomorrow's expected beds: /);
+    expect(within(counted).getByText("Expected")).toBeTruthy();
+    expect(within(counted).getByText("Confirmed")).toBeTruthy();
   });
 
   it("links Home straight to the forecast panel on Capacity", () => {
@@ -86,10 +88,8 @@ describe("each ward's part in tomorrow's forecast (forecast integration, 27 Oct 
     const target = document.getElementById(anchor ?? "");
     expect(target).not.toBeNull();
     expect(target?.getAttribute("aria-labelledby")).toBe("capacity-forecast-card-title");
-    expect(document.getElementById("capacity-forecast-card-title")?.textContent).toMatch(
-      /^Expected from recorded dates/u,
-    );
-    fireEvent.click(within(target!).getByRole("button", { name: "Open" }));
+    expect(document.getElementById("capacity-forecast-card-title")?.textContent).toMatch(/^Next few days/u);
+    fireEvent.click(within(target!).getByRole("button", { name: "Forecast" }));
     expect(screen.getByRole("region", { name: "Beds ahead" })).toBeTruthy();
   });
 });

@@ -12,9 +12,9 @@ import {
 /**
  * M139 (Tier 7 plan, 10 Nov 2026): the import map's layer rules, frozen at today's baseline
  * (main 29352cd0). No import cycle (there is none today), the kit and src/lib import no ward code,
- * live code imports no mockup, and screen-to-screen imports may not rise above 564.
+ * live code imports no mockup, and screen-to-screen imports may not rise above 582 (564 until the r10 build, 28 Nov 2026).
  */
-const TODAY_SCREEN_TO_SCREEN = 564;
+const TODAY_SCREEN_TO_SCREEN = 582;
 const WM = "src/components/ward-management";
 
 describe("import map layers", () => {

@@ -319,6 +319,13 @@ const ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON: Record<string, string> = {
   // carried a reason). A refused re-pull pulls nothing, shows the engine's reason with an "Open the
   // movement" link, and patient-transit-operations.tsx's Pull there records an override reason.
   "src/components/ward-management/referrals/pull-accepted-referral.tsx": "PULL_PATIENT",
+  // Audit four item 13 (r10, 28 Nov 2026): the planned-arrival alert's Record arrival confirms through
+  // the shared arrival identity dialog and dispatches the booking's own CONVERT_PLANNED_ADMISSION. It is
+  // offered only when no bed-count reason is needed (usePlannedArrivalOffered returns false when
+  // plannedArrivalNeedsBedCountReason holds), so Open bookings stays the step that asks for the reason
+  // on the Planned panel. The reducer still refuses an arrival that needs one, and the alert shows the
+  // refusal. An authorisation reason is recorded on the booking when it is made, not at arrival.
+  "src/components/ward-management/alerts/alert-planned-arrival.tsx": "CONVERT_PLANNED_ADMISSION",
 };
 
 const derivedMembers = deriveWardFlowEventMembers();
@@ -494,6 +501,13 @@ const DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE: Record<string, string> = {
   // scanned above.
   "src/components/ward-management/referrals/ward-referral-inbox.tsx :: event":
     "answer(): forwards the ACCEPT_REFERRAL or DECLINE_REFERRAL event each inbox button builds as a literal",
+  // r10 (28 Nov 2026): the movement drawer's urgent flag and clear are built once, as literal events, by
+  // flagUrgentEvent and clearUrgentEvent, and forwarded by the two small functions below them. Neither
+  // FLAG_MOVEMENT_URGENT nor CLEAR_MOVEMENT_URGENT_FLAG declares an overrideReason.
+  "src/components/ward-management/movements/movement-drawer.tsx :: flagUrgentEvent(now, movementId, reason)":
+    "flagUrgent(): forwards the FLAG_MOVEMENT_URGENT literal built in flagUrgentEvent just above; no override applies",
+  "src/components/ward-management/movements/movement-drawer.tsx :: clearUrgentEvent(now, movementId)":
+    "clearUrgentFlag(): forwards the CLEAR_MOVEMENT_URGENT_FLAG literal built in clearUrgentEvent just above; no override applies",
   // Fix list 1.5 (15 Oct 2026): the named raise helper adds the desk and the time to the type its
   // caller names. Every `raise("TYPE", ...)` call is scanned above with its literal type.
   "src/components/ward-management/ward-flow-raise.ts :: { ...fields, type, role, now } as WardFlowEvent":
@@ -682,8 +696,9 @@ describe("ward override-surface guard", () => {
     // WS-03 (26 Oct 2026) added the one-step Pull the bed (6); WT-08 took it off again (5).
     // Review P4-1 (PR #1659): the pull form's pull again after an Undo (6).
     // D-273 (21 Nov 2026): Weekly's scripted example journeys, which no one presses (7).
-    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(7);
-    expect(stillInViolation.size).toBe(7);
+    // Audit four item 13 (r10, 28 Nov 2026): the planned-arrival alert's Record arrival (8).
+    expect(Object.keys(ALLOWED_SURFACES_WITHOUT_OVERRIDE_REASON).length).toBe(8);
+    expect(stillInViolation.size).toBe(8);
   });
 
   // --- The compliance guard: every site the scan CAN see meets the rule. ---
@@ -728,7 +743,9 @@ describe("ward override-surface guard", () => {
     // 5 -> 6, clinical-safety audit (1 Nov 2026): Home's sendStepsInOrder() forwards its literal-typed steps.
     // 6 -> 7, Tier B2/E2 (4 Nov 2026): Activity forwards its exact own-command inverse, with the
     // named exception above; the bounded inverse set is separately checked below.
-    expect(nonLiteralDispatchCalls.length).toBe(7);
+    // 7 -> 9, r10 (28 Nov 2026): the movement drawer builds its urgent flag and clear events in two
+    // named helpers and forwards them; both build literal types, and neither event can carry an override.
+    expect(nonLiteralDispatchCalls.length).toBe(9);
   });
 
   it("Activity's supported Undo types contain no override-gated event", () => {
@@ -787,6 +804,8 @@ describe("ward override-surface guard", () => {
     // one construction site each) left with the file itself, deleted outright by item 41
     // (owner-approved 2026-09-17). Re-derived by running this file, not by arithmetic.
     expect(counts).toEqual({
+      // Audit four item 13 (r10, 28 Nov 2026): the planned-arrival alert's Record arrival (allowlisted above).
+      "src/components/ward-management/alerts/alert-planned-arrival.tsx::CONVERT_PLANNED_ADMISSION": 1,
       // Audit 24-1 decision 2: the booking form's Book and Save.
       "src/components/ward-management/capacity/planned-admissions-panel.tsx::BOOK_PLANNED_ADMISSION": 1,
       "src/components/ward-management/capacity/planned-admissions-panel.tsx::CHANGE_PLANNED_ADMISSION": 1,

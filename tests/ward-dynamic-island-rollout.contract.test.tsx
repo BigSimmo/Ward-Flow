@@ -18,6 +18,12 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Mock next/link to standard <a> anchors to allow testing in jsdom without Next.js App Router context
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
     <a href={href} {...rest}>
@@ -111,7 +117,7 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
     // tops (Josh, 9 Nov 2026) the band sits in the hero, one cell per type; wave 4 (D-191) titles it
     // "By bed type · now"; the kit's WindowWord hides the dot from the spoken name ("By bed type now").
     const mismatch = within(screen.getByTestId("capacity-mismatch"));
-    const tiles = mismatch.getByRole("list", { name: /^By bed type\s*now$/u }).querySelectorAll(":scope > li");
+    const tiles = mismatch.getByRole("list", { name: /^By bed type$/u }).querySelectorAll(":scope > li");
     const gapRows = bedKindGaps(wardMovements, allUnits(), NOW_ANCHOR, wardAdmissions);
     expect(Array.from(tiles, (tile) => tile.querySelector('[class*="cellLabel"]')?.textContent)).toEqual(
       gapRows.map((row) => shortNeed(row.need)),
@@ -229,7 +235,7 @@ describe("5. Live Target Screen Component Mounts", () => {
     expect(screen.getByRole("button", { name: /pause demo updates$/ })).toBeDefined();
     expect(within(hud).getByTestId("capacity-hero-ready")).toHaveTextContent(
       // D-179 item 8: the beds still being made ready are said beside Ready.
-      /^\d+\s*\/ \d+\s*Ready · now(?:, \d+ being made ready)?$/u,
+      /^\d+\s*\/ \d+\s*Ready(?:, \d+ being made ready)?$/u,
     );
   });
 });

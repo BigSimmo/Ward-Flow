@@ -10,6 +10,8 @@ let selected: WardFlowState;
 vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/ward-management/ward-flow-provider")>()),
   useWardFlowSelect: () => selected,
+  // r10: Home's also-on-ward figures read the clock, which this provider-less render has none of.
+  useWardFlowClock: () => NOW_ANCHOR,
 }));
 
 const REPORTED_AT = NOW_ANCHOR;

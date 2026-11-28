@@ -47,6 +47,14 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
     cover: "no form",
     why: "Escalate is one tap with no fields; checkOpen only folds the daily check list.",
   },
+  "delays/delays-board.tsx": {
+    cover: "popup",
+    why: "r10: the list holds filters and folds only; a person's edits open in the movement drawer, a Sheet the board holds.",
+  },
+  "discharges/discharge-board.tsx": {
+    cover: "popup",
+    why: "r10: the slipping fold and Record or release panels open only inside the discharge PanelDrawer, which the board holds.",
+  },
   "discharges/discharge-care-journey.tsx": { cover: "page form" },
   "discharges/discharge-detail-panes.tsx": { cover: "page form" },
   "discharges/discharge-follow-up.tsx": { cover: "page form" },
@@ -90,10 +98,8 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
     why: "The focus panel opens only in the form Drawer (phone: PhoneSheet), which the board already holds.",
   },
   "loop-checks/ward-closure-loop-checks.tsx": { cover: "held" },
-  "movements/movement-drawer.tsx": {
-    cover: "popup",
-    why: "The movement drawer opens in a Sheet (phone: PhoneSheet), which the board already holds.",
-  },
+  // movements/movement-drawer.tsx left the register (r10, 28 Nov 2026): it keeps no form or open state of
+  // its own now; its edit forms live in the files below, inside the Sheet the board already holds.
   "movements/movement-workflow-actions.tsx": { cover: "page form" },
   "movements/movement-workspace-cockpit.tsx": { cover: "held" },
   "movements/sent-journey-changes.tsx": { cover: "held" },

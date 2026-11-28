@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { describe, expect, it, onTestFinished, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { UploadFormsModal } from "@/components/ward-management/referrals/upload-forms-modal";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -28,29 +28,32 @@ function setup() {
   fireEvent.click(trigger);
   return trigger;
 }
+// The kit Dialog's one filled button, found by its words (it has no test id of its own).
+const recordButton = () =>
+  within(screen.getByRole("dialog")).getByRole("button", { name: /^Record document details$/u });
 describe("document metadata and modal lifecycle", () => {
   it("cannot record an absent or empty file, and records actual metadata only", () => {
     setup();
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveTextContent("Only the file type, size and document type are recorded");
     expect(dialog).toHaveTextContent("The file name and contents are not stored or sent");
-    const submit = screen.getByTestId("confirm-upload-form-button");
+    const submit = recordButton();
     expect(submit).toHaveAttribute("aria-disabled", "true");
     const input = within(dialog).getByLabelText("Select a file to record its details");
     expect(input).toHaveAccessibleName("Select a file to record its details");
     fireEvent.change(input, { target: { files: [new File([], "empty.pdf", { type: "application/pdf" })] } });
-    fireEvent.submit(submit.closest("form")!);
+    fireEvent.submit(dialog.querySelector("form")!);
     expect(screen.getByTestId("metadata")).toHaveTextContent("[]");
     fireEvent.change(input, {
       target: { files: [new File(["synthetic"], "Synthetic-Name-Marker.pdf", { type: "application/pdf" })] },
     });
     // The document type opens blank: with a file but no type, nothing is recorded.
-    fireEvent.click(submit);
+    fireEvent.click(recordButton());
     expect(screen.getByTestId("metadata")).toHaveTextContent("[]");
     fireEvent.change(within(dialog).getByRole("combobox"), { target: { value: "Form 4A Transport order" } });
     // The chosen name shows while the dialog is open, on this device only.
     expect(dialog).toHaveTextContent("Synthetic-Name-Marker.pdf");
-    fireEvent.click(submit);
+    fireEvent.click(recordButton());
     const records = JSON.parse(screen.getByTestId("metadata").textContent!);
     expect(records).toHaveLength(1);
     expect(records[0]).toMatchObject({
@@ -64,7 +67,7 @@ describe("document metadata and modal lifecycle", () => {
     expect(records[0]).not.toHaveProperty("fileName");
     expect(screen.getByTestId("metadata").textContent).not.toContain("Synthetic-Name-Marker");
   });
-  it("contains keyboard focus, isolates the background and returns to its trigger", () => {
+  it("contains keyboard focus, isolates the background and returns to its trigger", async () => {
     // jsdom has no layout; the shared modal trap only cycles through controls that have client rects.
     const rects = vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue({
       length: 1,
@@ -76,10 +79,11 @@ describe("document metadata and modal lifecycle", () => {
     onTestFinished(() => rects.mockRestore());
     const trigger = setup();
     const dialog = screen.getByRole("dialog");
-    const first = within(dialog).getByRole("button", { name: "Close dialog" });
+    const first = within(dialog).getByRole("button", { name: "Close" });
     // The unavailable submit stays focusable (aria-disabled, not native disabled), so it is the last stop.
-    const last = within(dialog).getByTestId("confirm-upload-form-button");
-    expect(first).toHaveFocus();
+    const last = recordButton();
+    // The kit dialog moves focus in from the next frame.
+    await waitFor(() => expect(first).toHaveFocus());
     expect(trigger.closest("[inert]")).not.toBeNull();
     fireEvent.keyDown(first, { key: "Tab", shiftKey: true });
     expect(last).toHaveFocus();
@@ -90,6 +94,6 @@ describe("document metadata and modal lifecycle", () => {
     expect(trigger).toHaveFocus();
     expect(trigger.closest("[inert]")).toBeNull();
     fireEvent.click(trigger);
-    expect(screen.getByTestId("confirm-upload-form-button")).toHaveAttribute("aria-disabled", "true");
+    expect(recordButton()).toHaveAttribute("aria-disabled", "true");
   });
 });

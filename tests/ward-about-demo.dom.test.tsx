@@ -39,8 +39,9 @@ describe("About this demo (F-77)", () => {
   it("says the demo is invented, not for clinical use, and unendorsed", () => {
     render(<AboutDemoScreen />);
     const page = screen.getByTestId("ward-about-demo");
-    expect(screen.getByRole("heading", { level: 1, name: "About this demo" })).toBeInTheDocument();
-    expect(screen.getByTestId("about-figure-patients")).toHaveTextContent("0 real patients");
+    // Audit four #51: the page title is the answer, "Synthetic data only".
+    expect(screen.getByRole("heading", { level: 1, name: "Synthetic data only" })).toBeInTheDocument();
+    expect(screen.getByTestId("about-figure-pass")).toHaveTextContent("demo pass");
     expect(screen.getByTestId("about-hero-act")).toHaveTextContent("Never type a real person's details");
     const isNot = within(screen.getByTestId("about-is-not"));
     expect(isNot.getByText("Connected to any hospital record")).toBeInTheDocument();
@@ -55,8 +56,8 @@ describe("About this demo (F-77)", () => {
     const kept = within(screen.getByTestId("about-kept-facts"));
     expect(kept.getByText("Working copy of the demo")).toBeInTheDocument();
     expect(kept.getByText("Kept by code or ward name, never a patient's name.")).toBeInTheDocument();
-    expect(kept.getByText("Signed. Holds neither the code nor your name.")).toBeInTheDocument();
-    expect(kept.getByText("8 hours")).toBeInTheDocument();
+    // The demo pass row left the kept list (its 8 hours stay in the hero figure).
+    expect(kept.queryByText("Demo pass")).not.toBeInTheDocument();
     expect(kept.getByText("30 days")).toBeInTheDocument();
     const sent = within(screen.getByTestId("about-sent-facts"));
     expect(sent.getByText("Nothing you do is saved on a server.")).toBeInTheDocument();
@@ -70,7 +71,8 @@ describe("About this demo (F-77)", () => {
         <AboutDemoScreen />
       </SharedSessionContext.Provider>,
     );
-    expect(screen.getByRole("heading", { level: 1, name: "About BedChart" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Synthetic data only" })).toBeInTheDocument();
+    expect(screen.getByTestId("about-figure-pass")).toHaveTextContent("sign-in limit");
     const page = screen.getByTestId("ward-about-demo");
     expect(page).not.toHaveTextContent("Nothing you do is saved on a server.");
     expect(page).not.toHaveTextContent("Your demo code");
