@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/his
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**836 rulings/items extracted, across 43 of 44 files.**
+**837 rulings/items extracted, across 43 of 44 files.**
 **0 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 **1 file(s) recorded as holding no ruling of their own**, each with its reason. See below.
 
@@ -32,7 +32,7 @@ line, in the order discovered — confirm which instance you mean before citing 
 
 ---
 
-## ID index — 586 distinct IDs
+## ID index — 587 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -445,6 +445,7 @@ safe global key across 30 files.
 | `D-281` | `decisions.md`:3193 | D-281. Names that read alike are called "Similar names" (28 November 2026) |
 | `D-282` | `decisions.md`:3200 | D-282. Leaving a ward is "Record discharge" (28 November 2026) |
 | `D-283` | `decisions.md`:3207 | D-283. Code the audit four cuts left unused is deleted (28 November 2026) |
+| `D-284` | `decisions.md`:3214 | D-284. Three kit leaf imports join the Ward Flow seam's approved list (28 November 2026) |
 | `D9-1` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | `D9-2` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
 | `D9-3` | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:126 | D9-3 — The retrospective is one person's journey replayed, plus the ward prediction track record last (SESSION) |
@@ -753,7 +754,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-274 item(s):
+275 item(s):
 
 - `D-1` — line 303, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 313, heading: "D-2. Railway is disconnected"
@@ -1029,6 +1030,7 @@ safe global key across 30 files.
 - `D-281` — line 3193, heading: "D-281. Names that read alike are called "Similar names" (28 November 2026)"
 - `D-282` — line 3200, heading: "D-282. Leaving a ward is "Record discharge" (28 November 2026)"
 - `D-283` — line 3207, heading: "D-283. Code the audit four cuts left unused is deleted (28 November 2026)"
+- `D-284` — line 3214, heading: "D-284. Three kit leaf imports join the Ward Flow seam's approved list (28 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
