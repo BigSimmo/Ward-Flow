@@ -63,7 +63,7 @@ import flowStyles from "./home-flow.module.css";
 import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 /** "Offered to BTY Adult Secure", or "Offered to 2 wards". */
-export function offeredToLabel(unitIds: readonly string[], units: readonly { id: string; name: string }[]): string {
+function offeredToLabel(unitIds: readonly string[], units: readonly { id: string; name: string }[]): string {
   if (unitIds.length === 1) {
     const name = units.find((unit) => unit.id === unitIds[0])?.name;
     return `Offered to ${name ? name.split(" — ")[0] : "a ward"}`;
