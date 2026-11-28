@@ -14,12 +14,18 @@ describe("Home hero gives one answer with its parts (R-HOME-1)", () => {
       </WardFlowProvider>,
     );
     const answer = screen.getByTestId("hero-next-answer").textContent ?? "";
-    const parts = /^(\d+) needs? you: (\d+) act now, (\d+) to decide$/u.exec(answer);
-    expect(parts, answer).not.toBeNull();
-    const [, total, act, decide] = parts!.map(Number);
-    expect(total).toBe(act! + decide!);
-    expect(screen.getByTestId("hero-next-detail").textContent).toMatch(new RegExp(`^${act} act now`, "u"));
+    // Controls 1 (C003): the title keeps only the total; the parts are said once, in the lines under it.
+    const titled = /^(\d+) needs? you$/u.exec(answer);
+    expect(titled, answer).not.toBeNull();
+    const total = Number(titled![1]);
+    const detail = screen.getByTestId("hero-next-detail").textContent ?? "";
+    const actParts = /^(\d+) act now/u.exec(detail);
+    expect(actParts, detail).not.toBeNull();
+    const act = Number(actParts![1]);
     const decideLine = screen.queryByTestId("hero-overdue-referral") ?? screen.getByTestId("hero-decide-line");
-    expect(decideLine.textContent).toMatch(new RegExp(`^${decide} to decide`, "u"));
+    const decideParts = /^(\d+) to decide/u.exec(decideLine.textContent ?? "");
+    expect(decideParts, decideLine.textContent ?? "").not.toBeNull();
+    const decide = Number(decideParts![1]);
+    expect(total).toBe(act + decide);
   });
 });

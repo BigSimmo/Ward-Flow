@@ -371,8 +371,12 @@ describe("WardNotificationCenter DOM Component", () => {
     ];
     render(<WardNotificationCenter {...defaultProps} movements={movements} onClose={onClose} />);
     const link = screen.getByRole("link", { name: "Open request" });
-    // The link names the request, so the Answer view opens on this patient (Codex P1 on #585).
-    expect(link).toHaveAttribute("href", `/bedchart/ward/ward-alpha/answer?movement=${encodeRecordAddress("WF-030")}`);
+    // The link names the request, so the ward's Referrals tab (simplification 26 Nov 2026, area 3 item 2)
+    // opens on this patient (Codex P1 on #585).
+    expect(link).toHaveAttribute(
+      "href",
+      `/bedchart/ward/ward-alpha?tab=referrals&movement=${encodeRecordAddress("WF-030")}`,
+    );
     expect(screen.getByTestId("ward-clearance-not-recorded")).toHaveTextContent("before you accept");
     fireEvent.click(link);
     expect(onClose).toHaveBeenCalledTimes(1);

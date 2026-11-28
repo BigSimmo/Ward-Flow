@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { LongStaySummary } from "@/components/ward-management/handover/long-stay-summary";
@@ -78,7 +78,9 @@ describe("Top 25 item 20: long stay and delayed discharge summary", () => {
         wardFor={() => "Test ward"}
       />,
     );
-    expect(screen.getByText("Long stays and delayed discharges (2)")).toBeTruthy();
+    const card = screen.getByTestId("ward-long-stay-summary");
+    expect(card).toHaveAccessibleName("Long stays and delayed discharges");
+    expect(within(card).getAllByRole("listitem")).toHaveLength(2);
     expect(screen.getByText("Escalation point reached")).toBeTruthy();
     expect(screen.getByText(/once one is recorded/)).toBeTruthy();
   });

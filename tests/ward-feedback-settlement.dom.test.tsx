@@ -14,7 +14,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import { inspectDelayPerson, showEveryDelayRow } from "./helpers/delays-interactions";
+import { delayPersonDrawer, showEveryDelayRow } from "./helpers/delays-interactions";
 
 const router = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -259,8 +259,9 @@ describe("escalation feedback", () => {
     }
     showEveryDelayRow();
     const movement = seedWardFlowState().movements.find((entry) => isOpen(entry) && !entry.escalation)!;
-    const panel = inspectDelayPerson(movement.id);
-    fireEvent.click(within(panel).getByTestId(`delays-escalate-${movement.id}`));
+    // Simplification mock-up (26 Nov 2026): the coordinator's person opens in the Movement drawer.
+    delayPersonDrawer(movement.id);
+    fireEvent.click(screen.getByTestId(`delays-escalate-${movement.id}`));
     const notice = () => [...document.querySelectorAll('[role="status"]')].map((node) => node.textContent).join(" ");
     expect(notice().includes("Escalated to")).toBe(false);
     await act(async () => command.resolve({ commandId: "own-escalation", status }));
@@ -321,7 +322,7 @@ describe("endorsement feedback", () => {
     expect(screen.queryAllByTestId("toast").length).toBe(0);
     expect(within(detail).getByRole("status").textContent?.includes("not confirmed")).toBe(true);
   });
-  it("says not confirmed, never Recording, when the sheet's review is refused before dispatch", () => {
+  it("says not confirmed, never Recording, when the review is refused before dispatch", () => {
     const dispatch = vi.fn<WardCommandDispatch>();
     function StaleHarness() {
       const flow = useWardFlow();
@@ -340,36 +341,17 @@ describe("endorsement feedback", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(document.querySelector<HTMLButtonElement>("[data-audit-row]")!);
-    fireEvent.click(screen.getByRole("button", { name: "Record review" }));
-    fireEvent.change(screen.getByLabelText("Decision"), { target: { value: "reviewed" } });
-    const role = screen.getByLabelText("Reviewing role") as HTMLSelectElement;
-    fireEvent.change(role, { target: { value: role.options[1]!.value } });
-    fireEvent.click(screen.getByRole("button", { name: "Record finding" }));
+    // Audit four item 100: the review is the detail's own Reviewed button; the Record review sheet is gone.
+    const detail = screen.getByTestId("ward-governance-decision-record");
+    fireEvent.click(within(detail).getByRole("button", { name: "Reviewed" }));
     expect(dispatch).not.toHaveBeenCalled();
     const announced = document.body.textContent ?? "";
-    expect(announced.includes("Recording review")).toBe(false);
-    expect(announced.includes("Review not confirmed")).toBe(true);
-  });
-  it("keeps a reopened draft when an earlier endorsement completes", async () => {
-    const command = deferred<WardCommandOutcome>();
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <Governance dispatch={() => command.promise} />
-      </WardFlowProvider>,
-    );
-    fireEvent.click(document.querySelector<HTMLButtonElement>("[data-audit-row]")!);
-    fireEvent.click(screen.getByRole("button", { name: "Record review" }));
-    fireEvent.change(screen.getByLabelText("Decision"), { target: { value: "reviewed" } });
-    const role = screen.getByLabelText("Reviewing role") as HTMLSelectElement;
-    fireEvent.change(role, { target: { value: role.options[1]!.value } });
-    fireEvent.click(screen.getByRole("button", { name: "Record finding" }));
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    fireEvent.click(screen.getByRole("button", { name: "Record review" }));
-    await act(async () => command.resolve({ commandId: "earlier-review", status: "accepted" }));
-    expect(screen.queryByLabelText("Decision") !== null).toBe(true);
+    expect(announced.includes("Recording")).toBe(false);
+    // SOURCE GAP (reported 28 Nov 2026): the removed Record review sheet also said "Review not confirmed"
+    // here; the detail's Reviewed button returns false from recordReview and says nothing.
   });
   it.each(["accepted", "refused", "failed", "cancelled"] as const)(
-    "keeps the draft until its own %s outcome",
+    "holds the detail's review as pending until its own %s outcome",
     async (status) => {
       const command = deferred<WardCommandOutcome>();
       render(
@@ -378,22 +360,13 @@ describe("endorsement feedback", () => {
         </WardFlowProvider>,
       );
       fireEvent.click(document.querySelector<HTMLButtonElement>("[data-audit-row]")!);
-      fireEvent.click(screen.getByRole("button", { name: "Record review" }));
-      fireEvent.change(screen.getByLabelText("Decision"), { target: { value: "reviewed" } });
-      const role = screen.getByLabelText("Reviewing role") as HTMLSelectElement;
-      fireEvent.change(role, { target: { value: role.options[1]!.value } });
-      fireEvent.change(screen.getByLabelText("Note for the register"), { target: { value: "Synthetic review note" } });
-      fireEvent.click(screen.getByRole("button", { name: "Record finding" }));
-      expect(document.getElementById("screenAnnouncer")?.textContent === "Review recorded.").toBe(false);
-      expect(screen.queryByLabelText("Decision") !== null).toBe(true);
+      const detail = screen.getByTestId("ward-governance-decision-record");
+      fireEvent.click(within(detail).getByRole("button", { name: "Reviewed" }));
+      expect(within(detail).getByRole("status").textContent?.includes("Recording")).toBe(true);
       await act(async () => command.resolve({ commandId: "own-review", status }));
-      expect(screen.queryByLabelText("Decision") !== null).toBe(status !== "accepted");
-      if (status !== "accepted") {
-        expect(
-          (screen.getByLabelText("Note for the register") as HTMLTextAreaElement).value === "Synthetic review note",
-        ).toBe(true);
-        expect(screen.getByRole("button", { name: "Record finding" }).getAttribute("aria-disabled")).toBeNull();
-      }
+      const after = within(detail).getByRole("status").textContent ?? "";
+      if (status !== "accepted") expect(after.includes("Recording")).toBe(false);
+      expect(after.includes("not confirmed")).toBe(status !== "accepted");
     },
   );
 });

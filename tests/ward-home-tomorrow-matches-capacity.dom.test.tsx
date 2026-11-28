@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { bedsForecast } from "@/components/ward-management/capacity/beds-forecast";
@@ -50,8 +50,12 @@ describe("FM-8: Home's Tomorrow matches Capacity's", () => {
       </WardFlowProvider>,
     );
     const [low, likely, high] = screen.getByTestId("capacity-tomorrow").textContent!.split("|");
+    // Simplification area 2 item 5: the card rests on its one line, which says the likely figure; the range
+    // is in the foot once the card is opened.
+    const folded = screen.getByTestId("home-beds-fit").textContent!.replace(/\s+/gu, " ");
+    expect(folded).toContain(`${likely} tomorrow`);
+    fireEvent.click(screen.getByRole("button", { name: "Show the beds that fit table" }));
     const card = screen.getByTestId("home-beds-fit").textContent!.replace(/\s+/gu, " ");
-    // The separator is the design's punctuation ("·" before PR E, "," after); the figures are the point.
     expect(card).toMatch(new RegExp(`Tomorrow ${likely}\\s*[·,]\\s*range ${low} to ${high}`, "u"));
   });
 });

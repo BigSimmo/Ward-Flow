@@ -1,5 +1,5 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { BedsGapCard } from "@/components/ward-management/coordinator/beds-gap-card";
 import { EdIndex } from "@/components/ward-management/ed/ed-index";
@@ -12,6 +12,11 @@ function GapCardFromState() {
   return <BedsGapCard now={NOW_ANCHOR} bedsReady={0} condensed={false} />;
 }
 
+afterEach(() => {
+  cleanup();
+  window.history.replaceState(null, "", "/");
+});
+
 describe("B-G1 wording", () => {
   it("P122: each Beds that fit row names its bed type instead of repeating a bare 'Tomorrow'", () => {
     render(
@@ -19,6 +24,8 @@ describe("B-G1 wording", () => {
         <GapCardFromState />
       </WardFlowProvider>,
     );
+    // Simplification area 2 item 5: the card rests folded on its one line; open it for the table.
+    fireEvent.click(screen.getByRole("button", { name: "Show the beds that fit table" }));
     // Home and Activity design (31 Oct 2026): one table, with Tomorrow as a column heading once.
     const table = within(screen.getByTestId("home-beds-fit")).getByRole("table");
     expect(
@@ -37,6 +44,8 @@ describe("B-G1 wording", () => {
   });
 
   it("P132: All EDs counts EDs, not 'synthetic records'", () => {
+    // Audit two #21: the count line shows only once a filter is on; the address names one.
+    window.history.replaceState(null, "", "/bedchart/ed?status=past-target");
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <EdIndex />
@@ -45,6 +54,6 @@ describe("B-G1 wording", () => {
     const count = screen.getByTestId("ed-index-match-count");
     // E1 (Josh, 3 Nov 2026): the line says what is showing. Page tops (Josh, 9 Nov 2026): the order
     // is stated by the Order control beside it, so the line no longer repeats it.
-    expect(count.textContent).toMatch(/^Showing \d+ of \d+ EDs, sample data$/u);
+    expect(count.textContent).toMatch(/^Showing \d+ of \d+ EDs · Over target, sample data$/u);
   });
 });

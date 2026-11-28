@@ -12,6 +12,12 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+// Handover reads the router (audit four): a stub, as the other screen tests give it.
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+}));
+
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { HandoverPage, resolveMovementPatient } from "@/components/ward-management/handover/handover-page";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -109,8 +115,13 @@ describe("a movement's patient comes from the record, never from a typed-in tabl
       const movementId = row.getAttribute("data-movement-id") ?? undefined;
       expect(movementId, row.textContent!).toBeDefined();
       const recorded = expectedFor(movementId!);
-      const strong = [...row.querySelectorAll("strong")].map((el) => el.textContent);
-      expect(strong.slice(0, 2), movementId).toEqual([recorded.name, recorded.umrn]);
+      // Audit four item 108: Home's row grammar, name then record number in the row; inside an "N alerts,
+      // one record" group the group head names the person and record once, for each row under it.
+      const scope = row.closest("[data-linked-record]") ?? row;
+      const text = scope.textContent ?? "";
+      expect(text, movementId).toContain(recorded.name);
+      expect(text, movementId).toContain(recorded.umrn);
+      expect(text.indexOf(recorded.name), movementId).toBeLessThan(text.indexOf(recorded.umrn));
     }
   });
 

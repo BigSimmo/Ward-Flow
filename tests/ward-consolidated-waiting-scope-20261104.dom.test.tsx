@@ -14,7 +14,7 @@ import { CapacityScreen } from "@/components/ward-management/capacity/capacity-s
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { NOW_ANCHOR as now, siteByCode, edById } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR as now, siteByCode, edById, edShortName } from "@/components/ward-management/ward-sites";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { setWardAccess, resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
 import { boardRows, filterRows, NO_FILTERS, runwayBins } from "@/components/ward-management/delays/delays-board-model";
@@ -62,7 +62,7 @@ describe("own ED Capacity figure destination", () => {
         <DelaysScreen />
       </WardFlowProvider>,
     );
-    const clear = await screen.findByRole("button", { name: `Remove filter ${edById(edId)!.name}` });
+    const clear = await screen.findByRole("button", { name: `Remove filter ${edShortName(edById(edId)!)}` });
     fireEvent.click(clear);
     await waitFor(() => expect(new URLSearchParams(window.location.search).has("ed")).toBe(false));
     expect(filtersFromSearch("")).toEqual(NO_FILTERS);

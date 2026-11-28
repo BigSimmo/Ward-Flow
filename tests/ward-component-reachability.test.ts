@@ -144,6 +144,18 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  */
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
+    module: "src/components/ward-management/hub/hub-screen.tsx",
+    why: "audit four r10 (Josh, 28 Nov 2026): /bedchart/hub now renders FindScreen (hub/find-screen.tsx), the four-tab Find page, so HubScreen is reached by no route. Kept with its tests until Josh decides whether to delete it",
+  },
+  {
+    module: "src/components/ward-management/ward-role-switcher.tsx",
+    why: "audit four r10 (Josh, 28 Nov 2026): the tools sheet no longer mounts the role switcher (ward-public-role-switcher.tsx, its only importer, was removed), so it is reached by no route. Kept with its tests until Josh decides whether to delete it",
+  },
+  {
+    module: "src/components/ward-management/statistics/statistics-unit-finder.tsx",
+    why: "audit four r10 (Josh, 28 Nov 2026): Statistics opens units from the shared browse slot (statistics-browse-slot.tsx) and no longer mounts the Open a unit card. Kept with its tests until Josh decides whether to delete it",
+  },
+  {
     module: "src/components/ward-management/capacity/capacity-shift-checks.tsx",
     why: "wave 4 redesign (D-191 item 8, Josh 13 Nov 2026): the shorter Capacity Overview keeps one rail (Held up · by tomorrow, then Forecast), so the shift checks card is no longer on the page. Kept with its tests until Josh decides whether to delete it",
   },

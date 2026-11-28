@@ -52,7 +52,10 @@ function redirectStubRoutes(): string[] {
         walk(path, `${route}/${entry.name}`);
       } else if (entry.name === "page.tsx") {
         const source = readFileSync(path, "utf8");
-        if (/\bredirect\(/u.test(source.replace(/\/\*[\s\S]*?\*\//gu, " ").replace(/\/\/[^\n]*/gu, " "))) {
+        const code = source.replace(/\/\*[\s\S]*?\*\//gu, " ").replace(/\/\/[^\n]*/gu, " ");
+        // A page that is nothing but a redirect renders no component. Home (audit four, 26 Nov 2026) redirects
+        // one old `?list=queue` bookmark and otherwise renders the Coordinator screen, so it is a real page.
+        if (/\bredirect\(/u.test(code) && !/<[A-Z][A-Za-z]*[\s/>]/u.test(code)) {
           stubs.push(route);
         }
       }

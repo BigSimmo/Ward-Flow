@@ -95,7 +95,6 @@ import { LeaveScreen } from "@/components/ward-management/leave/leave-screen";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
 import { PatientChronologyScreen } from "@/components/ward-management/reports/patient-chronology-screen";
-import { TodaysReviewScreen } from "@/components/ward-management/review/todays-review-screen";
 import { AboutDemoScreen } from "@/components/ward-management/about/about-demo-screen";
 import { PrivacyTrackerScreen } from "@/components/ward-management/privacy/privacy-tracker-screen";
 import { NightViewScreen } from "@/components/ward-management/night/night-view-screen";
@@ -194,8 +193,7 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
     },
   ],
   ["/bedchart/reports/downtime", { concrete: "/bedchart/reports/downtime", render: () => <DowntimePackScreen /> }],
-  // Today's review (Home notes 4, 9 Nov 2026).
-  ["/bedchart/review", { concrete: "/bedchart/review", render: () => <TodaysReviewScreen /> }],
+  // /bedchart/review is a redirect to Governance's Review tab (audit four, 28 Nov 2026), so it has no entry.
   ["/bedchart/night", { concrete: "/bedchart/night", render: () => <NightViewScreen /> }],
   ["/bedchart/about", { concrete: "/bedchart/about", render: () => <AboutDemoScreen /> }],
   ["/bedchart/privacy", { concrete: "/bedchart/privacy", render: () => <PrivacyTrackerScreen /> }],

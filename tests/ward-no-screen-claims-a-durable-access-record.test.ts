@@ -53,7 +53,10 @@ const CLAIM = [
   // property is only ever about the second. The shape now needs an access subject in the same
   // sentence, and its self-test case sits below beside the others — a narrowing without its own
   // case is a widening nobody can see.
-  /\baudit\s+(trail|log)\b[^.;]*\b(search|look-?up|view|access)\w*\b|\b(search|look-?up|view|access)\w*\b[^.;]*\baudit\s+(trail|log)\b/i,
+  // Audit four item 124 (28 Nov 2026): "Audit trail" is also the name of the Governance tab the Access log
+  // lives in, so a path such as "Governance, Audit trail, Access log lists ..." names a place, not a claim.
+  // The tab name is followed by a comma there; a claim ("an audit trail of every search") never is.
+  /\baudit\s+(trail|log)\b(?!,)[^.;]*\b(search|look-?up|view|access)\w*\b|\b(search|look-?up|view|access)\w*\b[^.;]*\baudit\s+(trail|log)\b/i,
 ];
 
 /** What makes such a claim honest: a bound on how long, or a statement of where it does not go. */
@@ -84,7 +87,8 @@ function renderedCopy(source: string): string {
     .split("\n")
     .filter((line) => {
       const t = line.trim();
-      return !(t.startsWith("*") || t.startsWith("//") || t.startsWith("/*"));
+      // `{/* ... */` is a JSX comment: a comment line all the same (audit four, 28 Nov 2026).
+      return !(t.startsWith("*") || t.startsWith("//") || t.startsWith("/*") || t.startsWith("{/*"));
     })
     .join("\n");
 }
@@ -126,6 +130,8 @@ describe("no ward screen claims a durable record of who looked", () => {
       // property's subject. This is the sentence that caused the audit shape to be narrowed; without
       // it here, a later reader would widen the shape back and nothing would tell them why not.
       "Both are recorded on this movement's audit trail",
+      // The Governance tab's own name in a how-to path (audit four item 124): a place, not a claim.
+      "Governance, Audit trail, Access log lists record openings by desks in your place",
     ]) {
       expect(claims(fine), `false positive: ${fine}`).toBe(false);
     }

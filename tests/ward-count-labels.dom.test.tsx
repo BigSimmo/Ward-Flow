@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -8,6 +8,12 @@ vi.mock("next/link", () => ({
       {children}
     </a>
   ),
+}));
+
+// Handover reads the router (audit four): a stub, as the other screen tests give it.
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
@@ -27,6 +33,7 @@ import {
   ED_SEVERE_PRESSURE_WAIT_MINUTES,
   LONG_WAIT_MINUTES,
 } from "@/components/ward-management/ward-operational-defaults";
+import { filterMenuItem } from "./helpers/delays-interactions";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { openEdJourneys, openJourneySplit } from "@/components/ward-management/ward-shared-figures";
@@ -54,15 +61,17 @@ describe("count labels say what they count", () => {
     const stats = within(hero).getByRole("group", { name: "Filter by the headline counts" });
     expect(within(stats).getByTestId("delays-stat-waiting").textContent).toBe(`${split.waiting} in ED`);
     expect(stats).toHaveTextContent(`${split.notWaiting.in_transit} in transit`);
-    // The list itself still holds everybody, and says so.
-    expect(screen.getByTestId("delays-shown-count")).toHaveTextContent(`${split.listed} of ${split.listed}`);
+    // Audit four item 54: the list head says "Waiting" only; its "N of N" count shows only once the list is
+    // narrowed, since the hero already gives the counts. Unnarrowed, the list holds everybody.
+    expect(screen.queryByTestId("delays-shown-count")).toBeNull();
   });
 
   it("Waiting keeps its views and drops the chips that repeated them", () => {
     inProvider(<DelaysScreen />);
     const waiting = screen.getByRole("region", { name: "Waiting" });
-    // Page tops: the views sit on the folder tab row above the list.
-    expect(screen.getByTestId("delays-view-needs-me")).toBeInTheDocument();
+    // Simplification mock-up (26 Nov 2026): the views are items of the list head's one Filters menu.
+    expect(filterMenuItem(/^Due soon or on you/u)).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
     expect(within(waiting).queryByRole("button", { name: /^12h\+/u })).toBeNull();
     expect(within(waiting).queryByRole("button", { name: /^No update 2h\+/u })).toBeNull();
     // "Yours" read as the Needs me now view; the tile is whose move it is, in different words.
@@ -73,9 +82,13 @@ describe("count labels say what they count", () => {
   it("an ED's title says how its board splits, and the waiting part is its own tile", () => {
     inProvider(<EdScreen edId="rph-ed" />);
     const rph = edOpenSummaries(state.movements, NOW_ANCHOR).find((summary) => summary.ed.id === "rph-ed")!;
-    const splitLine = screen.getByTestId("ward-ed-board-split");
-    expect(splitLine.textContent).toMatch(new RegExp(`^${rph.waiting} waiting, \\d+ in transit$`, "u"));
-    // Page tops (Josh, 9 Nov 2026): the split is the act row's quiet line, and this department's
+    // Audit two #91: the split is read in the first figure's breakdown, over the people it counts.
+    fireEvent.click(screen.getByTestId("ward-ed-figure-on-board-breakdown"));
+    const popup = screen.getByRole("dialog");
+    expect(within(popup).getByText("Waiting").parentElement).toHaveTextContent(new RegExp(`${rph.waiting}`, "u"));
+    expect(within(popup).getByText("In transit")).toBeInTheDocument();
+    fireEvent.keyDown(popup, { key: "Escape" });
+    // Page tops (Josh, 9 Nov 2026): this department's
     // waiting count is its own cell on the hero's "Switch ED" band (other departments' cells are links
     // named "N waiting"; this one is not a link).
     const band = screen.getByRole("list", { name: "Switch ED" });

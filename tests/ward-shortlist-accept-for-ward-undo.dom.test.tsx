@@ -81,6 +81,8 @@ describe("Accept for this ward (coordinator Placement)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(screen.getByTestId("accepted")).toHaveTextContent("none");
-    expect(screen.getByText(`Acceptance undone for ${who}.`, { exact: false })).toBeInTheDocument();
+    // Toast words (audit four): "Undone: Acceptance for <name> · The referral is back with the ward", still
+    // naming the person.
+    expect(screen.getByText(`Undone: Acceptance for ${who}`, { exact: false })).toBeInTheDocument();
   });
 });

@@ -53,28 +53,36 @@ function stateCount(label: string): number {
   return Number((radio?.textContent ?? "").replace(/\D/gu, ""));
 }
 
+// Audit two #28 (27 Nov 2026): Copy list, Export and Print are one Share menu; Print is its headed group.
 function openPrintMenu(trigger: HTMLElement) {
   fireEvent.click(trigger);
-  return screen.getByRole("menu", { name: "Print" });
+  return screen.getByRole("menu", { name: "Share" });
 }
+const printItems = (menu: HTMLElement) =>
+  within(menu)
+    .getAllByRole("menuitem")
+    .filter((item) => /^(Whole list|ED and placement only)/u.test(item.textContent ?? ""));
 
 describe("Patients Print menu", () => {
   it("offers the whole list and the ED and placement sheet, with their counts", () => {
     renderPage();
-    const trigger = screen.getByTestId("ward-census-print");
+    const trigger = screen.getByTestId("ward-census-share");
     expect(trigger).toHaveAttribute("aria-haspopup", "menu");
     const menu = openPrintMenu(trigger);
-    const items = within(menu).getAllByRole("menuitem");
+    expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual(
+      expect.arrayContaining(["Copy list", "Export list"]),
+    );
+    const items = printItems(menu);
     expect(items).toHaveLength(2);
     expect(items[0]).toHaveTextContent(/^Whole list\d+ people$/u);
     expect(items[1]).toHaveTextContent(
       `ED and placement only${stateCount("In ED") + stateCount("In placement")} people`,
     );
-    expect(within(menu).getByRole("group", { name: "Print" })).toBeInTheDocument();
+    expect(within(menu).getByText("Print")).toBeInTheDocument();
 
     // Escape closes the menu and returns focus to the trigger (the kit Menu).
     fireEvent.keyDown(items[0]!, { key: "Escape" });
-    expect(screen.queryByRole("menu", { name: "Print" })).toBeNull();
+    expect(screen.queryByRole("menu", { name: "Share" })).toBeNull();
     expect(trigger).toHaveFocus();
   });
 
@@ -88,7 +96,7 @@ describe("Patients Print menu", () => {
       .find((candidate) => (candidate.textContent ?? "").startsWith("Inpatient"))!;
     fireEvent.click(inpatient);
 
-    const menu = openPrintMenu(screen.getByTestId("ward-census-print"));
+    const menu = openPrintMenu(screen.getByTestId("ward-census-share"));
     fireEvent.click(within(menu).getByRole("menuitem", { name: /ED and placement only/u }));
 
     expect(print).toHaveBeenCalledTimes(1);
@@ -120,7 +128,7 @@ describe("Patients Print menu", () => {
   it("prints the whole list as the page shows it, with no scope", () => {
     const print = vi.spyOn(window, "print").mockImplementation(() => {});
     renderPage();
-    const menu = openPrintMenu(screen.getByTestId("ward-census-print"));
+    const menu = openPrintMenu(screen.getByTestId("ward-census-share"));
     fireEvent.click(within(menu).getByRole("menuitem", { name: /Whole list/u }));
 
     expect(print).toHaveBeenCalledTimes(1);
@@ -146,7 +154,7 @@ describe("Patients Print menu", () => {
     expect(console.querySelector("[data-census-print-title]")).toBeNull();
   });
 
-  it("puts the menu on the phone header after Copy list, offering the short sheet only", () => {
+  it("puts Print in the phone Share chip, offering the short sheet only", () => {
     Object.defineProperty(window, "matchMedia", {
       writable: true,
       configurable: true,
@@ -166,13 +174,14 @@ describe("Patients Print menu", () => {
     const labels = within(chips)
       .getAllByRole("button")
       .map((button) => button.textContent?.trim());
-    expect(labels.slice(-2)).toEqual(["Copy list", "Print"]);
-    const menu = openPrintMenu(screen.getByTestId("ward-patient-search-print"));
-    expect(
-      within(menu)
-        .getAllByRole("menuitem")
-        .map((item) => item.firstChild?.textContent),
-    ).toEqual(["ED and placement only"]);
+    // Audit two #28: Copy list and Print are one Share chip.
+    expect(labels.slice(-1)).toEqual(["Share"]);
+    expect(labels).not.toContain("Copy list");
+    const menu = openPrintMenu(screen.getByTestId("ward-patient-search-share"));
+    const items = within(menu).getAllByRole("menuitem");
+    expect(items).toHaveLength(2);
+    expect(items[0]).toHaveTextContent(/^Copy list$/u);
+    expect(items[1]).toHaveTextContent(/^ED and placement only/u);
   });
 
   it("does not offer a print with nobody in it", () => {
@@ -180,8 +189,8 @@ describe("Patients Print menu", () => {
     renderPage();
     // A search that matches nobody empties both choices.
     fireEvent.change(screen.getByTestId("ward-patient-typeahead-input"), { target: { value: "UM999999" } });
-    const menu = openPrintMenu(screen.getByTestId("ward-census-print"));
-    const items = within(menu).getAllByRole("menuitem");
+    const menu = openPrintMenu(screen.getByTestId("ward-census-share"));
+    const items = printItems(menu);
     expect(items.map((item) => item.textContent)).toEqual([
       "Whole listNobody to print",
       "ED and placement onlyNobody to print",

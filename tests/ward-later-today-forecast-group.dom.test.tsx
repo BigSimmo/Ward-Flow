@@ -41,7 +41,8 @@ const row = (id: string, at: number): PlannedRow => ({
   id,
   at,
   kind: "move",
-  what: "Planned move",
+  // Audit two #90: neighbouring rows with the same words run under one sub-label, so each row here has its own.
+  what: `Planned move ${id}`,
   who: `Synthetic, ${id}`,
   where: "Synthetic ED to Synthetic Ward",
   later: at > until,

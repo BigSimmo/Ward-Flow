@@ -84,6 +84,8 @@ describe("a slipped-dates row opens its record and keeps the page on Now", () =>
     );
     const nowTab = () => screen.getByRole("tab", { name: /^Now/u });
     expect(nowTab()).toHaveAttribute("aria-selected", "true");
+    // #127: the Slipping list starts folded; the overdue figure shows it.
+    fireEvent.click(within(screen.getByTestId("ward-discharge-figure-overdue")).getByRole("button"));
     const card = screen.getByTestId("ward-discharge-slipping");
     const showAll = within(card).queryByRole("button", { name: /^Show all/u });
     if (showAll) fireEvent.click(showAll);

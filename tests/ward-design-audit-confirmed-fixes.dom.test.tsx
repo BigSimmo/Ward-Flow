@@ -85,7 +85,12 @@ function fillModal(kind: ModalKind) {
   }
 }
 function submitModal(kind: ModalKind) {
-  return screen.getByTestId(kind === "arrival" ? "save-arrival-plan-button" : "confirm-upload-form-button");
+  // The kit Dialog's primary action (audit four): found by name inside the dialog, which reads "Saving…"
+  // while a save is pending.
+  const testId = kind === "arrival" ? "arrival-time-dialog" : "upload-forms-dialog";
+  return within(screen.getByTestId(testId)).getByRole("button", {
+    name: /^(?:Save arrival plan|Record document details|Saving…)$/u,
+  });
 }
 function expectRetained(kind: ModalKind) {
   if (kind === "arrival") expect(screen.getByLabelText("CAD or tracking number")).toHaveValue("SYNTHETIC-TRACKING");
@@ -105,21 +110,24 @@ describe.each(["arrival", "document"] as const)("%s accepted-completion gating",
       render(modalTree(kind, first, dispatch, close));
       fillModal(kind);
       const submit = submitModal(kind);
-      fireEvent.submit(submit.closest("form")!);
-      fireEvent.submit(submit.closest("form")!);
+      // The kit Dialog's primary sits in its foot, outside the form: submit the dialog's own form.
+      const form = screen.getByRole("dialog").querySelector("form")!;
+      fireEvent.submit(form);
+      fireEvent.submit(form);
       const dialog = screen.getByRole("dialog");
       fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
-      fireEvent.click(within(dialog).getByRole("button", { name: "Close dialog" }));
+      // The kit Dialog (closable only when not saving) offers no close control while the save is pending.
+      expect(within(dialog).queryByRole("button", { name: /^Close/u })).toBeNull();
       fireEvent.click(dialog.parentElement!);
       fireEvent.keyDown(dialog, { key: "Escape" });
       expect(dispatch).toHaveBeenCalledTimes(1);
       expect(close).not.toHaveBeenCalled();
-      if (kind === "document") {
-        expect(submit).toHaveAttribute("aria-disabled", "true");
-        expect(submit).not.toBeDisabled();
-        submit.focus();
-        expect(submit).toHaveFocus();
-      } else expect(submit).toBeDisabled();
+      // The kit Dialog's primary shows a pending save as busy ("Saving…"), stays focusable, and a second
+      // press is refused (dispatch was called once, above).
+      expect(submit).toHaveAttribute("aria-busy", "true");
+      expect(submit).toHaveAccessibleName("Saving…");
+      submit.focus();
+      expect(submit).toHaveFocus();
       await act(async () => {
         if (failure === "refused")
           request.resolve({ commandId: "synthetic-request", status: "refused", message: "Synthetic request refused" });
@@ -131,6 +139,7 @@ describe.each(["arrival", "document"] as const)("%s accepted-completion gating",
       expectRetained(kind);
       expect(submit).not.toBeDisabled();
       expect(submit).not.toHaveAttribute("aria-disabled", "true");
+      expect(submit).not.toHaveAttribute("aria-busy", "true");
       fireEvent.click(submit);
       expect(dispatch).toHaveBeenCalledTimes(2);
       expect(close).toHaveBeenCalledTimes(1);

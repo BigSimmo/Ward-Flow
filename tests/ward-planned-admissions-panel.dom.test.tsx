@@ -131,7 +131,7 @@ describe("planned admissions panel", () => {
     fireEvent.change(screen.getByTestId("ward-planned-unit"), { target: { value: "fsh-adult-secure" } });
     fireEvent.click(screen.getByTestId("ward-planned-submit"));
     fireEvent.click(within(screen.getByTestId("ward-planned-PA-01")).getByRole("button", { name: "Arrived" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm arrival" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record arrival" }));
     expect(screen.getByTestId("ward-planned-refusal")).toHaveTextContent(
       /cannot take this patient\. Choose another ward/,
     );
@@ -159,7 +159,7 @@ describe("planned admissions panel", () => {
     fireEvent.change(screen.getByTestId("ward-planned-unit"), { target: { value: "fsh-adult-secure" } });
     fireEvent.click(screen.getByTestId("ward-planned-submit"));
     fireEvent.click(within(screen.getByTestId("ward-planned-PA-01")).getByRole("button", { name: "Arrived" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm arrival" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record arrival" }));
     expect(screen.queryByTestId("ward-planned-refusal")).toBeNull();
     expect(screen.queryByTestId("ward-planned-PA-01")).toBeNull();
   });
@@ -210,12 +210,13 @@ describe("planned admissions panel", () => {
     expect(screen.queryByTestId("ward-planned-PA-SEED-01")).toBeNull();
 
     fireEvent.click(within(screen.getByTestId("ward-planned-PA-SEED-03")).getByRole("button", { name: "Arrived" }));
-    // Finding 185: the arrival identity check comes first, as on a movement. Cancel changes nothing.
+    // Finding 185: the arrival identity check comes first, as on a movement. Not yet changes nothing
+    // (audit four #45: the dialog's words are "Record arrival" and "Not yet").
     expect(screen.getByTestId("ward-planned-arrival-identity-check")).toHaveTextContent(/^Name.+UMRN.+Date of birth/u);
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancel" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Not yet" }));
     expect(screen.getByTestId("ward-planned-PA-SEED-03")).toBeInTheDocument();
     fireEvent.click(within(screen.getByTestId("ward-planned-PA-SEED-03")).getByRole("button", { name: "Arrived" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm arrival" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record arrival" }));
     expect(screen.queryByTestId("ward-planned-PA-SEED-03")).toBeNull();
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
   });

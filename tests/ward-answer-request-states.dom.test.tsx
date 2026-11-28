@@ -56,7 +56,10 @@ describe("ward answer: the Bed request panel and the census reason follow whethe
     const unit = unitById(WARD_ID)!;
     expect(screen.queryByTestId(/^ward-incoming-/)).not.toBeInTheDocument();
     const line = screen.getByTestId("ward-answer-all-answered");
-    expect(line).toHaveTextContent("No requests waiting.");
+    // Round 2 (audit four): the page title says "Nothing to answer"; the all-answered block holds only
+    // a decline note, if any, so no request panel competes with it.
+    expect(line).toBeInTheDocument();
+    expect(document.body).toHaveTextContent("Nothing to answer");
     expect(screen.queryByRole("heading", { name: "Bed request" })).not.toBeInTheDocument();
 
     const reason = document.getElementById(`ward-answer-bed-reason-${WARD_ID}`)!;
@@ -85,6 +88,9 @@ describe("ward answer: the Bed request panel and the census reason follow whethe
     const items = within(key).getAllByRole("listitem");
     expect(items).toHaveLength(4);
     const counted = items.reduce((total, item) => total + Number(item.querySelector("b")?.textContent ?? 0), 0);
-    expect(counted).toBe(screen.getAllByRole("button", { name: /^Census square \d+: / }).length);
+    // Controls document 13 (26 Nov 2026): with no request open a square is a plain figure (role img),
+    // not a button.
+    expect(counted).toBe(screen.getAllByRole("img", { name: /^Census square \d+: / }).length);
+    expect(screen.queryAllByRole("button", { name: /^Census square \d+: / })).toHaveLength(0);
   });
 });

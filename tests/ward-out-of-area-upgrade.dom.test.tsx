@@ -67,6 +67,9 @@ function renderPhoneBoard() {
   return renderBoard();
 }
 
+// Audit four #104: Everyone has no tab of its own; it opens inside Away now from the list's "more" row.
+const showEveryone = () => fireEvent.click(screen.getByRole("button", { name: /show everyone/i }));
+
 const isHighlighted = (id: string) => screen.getByTestId(`ward-out-of-area-row-${id}`).hasAttribute("data-highlighted");
 
 describe("out-of-area upgrade — functional layout and clean presentation", () => {
@@ -83,6 +86,7 @@ describe("out-of-area upgrade — functional layout and clean presentation", () 
   it("keeps the phone card list as a second, independently keyed rendering of every entry", () => {
     renderPhoneBoard();
     expect(entries.length).toBeGreaterThan(0);
+    showEveryone();
 
     const cards = screen.getByTestId("ward-out-of-area-cards");
     for (const entry of entries) {
@@ -160,7 +164,7 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
     renderPhoneBoard();
     const first = entries[0];
     // One button covers each card, so the profile link inside it is never nested in a button.
-    fireEvent.click(screen.getByRole("radio", { name: /Everyone/ }));
+    showEveryone();
     const card = screen.getByTestId(`ward-out-of-area-card-${first.admission.id}`);
     fireEvent.click(within(card).getByRole("button", { name: /^Open / }));
     expect(card).toHaveAttribute("data-selected", "true");
@@ -281,7 +285,7 @@ describe("out-of-area upgrade — the new 'At a glance' selection panel", () => 
 
   it("renders patient name and UMRN link in mobile cards", () => {
     renderPhoneBoard();
-    fireEvent.click(screen.getByRole("radio", { name: /Everyone/ }));
+    showEveryone();
     const cards = screen.getByTestId("ward-out-of-area-cards");
     const first = entries[0];
     const card = within(cards).getByTestId(`ward-out-of-area-card-${first.admission.id}`);
@@ -450,7 +454,8 @@ describe("Out of area redesign", () => {
     expect(screen.queryByTestId("ward-out-of-area-twin")).not.toBeInTheDocument();
     // Page tops: the "Copy for bed meeting" chip is a tool, not the comparison.
     expect(screen.queryByText(/since .*bed meeting$/i)).not.toBeInTheDocument();
-    expect(screen.getAllByText(/^bed days?$/).length).toBeGreaterThan(0);
+    // Audit four: bed days left the hero's figures for the register's foot line ("N bed days · longest M").
+    expect(document.body.textContent ?? "").toMatch(/\d+\s*bed days? /u);
   });
 
   // D-83: names read surname first from the record's formal name, and the Name order sorts by surname.
@@ -507,7 +512,8 @@ describe("Out of area redesign", () => {
 
   it("keeps every region's nearby beds open on the phone", () => {
     renderPhoneBoard();
-    fireEvent.click(screen.getByRole("radio", { name: /^Beds/ }));
+    // Audit four #104: Beds is a region of Away now on the phone, not a tab of its own.
+    expect(screen.getByRole("region", { name: "Beds" })).toBeInTheDocument();
     const card = screen
       .getByRole("heading", { name: "Home regions and beds" })
       .closest("section, article, div[aria-labelledby]");
@@ -528,10 +534,10 @@ describe("Out of area redesign", () => {
     renderPhoneBoard();
     expect(screen.getAllByText(/^Date passed \d+ days? ago · .+ days? away$/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/^Due \d+ days? ago/)).not.toBeInTheDocument();
-    const more = screen.getByRole("button", { name: /^\d+ more away from home, show Everyone$/ });
-    expect(within(more).getByText(/^\d+ more in Everyone$/)).toBeInTheDocument();
+    const more = screen.getByRole("button", { name: /^\d+ more away from home, show everyone$/ });
+    expect(within(more).getByText(/^\d+ more away from home$/)).toBeInTheDocument();
     fireEvent.click(more);
-    expect(screen.getByRole("radio", { name: /Everyone/ })).toBeChecked();
+    expect(screen.getByRole("region", { name: "Everyone" })).toBeInTheDocument();
     // Page tops: the hero's no return plan figure highlights them.
     expect(screen.getByRole("button", { name: /^\d+ no return plan$/ })).toBeInTheDocument();
   });

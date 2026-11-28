@@ -101,10 +101,11 @@ describe("the officer screen's sentence and its filter agree", () => {
 describe("the patient search names every list it renders", () => {
   it("BEHAVIOUR: renders a referral list as well as people and movements", () => {
     renderIn(<PatientSearchPage />);
-    // The three result surfaces the page can show. Referrals are rendered FIRST by deliberate
-    // decision (the component's own comment: "a referral is somebody still waiting for a decision").
-    expect(screen.getByTestId("ward-patient-search-people")).toBeInTheDocument();
-    expect(screen.queryByTestId("ward-patient-search-referrals"), "the omitted category").toBeInTheDocument();
+    // Audit four (search rebuilt as the census): people, with their movements and waiting referrals, are
+    // the one table under "Where people are now"; there is no separate people card or referral list.
+    expect(screen.getByTestId("ward-patient-states")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-search-results-console")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-patient-search-people")).not.toBeInTheDocument();
   });
 
   it("SENTENCE: enumerates referrals alongside people and movements", () => {

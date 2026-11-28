@@ -38,7 +38,7 @@ describe("Task 6: Background render-churn elimination & HandoverPage timer isola
       </WardFlowProvider>,
     );
 
-    const startBtn = screen.getByRole("button", { name: /start meeting/i });
+    const startBtn = screen.getByRole("button", { name: /meeting timer/i });
     fireEvent.click(startBtn);
 
     expect(screen.getByRole("button", { name: /stop 1 min/i })).toBeTruthy();
@@ -79,7 +79,7 @@ describe("Task 6: Background render-churn elimination & HandoverPage timer isola
       ).toBeLessThanOrEqual(1);
     }
 
-    fireEvent.click(screen.getByRole("button", { name: /start meeting/i }));
+    fireEvent.click(screen.getByRole("button", { name: /meeting timer/i }));
     const unloadEvent = new Event("beforeunload", { cancelable: true });
     window.dispatchEvent(unloadEvent);
     expect(unloadEvent.defaultPrevented).toBe(true);
