@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { StatisticsSampleFigures } from "@/components/ward-management/statistics/statistics-sample-figures";
+import { StatisticsShareProvider } from "@/components/ward-management/statistics/statistics-share";
 import polish from "@/components/ward-management/statistics/statistics-polish.module.css";
 
 /**
@@ -8,9 +9,11 @@ import polish from "@/components/ward-management/statistics/statistics-polish.mo
  */
 export default function WardStatisticsLayout({ children }: { children: ReactNode }) {
   return (
-    <div className={polish.root}>
-      {children}
-      <StatisticsSampleFigures />
-    </div>
+    <StatisticsShareProvider>
+      <div className={polish.root}>
+        {children}
+        <StatisticsSampleFigures />
+      </div>
+    </StatisticsShareProvider>
   );
 }

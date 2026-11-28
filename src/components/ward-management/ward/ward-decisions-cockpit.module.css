@@ -412,9 +412,14 @@
 .progress {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  /* Audit two #58: 12 above and below the bar, so the shorter card reads as finished. */
+  gap: var(--wf-s-3);
   padding: var(--wf-s-4);
   border-bottom: 1px solid var(--wf-line);
+}
+
+.progress:last-child {
+  border-bottom: 0;
 }
 
 .prow {

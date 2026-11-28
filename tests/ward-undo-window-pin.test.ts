@@ -24,7 +24,7 @@ describe("the Undo window is pinned (Deep-DP5-2)", () => {
 
   it("is the number the Help page tells people", () => {
     const answer = HOW_TOS.find((howTo) => howTo.id === "undo")?.answer ?? "";
-    expect(answer, CHANGE_NEEDS_JOSH).toContain(`Undo works for ${UNDO_WINDOW_MINUTES} minutes`);
-    expect(answer, CHANGE_NEEDS_JOSH).toContain(`Undo works for ${SIGNED_UNDO_WINDOW_MINUTES} minutes`);
+    expect(answer, CHANGE_NEEDS_JOSH).toContain(`up to ${UNDO_WINDOW_MINUTES} minutes`);
+    expect(answer, CHANGE_NEEDS_JOSH).toContain(`up to ${SIGNED_UNDO_WINDOW_MINUTES} minutes`);
   });
 });

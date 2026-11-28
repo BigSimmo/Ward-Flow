@@ -75,7 +75,7 @@ export function bedHold(
     minutes: left,
     label: `Pull ${remaining} left`,
     short: `${remaining} left`,
-    nextStep: "Book transport",
+    nextStep: "Record transport booking",
   };
 }
 

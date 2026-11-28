@@ -76,7 +76,7 @@ export function AgendaGroupFilterControl({
           </ChipGroup>
           {facet === "ward" && options.ward.length > WARDS_SHOWN ? (
             <ShowMoreRow onClick={() => setAllWards((open) => !open)} expanded={allWards}>
-              {allWards ? "Show fewer wards" : `Show all ${options.ward.length} wards`}
+              {allWards ? "Show fewer" : `Show all ${options.ward.length}`}
             </ShowMoreRow>
           ) : null}
         </div>

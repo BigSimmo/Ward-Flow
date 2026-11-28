@@ -47,7 +47,7 @@ describe("Home after wave 4", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
-    expect(screen.getByTestId("home-figure-ed")).toHaveTextContent(/^\d+ Open movements$/u);
+    expect(screen.getByTestId("home-figure-ed")).toHaveTextContent(/^\d+ Open ED movements$/u);
     expect(screen.getByTestId("home-figure-beds")).toHaveTextContent(/^\d+ Ready$/u);
     // Ruling 4: "In use", never "at risk"; at or over the line it keeps the amber dot.
     const occupancy = screen.queryByTestId("home-figure-occupancy");

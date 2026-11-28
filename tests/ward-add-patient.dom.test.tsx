@@ -44,7 +44,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { decodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 
 // The Patients census search is the kit's one page search field (D-91, Patients redesign).
-const SEARCH_LABEL = "Find a person by name, UMRN or place";
+const SEARCH_LABEL = "Find a person by name, UMRN, place or date of birth";
 
 /** Echoes the live patient count so a test can observe `ADD_PATIENT` actually reaching state,
  *  without reaching into the reducer directly — same technique as `ClockAdvancer` in the sibling
@@ -254,8 +254,9 @@ describe("PatientSearchPage empty state", () => {
 
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "Zzzznotarealname" } });
 
-    expect(screen.getByTestId("ward-patient-search-people-empty")).toBeInTheDocument();
-    const link = screen.getByTestId("ward-patient-search-people-empty-add");
+    const link = within(screen.getByTestId("ward-patient-search-results-console")).getByRole("link", {
+      name: "Add patient",
+    });
     // ⚠️ THE TYPED TEXT IS NOT IN THIS HREF. It used to be a `?search=` query parameter — a name or
     // record number written into browser history and every proxy log between here and the server.
     // See `patient-query-handoff.ts`'s own doc comment for the ruling this closes.
@@ -274,8 +275,8 @@ describe("PatientSearchPage empty state", () => {
 
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "Zzzznotarealname" } });
 
-    expect(screen.getByTestId("ward-patient-search-people-empty")).toHaveTextContent(
-      /No matches\. Check the spelling or (record number|UMRN) before adding a patient\./i,
+    expect(screen.getByTestId("ward-patient-search-results-console")).toHaveTextContent(
+      /No patient matches “Zzzznotarealname”/,
     );
   });
 
@@ -286,7 +287,9 @@ describe("PatientSearchPage empty state", () => {
 
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "Mary Anne Halloway" } });
 
-    const link = screen.getByTestId("ward-patient-search-people-empty-add");
+    const link = within(screen.getByTestId("ward-patient-search-results-console")).getByRole("link", {
+      name: "Add patient",
+    });
     expect(link).toHaveAttribute("href", "/bedchart/people/new");
     fireEvent.click(link);
     expect(takeHandedOffPatientQuery()).toEqual({ text: "Mary Anne Halloway", assignTo: "carried" });
@@ -812,15 +815,15 @@ describe("AddPatientForm safety regressions", () => {
     expect(router.push).toHaveBeenCalledTimes(1);
   });
 
-  it("clears every identity field after confirming reset", () => {
+  it("clears every identity field on reset", () => {
     renderForm();
     fillDraft();
     fireEvent.click(genderRadio("Female"));
     fireEvent.click(indigenousRadio("Aboriginal, not Torres Strait Islander"));
     fireEvent.change(screen.getByLabelText("Street address"), { target: { value: "1 Example Street" } });
     fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
-    expect(screen.getByRole("dialog", { name: "Reset patient form?" })).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId("ward-add-patient-reset-confirm"));
+    // r10 (one confirm-or-undo rule): Reset clears at once and the toast offers Undo, so there is no dialog.
+    expect(screen.queryByRole("dialog", { name: "Reset patient form?" })).not.toBeInTheDocument();
 
     for (const label of [/Record number|UMRN/i, "Given name", "Family name", "Date of birth"]) {
       expect(screen.getByLabelText(label)).toHaveValue("");
@@ -945,14 +948,20 @@ describe("AddPatientForm safety regressions", () => {
     expect(screen.queryByText("Not wired in this prototype.")).not.toBeInTheDocument();
   });
 
-  it.each(["Indigenous status", "Gender"])("asks before discarding a change only to %s", (field) => {
-    renderForm();
-    // v6 (AddPatient.png): the field is labelled "Aboriginal or Torres Strait Islander".
-    if (field === "Indigenous status") fireEvent.click(indigenousRadio("Aboriginal, not Torres Strait Islander"));
-    if (field === "Gender") fireEvent.click(genderRadio("Female"));
-    fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
-    expect(screen.getByRole("dialog", { name: "Reset patient form?" })).toBeInTheDocument();
-  });
+  it.each(["Indigenous status", "Gender"])(
+    "reset also clears a change only to %s (Undo is covered in the v10 suite)",
+    (field) => {
+      renderForm();
+      // v6 (AddPatient.png): the field is labelled "Aboriginal or Torres Strait Islander".
+      if (field === "Indigenous status") fireEvent.click(indigenousRadio("Aboriginal, not Torres Strait Islander"));
+      if (field === "Gender") fireEvent.click(genderRadio("Female"));
+      fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
+      // One confirm-or-undo rule: no dialog, the change is cleared at once.
+      expect(screen.queryByRole("dialog", { name: "Reset patient form?" })).not.toBeInTheDocument();
+      if (field === "Indigenous status") expectNoIndigenousAnswer();
+      if (field === "Gender") expect(genderRadio("Female")).toHaveAttribute("aria-checked", "false");
+    },
+  );
 });
 
 describe("AddPatientForm — errors mark and move to the field at fault (DA-12)", () => {

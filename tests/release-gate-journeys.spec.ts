@@ -24,7 +24,7 @@ import { clearToasts } from "./helpers/clear-toasts";
 import { escapeForRegExp } from "./helpers/ward-place-names";
 import { chooseEdKitChoice, expectEdKitChoice } from "./helpers/ed-kit-choices";
 import { openEdLists } from "./helpers/ward-ed-lists";
-import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
+import { openPlacementFromWaiting } from "./helpers/ward-home-page";
 
 /**
  * The release gate: four core bed-flow journeys that must pass before a change ships.
@@ -45,28 +45,46 @@ import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/
 
 test.describe.configure({ timeout: 120_000 });
 
-/** Open a ward's bed board from the Wards index: the ward's profile on desktop, its sheet on a phone. */
+/**
+ * Open a ward's bed board from the Wards index: the ward's profile on desktop, its sheet on a phone.
+ * r10: All wards is Find's Wards tab, a ward opens its page, and the bed board is its Grid view.
+ */
 async function openBedBoardFromWards(page: Page, unitName: string, unitId: string): Promise<void> {
   // The Wards index belongs to the coordinator; a ward desk cannot navigate to it.
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
-  await goViaNav(page, "/bedchart/wards", "ward-index");
+  await goViaNav(page, "/bedchart/hub", "ward-patient-search");
+  await page.locator('a[href="/bedchart/hub?tab=wards"]:visible').first().click();
+  await page.waitForURL((url) => url.pathname === "/bedchart/hub" && url.searchParams.get("tab") === "wards");
+  await waitForScreen(page, "ward-index");
   if (isPhoneLayout(page)) {
     await page
       .getByRole("region", { name: "Wards", exact: true })
       .getByRole("button", { name: new RegExp(`^${escapeForRegExp(unitName)}`, "u") })
       .first()
       .click();
-    await page.getByTestId("ward-index-phone-sheet").getByRole("button", { name: "Bed board", exact: true }).click();
+    await page
+      .getByTestId("ward-index-phone-sheet")
+      .getByRole("button", { name: `Open ${unitName}`, exact: true })
+      .click();
   } else {
-    // The ward card's name opens its side panel, which links to the Bed board (#1360).
+    // The ward card's name opens its side panel, whose foot opens the ward.
     await page
       .getByRole("button", { name: unitName.split(" — ")[0], exact: true })
       .first()
       .click();
-    await page.getByRole("dialog").getByRole("link", { name: "Bed board", exact: true }).click();
+    await page
+      .getByRole("dialog")
+      .getByRole("link", { name: `Open ${unitName}`, exact: true })
+      .click();
   }
-  await page.waitForURL(`**/bedchart/board/${unitId}`);
-  await waitForScreen(page, "ward-board");
+  await page.waitForURL((url) => url.pathname === `/bedchart/ward/${unitId}`);
+  await waitForScreen(page, "ward-unit-screen");
+  // The bed board is the ward page's Grid view.
+  const grid = page.getByRole("radio", { name: "Grid", exact: true }).filter({ visible: true }).first();
+  if ((await grid.getAttribute("aria-checked")) !== "true") await grid.click();
+  await expect(grid).toHaveAttribute("aria-checked", "true");
+  await page.waitForURL((url) => url.searchParams.get("view") === "grid");
+  await expect(page.getByTestId("ward-board-beds").filter({ visible: true }).first()).toBeVisible();
 }
 
 test("ED referral to bed offer: the ED raises a referral, the coordinator offers a ward, the ward accepts and pulls", async ({
@@ -88,7 +106,8 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   await openEdLists(page);
   await page
     .getByTestId("ward-ed-inbox-row-RF-009")
-    .getByRole("button", { name: /View referral/u })
+    // r10: the My list inbox row's details toggle reads "Open referral" (ed-screen-inbox.tsx).
+    .getByRole("button", { name: /^Open referral/u })
     .click();
   await page.getByTestId("ward-ed-inbox-raise-RF-009").click();
   await expect(page.getByRole("region", { name: "Ask for a bed" })).toBeVisible();
@@ -146,11 +165,9 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   // Tours are already seen in this journey, and page tips start off on the demo site (eight
   // suggestions Q3, 4 Nov 2026), so no Home hint sits over the queue below.
   await expect(page.getByRole("complementary", { name: "Home help", exact: true })).toHaveCount(0);
-  // Each Flow stage shows its oldest five (Home flow, Q345); a new movement can sit below them.
-  await showEveryoneWaitingOn(page);
-  const queueRow = page.getByTestId(`ward-queue-row-${movementId}`);
-  if (!(await queueRow.isVisible())) await showAllFlowRows(homeFlowCard(page));
-  await queueRow.click();
+  // r10: Flow folded into Waiting. The movement's Waiting row opens its drawer, whose Open on Home
+  // opens Placement over Home (Waiting's folded groups open when the row sits further down).
+  await openPlacementFromWaiting(page, movementId);
   const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
   await expect(shortlist).toHaveAttribute("data-subject-movement", movementId);
   const candidatesToggle = shortlist.getByTestId("ward-shortlist-candidates-toggle");
@@ -269,9 +286,9 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   await medicalPlacement.getByRole("button", { name: "Confirm medically cleared", exact: true }).click();
   await expect(medicalPlacement.getByRole("status")).toContainText("Recorded medically cleared.");
   await expectAccessible(page, testInfo, "ED person sheet after clearance");
-  // Redesign (Josh, 31 Oct 2026): the list item is "Log transport booking", the same words as the
-  // pinned next step and the handover blocker's fix, so it is found by its test id.
-  await personSheet.getByTestId(`ward-ed-book-transport-toggle-${movementId}`).click();
+  // Controls 4 (26 Nov 2026, r10): the sheet pins the row's next step as its own footer button,
+  // "Record booking", and its Actions list leaves that same step out.
+  await personSheet.getByRole("button", { name: "Record booking", exact: true }).click();
   const booking = page.getByTestId(`ward-ed-book-transport-${movementId}`);
   await expect(booking).toBeVisible();
   await page.getByTestId(`ward-ed-transport-provider-${movementId}`).selectOption("Patient transport service");
@@ -284,6 +301,8 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   await expectAccessible(page, testInfo, "ED transport booking, filled");
   await page.getByTestId(`ward-ed-book-transport-confirm-${movementId}`).click();
   await expect(booking).toHaveCount(0);
+  // WF-004 has no examination yet, so once the booking is in the sheet pins "Record exam" as its next
+  // step and the handover stays in its Actions list, worded "Mark handover ready" (ed-screen-row-menu).
   await personSheet.getByRole("button", { name: "Mark handover ready", exact: true }).click();
   await expectAccessible(page, testInfo, "ED person sheet after handover ready");
   await page.keyboard.press("Escape");
@@ -300,7 +319,9 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   }).toPass({ timeout: 15_000 });
   const detail = page.getByTestId("ward-officer-detail");
   await expectAccessible(page, testInfo, "officer job detail");
-  await expect(detail.getByTestId(`ward-officer-transport-legal-status-${movementId}`)).not.toContainText("Legal now");
+  // Audit three #9 (r10): the transport-logged status shows on Details only when it clashes with the
+  // legal status now ("…, Legal now …"); with no clash it sits on the Forms tab. So none here means no clash.
+  await expect(detail.getByTestId(`ward-officer-transport-legal-status-${movementId}`)).toHaveCount(0);
 
   for (const stage of ["accept", "enroute", "collect", "arrive"] as const) {
     const button = detail.getByTestId(`ward-officer-${stage}-${movementId}`);
@@ -340,7 +361,8 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   await expectAccessible(page, testInfo, "ward arrivals with the delivered patient");
   await wardScreen.getByTestId(`ward-confirm-arrival-${movementId}`).click();
   // Walk-through WT-11: the ward checks the name and UMRN before the arrival is recorded.
-  await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Confirm arrival" }).click();
+  await expect(page.getByTestId("ward-arrival-identity-check")).toBeVisible();
+  await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Record arrival" }).click();
   await expect(wardScreen.getByTestId(`ward-accepted-${movementId}`)).toHaveCount(0);
   await openWardHome(page);
   // One patient, one bed: Occupied rises by exactly one.
@@ -390,17 +412,26 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   // profile on desktop, the ward's sheet on a phone.
   await openBedBoardFromWards(page, unitName, unitId);
   await expectAccessible(page, testInfo, "ward bed board");
-  // The board's Needs you this shift list carries every discharge due or overdue, on desktop and
-  // on the phone (where it replaces the bed grid). They have left records the departure.
-  const workBand = page.getByTestId("ward-board-work-band-list");
+  // r10 (bed board folded into Ward, 26 Nov 2026): the board's Before handover list is the last group
+  // of the ward page's Decisions tab (ward-screen-tab-sections.tsx), on desktop and on the phone.
+  // It carries every discharge due or overdue; They have left records the departure.
+  await page
+    .getByRole("tab", { name: /^Decisions/u })
+    .filter({ visible: true })
+    .first()
+    .click();
+  const workBand = page.getByTestId("ward-decisions-before-handover").getByTestId("ward-board-work-band-list");
   const shiftItem = workBand.getByTestId(`ward-board-shift-discharge-${release.admissionId}`);
-  const showMore = page.getByTestId("ward-board-work-band").getByRole("button", { name: /^Show \d+ more$/u });
+  // r10: the band's expander reads "Show all N" (ward-board-work-band.tsx).
+  const showMore = page.getByTestId("ward-board-work-band").getByRole("button", { name: /^Show all \d+$/u });
   if (!(await shiftItem.isVisible()) && (await showMore.isVisible())) await showMore.click();
   // The ward's confirmation reaches the board: one discharge, one answer.
   await expect(shiftItem).toBeVisible();
   await expect(shiftItem).toContainText("Confirmed discharge");
   await shiftItem.getByRole("button", { name: /^They have left, / }).click();
-  const departure = page.getByRole("dialog", { name: "Confirm discharge" });
+  // r10: the confirm is the kit Dialog as an alertdialog, titled "Record discharge"
+  // (ward-board.tsx, leavingConfirmWords in ward-board-transport-wait.tsx); its identity check stays.
+  const departure = page.getByRole("alertdialog", { name: "Record discharge" });
   await expect(departure).toBeVisible();
   await expectAccessible(page, testInfo, "confirm patient departure dialog");
   // Audit CS3-07: where they went starts blank and must be chosen.

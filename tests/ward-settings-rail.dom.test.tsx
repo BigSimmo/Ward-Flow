@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -51,54 +51,26 @@ afterEach(() => {
 });
 
 describe("the settings screen's rail control", () => {
-  it("offers Full and Compact, with the current state checked", () => {
+  // Audit two #68 (r10): the Sidebar row (Full or Compact) left Settings; the rail's own control is the
+  // only door. The four cases that drove the Settings row went with it, replaced by these two, which
+  // keep the shared-store claim: Settings must not carry a second writer or a stale readout.
+  it("no longer offers a Sidebar row, so nothing on this screen can write a second rail state", () => {
     setRailOpenPreference(true);
     renderSettings();
-    const panel = screen.getByTestId("ward-settings-rail");
-
-    expect(within(panel).getByRole("radio", { name: "Full" }).getAttribute("aria-checked")).toBe("true");
-    expect(within(panel).getByRole("radio", { name: "Compact" }).getAttribute("aria-checked")).toBe("false");
+    expect(screen.queryByTestId("ward-settings-rail")).toBeNull();
+    expect(screen.queryByTestId("ward-settings-rail-now")).toBeNull();
+    expect(screen.queryByRole("radiogroup", { name: "Sidebar" })).toBeNull();
   });
 
-  it("writes the real rail state, not a second one of its own", () => {
-    setRailOpenPreference(true);
+  it("leaves the shared rail state alone, and a change made elsewhere still stands", () => {
+    setRailOpenPreference(false);
     renderSettings();
-
-    fireEvent.click(within(screen.getByTestId("ward-settings-rail")).getByRole("radio", { name: "Compact" }));
-
-    expect(window.localStorage.getItem("ward-flow-rail"), "the real key was not written").toBe("closed");
+    expect(window.localStorage.getItem("ward-flow-rail"), "opening Settings changed the rail").toBe("closed");
     expect(window.localStorage.getItem("ward-flow-settings-rail"), "a second key was written").toBeNull();
-  });
-
-  it("says the rail is compact once Compact is chosen", () => {
-    setRailOpenPreference(true);
-    renderSettings();
-    const panel = screen.getByTestId("ward-settings-rail");
-
-    fireEvent.click(within(panel).getByRole("radio", { name: "Compact" }));
-
-    expect(screen.getByTestId("ward-settings-rail-now").textContent).toMatch(/compact/i);
-  });
-
-  /**
-   * 🔴 **THE ASSERTION NO KEY-BASED GUARD CAN MAKE.** Driven by calling the REAL writer directly —
-   * which is what the rail's own control does — so a screen holding its own `useState` shows a stale
-   * word here even though its storage is correct.
-   */
-  it("follows a change made from anywhere else", () => {
-    setRailOpenPreference(true);
-    renderSettings();
-    expect(screen.getByTestId("ward-settings-rail-now").textContent).toMatch(/full/i);
-
-    // ⚠️ `act` because this write originates OUTSIDE React, exactly as the rail's own control's
-    // would from another component tree. It flushes the pending update; it does not weaken the
-    // claim, which is that the readout follows the SHARED store rather than local state.
-    act(() => setRailOpenPreference(false));
-
-    expect(
-      screen.getByTestId("ward-settings-rail-now").textContent,
-      "the readout did not follow a change made outside this screen",
-    ).toMatch(/compact/i);
+    // ⚠️ `act` because this write originates OUTSIDE React, as the rail's own control's would.
+    act(() => setRailOpenPreference(true));
+    expect(screen.queryByTestId("ward-settings-rail-now")).toBeNull();
+    expect(window.localStorage.getItem("ward-flow-settings-rail")).toBeNull();
   });
 
   /**

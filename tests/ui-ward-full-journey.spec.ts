@@ -6,19 +6,16 @@ import { clearToasts } from "./helpers/clear-toasts";
 import { chooseEdKitChoice } from "./helpers/ed-kit-choices";
 import { openEdLists } from "./helpers/ward-ed-lists";
 import { openWardList } from "./helpers/ward-release-gate";
-import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
+import { homeFlowCard, openPlacementFromWaiting } from "./helpers/ward-home-page";
 
 /**
- * Home placement redesign (Josh, 19 Oct 2026), then Home flow (Q340, Q345, 3 Nov 2026): each Flow
- * stage lists its oldest 5 and its own "Show all N" reveals the rest in place. Pick a row the way a
- * coordinator would: open the stages first when the row is further down.
+ * Home placement redesign (Josh, 19 Oct 2026), then r10 (28 Nov 2026): Flow folded into Waiting. Pick
+ * a movement the way a coordinator now does: its Waiting row (opening folded groups when it sits
+ * further down), the person's drawer, then the drawer's Open on Home, which opens Placement over Home.
+ * Returns the Placement drawer.
  */
 async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator> {
-  await showEveryoneWaitingOn(queue.page());
-  const row = queue.getByTestId(`ward-queue-row-${movementId}`);
-  if (!(await row.isVisible())) await showAllFlowRows(queue);
-  await row.click();
-  return row;
+  return openPlacementFromWaiting(queue.page(), movementId);
 }
 
 /**
@@ -129,25 +126,6 @@ async function goViaRail(page: Page, href: string, screenTestId: string) {
 }
 
 /**
- * The role switcher lives inside `WardBar`'s Tools drawer (Task 8, 2026-09-11) — opening it is a
- * precondition for reaching "Change view" at all. Mirrors `ui-ward-roles.spec.ts`'s own
- * `ensureToolsOpen`/`ensureToolsClosed`, which that file's comments record the exact failure shape
- * for (the drawer covers its own trigger, so closing by re-clicking the trigger is intercepted by
- * the drawer it opened).
- */
-async function ensureToolsOpen(page: Page) {
-  const trigger = page.getByTestId("ward-bar-tools-trigger");
-  if ((await trigger.getAttribute("aria-expanded")) !== "true") {
-    await trigger.click();
-  }
-  // Tools review (15 Oct 2026): one sheet, Change view at its top, so no tab to pick.
-  await page
-    .getByRole("dialog", { name: "Tools" })
-    .getByRole("button", { name: /^Change view/ })
-    .waitFor();
-}
-
-/**
  * Ward Hub (9 Oct 2026): the Arrivals tab was folded into the Home tab's Ward flow card. The full
  * arrivals view still exists and opens from that card's Admissions pane via "All arrivals".
  */
@@ -167,8 +145,10 @@ async function ensureToolsClosed(page: Page) {
  *  (10 October 2026; it used to open its own menu), never a typed URL. `pick` narrows to the
  *  statewide tile, the Patient in focus chip or the searched desk the caller wants. */
 async function switchView(page: Page, pick: (drawer: Locator) => Locator | Promise<Locator>, screenTestId: string) {
-  await ensureToolsOpen(page);
-  await page.getByRole("button", { name: /^Change view/ }).click();
+  // One door to Go to a desk (A27, 26 Nov 2026, r10): the rail's person button opens it; Tools no
+  // longer repeats Change view.
+  await ensureToolsClosed(page);
+  await page.getByTestId("ward-rail-persona-trigger").click();
   const drawer = page.getByRole("dialog", { name: "Go to a desk" });
   await expect(drawer).toBeVisible();
   const item = await pick(drawer);
@@ -228,6 +208,10 @@ test.describe("@mockup BedChart full journey — referral to discharge planning,
     await newPatient.getByLabel("Given name", { exact: true }).fill("Synthetic");
     await newPatient.getByLabel("Date of birth", { exact: true }).fill("02/01/1990");
     await newPatient.getByLabel("UMRN", { exact: true }).fill("UM990703");
+    // r10: recorded sex, gender and suburb sit in the "More about this person" fold.
+    const moreAboutPerson = newPatient.getByTestId("ward-referral-fold-new-patient");
+    if (!(await moreAboutPerson.evaluate((fold) => (fold as HTMLDetailsElement).open)))
+      await moreAboutPerson.locator("summary").click();
     await newPatient.getByLabel("Suburb", { exact: true }).fill("Albany");
     await newPatient.getByRole("button", { name: "Add and use for this referral" }).click();
     await expect(sheet).toContainText("Communityfield, Synthetic");
@@ -276,7 +260,7 @@ test.describe("@mockup BedChart full journey — referral to discharge planning,
     // No transport needed: patient or carer accompanied.
     await sheet.getByLabel("Transport", { exact: true }).selectOption("Family or carer");
 
-    await sheet.getByRole("button", { name: "Send referral", exact: true }).click();
+    await sheet.getByRole("button", { name: "Review and send", exact: true }).click();
     await expect(sheet.getByRole("heading", { name: "Confirm and send" })).toBeVisible();
     await sheet.getByLabel("Your name", { exact: true }).fill("Synthetic Referrer");
     await sheet.getByLabel("Email address", { exact: true }).fill("referrer@example.org");
@@ -584,7 +568,7 @@ test.describe("@mockup BedChart full journey — referral to discharge planning,
     await openAllArrivals(page);
     await wardScreenAfterArrival.getByTestId(`ward-confirm-arrival-${movementId}`).click();
     // Walk-through WT-11: the ward checks the name and UMRN before the arrival is recorded.
-    await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Confirm arrival" }).click();
+    await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Record arrival" }).click();
     await expect(wardScreenAfterArrival.getByTestId(`ward-accepted-${movementId}`)).toHaveCount(0);
     await page.locator("#tabBtn-attn").click();
     await expect(wardScreenAfterArrival.getByTestId(`ward-pull-${movementId}`)).toHaveCount(0);

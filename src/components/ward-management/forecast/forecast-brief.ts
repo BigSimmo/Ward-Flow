@@ -50,9 +50,9 @@ function edRisk(risk: EdAccessRisk, edName: (edId: string) => string): string {
       ? `${risk.alreadyOver} ${risk.alreadyOver === 1 ? "person has" : "people have"} already passed ${target} in ED.`
       : `Nobody in ED will pass ${target} in the next day on what is recorded.`;
   }
-  const people = first.atRisk === 1 ? "1 person" : `${first.atRisk} people`;
-  const verb = first.atRisk === 1 ? "passes" : "pass";
-  return `${people} at ${edName(first.edId)} ${verb} ${target} before a suitable bed is due.`;
+  // Audit four item 29: "more" and "will" keep this forecast apart from the banner's count of people
+  // already over 24 hours; the panel's "Not a prediction" caveat stays (D-129).
+  return `${first.atRisk} more at ${edName(first.edId)} will pass ${target} before a suitable bed is due.`;
 }
 
 function bestAction(levers: readonly ForecastLever[]): string {

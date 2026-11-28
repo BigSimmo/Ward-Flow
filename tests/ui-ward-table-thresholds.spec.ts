@@ -1,6 +1,5 @@
 import { expect, test } from "playwright/test";
 import { CHECKED_TRAVEL_BANDS } from "@/components/ward-management/ward-travel-bands";
-import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
  * 🔴 **EVERY WARD TABLE'S SCROLL THRESHOLD, MEASURED AGAINST THE TABLE THAT IS ACTUALLY THERE.**
@@ -625,8 +624,9 @@ const TYPE_FLOOR_ROUTES = [
     route: "/bedchart/waiting",
     expect: ["delays-cause", "delays-profile", "delays-wait", "delays-since", "banner", "badge"],
   },
-  // Home v7 (Josh, 22 Oct 2026): the queue's tier labels sit behind the Flow list (Q340).
-  { route: "/bedchart", expect: ["command-tier", "banner", "badge"], everyoneWaiting: true },
+  // r10 (simplification area 2 item 1): Flow folded into Waiting, so Home no longer paints the
+  // queue's tier labels ("command-tier"); Waiting's own rows are measured above.
+  { route: "/bedchart", expect: ["banner", "badge"] },
   { route: "/bedchart/movements", expect: ["banner", "badge"] },
   { route: "/bedchart/capacity", expect: ["banner", "badge"] },
 ] as const;
@@ -643,7 +643,6 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
       await page.goto(route, { waitUntil: "load" });
       await page.waitForLoadState("networkidle");
       await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
-      if ("everyoneWaiting" in entry) await showEveryoneWaitingOn(page);
 
       const found = await page.evaluate(() =>
         [...document.querySelectorAll("[data-ward-type-floor]")].map((element) => ({

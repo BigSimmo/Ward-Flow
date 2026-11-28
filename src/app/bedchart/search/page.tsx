@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { RedirectToFind } from "@/components/ward-management/hub/find-redirect";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 
 export const metadata: Metadata = {
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function WardPatientSearchPage() {
-  return <PatientSearchPage />;
+  return (
+    <RedirectToFind tab="people">
+      <PatientSearchPage />
+    </RedirectToFind>
+  );
 }

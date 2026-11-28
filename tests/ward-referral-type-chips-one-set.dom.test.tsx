@@ -25,12 +25,12 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
  * P154 (Josh, 27 October 2026, 9:24 PM AWST, option A): phone and desktop both read
- * "Ward bed · ED · More than one · Community · Refused once", and each referral is counted once
+ * "Ward bed · ED · More than one · Community · Declined once", and each referral is counted once
  * under its type (A2-13): one asking for more than one kind of place sits under More than one.
  */
 
 const TYPE_KEYS = ["ward", "ed", "both", "community"] as const;
-const LABELS = ["Ward bed", "ED", "More than one", "Community", "Refused once"];
+const LABELS = ["Ward bed", "ED review", "More than one", "Community", "Declined once"];
 
 function setPhone(phone: boolean) {
   const mm = (query: string) => ({
@@ -78,7 +78,7 @@ afterEach(() => {
 });
 
 describe("P154: one type chip set on phone and desktop, each referral counted once", () => {
-  it("phone chips read Ward bed · ED · More than one · Community · Refused once; types sum to the queue", () => {
+  it("phone chips read Ward bed · ED · More than one · Community · Declined once; types sum to the queue", () => {
     setPhone(true);
     const queued = renderBoard();
     // Page tops (Josh, 9 Nov 2026): the type chips are the slate's quick chips (Bed meeting is a link).
@@ -89,12 +89,12 @@ describe("P154: one type chip set on phone and desktop, each referral counted on
     expect(chips.map(([label]) => label)).toEqual(LABELS.filter((label) => chips.some(([shown]) => shown === label)));
     expect(chips.every(([, n]) => n > 0)).toBe(true);
     expect(queued).toBeGreaterThan(0);
-    const types = chips.filter(([label]) => label !== "Refused once");
+    const types = chips.filter(([label]) => label !== "Declined once");
     expect(types.length).toBeGreaterThanOrEqual(2);
     expect(types.reduce((sum, [, n]) => sum + n, 0)).toBe(queued);
   });
 
-  it("desktop pills read Ward bed · ED · More than one · Community (+ Refused once), same counts as phone", () => {
+  it("desktop pills read Ward bed · ED · More than one · Community (+ Declined once), same counts as phone", () => {
     setPhone(true);
     renderBoard();
     // Referrals redesign (31 Oct 2026): empty type chips hide on both, so compare the ones shown.
@@ -106,18 +106,18 @@ describe("P154: one type chip set on phone and desktop, each referral counted on
     document.body.innerHTML = "";
     setPhone(false);
     const queued = renderBoard();
-    // Page tops (Josh, 9 Nov 2026): Decision overdue is a hero figure; the type chips and Refused once
+    // Page tops (Josh, 9 Nov 2026): Decision overdue is a hero figure; the type chips and Declined once
     // are the slate's quick chips, the same set as the phone's (hidden, like the rest, while nobody is in it).
     const group = screen.getByRole("list", { name: "Referral highlights" });
     const pills = within(group).getAllByRole("button").map(split);
-    const order = ["Tier 1", "Ward bed", "ED", "More than one", "Community", "Refused once"];
+    const order = ["Tier 1", "Ward bed", "ED review", "More than one", "Community", "Declined once"];
     expect(pills.map(([label]) => label)).toEqual(order.filter((label) => pills.some(([shown]) => shown === label)));
     expect(pills.every(([, n]) => n > 0)).toBe(true);
-    const types = pills.filter(([label]) => !["Decision overdue", "Tier 1", "Refused once"].includes(label));
+    const types = pills.filter(([label]) => !["Decision overdue", "Tier 1", "Declined once"].includes(label));
     expect(types).toEqual(phone);
     expect(types.reduce((sum, [, n]) => sum + n, 0)).toBe(queued);
     const refused = screen.queryByTestId("ward-referral-highlight-refused");
     expect(refused?.textContent ?? null).toBe(phoneRefused);
-    if (refused) expect(refused).toHaveTextContent("Refused once");
+    if (refused) expect(refused).toHaveTextContent("Declined once");
   });
 });

@@ -145,7 +145,7 @@ describe("ward board order explanation", () => {
     renderWardBoard(UNIT_ID);
 
     // MU5 (Josh, 5 Nov 2026): three kit segments in place of the select.
-    const order = screen.getByRole("radiogroup", { name: "Order the beds" });
+    const order = screen.getByRole("radiogroup", { name: "Sort beds" });
     expect(
       within(order)
         .getAllByRole("radio")

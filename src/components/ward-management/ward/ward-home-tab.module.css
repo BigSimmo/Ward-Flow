@@ -72,6 +72,37 @@
   min-width: 0;
 }
 
+/* Simplification 26 Nov 2026 (perfection): below 1440 the highlight choices did not fit beside
+   Place or move and the view switch, so "Ready 2" was cut off at 1280. There the tools take two
+   rows: Place or move and the view switch on the first, the highlight choices whole on the second. */
+@media (min-width: 46.5rem) {
+  .areaBeds > .bedsHead > div:last-child {
+    flex: 1 1 100%;
+    min-width: 0;
+    margin-left: 0;
+  }
+
+  .areaBeds > .bedsHead .headTools {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    width: 100%;
+    row-gap: var(--wf-s-2);
+  }
+
+  .areaBeds > .bedsHead .headTools > .viewSwitchSeg {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .areaBeds > .bedsHead .headTools > .gridControls,
+  .areaBeds > .bedsHead .headTools > .bedHighlight {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+    max-width: 100%;
+  }
+}
+
 /* Every bed keeps its title on one line. When Place or move and the filters do not fit beside it,
    they drop to a row of their own instead of squeezing the title onto two lines. */
 .areaBeds > .bedsHead {
@@ -2089,6 +2120,14 @@ label.todoMain:has(.todoTick:focus-visible) {
   white-space: nowrap;
 }
 
+/* Simplification 26 Nov 2026 (item 6): the counts only the squares strip said, after the live mark. */
+.bedsNotes {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .liveDot {
   width: 6px;
   height: 6px;
@@ -2159,4 +2198,118 @@ label.todoMain:has(.todoTick:focus-visible) {
 
 .deskChecks .phoneFiguresFoot {
   padding-bottom: var(--wf-s-3);
+}
+
+/* Fold the Bed board into Ward (item 13): the Grid view's own Show, Order and Narrow controls, in the
+   card head's second row while Grid is on, as the highlight choices are for the picture. */
+.gridControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.gridControls > div {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  /* Show and Order on one control row (review fix) where they fit; final look (26 Nov 2026): on a
+     narrower card Order wraps onto its own row under the Show chips rather than running off the edge. */
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+
+/* "Also on this ward": one line of kit chips under the key, each lighting its beds. */
+.alsoBand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+}
+
+.alsoTitle {
+  margin-right: var(--wf-s-1);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+/* Fold the Bed board into Ward (item 13): Since yesterday, under the Updates sheet's review. */
+.sinceYesterday {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-4);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.sinceFacts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.sinceNote {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+/* Grid view (fold the Bed board into Ward, review fix): the dense grid takes the card's full width,
+   as on the board, and the rail cards follow beneath it in one column, so no rail is left empty. */
+.homeTop[data-view="grid"] {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: none;
+}
+
+.homeTop[data-view="grid"] > .areaBeds,
+.homeTop[data-view="grid"] > .deskChecks,
+.homeTop[data-view="grid"] > .flowWrap {
+  grid-column: 1;
+  grid-row: auto;
+}
+
+.homeTop[data-view="grid"] > .areaBeds {
+  order: -1;
+}
+
+/* Fable re-review: in Grid the head is one row (title, then Place or move and Picture/Grid at the
+   right), and the grid's Show and Order controls sit in a row of their own under it. */
+@media (min-width: 46.5rem) {
+  .homeTop[data-view="grid"] .areaBeds > .bedsHead > div:last-child {
+    flex: 0 1 auto;
+    margin-left: auto;
+  }
+
+  .homeTop[data-view="grid"] .areaBeds > .bedsHead .headTools {
+    display: inline-flex;
+    width: auto;
+  }
+}
+
+.gridControlsRow {
+  display: flex;
+  min-width: 0;
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Final look (26 Nov 2026): the phone's Picture or Grid switch, at the right above the bed squares,
+   and the grid in a card of its own when Grid is on. */
+.phoneViewRow {
+  display: flex;
+  justify-content: flex-end;
+  /* Up into the sheet's top inset, so the switch sits the usual phone gap under the tabs, and the
+     card below follows at the 8px a control row keeps from its list. */
+  margin-top: -14px;
+  margin-bottom: -8px;
+}
+
+/* The grid runs the full content width, as the old phone Bed board did (two cards to a row at the
+   page gutter, 8px apart); its squares and Show chips sit on the sheet, not in a card. */
+.phoneGrid {
+  min-width: 0;
 }

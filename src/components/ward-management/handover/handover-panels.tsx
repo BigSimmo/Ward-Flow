@@ -11,7 +11,7 @@ import { movementHref } from "../shell/ward-facade";
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useId } from "react";
-import { Ambulance, Check, ChevronLeft, ChevronRight, ClipboardCopy, Route, UserRound } from "lucide-react";
+import { Ambulance, Check, ClipboardCopy, Route, UserRound } from "lucide-react";
 import {
   Button,
   Card,
@@ -19,6 +19,7 @@ import {
   DrawerFootRow,
   Icon,
   PanelDrawer,
+  SrOnly,
   StatusGlyph,
   StatusPill,
   buttonClass,
@@ -121,7 +122,7 @@ function WardCapacity({ ward, now }: { ward: HandoverWard | undefined; now: Inst
  * One patient's flow, in the kit right drawer at every width above a phone (drawer review, 6 Nov
  * 2026). It used to sit in the sticky "Patient flow" rail beside the list, which would scroll on its
  * own as it grew; now the list keeps the full width and one page scroll. The head names the patient
- * with one line (UMRN, ED, time waiting) and the tier as the tag; the foot holds Open patient, then
+ * with one line (UMRN, ED, time waiting) and the tier as the tag; the foot holds Quick look, then
  * Copy ISBAR and Movements. J and K still step through the list while it is open (handover-page.tsx).
  */
 export function HandoverFlowPanel({
@@ -212,35 +213,12 @@ export function HandoverFlowPanel({
       tag={
         <span className={styles.flowHeadTag}>
           <StatusPill tone={rowTone(row, ctx)}>Tier {row.tier}</StatusPill>
-          {onStep && position && position.total > 1 ? (
-            <span className={styles.flowSteps}>
-              <Button
-                variant="ghost"
-                size="sm"
-                iconOnly
-                icon={ChevronLeft}
-                aria-label="Previous patient"
-                reasonDisplay="tooltip"
-                disabledReason={position.index <= 0 ? "First patient in the list" : undefined}
-                onClick={() => onStep(-1)}
-              />
-              <span className={styles.flowStepCount}>
-                {position.index + 1} of {position.total}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                iconOnly
-                icon={ChevronRight}
-                aria-label="Next patient"
-                reasonDisplay="tooltip"
-                disabledReason={position.index >= position.total - 1 ? "Last patient in the list" : undefined}
-                onClick={() => onStep(1)}
-              />
-            </span>
-          ) : null}
         </span>
       }
+      // Audit four #31: the kit pager in the head, in place of the hand-built steps.
+      {...(onStep && position && position.total > 1
+        ? { pager: { index: position.index, total: position.total, noun: "patient", onStep } }
+        : {})}
       closeLabel="Close patient"
       bodyLabel={`Patient flow, ${row.name}`}
       testId="ward-handover-flow-panel"
@@ -254,11 +232,11 @@ export function HandoverFlowPanel({
               className={buttonClass({ variant: "pri" })}
             >
               <Icon icon={UserRound} size={16} />
-              Open patient
+              Quick look
             </PatientPeekLink>
           ) : (
             <Button variant="pri" disabledReason="UMRN not recorded">
-              Open patient
+              Quick look
             </Button>
           )}
           <DrawerFootRow>
@@ -267,7 +245,7 @@ export function HandoverFlowPanel({
             </Button>
             <Link href={movementHref(row.movement.id)} className={buttonClass({ variant: "sec" })}>
               <Icon icon={Ambulance} size={16} />
-              Movements
+              Movement
             </Link>
           </DrawerFootRow>
         </>
@@ -377,6 +355,48 @@ export function HandoverFlowPanel({
 
 export type SignOffCheck = { id: string; done: boolean; text: string; action?: { label: string; onClick: () => void } };
 
+/** Who a sign-off names: the role on its record once signed (as History does), else the viewer. */
+export function signOffSignerLabel(
+  signedAt: Instant | null,
+  signedBy: WardFlowRole | null,
+  viewerRole: WardChromeRole,
+): string {
+  // Codex P2 on #707: a recorded sign-off names the role on its record, never the desk viewing it.
+  const signer = signedAt !== null && signedBy !== null ? signedBy : viewerRole;
+  return signer === "coordinator" ? "Bed coordinator" : signer === "demo" ? "Demo" : CHROME_ROLE_LABELS[signer];
+}
+
+/** The five checks under "Before you sign", with the meter; shared by the drawer card and the dialog. */
+function SignOffChecks({ checks }: { checks: SignOffCheck[] }) {
+  return (
+    <>
+      {/* Audit three #29: the bar is the one progress readout; its count is for screen readers. */}
+      <span className={styles.sectionHead}>
+        Before you sign
+        <SrOnly>{`, ${checks.filter((check) => check.done).length} of ${checks.length} clear`}</SrOnly>
+      </span>
+      <span className={styles.checkMeter} aria-hidden="true">
+        {checks.map((check) => (
+          <i key={check.id} data-done={check.done ? "true" : undefined} />
+        ))}
+      </span>
+      <ul className={styles.checks} data-testid="ward-handover-sign-off-checks">
+        {checks.map((check) => (
+          <li key={check.id}>
+            <StatusGlyph tone={check.done ? "success" : "warning"} size={9} />
+            <span>{check.text}</span>
+            {check.action ? (
+              <Button variant="ghost" size="sm" onClick={check.action.onClick}>
+                {check.action.label}
+              </Button>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
 export function HandoverSignOffPanel({
   title,
   subtitle,
@@ -389,7 +409,13 @@ export function HandoverSignOffPanel({
   cannotSignReason,
   onSignOff,
   onUndoSignOff,
+  inDialog = false,
 }: {
+  /**
+   * Audit four item 37: in the small kit Sign off dialog the dialog names the handover and holds the
+   * filled step in its foot, so the panel drops its card, head and foot and keeps the five checks.
+   */
+  inDialog?: boolean;
   title: string;
   subtitle: string;
   checks: SignOffCheck[];
@@ -406,12 +432,20 @@ export function HandoverSignOffPanel({
   onUndoSignOff: () => void;
 }) {
   const baseId = useId();
-  // Codex P2 on #707: a recorded sign-off names the role on its record (as History does), never the
-  // desk that happens to be viewing it; only an unsigned handover names the viewer, who would sign.
-  const signer = signedAt !== null && signedBy !== null ? signedBy : viewerRole;
-  const signerLabel =
-    signer === "coordinator" ? "Bed coordinator" : signer === "demo" ? "Demo" : CHROME_ROLE_LABELS[signer];
-  const signerIsYou = signedAt === null || signedBy === null || signedBy === viewerRole;
+  const signerLabel = signOffSignerLabel(signedAt, signedBy, viewerRole);
+  if (inDialog) {
+    return (
+      <div className={styles.signDialogBody} data-testid="ward-handover-sign-off">
+        <SignOffChecks checks={checks} />
+        {signedAt !== null ? (
+          <div className={styles.signed} data-testid="ward-handover-sign-off-visible-status" role="status">
+            <StatusGlyph tone="success" size={9} />
+            Signed off at {formatInstantWithDay(signedAt, now)} as {signerLabel.toLowerCase()}. Recorded in History.
+          </div>
+        ) : null}
+      </div>
+    );
+  }
   return (
     <Card
       as="section"
@@ -427,38 +461,7 @@ export function HandoverSignOffPanel({
         </div>
       </div>
       <div className={styles.section}>
-        <span className={styles.sectionHead}>
-          Before you sign
-          <span className={styles.checksDone}>
-            {checks.filter((check) => check.done).length} of {checks.length} clear
-          </span>
-        </span>
-        <span className={styles.checkMeter} aria-hidden="true">
-          {checks.map((check) => (
-            <i key={check.id} data-done={check.done ? "true" : undefined} />
-          ))}
-        </span>
-        <ul className={styles.checks} data-testid="ward-handover-sign-off-checks">
-          {checks.map((check) => (
-            <li key={check.id}>
-              <StatusGlyph tone={check.done ? "success" : "warning"} size={9} />
-              <span>{check.text}</span>
-              {check.action ? (
-                <Button variant="ghost" size="sm" onClick={check.action.onClick}>
-                  {check.action.label}
-                </Button>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className={styles.section}>
-        <span className={styles.sectionHead}>Handed over by</span>
-        <div className={styles.who}>
-          <Icon icon={UserRound} size={14} />
-          <b>{signerLabel}</b>
-          {signerIsYou ? <span>you</span> : null}
-        </div>
+        <SignOffChecks checks={checks} />
       </div>
       {signedAt !== null ? (
         <div className={styles.section}>
@@ -483,7 +486,8 @@ export function HandoverSignOffPanel({
             disabledReason={!canSignOff ? (cannotSignReason ?? "Complete sign-off checks first") : cannotSignReason}
             data-testid="ward-handover-sign-off-button"
           >
-            {`Sign off at ${formatInstant(now)}`}
+            {/* Audit three #29: who signs is named in the button, so the record still shows it. */}
+            {`Sign off as ${signerLabel} at ${formatInstant(now)}`}
           </Button>
         )}
       </div>

@@ -796,7 +796,7 @@ export function HubScreen() {
       boxClassName={isPhone ? styles.phoneSearchBox : styles.heroSearch}
       aria-label="Search wards, EDs and community teams"
       aria-describedby={isPhone ? undefined : "hub-search-hint"}
-      placeholder={isPhone ? "Search places" : "Search ward, hospital or team"}
+      placeholder="Ward, hospital or team"
       value={query}
       onChange={(event) => setQuery(event.target.value)}
       onKeyDown={onSearchKeyDown}
@@ -1026,9 +1026,9 @@ export function HubScreen() {
                 </button>
               ) : (
                 <span className={styles.heroOrder}>
-                  <span className={styles.heroOrderLabel}>Order</span>
+                  <span className={styles.heroOrderLabel}>Sort</span>
                   <Segmented
-                    label="Order"
+                    label="Sort"
                     items={[
                       { id: "service" as const, label: "Service" },
                       { id: "name" as const, label: "A to Z" },

@@ -39,8 +39,25 @@ export class NextShellBoundary extends Component<NextShellBoundaryProps, { faile
 
   render() {
     if (!this.state.failed) return this.props.children;
+    // Gate r10 (1b F7, upgrade 7): the top bar's line stands in as the bar (`data-wf-bar`), so the
+    // page's hero measures under it and joins it as it joins the bar; the sidebar's line keeps the
+    // brand mark at the top of its column, so the shell's top line stays whole.
+    const isBar = this.props.label === "The top bar";
+    const isRail = this.props.label === "The sidebar";
     return (
-      <div role="status" data-wf-shell-error="" data-testid="ward-shell-error" data-print-hide>
+      <div
+        role="status"
+        data-wf-shell-error=""
+        data-wf-shell-part={isBar ? "bar" : isRail ? "rail" : undefined}
+        data-wf-bar={isBar ? "" : undefined}
+        data-testid="ward-shell-error"
+        data-print-hide
+      >
+        {isRail ? (
+          <b data-wf-shell-brand="" aria-hidden="true">
+            BedChart
+          </b>
+        ) : null}
         <span>{this.props.label} could not load.</span>
         <button type="button" onClick={() => location.reload()}>
           Reload page

@@ -174,4 +174,11 @@ a.row:focus-visible {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--wf-s-1);
   }
+
+  /* States B review: "Ward for" has five chips; they wrap onto two rows (as at 1440) instead of the
+     kit's sideways phone row, which cut the last one at the edge. html wins over the kit rule. */
+  html .filterRow > [role="group"] {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
 }

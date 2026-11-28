@@ -14,8 +14,6 @@ import { waitedHours } from "./search-filters";
 export const SHORT_WAIT_HOURS = WAIT_FILTER_SHORT_MINUTES / 60;
 export const LONG_WAIT_HOURS = LONG_WAIT_MINUTES / 60;
 
-export const ACCESS_RECORD_EMPTY = "No searches this session.";
-
 export type ShowFacetKey = "all" | "accepted" | "waiting" | "unowned" | "under6" | "6to24" | "over24";
 
 export type ShowFacet = {

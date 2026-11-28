@@ -7,7 +7,16 @@ import dynamic from "next/dynamic";
 import { WardBarFrame } from "@/components/ward-management/shell/ward-chrome-frame";
 import { ChevronDown, Wrench } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { startTransition, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 
 import { Sheet } from "@/components/wf/sheet";
 import { canRestoreFocusTo, hasOpenSheet, isTopmostSheet, popSheet, pushSheet } from "@/components/wf/sheet-focus";
@@ -58,6 +67,7 @@ import { announceToWardShell } from "@/components/ward-management/shell/ward-liv
 import { WARD_BAR_PAGE_TOOLS_ID, useWardBarPageTitleFor } from "@/components/ward-management/shell/ward-bar-page-tools";
 import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
 import { WardBarHelpButton } from "@/components/ward-management/shell-next/next-bar-help";
+import { PLACES_CATCHMENTS_HREF } from "@/components/ward-management/hub/places-hrefs";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "@/components/ward-management/shell/ward-drawer-bus";
 import { dischargeHref, movementHref, patientSearchHref } from "@/components/ward-management/shell/ward-facade";
 import type { WardPrimaryAction } from "@/components/ward-management/shell/ward-shell-types";
@@ -107,6 +117,7 @@ import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { accessIsWholeNetwork, type WardAccess } from "@/components/ward-management/ward-role-access";
 import polish from "@/components/ward-management/shell-next/next-bar.module.css";
+import { useOpenFindTab } from "@/components/ward-management/hub/find-active-tab";
 // The shell's one close-menus event, from its own small module so the bar does not carry the rail's parts.
 import { CLOSE_MENUS_EVENT } from "@/components/ward-management/shell/ward-menu-events";
 /**
@@ -329,7 +340,17 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
   const oneAlertsQueue = alertsScreenOpen && alertsQueueForDesk;
   const path = pathname.replace(/\/+$/u, "");
   const onAlertsScreen = oneAlertsQueue && path === WARD_ALERTS_HREF;
-  const onPatientsPage = path === patientSearchHref();
+  // Find (mock-up, 26 Nov 2026): Find's People tab is the Patients page, so its own search box stands alone too.
+  const openFindTab = useOpenFindTab();
+  // Audit three #51 (Josh, 28 Nov 2026): Find's Teams and Suburbs tabs have their own search too, so
+  // the header search steps aside there as well (D-92: one search box per page). Help keeps its
+  // place (D-244). Every other page keeps the header search, which finds a person from anywhere.
+  const onPatientsPage =
+    path === patientSearchHref() ||
+    path === PLACES_CATCHMENTS_HREF ||
+    openFindTab === "people" ||
+    openFindTab === "teams" ||
+    openFindTab === "suburbs";
   const roleCategory = roleReferralCategory(role);
   const checksPublication = useWardChecks();
   // Access audit (31 Oct 2026): the referral slide-out is referral intake, so a desk that may not
@@ -1001,6 +1022,7 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
   // hero ink at rest and hands over to its own solid scrolled face (v10 Home mockup, 11 Oct 2026).
   const barRef = useRef<HTMLElement>(null);
   const barScrolled = useBarScrolled(barRef, isPhone);
+  usePhoneChipFit(barRef, isPhone, routeTitle, activeServiceBadgeLabel);
   const bandHero = useWfBandActive();
   const bandScrolled = useBandScrolled(barRef, bandHero && !isPhone);
   // Sticky header redesign (Josh, 9 Nov 2026): a phone bar over a band page stays slate when it
@@ -1066,7 +1088,6 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
       data-testid="ward-bar"
       data-wf-bar=""
       data-band={bandState}
-      data-long-title={routeTitle.length > 17 || undefined}
       data-scrolled={barScrolled || undefined}
     >
       {/* Phone (Josh, 10 Oct 2026, locked lean bar): Menu, title over the service line, Search, Tasks. */}
@@ -1132,7 +1153,11 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         </span>
       </div>
 
-      <div className={`${styles.centerGroup} ${polish.searchPair}`}>
+      <div
+        className={`${styles.centerGroup} ${polish.searchPair}`}
+        // Audit four #23 (r10): with the search stepped aside, Help stays beside the scope chip.
+        data-no-search={onPatientsPage ? "" : undefined}
+      >
         {/* Help on the left of the search (Josh, 15 Nov 2026, D-248). */}
         <WardBarHelpButton />
         {/* The Patients page has its own search box, which filters its list in place, so the header
@@ -1293,12 +1318,8 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         bodyClassName={styles.drawerBody}
         footer={
           <div className={styles.drawerFoot}>
+            {/* Audit four #53: the second "/" hint is gone; the search field carries its own. */}
             <span>Synthetic prototype</span>
-            {isPhone ? null : (
-              <span className={polish.footHint} aria-hidden="true">
-                <kbd className={styles.escKbd}>/</kbd> Search tools
-              </span>
-            )}
             <WardDemoClockPopover onOpen={(from) => openDemoMenuFromSheet("tools", from)}>
               <span className={styles.footClock}>
                 Board time <b>{formatInstant(now)}</b>
@@ -1378,4 +1399,87 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
 export function NextBarMount(props: Omit<WardBarProps, "primaryAction">) {
   const pathname = usePathname() ?? "";
   return <NextBar {...props} primaryAction={routeBarAction(pathname)} />;
+}
+
+/**
+ * Gate r10 F3 (audit four #7): on a phone the page name never truncates before the scope chip
+ * gives way. Decided by fit, not by character count: full chip first; if the title or the chip's
+ * label would clip, the chip shows its dot and short code ("NMHS"); if the title still clips,
+ * the dot alone. Measured before paint, so no frame shows the clipped title.
+ */
+function usePhoneChipFit(barRef: RefObject<HTMLElement | null>, isPhone: boolean, title: string, label: string) {
+  const measure = useCallback(() => {
+    const bar = barRef.current;
+    if (!bar) return;
+    bar.removeAttribute("data-long-title");
+    bar.removeAttribute("data-title-wrap");
+    if (!isPhone) return;
+    // fix-5: scrollWidth and clientWidth are whole pixels, so a title clipped by a fraction of a
+    // pixel ("Mental Health U…") read as fitting; the laid-out text is measured against the box too.
+    const clips = (selector: string) => {
+      const node = bar.querySelector<HTMLElement>(selector);
+      if (node === null || node.offsetParent === null) return false;
+      if (node.scrollWidth > node.clientWidth + 1) return true;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const style = getComputedStyle(node);
+      const room = node.getBoundingClientRect().width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      return range.getBoundingClientRect().width > room + 0.01;
+    };
+    const titleSelector = `.${styles.place}`;
+    if (!clips(titleSelector) && !clips(`.${styles.scopeBadgeLabel}`)) return;
+    // Final r10 F1: a chip with no short code (Statewide) goes straight from full to the dot.
+    if (!bar.querySelector(`.${styles.scopeBadgeShort}`)) {
+      bar.setAttribute("data-long-title", "dot");
+      return;
+    }
+    bar.setAttribute("data-long-title", "short");
+    // The title wins (item 7): the code gives way to the dot when the title still clips or the code
+    // spills past its squeezed chip (the button's own scrollWidth always reads wider, so edges are compared).
+    const shortNode = bar.querySelector<HTMLElement>(`.${styles.scopeBadgeShort}`);
+    const chipNode = shortNode?.closest<HTMLElement>(`.${styles.scopeBadgeBtn}`) ?? null;
+    // Look check F3: a title that still clips beside the short code takes a second line (up to two,
+    // in the same bar height) and keeps the code; the dot comes only if two lines still clip. A name
+    // that fits on one line beside the dot alone (Mental Health Unit) keeps that r10 look instead.
+    let titleClips = clips(titleSelector);
+    if (titleClips) {
+      bar.setAttribute("data-long-title", "dot");
+      if (!clips(titleSelector)) return;
+      bar.setAttribute("data-long-title", "wrap");
+      bar.setAttribute("data-title-wrap", "");
+      const titleNode = bar.querySelector<HTMLElement>(titleSelector);
+      titleClips = clips(titleSelector) || (titleNode !== null && titleNode.scrollHeight > titleNode.clientHeight + 1);
+    }
+    const codeSpills =
+      shortNode !== null &&
+      chipNode !== null &&
+      shortNode.getBoundingClientRect().right > chipNode.getBoundingClientRect().right + 0.5;
+    if (titleClips || clips(`.${styles.scopeBadgeShort}`) || codeSpills) {
+      bar.setAttribute("data-long-title", "dot");
+    }
+  }, [barRef, isPhone]);
+  useLayoutEffect(() => {
+    measure();
+  }, [measure, title, label]);
+  useEffect(() => {
+    if (!isPhone) return;
+    // Re-measure once web fonts land (the title widens) and whenever the bar or title resizes.
+    let live = true;
+    void document.fonts?.ready.then(() => {
+      if (live) measure();
+    });
+    const bar = barRef.current;
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => measure());
+    if (bar && observer) {
+      observer.observe(bar);
+      const titleNode = bar.querySelector<HTMLElement>(`.${styles.place}`);
+      if (titleNode) observer.observe(titleNode);
+    }
+    window.addEventListener("resize", measure);
+    return () => {
+      live = false;
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [barRef, isPhone, measure]);
 }

@@ -81,9 +81,12 @@
   color: var(--wf-ink-2);
 }
 
+/* Final r10 (a2 F6): the action sits at the card's right edge, as the dialogs do, so a disabled
+   button and its reason under it line up with the edge rather than float 90px in. */
 .formFoot {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
   gap: var(--wf-s-3);
   padding: 0 var(--wf-s-4) var(--wf-s-3);
@@ -141,4 +144,23 @@
     grid-column: 2;
     grid-row: 1 / span 2;
   }
+}
+
+/* Audit three review: a coordinator's cover and roles panels, each one column stacking on its own. */
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+/* The lead holds only a problem or result now; empty, it takes no gap. */
+.lead:empty {
+  display: none;
+}
+
+/* A panel's note, the first line inside its form card. */
+.formNote {
+  grid-column: 1 / -1;
+  padding: 0;
 }

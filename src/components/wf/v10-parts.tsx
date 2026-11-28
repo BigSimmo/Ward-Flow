@@ -315,8 +315,13 @@ export function WardCapacityRows({
 export type GroupHeadProps = {
   /** Group name ("Waiting on a bed") or one letter ("A") for an A to Z list. */
   title: ReactNode;
-  /** Rows in the group. 0 shows 0. */
+  /** Rows in the group. 0 shows 0, unless `hideWhenEmpty`. */
   count?: number;
+  /**
+   * Audit two #81 (K38): the empty-group guard. With a count of 0 the head draws nothing, so a list
+   * never shows a heading over nothing; the page states the empty group in words instead.
+   */
+  hideWhenEmpty?: boolean;
   /** Owner or a short note, in ink-3 ("Bed manager"). */
   meta?: ReactNode;
   /** Right side: a figure or one quiet action. */
@@ -342,8 +347,10 @@ export function GroupHead({
   onToggle,
   expanded,
   controls,
+  hideWhenEmpty = false,
   className,
 }: GroupHeadProps) {
+  if (hideWhenEmpty && count === 0) return null;
   const inner = (
     <>
       <span className={styles.groupName}>

@@ -8,7 +8,7 @@ One patient's record: where they are now, their movement and the next step.
 
 1. Who and where. Name, record number and where they are now, such as In ED or Inpatient.
 2. At a glance. Legal status, observation level, risk and alerts, as recorded. Legal opens their forms.
-3. Copy, Pin and Forms. Copy handover or Copy summary copies a short summary. Pin keeps the record on Home. Forms opens their legal forms.
+3. Copy and Pin. Copy for handover copies a short summary. Pin keeps the record on Home.
 4. Where they are up to. Each step from the ED to the community, with the current one marked and the dates recorded.
 5. The record. Now, History, Details and Documents (Docs on a phone). History lists each change as it was saved.
 6. The status card. Where they stand now. In an ED: the bed, fit to travel and transport, each with who does it. On a ward: their day of stay.

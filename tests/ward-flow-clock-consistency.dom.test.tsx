@@ -1,5 +1,12 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// The movement drawer reads the router for its Open on Home and Find a bed steps (r10).
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { splitDuration } from "@/components/ward-management/ward-clock";
@@ -60,16 +67,18 @@ const ADVANCE_BY = 60;
 const OPEN_SUBJECT = wardMovements.find((movement) => movement.closure === undefined);
 const CLOSED_SUBJECT = wardMovements.find((movement) => movement.closure !== undefined && movement.stage !== "arrived");
 
-function renderBoard() {
+function renderBoard(tab?: "resolved") {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <MovementsScreen />
       <ClockAdvancer minutes={ADVANCE_BY} />
     </WardFlowProvider>,
   );
+  // Audit two #3: the first tab lists only open movements; a closed one sits on Resolved today.
+  if (tab === "resolved") fireEvent.click(screen.getByRole("tab", { name: /^Resolved today/u }));
   // v6 (7 Oct 2026): the worklist shows the first rows of each group until Show all; these
   // cases read every row, so they open the full list first.
-  fireEvent.click(screen.getByRole("button", { name: /^Show all \d+$/u }));
+  for (const showAll of screen.queryAllByRole("button", { name: /^Show all \d+$/u })) fireEvent.click(showAll);
   // Read the mounted worklist; clock assertions below still compare live and frozen journeys.
   return screen.getByRole("region", { name: "Movement worklist" });
 }
@@ -119,7 +128,7 @@ describe("the movements board reads the live shared clock, not a value frozen at
         "cannot discriminate. Pick a different subject rather than trusting the green.",
     ).not.toBe(ifItHadKeptRunning);
 
-    const board = renderBoard();
+    const board = renderBoard("resolved");
     fireEvent.click(screen.getByRole("button", { name: "advance clock" }));
 
     const row = rowFor(board, movement.id);

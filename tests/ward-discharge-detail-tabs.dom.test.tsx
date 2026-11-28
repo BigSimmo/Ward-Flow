@@ -23,7 +23,7 @@ describe("discharge detail tabs", () => {
     // selected tab's panel as the one scroll area.
     const tablist = screen.getByRole("tablist", { name: "Discharge inspection sections" });
     const tabs = within(tablist).getAllByRole("tab");
-    expect(tabs.map((tab) => tab.tabIndex)).toEqual([0, -1, -1, -1]);
+    expect(tabs.map((tab) => tab.tabIndex)).toEqual(kind === "record" ? [0, -1, -1, -1] : [0, -1, -1]);
     const panelFor = (tab: HTMLElement) => document.getElementById(tab.getAttribute("aria-controls") ?? "");
     expect(panelFor(tabs[0])).toHaveAttribute("role", "tabpanel");
     expect(panelFor(tabs[0])).toHaveAttribute("aria-labelledby", tabs[0].id);
@@ -31,15 +31,15 @@ describe("discharge detail tabs", () => {
     await user.keyboard("{ArrowRight}");
     expect(tabs[1]).toHaveFocus();
     expect(tabs[1]).toHaveAttribute("aria-selected", "true");
-    expect(tabs.map((tab) => tab.tabIndex)).toEqual([-1, 0, -1, -1]);
+    expect(tabs.map((tab) => tab.tabIndex)).toEqual(kind === "record" ? [-1, 0, -1, -1] : [-1, 0, -1]);
     expect(panelFor(tabs[1])).toHaveAttribute("aria-labelledby", tabs[1].id);
     expect(screen.getByRole("tabpanel", { name: /^Held up/u })).toBeInTheDocument();
     await user.keyboard("{End}");
-    expect(tabs[3]).toHaveFocus();
+    expect(tabs[tabs.length - 1]).toHaveFocus();
     await user.keyboard("{ArrowRight}");
     expect(tabs[0]).toHaveFocus();
     await user.keyboard("{ArrowLeft}");
-    expect(tabs[3]).toHaveFocus();
+    expect(tabs[tabs.length - 1]).toHaveFocus();
     await user.keyboard("{Home}");
     expect(tabs[0]).toHaveFocus();
     await user.keyboard("{Enter}");

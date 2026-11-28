@@ -21,16 +21,17 @@ import {
 } from "@/components/wf";
 import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
-import { ageSexLabel, RISK_FLAG_LABELS, formatDob } from "./ward-referral-drawer-model";
+import { ageSexLabel, formatDob } from "./ward-referral-drawer-model";
 import { Field, SelectBox, CardHead } from "./ward-referral-drawer-fields";
 import { CarriedNote } from "./referral-carried-note";
-import { carriedNotesFor, withCarriedLegal } from "./referral-carry-over";
+import { carriedNotesFor } from "./referral-carry-over";
 import { ReferralCatchmentCard } from "./ward-referral-drawer-catchment";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
 import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 import { ReferralDuplicateCheck } from "./ward-referral-drawer-duplicate-check";
+import { ReferralFold } from "./ward-referral-drawer-referral-step";
 
 /**
  * Names and suburbs have no hard cap (Josh, 5 Nov 2026), as on Add a patient: over 100 characters
@@ -88,25 +89,16 @@ export function ReferralPatientStep({
     isPhone,
     liveMovement,
     patientRecord,
-    effectiveCohort,
-    isMedicalCleared,
     catchmentNotKnown,
     activeSection,
-    setActiveSection,
     unidentified,
     setUnidentified,
     destType,
-    security,
-    provisionalDiag,
     dirty,
     currentPatient,
     handleSelectPatient,
     filteredPatients,
     addNewPatient,
-    realTimeMatch,
-    tierLabel,
-    recordedFlags,
-    clearance,
     patientShowErrors,
     readmissionFlag,
     sendingWard,
@@ -121,7 +113,6 @@ export function ReferralPatientStep({
   } = s;
   // Feature 39: a carried legal status and expiry show in the summary while the form still holds them.
   const carriedNotes = carriedNotesFor(s.carry, s);
-  const legalShown = withCarriedLegal(currentPatient, carriedNotes, s.legalStatus);
   // WS-08 (H-0973): this person already has an open ED movement that starts somewhere else.
   const journeyElsewhere = openJourney && openJourney.siteCode !== originSiteCode ? openJourney : undefined;
   const originName = siteDirectory.find((site) => site.code === originSiteCode)?.emergencyDepartment?.name;
@@ -253,7 +244,8 @@ export function ReferralPatientStep({
                   <X aria-hidden="true" />
                 </button>
               </div>
-              <div className={styles.fieldGrid} data-layout="three">
+              {/* Thread C mock-up: the four required fields sit two by two, and the optional ones fold. */}
+              <div className={styles.fieldGrid}>
                 <Field
                   label="Family name"
                   htmlFor={`${sectionId}-np-family`}
@@ -318,50 +310,59 @@ export function ReferralPatientStep({
                     }
                   />
                 </Field>
-                {/* WT-05 (walk-through, 26 Oct 2026): recorded sex is asked once, here, and the referral
-                    and placement start from it instead of "Not recorded". */}
-                <div className={styles.npChoices}>
-                  <div className={styles.npChoice}>
-                    <span className={styles.npChoiceLabel} id={`${sectionId}-np-sex`}>
-                      Recorded sex <small>optional</small>
-                    </span>
-                    <Segmented
-                      label="Recorded sex"
-                      items={NEW_PATIENT_SEX_ITEMS}
-                      value={newPatient.sex ?? ""}
-                      onChange={(sex) => setNewPatient((p) => ({ ...p, sex: sex as RecordedSex | "" }))}
-                    />
-                  </div>
-                  <div className={styles.npChoice}>
-                    <span className={styles.npChoiceLabel} id={`${sectionId}-np-gender`}>
-                      Gender <small>optional, bed matching</small>
-                    </span>
-                    <Segmented
-                      label="Gender"
-                      items={NEW_PATIENT_GENDER_ITEMS}
-                      value={newPatient.gender}
-                      onChange={(gender) => setNewPatient((p) => ({ ...p, gender: gender as Gender | "" }))}
-                    />
-                  </div>
-                </div>
-                <Field
-                  label="Suburb"
-                  htmlFor={`${sectionId}-np-suburb`}
-                  hint="optional"
-                  warning={longTextWarning(newPatient.suburb, "suburb")}
-                >
-                  <input
-                    id={`${sectionId}-np-suburb`}
-                    className={styles.fieldInput}
-                    list={`${sectionId}-suburbs`}
-                    value={newPatient.suburb}
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="words"
-                    onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, suburb: value }))}
-                  />
-                </Field>
               </div>
+              <ReferralFold
+                inset
+                title="More about this person"
+                holds="Recorded sex, gender and suburb"
+                added={(newPatient.sex ? 1 : 0) + (newPatient.gender ? 1 : 0) + (newPatient.suburb.trim() ? 1 : 0)}
+                testId="ward-referral-fold-new-patient"
+              >
+                <div className={styles.fieldGrid} data-layout="three">
+                  {/* WT-05 (walk-through, 26 Oct 2026): recorded sex is asked once, here, and the referral
+                      and placement start from it instead of "Not recorded". */}
+                  <div className={styles.npChoices}>
+                    <div className={styles.npChoice}>
+                      <span className={styles.npChoiceLabel} id={`${sectionId}-np-sex`}>
+                        Recorded sex
+                      </span>
+                      <Segmented
+                        label="Recorded sex"
+                        items={NEW_PATIENT_SEX_ITEMS}
+                        value={newPatient.sex ?? ""}
+                        onChange={(sex) => setNewPatient((p) => ({ ...p, sex: sex as RecordedSex | "" }))}
+                      />
+                    </div>
+                    <div className={styles.npChoice}>
+                      <span className={styles.npChoiceLabel} id={`${sectionId}-np-gender`}>
+                        Gender <small>used for bed matching</small>
+                      </span>
+                      <Segmented
+                        label="Gender"
+                        items={NEW_PATIENT_GENDER_ITEMS}
+                        value={newPatient.gender}
+                        onChange={(gender) => setNewPatient((p) => ({ ...p, gender: gender as Gender | "" }))}
+                      />
+                    </div>
+                  </div>
+                  <Field
+                    label="Suburb"
+                    htmlFor={`${sectionId}-np-suburb`}
+                    warning={longTextWarning(newPatient.suburb, "suburb")}
+                  >
+                    <input
+                      id={`${sectionId}-np-suburb`}
+                      className={styles.fieldInput}
+                      list={`${sectionId}-suburbs`}
+                      value={newPatient.suburb}
+                      autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="words"
+                      onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, suburb: value }))}
+                    />
+                  </Field>
+                </div>
+              </ReferralFold>
               <ReferralDuplicateCheck
                 draft={newPatient}
                 onUse={(key) => {
@@ -419,7 +420,7 @@ export function ReferralPatientStep({
                 aria-autocomplete="list"
                 aria-controls={showResults ? resultsId : undefined}
                 aria-activedescendant={showResults && highlight >= 0 ? `${searchId}-opt-${highlight}` : undefined}
-                placeholder="Find a patient by name or UMRN"
+                placeholder="Name or UMRN"
                 autoCorrect="off"
                 autoCapitalize="none"
                 enterKeyHint="search"
@@ -736,79 +737,6 @@ export function ReferralPatientStep({
               </Field>
             </div>
           ) : null}
-
-          <div
-            className={styles.priorityGrid}
-            role="region"
-            aria-label="Clinical priority grid"
-            hidden={noPatientChosen}
-          >
-            <div className={styles.priorityCell}>
-              <p className={styles.eyebrow}>Legal order</p>
-              <p className={styles.priorityValue}>{legalShown.legalStatus}</p>
-              <p className={styles.priorityMeta}>Expiry {legalShown.recordedExpiry}</p>
-              <CarriedNote note={carriedNotes.legalStatus} field="legal-summary" />
-            </div>
-            <div className={styles.priorityCell}>
-              <p className={styles.eyebrow}>Clinical acuity</p>
-              <p className={styles.priorityValue}>{tierLabel}</p>
-              <p className={styles.priorityMeta}>
-                {provisionalDiag ? `Diagnosis ${provisionalDiag}` : "Diagnosis not recorded"}
-              </p>
-              <p className={styles.priorityMeta}>
-                {recordedFlags.length
-                  ? recordedFlags
-                      .map((key, index) => (index === 0 ? RISK_FLAG_LABELS[key] : RISK_FLAG_LABELS[key].toLowerCase()))
-                      .join(", ")
-                  : "No risk flags selected"}
-              </p>
-            </div>
-            <div className={styles.priorityCell}>
-              <p className={styles.eyebrow}>Bed fit</p>
-              <p className={styles.priorityValue}>
-                {effectiveCohort || "Age band not chosen"} · {security.toLowerCase()}
-              </p>
-
-              <p className={styles.priorityMeta}>Origin {currentPatient.origin.split("·")[0].trim()}</p>
-              <p className={styles.priorityMeta}>
-                {destType === "ward" ? (
-                  <>
-                    <StatusGlyph tone={realTimeMatch.readyBedsCount > 0 ? "success" : "danger"} size={9} />
-                    {realTimeMatch.readyBedsCount} ready · {realTimeMatch.pulledBedsCount} pulled
-                  </>
-                ) : destType === "community" ? (
-                  <>
-                    <StatusGlyph tone="success" size={9} />
-                    Community team, no bed requested
-                  </>
-                ) : (
-                  <>
-                    <StatusGlyph tone="neutral" size={9} />
-                    Observation beds not recorded
-                  </>
-                )}
-              </p>
-            </div>
-            <div className={styles.priorityCell} data-testid="ward-referral-medical-clearance-card">
-              <p className={styles.eyebrow}>Medical clearance</p>
-              <p className={styles.priorityValue} data-testid="ward-referral-clearance-status">
-                <StatusGlyph tone={clearance.tone} size={9} />
-                {clearance.label}
-              </p>
-              <p className={styles.priorityMeta}>
-                {isMedicalCleared ? "Fit for admission & travel" : "Pre-admission exam needed"}
-              </p>
-              <button
-                type="button"
-                className={styles.textLink}
-                data-cleared={isMedicalCleared}
-                data-testid="ward-referral-medical-clearance-toggle"
-                onClick={() => setActiveSection(destType === "community" ? "referral" : "documentation")}
-              >
-                Review clearance
-              </button>
-            </div>
-          </div>
         </div>
       </section>
 

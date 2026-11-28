@@ -508,7 +508,8 @@
 }
 
 .findBox {
-  flex: 1 1 14rem;
+  /* Review fix (27 Nov 2026): it gives way first, so the Share menu stays on the bar's one row. */
+  flex: 1 1 10rem;
   width: auto;
   min-width: 9rem;
   max-width: 260px;
@@ -536,6 +537,18 @@
   white-space: nowrap;
 }
 
+/* With View as on the bar, it takes the free space and the Share menu sits flush after it. */
+.filterBar:has(> .roleSwitch) > :last-child {
+  margin-inline-start: 0;
+}
+
+/* Under 1400px the "View as" word goes; the switch keeps its own name (label="View as"). */
+@media (max-width: 87.4375rem) {
+  .roleSwitch > .fieldWord {
+    display: none;
+  }
+}
+
 /* Table about two thirds, the side panel beside it; flush at equal heights. */
 .chronoSplit {
   display: grid;
@@ -548,6 +561,9 @@
 .chronoCard {
   min-width: 0;
   align-self: start;
+  /* Review fix (27 Nov 2026): the day rows never paint over the Summary rail beside the table.
+     clip, not hidden, so the page-sticky head and day rows keep sticking. */
+  overflow: clip;
 }
 
 .countPill {
@@ -831,6 +847,13 @@
 }
 
 /* Tablet landscape keeps the table beside the summary; portrait (and below) stacks them. */
+/* The events table needs the full width below 1400px; the Summary rail stacks under it (review 27 Nov). */
+@media (max-width: 87.4375rem) {
+  .chronoSplit {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 62.5rem) {
   .chronoSplit {
     grid-template-columns: minmax(0, 1fr);

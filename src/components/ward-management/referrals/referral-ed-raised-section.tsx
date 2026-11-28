@@ -152,7 +152,7 @@ export function ReferralEdRaisedSection({ view, now }: { view: EdDeskView; now: 
         )}
         {raised.length > FIRST_ROWS ? (
           <ShowMoreRow expanded={showAll} onClick={() => setShowAll((value) => !value)}>
-            {showAll ? "Show fewer" : `Show ${raised.length - FIRST_ROWS} more`}
+            {showAll ? "Show fewer" : `Show all ${raised.length}`}
           </ShowMoreRow>
         ) : null}
       </section>

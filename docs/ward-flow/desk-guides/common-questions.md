@@ -78,7 +78,7 @@ Source: Help, Nurse in charge desk guide limits (`DESK_GUIDES.ward`).
 
 ### Why can't I book transport?
 
-> Log booking stays greyed until a ward has accepted the patient, and the reason shows beside it. Book by phone first: logging it needs the CAD number from the call, the quoted ETA, the provider, the legal status and whether an escort is needed.
+> Record booking stays greyed until a ward has accepted the patient, and the reason shows beside it. Book by phone first: recording it needs the CAD number from the call, the quoted ETA, the provider, the legal status and whether an escort is needed.
 
 Source: Help, screen questions (`screenHelpFor`). Screen: Movements.
 

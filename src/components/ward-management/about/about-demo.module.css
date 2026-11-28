@@ -1,6 +1,7 @@
 /*
- * F-77 "About this demo". Page frame as Night view; a main column and a side rail at 2:1 on desktop
- * (DESIGN-SYSTEM §5), stacked below the content stack point. Rows follow Home's lists: a bold title,
+ * F-77 "About this demo". Page frame as Night view; full-width cards, each holding a pair side by side
+ * on desktop (what this is and the invented data, kept and sent, the two steps for leaving), stacked
+ * below the content stack point. Rows follow Home's lists: a bold title,
  * one quiet line, the fact's scope in mono on the right. Kit parts and tokens only.
  */
 .main {
@@ -13,24 +14,35 @@
 }
 
 .layout {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  gap: var(--wf-s-4);
-  align-items: start;
-}
-
-.column,
-.rail {
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-4);
   min-width: 0;
 }
 
-/* The rail stays beside the long privacy list as the page scrolls (Home's right column does the same). */
-.rail {
-  position: sticky;
-  top: var(--ward-sticky-top, 4.5rem);
+/* A card's two halves side by side, a hairline between; the Leaving steps do the same. */
+.pair,
+.steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.pair > * {
+  min-width: 0;
+}
+
+.pair > * + *,
+.steps li + li {
+  border-left: 1px solid var(--wf-line);
+}
+
+.steps li {
+  border-top: 0;
+}
+
+/* A group head at the top of a half sits under the card head's own line, so it needs no second one. */
+.pair > section > .groupHead {
+  border-top: 0;
 }
 
 .lead {
@@ -179,38 +191,20 @@
   font-size: var(--wf-fs-12);
 }
 
-.quietFoot {
-  margin: 0;
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
-  font-size: var(--wf-fs-13);
-  line-height: var(--wf-lh-13);
-}
-
-.quietFoot {
-  margin-top: var(--wf-s-3);
-  color: var(--wf-ink-3);
-}
-
 .foot {
   display: flex;
-  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
   border-top: 1px solid var(--wf-line);
 }
 
-.foot > * {
-  width: 100%;
-}
-
-/* The content stack point (Q291): the rail drops under the main column. */
-@media (max-width: 56.25rem) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .rail {
-    position: static;
-  }
+.footNote {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
 }
 
 @media (max-width: 46.4375rem) {
@@ -218,8 +212,22 @@
     padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-6);
   }
 
-  .isGrid {
+  .isGrid,
+  .pair,
+  .steps {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pair > * + *,
+  .steps li + li {
+    border-top: 1px solid var(--wf-line);
+    border-left: 0;
+  }
+
+  /* On a phone the button takes the full width under the line, as before. */
+  .foot {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .rowFigure {

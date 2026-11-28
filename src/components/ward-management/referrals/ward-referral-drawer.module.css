@@ -453,6 +453,13 @@
   color: var(--wf-ink-1);
 }
 
+/* Ward Referrals tab (26 Nov 2026): the standard 12px gap between referral cards. */
+.inboxList:not([hidden]) {
+  display: grid;
+  min-width: 0;
+  gap: var(--wf-s-3);
+}
+
 .refCard:has(> .cardHead) {
   gap: 0;
   padding: 0;
@@ -729,6 +736,19 @@
 
 .textLink:hover {
   text-decoration: underline;
+}
+
+/* Audit three #40: Save draft as a link in the send foot, at the foot's tap height. */
+html .footLink {
+  min-height: var(--spacing-tap, 3rem);
+  padding: 0 var(--space-1);
+  font-size: var(--wf-fs-13);
+}
+
+html .footLink[aria-disabled="true"] {
+  color: var(--wf-ink-3);
+  text-decoration: none;
+  cursor: default;
 }
 
 .cardActions {
@@ -1689,6 +1709,21 @@
   padding: 0 var(--wf-s-4);
 }
 
+/* Gate r10 (2 upgrade 2): the empty Wards list, the kit empty state centred with no frame of its own. */
+.wardEmpty {
+  /* r10 (final-b1 #13): glyph stacked over the sentence, both centred, so they read as one thing. */
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wf-s-2);
+  justify-content: center;
+  margin: var(--wf-s-4) var(--wf-s-3);
+  padding-block: var(--wf-s-5, 20px);
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-2);
+  text-align: center;
+}
+
 .wardTableHead {
   height: 32px;
   color: var(--wf-ink-3);
@@ -1997,6 +2032,152 @@ details.refCard > summary {
   font-size: var(--wf-fs-12);
   font-weight: 600;
   cursor: pointer;
+}
+
+/* Thread C mock-up (26 Nov 2026): a fold in a step card, copied from Add patient's folds so the two
+   forms read alike. At a card's foot it sits flush under a hairline; as the whole card its head reads
+   as the card head; inside a body it is a hairline box. Tone is a glyph beside a word, never an edge. */
+.refFold {
+  min-width: 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.refCard > .refFold:only-child,
+.refFold[data-card] {
+  border-top: 0;
+  border-radius: inherit;
+}
+
+.refFold[data-inset] {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.refFoldHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: var(--wf-row-default);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-radius: inherit;
+  color: var(--wf-ink-1);
+  list-style: none;
+  cursor: pointer;
+}
+
+.refFold[data-card] > .refFoldHead {
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.refFold[data-inset] > .refFoldHead {
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.refFoldHead::-webkit-details-marker {
+  display: none;
+}
+
+.refFoldHead:hover {
+  background: var(--wf-hover);
+}
+
+.refFoldHead:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.refFold[open] > .refFoldHead {
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* Review fix (27 Nov 2026): an open head takes the fold's own tint, whether or not the pointer is
+   still on it, so every open fold reads the same. */
+.refFold[open] > .refFoldHead:hover {
+  background: transparent;
+}
+
+.refFold[open] {
+  background: color-mix(in srgb, var(--wf-surface-2) 55%, var(--wf-surface));
+}
+
+/* As the whole card, open, it keeps the card's own surface and a head rule, like CardHead. */
+.refFold[data-card][open] {
+  background: transparent;
+}
+
+.refFold[data-card][open] > .refFoldHead {
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.refFoldLines {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.refFoldTitle {
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.refFoldSummary {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.refFold[open] .refFoldSummary {
+  display: none;
+}
+
+.refFoldCount {
+  flex: none;
+  padding: 1px var(--wf-s-2);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wf-success) 14%, var(--wf-surface));
+  color: var(--wf-success-ink, var(--wf-ink-1));
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.refFoldChevron {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--wf-ink-3);
+  transition: transform var(--wf-t-enter) var(--wf-ease-out);
+}
+
+.refFold[open] .refFoldChevron {
+  transform: rotate(180deg);
+}
+
+.refFoldBody {
+  display: grid;
+  min-width: 0;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-1) var(--wf-s-4) var(--wf-s-4);
+}
+
+.refFold[data-card] > .refFoldBody {
+  padding-top: var(--wf-s-3);
+}
+
+.refFold[data-inset] > .refFoldBody {
+  padding: var(--wf-s-1) var(--wf-s-3) var(--wf-s-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .refFoldChevron {
+    transition: none;
+  }
 }
 
 .documentLinks {
@@ -2959,6 +3140,16 @@ details.refCard > summary {
   }
 
   button.phFigure[aria-pressed="true"] {
+    background: var(--wf-on-hero-fill);
+  }
+
+  /* States B review: Preview letter is one inline hero chip, at the start of its cell. */
+  .phFigures > .phPreview {
+    align-self: center;
+    justify-self: start;
+  }
+
+  .phFigures > .phPreview[aria-pressed="true"] {
     background: var(--wf-on-hero-fill);
   }
 
@@ -4054,4 +4245,10 @@ details.refCard > summary {
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
   line-height: var(--wf-lh-13);
+}
+
+/* Audit two #104: sex and gender from the record, stated once under Bed requirements. */
+.identityOnRecord {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
 }

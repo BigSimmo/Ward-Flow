@@ -1,6 +1,6 @@
 "use client";
 
-import { placeDisplayName } from "@/components/ward-management/ward-place-names";
+import { placeDisplayName, placeShortCode } from "@/components/ward-management/ward-place-names";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { useId, useMemo, useRef } from "react";
@@ -63,6 +63,8 @@ export function WardOffersTable({
   const configuration = useOptionalWardFlowSelect("configuration")?.configuration;
   if (offers.length === 0) return null;
   const wardName = (unitId: string) => placeDisplayName(unitId, units).split(" — ")[0];
+  // Item 24: at tablet width the Chase button names the ward by its short code ("BTY"); the full name stays in the row.
+  const wardCode = (unitId: string) => placeShortCode(unitId, units);
   // Note 11 (Josh, 9 Nov 2026): the list's state before its rows. Offers are oldest first, so the
   // first one is the longest wait; the bar on each row compares against it (no threshold, no colour).
   const sentAt = (movement: Movement) => movement.referredAt ?? movement.openedAt;
@@ -199,13 +201,18 @@ export function WardOffersTable({
                               owner: "ward",
                               unitId: toAnswer,
                               dueAt: now + 120,
-                              success: `Chased ${wardName(toAnswer)}.`,
+                              success: `Chased ${wardName(toAnswer)}`,
                             });
                           }}
                           data-testid={`ward-offer-chase-${movement.id}`}
                         >
                           Chase
-                          {toAnswer ? <span className={styles.offerChaseWard}> {wardName(toAnswer)}</span> : null}
+                          {toAnswer ? (
+                            <>
+                              <span className={styles.offerChaseWard}> {wardName(toAnswer)}</span>
+                              <span className={styles.offerChaseCode}> {wardCode(toAnswer)}</span>
+                            </>
+                          ) : null}
                         </Button>
                       )}
                       {overdue || openMeetingAction(movement.meetingActions, "escalate_ward_answer") ? (

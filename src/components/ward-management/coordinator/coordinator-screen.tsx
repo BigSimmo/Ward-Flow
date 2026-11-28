@@ -23,7 +23,7 @@ import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { isBedCountStale } from "@/components/ward-management/ward-clinical-values";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
-import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
+import { activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import { alertsNowFigures } from "@/components/ward-management/ward-alerts-figures";
 import { formatInstant, splitDuration } from "@/components/ward-management/ward-clock";
 import { originPlace } from "@/components/ward-management/origin-place";
@@ -41,22 +41,26 @@ import { currentInboxOwner } from "@/components/ward-management/ward-inbox-snooz
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { unitInScope } from "@/components/ward-management/ward-role-access";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { CountBreakdown } from "@/components/ward-management/count-breakdown";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
-import { movementBreakdownRows, wardReadyBreakdownRows } from "@/components/ward-management/count-breakdown-rows";
+import {
+  movementBreakdownRows,
+  waitingTransitFacts,
+  wardReadyBreakdownRows,
+} from "@/components/ward-management/count-breakdown-rows";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { queueOrder } from "@/components/ward-management/ward-priority";
 import { coordinatorReferralQueue, isReferralOverdue } from "@/components/ward-management/ward-referrals";
 import {
   movementBelongsToService,
-  noRecordedServiceMovementCount,
   referralBelongsToService,
   unitHealthService,
-  urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
 import { homeChipFigures, openEdJourneys } from "@/components/ward-management/ward-shared-figures";
-import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import {
   buttonClass,
@@ -68,13 +72,11 @@ import {
   HeroTop,
   LiveChip,
   Menu,
-  PillTabs,
   Segmented,
   SrOnly,
   StatusGlyph,
   type HeroNextStep,
 } from "@/components/wf";
-import { createBrowserStore } from "@/lib/client-store-factory";
 import activity from "./home-activity.module.css";
 import cards from "./home-cards.module.css";
 import styles from "./home.module.css";
@@ -96,51 +98,13 @@ import heroStyles from "./home-hero.module.css";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 import type { PlacementSubject } from "./home-placement-drawer";
 import { usePlannedRows } from "./planned-rows";
-import { FLOW_STAGES, flowStageOf, type FlowStageId, PriorityQueue, type QueueHighlight } from "./priority-queue";
+import { waitingHref } from "@/components/ward-management/delays/waiting-href";
 import { needsYouCount } from "@/components/ward-management/figures/decision-counts";
 import { WardReadyForNextLines } from "../ward/ward-ready-for-next-lines";
 
-/*
- * Audit S-25: the Home ED filter lasts for this browser session, so opening a patient and coming
- * back keeps it (the "Filtered to" chip shows it is on). sessionStorage, wrapped so a blocked
- * store never throws; the server snapshot is no filter.
- */
-const HOME_ED_FILTER_KEY = "ward_flow_home_ed_filter";
-const HOME_ED_FILTER_EVENT = "ward_flow_home_ed_filter_change";
-let homeEdFilterFallback: string | null | undefined;
-
-function readHomeEdFilter(): string | null {
-  try {
-    return window.sessionStorage.getItem(HOME_ED_FILTER_KEY);
-  } catch {
-    return homeEdFilterFallback ?? null;
-  }
-}
-
-function writeHomeEdFilter(edId: string | undefined): void {
-  try {
-    if (edId) window.sessionStorage.setItem(HOME_ED_FILTER_KEY, edId);
-    else window.sessionStorage.removeItem(HOME_ED_FILTER_KEY);
-  } catch {
-    // A blocked store: the filter lasts for this page only.
-    homeEdFilterFallback = edId ?? null;
-  }
-  try {
-    window.dispatchEvent(new Event(HOME_ED_FILTER_EVENT));
-  } catch {
-    // Nothing else depends on the notification.
-  }
-}
-
-function subscribeHomeEdFilter(onChange: () => void) {
-  window.addEventListener(HOME_ED_FILTER_EVENT, onChange);
-  return () => window.removeEventListener(HOME_ED_FILTER_EVENT, onChange);
-}
-
-const useHomeEdFilter = createBrowserStore(subscribeHomeEdFilter, readHomeEdFilter, null);
-const HOME_VIEWS = ["needs", "queue", "planned"] as const;
+// Simplification mock-up (area 2 item 1): Flow folded into Waiting; `?list=queue` redirects there.
+const HOME_VIEWS = ["needs", "planned"] as const;
 const NEEDS_FOCI = ["all", "act", "decide"] as const;
-const DELAYS_HREF = "/bedchart/waiting";
 
 /** Alerts whose work happens in Placement, so their row button opens it beside the list (Home v7). */
 const IN_PLACE_KINDS = new Set(["hold", "declines", "nobed", "unsuitable"]);
@@ -197,8 +161,8 @@ const REFUSED_MARKER_EXPLANATION =
  *   but its card names the oldest alert to place;
  * - Today's review and Alerts history sit under one "More" menu at the end of the list tabs.
  */
-/** Today's review and Alerts history under one "More" menu at the end of Home's list tabs. */
-function HomeListMoreMenu() {
+/** Today's review and Night view under one "More" menu at the end of Home's list tabs. */
+function HomeListMoreMenu({ plain = false, refused = 0 }: { plain?: boolean; refused?: number }) {
   // Optional, so Home still renders where no app router is mounted (the preview and the screen tests).
   const router = useOptionalRouter();
   return (
@@ -208,23 +172,32 @@ function HomeListMoreMenu() {
       items={[
         // Home notes 4, issue 4 (Josh, 9 Nov 2026): Today's review replaces the four Registers tabs
         // (Exceptions, Declines, Overrides, Refused) as the one page for what went off-plan today.
-        { id: "review", label: "Today's review", onSelect: () => router?.push("/bedchart/review") },
+        // Batch 3 (one Handover): /review redirects to Governance's Review tab, so go there directly.
+        // Plan 1: the refused count rides on the item, so the page that explains it is one tap from the number.
+        {
+          id: "review",
+          label: "Today's review",
+          meta: refused > 0 ? `${refused} refused` : undefined,
+          onSelect: () => router?.push("/bedchart/governance?tab=review"),
+        },
         // Feature plan item 29: the overnight page, with the same figures as the day screens.
         { id: "night", label: "Night view", onSelect: () => router?.push("/bedchart/night") },
-        { id: "alerts", label: "Alerts history", onSelect: () => router?.push("/bedchart/alerts") },
+        // Simplification mock-up (area 2 item 6): "Alerts history" cut; Alerts is one tap from the bell.
       ]}
       trigger={(props) => (
         <button
           type="button"
           {...props}
-          className={`${buttonClass({ variant: "ghost", size: "sm" })} ${folderTabClasses.more} ${flowStyles.moreCover}`}
+          className={`${buttonClass({ variant: "ghost", size: "sm" })} ${plain ? "" : folderTabClasses.more} ${flowStyles.moreCover}`}
           data-testid="ward-home-more"
         >
           <Ellipsis size={16} strokeWidth={1.75} aria-hidden="true" />
           <span className={flowStyles.moreText} aria-hidden="true">
-            More
+            {refused > 0 ? `More · ${refused}` : "More"}
           </span>
-          <span className="sr-only">More for this list</span>
+          <span className="sr-only">
+            {refused > 0 ? `More for this list, ${refused} refused today` : "More for this list"}
+          </span>
         </button>
       )}
     />
@@ -233,6 +206,9 @@ function HomeListMoreMenu() {
 
 export function CoordinatorScreen() {
   const network = useWardNetwork();
+  // Audit four item 1: a site desk's hero Ready and In use count its own site, as the rail does.
+  const { scope: deskScope } = useEffectiveWardAccess();
+  const siteScope = deskScope.kind === "site" ? deskScope : undefined;
   const thresholds = useDueSoonThresholds();
   usePrintableDisclosures();
   const {
@@ -302,8 +278,7 @@ export function CoordinatorScreen() {
   const [releaseSheetUsed, setReleaseSheetUsed] = useState(false);
   // Act now and Referrals to decide in the hero narrow My list to that group.
   const [needsFocus, chooseNeedsFocus] = useAddressTab("focus", NEEDS_FOCI, "all");
-  // Home flow mock-up (Q343): the stage the tiles opened in the Flow tab; none shows every stage.
-  const [flowStage, setFlowStage] = useState<FlowStageId | undefined>(undefined);
+  const router = useOptionalRouter();
   // Switching lists clears Placement, so it never shows someone the new list does not highlight.
   function showView(view: (typeof HOME_VIEWS)[number]) {
     if (view !== homeView) {
@@ -316,16 +291,12 @@ export function CoordinatorScreen() {
     showView("needs");
     chooseNeedsFocus(needsFocus === next ? "all" : next);
   }
-  const selectedEdId = useHomeEdFilter() ?? undefined;
-  const setSelectedEdId = writeHomeEdFilter;
   // The shortlist's other possible subject. Switching the queue between Patients and Referrals
   // never touches either selection.
   const [selectedReferralId, setSelectedReferralId] = useState<string | undefined>(undefined);
   const queueFocusRef = useRef<HTMLDivElement>(null);
   // The list tabs' row, which the curved folder shape measures.
   const listsNavRef = useRef<HTMLElement>(null);
-  // A highlight (past target, from the next step) marks its rows in the queue; the rest dim, nothing hides.
-  const [highlight, setHighlight] = useState<QueueHighlight | undefined>(undefined);
   // Home v7 layouts: two columns (the list, then Beds that fit and Placement) from tablet landscape
   // up, one column on tablet portrait with Placement as a side sheet, phone direction A.
   const layout = useHomeLayout();
@@ -360,10 +331,6 @@ export function CoordinatorScreen() {
     focusQueue(queueFocusRef.current);
   }, [selectedMovementId, selectedMovement, setFocusMovementId]);
 
-  const selectedEd = selectedEdId ? allEmergencyDepartments().find((ed) => ed.id === selectedEdId) : undefined;
-  const activeEdId = selectedEd?.id;
-  const filteredMovements = activeEdId ? movements.filter((movement) => movement.originEdId === activeEdId) : movements;
-
   // Item 44 (build plan B1): `null` is All services and filters nothing.
   const isInServiceScope = useMemo(() => {
     if (service === null) return null;
@@ -376,62 +343,8 @@ export function CoordinatorScreen() {
     return (referral: Referral) => referralBelongsToService(referral, chosenService, units);
   }, [service, units]);
 
-  const scopedFilteredMovements = isInServiceScope ? filteredMovements.filter(isInServiceScope) : filteredMovements;
-  // Movements with an active act-now task (`activeActNowItems`). Audit 1, Josh 20 Oct (CS-04): they
-  // carry an "Act now" mark on their row and are no longer pinned on top; the queue is wait order.
-  const actNowMovementIds = useMemo(
-    () =>
-      new Set(
-        activeActNowItems(
-          {
-            movements,
-            units,
-            configuration,
-            inboxSnoozes,
-            admissions,
-            patients,
-            referrals,
-            supportNotifications,
-            plannedAdmissions,
-            broadcastAlerts,
-            leaveBeds,
-          },
-          now,
-        ).map((item) => item.movementId),
-      ),
-    [
-      movements,
-      units,
-      configuration,
-      inboxSnoozes,
-      admissions,
-      patients,
-      referrals,
-      supportNotifications,
-      plannedAdmissions,
-      broadcastAlerts,
-      leaveBeds,
-      now,
-    ],
-  );
+  const scopedFilteredMovements = isInServiceScope ? movements.filter(isInServiceScope) : movements;
   const queue = queueOrder(scopedFilteredMovements, now);
-  const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
-
-  const noRecordedServiceCount = useMemo(() => noRecordedServiceMovementCount(movements, units), [movements, units]);
-  const urgentOutsideServiceCount = useMemo(() => {
-    if (service === null) return 0;
-    return urgentMovementsOutsideService(openMovements, service, units, now, configuration).length;
-  }, [service, openMovements, units, now, configuration]);
-  const queueServiceScope = service
-    ? {
-        service,
-        // Review finding 14 (12 Nov 2026): open movements in both figures, as Waiting counts them.
-        shown: isInServiceScope ? openMovements.filter(isInServiceScope).length : openMovements.length,
-        total: openMovements.length,
-        noRecordedServiceCount,
-        urgentOutside: { count: urgentOutsideServiceCount },
-      }
-    : undefined;
 
   const referralQueueAll = coordinatorReferralQueue(referrals);
   const referralQueue = isReferralInServiceScope ? referralQueueAll.filter(isReferralInServiceScope) : referralQueueAll;
@@ -610,16 +523,6 @@ export function CoordinatorScreen() {
   // Layout shift on Home (11 Nov 2026): the columns appear once the cards above My list and Later today have arrived.
   const cardsSettled = useHomeCardsSettled(!isPhone && !chosenAlert);
   const releaseAlert = releaseAlertId ? alertEntries.find((entry) => entry.item.id === releaseAlertId) : undefined;
-  const waitEntries = alertEntries.filter((entry) => entry.group === "wait");
-  // Home flow mock-up (Q340): a waiting alert is a mark on its patient's Flow row.
-  // Every waiting title on a patient is kept. Ruling 2 (D-191): a waiting alert with no patient is no
-  // longer a row in Needs you; it stays in Alerts (and a late planned arrival is in Past planned time).
-  const waitingMarks = new Map<string, string>();
-  for (const entry of waitEntries) {
-    if (!entry.movement) continue;
-    const prior = waitingMarks.get(entry.movement.id);
-    waitingMarks.set(entry.movement.id, prior ? `${prior} · ${entry.item.title}` : entry.item.title);
-  }
   const alertHandlers: QueueHandlers = {
     selectedId: selectedAlertId,
     onSelect: (entry) => {
@@ -657,8 +560,9 @@ export function CoordinatorScreen() {
         now,
         sites: network.sites,
         thresholds,
+        scope: siteScope,
       }),
-    [movements, units, referrals, bedReleases, leaveBeds, admissions, now, thresholds, network],
+    [movements, units, referrals, bedReleases, leaveBeds, admissions, now, thresholds, network, siteScope],
   );
   // Journey accountability continues through transit; the ED strip keeps physical inpatient waits.
   // With a service chosen, the hero's ED figures count that service's journeys (stress test, 3 Nov 2026).
@@ -671,14 +575,16 @@ export function CoordinatorScreen() {
   const networkWord = service === null ? "" : " · network-wide";
   const bedsReady = counts.capacity?.value ?? 0;
   // The highlight chips count the queue they highlight (after the ED and service filters), P002/P003.
-  const chips = homeChipFigures(queue, now, selectedEd?.siteCode);
+  const chips = homeChipFigures(queue, now, undefined);
 
   // v10 hero: the one ring on the page is statewide occupancy, from the one shared count
   // (`ward-occupancy.ts`) every page and the rail read, against the sidebar's alert line.
-  const statewideOccupancy = useMemo(
-    () => wardOccupancy(units, admissions, bedReleases).percent,
-    [units, admissions, bedReleases],
-  );
+  const statewideOccupancy = useMemo(() => {
+    if (!siteScope) return wardOccupancy(units, admissions, bedReleases).percent;
+    const places = wardPlaceLookup(units);
+    const siteUnits = units.filter((unit) => unitInScope(siteScope, unit.id, places));
+    return wardOccupancy(siteUnits, admissions, bedReleases).percent;
+  }, [units, admissions, bedReleases, siteScope]);
   // Checking foot: what this page watched, as counts. Never "All clear". Review finding 14 (12 Nov
   // 2026): with a service chosen, it counts that service's wards only, as the rest of Home does.
   const checkedUnits = service === null ? units : units.filter((unit) => unitHealthService(unit) === service);
@@ -698,6 +604,61 @@ export function CoordinatorScreen() {
       : deferredPanelMovement
         ? { kind: "movement", movement: deferredPanelMovement }
         : undefined;
+  // Audit four #31: the placement drawer's kit pager steps through My list in its own order: beds to
+  // pull, the Act now alerts, then the referrals to decide (the chosen focus narrows it, as the card does).
+  const listSteps: { key: string; open: () => void }[] =
+    shownView === "planned"
+      ? []
+      : [
+          ...(needsFocus === "decide"
+            ? []
+            : [
+                ...toPull.map((entry) => ({
+                  key: `pull:${entry.referral.id}`,
+                  open: () => {
+                    setSelectedAlertId(undefined);
+                    if (entry.movementId) selectMovement(entry.movementId);
+                    else {
+                      selectMovement(undefined);
+                      selectReferral(entry.referral.id);
+                    }
+                  },
+                })),
+                ...actEntries.map((entry) => ({
+                  key: `alert:${entry.item.id}`,
+                  open: () => alertHandlers.onSelect(entry),
+                })),
+              ]),
+          ...(needsFocus === "act"
+            ? []
+            : referralQueue.map((referral) => ({
+                key: `ref:${referral.id}`,
+                open: () => {
+                  setSelectedAlertId(undefined);
+                  selectMovement(undefined);
+                  selectReferral(referral.id);
+                },
+              }))),
+        ];
+  const openStepKey = chosenAlert
+    ? `alert:${chosenAlert.item.id}`
+    : selectedReferral
+      ? toPull.some((entry) => entry.referral.id === selectedReferral.id)
+        ? `pull:${selectedReferral.id}`
+        : `ref:${selectedReferral.id}`
+      : deferredPanelMovement
+        ? `pull:${toPull.find((entry) => entry.movementId === deferredPanelMovement.id)?.referral.id ?? ""}`
+        : "";
+  const listStepIndex = listSteps.findIndex((step) => step.key === openStepKey);
+  const placementPager =
+    listStepIndex < 0 || listSteps.length < 2
+      ? undefined
+      : {
+          index: listStepIndex,
+          total: listSteps.length,
+          noun: "person",
+          onStep: (delta: -1 | 1) => listSteps[(listStepIndex + delta + listSteps.length) % listSteps.length]?.open(),
+        };
   const placementNode = placementSubject ? (
     <HomePlacementDrawer
       // A new subject is a new drawer, so its foot slot and scroll start fresh.
@@ -709,21 +670,32 @@ export function CoordinatorScreen() {
       onSelectUnit={setSelectedUnitId}
       onRefer={referFromSheet}
       networkNote={service ? "Every ward in the network is considered." : undefined}
+      pager={placementPager}
     />
   ) : null;
 
   // Plan item 2i (proposal): the hero's next step, from the same figures as the hero's toggles.
   // Act now first, then referrals to decide, then past-target waits in the flow; one at a time.
   const actPressed = shownView === "needs" && needsFocus === "act";
-  const decidePressed = shownView === "needs" && needsFocus === "decide";
-  const overduePressed = shownView === "queue" && highlight === "overdue";
-  const showOverdue = () => {
-    showView("queue");
-    setFlowStage(undefined);
-    chooseNeedsFocus("all");
-    // CodeRabbit (#1380): set from what is shown, so a retained highlight from Needs you is not cleared.
-    setHighlight(overduePressed ? undefined : "overdue");
+  // Audit two #115: the first Act now row as Needs you draws it, accepted referrals with no bed pulled
+  // first (their Placement opens on "Pull the bed"), then the alerts, oldest first.
+  const openFirstActNow = () => {
+    const firstPull = toPull[0];
+    const firstAlert = actEntries[0];
+    if (firstPull?.movementId) {
+      setSelectedAlertId(undefined);
+      selectMovement(firstPull.movementId);
+    } else if (firstPull) {
+      setSelectedAlertId(undefined);
+      selectMovement(undefined);
+      selectReferral(firstPull.referral.id);
+    } else if (firstAlert) {
+      alertHandlers.onSelect(firstAlert);
+    }
   };
+  const decidePressed = shownView === "needs" && needsFocus === "decide";
+  // Simplification mock-up (area 2 item 1): past-target waits open Waiting, longest wait first.
+  const showOverdue = () => router?.push("/bedchart/waiting?order=longest");
   // Scope: with a service chosen, the step counts only that service's work, never statewide: the
   // hero's own scoped Act now (`heroActNow`), and the scoped referral queue and flow queue Home shows.
   const nextActCount = heroActNow;
@@ -735,19 +707,28 @@ export function CoordinatorScreen() {
   // R-HOME-1 (mock-up HOME-M1): one answer with its parts, "12 need you: 6 act now, 6 to decide". Act now is
   // the one shared figure the bell and Alerts use (`alertsNowFigures`); to decide is the referral queue.
   const needsYou = nextActCount + referralQueue.length;
-  const needsYouParts =
-    nextActCount > 0 && referralQueue.length > 0 ? `: ${nextActCount} act now, ${referralQueue.length} to decide` : "";
-  const needsYouAnswer = `${needsYou} ${needsYou === 1 ? "needs" : "need"} you${nextScope}${needsYouParts}`;
+  // Controls 1 (C003): the parts ("6 act now", "6 to decide") are said once, in the lines under the title, so
+  // the title keeps only the total.
+  const needsYouAnswer = `${needsYou} ${needsYou === 1 ? "needs" : "need"} you${nextScope}`;
   const heroNext: HeroNextStep =
     nextActCount > 0
       ? {
           answer: needsYouAnswer,
-          action: {
-            label: actPressed ? "Show all" : "Show act now",
-            pressed: actPressed,
-            testId: "home-next-action",
-            onClick: () => toggleFocus("act"),
-          },
+          // Audit two #115 (P1), for Josh (reverses his 4 Nov button words): the act button opens the
+          // first Act now row, as Movements, Alerts and Referrals open their next item. A filter left
+          // on from before is cleared, so the row it opens is in view.
+          action: actPressed
+            ? {
+                label: "Show all",
+                pressed: true,
+                testId: "home-next-action",
+                onClick: () => toggleFocus("act"),
+              }
+            : {
+                label: "Open next",
+                testId: "home-next-action",
+                onClick: openFirstActNow,
+              },
         }
       : referralQueue.length > 0
         ? {
@@ -761,10 +742,10 @@ export function CoordinatorScreen() {
           }
         : chips.overdueInQueue > 0
           ? {
-              answer: `Nothing to act on now${nextScope} · ${chips.overdueInQueue} past target in the flow`,
+              answer: `Nothing to act on now${nextScope} · ${chips.overdueInQueue} over target in the flow`,
               action: {
-                label: overduePressed ? "Show all" : "Show past target",
-                pressed: overduePressed,
+                label: "Open in Waiting",
+                pressed: false,
                 testId: "home-next-action",
                 onClick: showOverdue,
               },
@@ -840,7 +821,7 @@ export function CoordinatorScreen() {
 
         <div className={styles.body} data-testid="ward-coordinator-body">
           <Hero
-            className={`${styles.homeHero} ${heroStyles.hero} ${folderTabClasses.hero}`}
+            className={`${styles.homeHero} ${heroStyles.hero} ${sheetPlacement ? folderTabClasses.hero : ""}`}
             // Sticky header redesign (Josh, 9 Nov 2026): one plain title on every size. The header already
             // names the page and place, so the eyebrow ("Modelled network · day shift") is gone.
             title={
@@ -869,7 +850,7 @@ export function CoordinatorScreen() {
                       // PR E swap: the kit's `window` prop once HeroFigures takes it (none shown here).
                       // Wave 4 (D-191, notes item 4): count labels as nouns, as Capacity says them. The
                       // window word ("now") is left out because the page title already says "right now".
-                      label: `Open movements${service === null ? "" : ` in ${service}`}`,
+                      label: `Open ED movements${service === null ? "" : ` in ${service}`}`,
                       testId: "home-figure-ed",
                       // Item 5: tap the figure to see who is in it, from the same journeys it counts.
                       renderPress: (press) => (
@@ -878,6 +859,10 @@ export function CoordinatorScreen() {
                           noun={`open ED ${edJourneys.total === 1 ? "movement" : "movements"}${service === null ? "" : ` in ${service}`}`}
                           countedAt={now}
                           rows={() => movementBreakdownRows(edJourneys.people, breakdownPerson, now, canOpenHref)}
+                          // Audit two #91 (T11): the Waiting and In transit split reads here, not on the ED band.
+                          facts={() =>
+                            waitingTransitFacts({ waiting: edJourneys.stillInEd, inTransit: edJourneys.inTransit })
+                          }
                           className={press.className}
                           id={press.id}
                           labelledBy={press.labelledBy}
@@ -958,8 +943,13 @@ export function CoordinatorScreen() {
                     heroNext.action
                       ? {
                           label: heroNext.action.label,
-                          // v6 (Josh, 9 Nov 2026): the phone's act row keeps one short word.
-                          phoneLabel: heroNext.action.pressed ? undefined : "Show",
+                          // v6 (Josh, 9 Nov 2026): the phone's act row keeps a short label. Audit three
+                          // #18: never a bare "Open"; it says what opens.
+                          phoneLabel: heroNext.action.pressed
+                            ? undefined
+                            : heroNext.action.label === "Open next"
+                              ? "Open next"
+                              : "Show",
                           pressed: heroNext.action.pressed,
                           onClick: heroNext.action.onClick,
                           testId: heroNext.action.testId,
@@ -973,13 +963,13 @@ export function CoordinatorScreen() {
                   onHero
                   now={now}
                   movements={movements}
-                  selectedEdId={selectedEdId}
-                  onSelectEd={setSelectedEdId}
+                  edHref={(edId) => waitingHref(undefined, edId)}
                   service={service}
                   population={
+                    // Audit two #91 (T11): the split moved into the first figure's breakdown, so the band
+                    // head keeps its title and the link to All EDs.
                     <span data-testid="ward-home-ed-population">
-                      {/* Wave 4 (D-191, notes item 4): the count label nouns; no window word under "right now". */}
-                      <b>{edJourneys.stillInEd}</b> Waiting · <b>{edJourneys.inTransit}</b> In transit
+                      Open<SrOnly> All EDs</SrOnly>
                     </span>
                   }
                 />
@@ -992,39 +982,47 @@ export function CoordinatorScreen() {
 
           {/* Home flow (Q340, Q345, 3 Nov 2026): one row. Needs you and Flow lead as the raised switch; the
               stages follow, after a rule, as quieter tabs with counts (always shown; one opens Flow there). */}
-          <FolderTabs
-            ref={listsNavRef}
-            className={flowStyles.nav}
-            label="Home lists"
-            value={shownView}
-            testId="home-lists"
-            act={actNowCount > 0 ? 1 : undefined}
-            more={<HomeListMoreMenu />}
-          >
-            <Segmented
-              className={`${list.viewSwitch} ${folderTabClasses.switch}`}
-              label="Home list"
-              size="md"
+          {sheetPlacement ? (
+            <FolderTabs
+              ref={listsNavRef}
+              className={flowStyles.nav}
+              label="Home lists"
               value={shownView}
-              onChange={(view) => {
-                showView(view);
-                chooseNeedsFocus("all");
-                setFlowStage(undefined);
-              }}
-              items={[
-                {
-                  id: "needs",
-                  label: "Needs you",
-                  // Act now plus the referrals to decide (A9-04), the one Needs you figure (D-220).
-                  count: needsYouCount(actNowCount, referralQueue.length),
-                },
-                { id: "queue", label: "Flow", count: queue.length },
-                ...(isPhone || layout === "tablet-portrait"
-                  ? [{ id: "planned" as const, label: "Later today", count: plannedRows.length }]
-                  : []),
-              ]}
-            />
-          </FolderTabs>
+              testId="home-lists"
+              act={actNowCount > 0 ? 1 : undefined}
+              more={<HomeListMoreMenu refused={rejections.length} />}
+            >
+              <Segmented
+                className={`${list.viewSwitch} ${folderTabClasses.switch}`}
+                label="Home list"
+                size="md"
+                value={shownView}
+                onChange={(view) => {
+                  showView(view);
+                  chooseNeedsFocus("all");
+                }}
+                items={[
+                  {
+                    id: "needs",
+                    label: "Needs you",
+                    // Act now plus the referrals to decide (A9-04), the one Needs you figure (D-220).
+                    count: needsYouCount(actNowCount, referralQueue.length),
+                  },
+                  ...(isPhone || layout === "tablet-portrait"
+                    ? [{ id: "planned" as const, label: "Later today", count: plannedRows.length }]
+                    : []),
+                ]}
+              />
+            </FolderTabs>
+          ) : (
+            // Desktop and tablet landscape hold one list, so there is no tab bar: "Needs you" is the
+            // section heading, with More at its right.
+            <div className={flowStyles.needsHead} data-testid="home-lists">
+              {/* Audit two #50 (P10): no count here on desktop, where the hero's title already says it. */}
+              <h2 className={flowStyles.needsTitle}>Needs you</h2>
+              <HomeListMoreMenu plain refused={rejections.length} />
+            </div>
+          )}
 
           <div
             className={`${styles.grid} ${list.grid}`}
@@ -1039,69 +1037,12 @@ export function CoordinatorScreen() {
                   pins. Both sit inside the column, under the folder tabs, so the approved tab join is
                   untouched, and both render nothing until there is something to show. */}
               {/* Batch 4 item 25 (D-142): after a recorded outage, the wards still to confirm. */}
-              {/* UX review (D-270): the Flow stages are filters of Flow, so they sit on their own
-                  row inside Flow, not on the tab row beside the views. */}
-              {shownView === "queue" ? (
-                <div className={flowStyles.flowFilterRow} data-testid="home-flow-filters">
-                  <span className={flowStyles.flowFilterLabel} aria-hidden="true">
-                    Show
-                  </span>
-                  {/* The kit's pill track lets items overflow on a phone, so this box scrolls. */}
-                  <div className={flowStyles.stageTabs}>
-                    <PillTabs
-                      toggles
-                      label="Flow stages"
-                      className={flowStyles.stagePills}
-                      value={flowStage ?? "all"}
-                      onChange={(id) => {
-                        showView("queue");
-                        chooseNeedsFocus("all");
-                        setFlowStage(id === "all" ? undefined : (id as FlowStageId));
-                      }}
-                      items={[
-                        { id: "all", label: "All", count: queue.length },
-                        // Icon design (Josh, 3 Nov 2026): no act-now triangle on the tabs; the late rows carry it.
-                        ...FLOW_STAGES.filter((stage) => stage.id !== "referral").map((stage) => ({
-                          id: stage.id,
-                          label: stage.label,
-                          count: queue.filter((movement) => flowStageOf(movement) === stage.id).length,
-                        })),
-                      ]}
-                    />
-                  </div>
-                </div>
-              ) : null}
               {shownView === "needs" ? <HomeOutageCatchUp now={now} /> : null}
               {/* Wave 4 (D-191, notes item 7): on Needs you the line sits inside its card. */}
               {shownView === "needs" ? null : <HomeSinceBanner now={now} />}
               <HomePinnedCard now={now} phone={isPhone} />
               {shownView === "planned" ? (
                 <PlannedList now={now} rows={plannedRows} title="Later today" tabbed />
-              ) : shownView === "queue" ? (
-                <PriorityQueue
-                  flowStage={flowStage}
-                  waitingMarks={waitingMarks}
-                  movements={queue}
-                  units={units}
-                  referralQueue={referralQueue}
-                  now={now}
-                  selectedId={selectedMovementId}
-                  onSelect={(movementId) => {
-                    setSelectedAlertId(undefined);
-                    selectMovement(movementId);
-                  }}
-                  filterEdId={activeEdId}
-                  onClearFilter={() => setSelectedEdId(undefined)}
-                  serviceScope={queueServiceScope}
-                  delaysHref={DELAYS_HREF}
-                  highlight={highlight}
-                  onClearHighlight={() => {
-                    setHighlight(undefined);
-                    setSelectedEdId(undefined);
-                  }}
-                  phone={isPhone}
-                  pinnedIds={actNowMovementIds}
-                />
               ) : (
                 <MyListCard
                   act={actEntries}

@@ -1,15 +1,13 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
-import { FileUp, FileText, CircleCheck, X } from "lucide-react";
-import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { Button, DisabledReason } from "@/components/wf";
+import { useId, useState } from "react";
+import { FileText, CircleCheck } from "lucide-react";
+import { Dialog } from "@/components/wf";
 import { type Movement } from "@/components/ward-management/ward-model";
 import { type UploadedFileType } from "@/components/ward-management/ward-model-vocabulary";
 import { uploadedFileTypeOf } from "@/components/ward-management/ward-uploaded-file";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
-import { useWardModalFocus } from "../ward-modal-focus";
 import { useWardFormSave } from "../use-ward-form-save";
 import styles from "./upload-forms-modal.module.css";
 
@@ -52,10 +50,6 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
     if (!save.pending) onClose();
   };
 
-  const dialogRef = useRef<HTMLDivElement>(null);
-
-  useWardModalFocus(true, dialogRef, dismiss);
-
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
@@ -68,6 +62,10 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    submit();
+  }
+
+  function submit() {
     if (!formName || !fileAttached || !fileName.trim() || simulatedSize <= 0 || saving) return;
     save.submit(
       () =>
@@ -84,194 +82,131 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
     );
   }
 
+  const typeMissing = !formName;
+  const fileMissing = !fileAttached || simulatedSize <= 0;
+  const blockedReason = saving
+    ? undefined
+    : typeMissing
+      ? "Choose the document type first."
+      : fileMissing
+        ? "Select a non-empty PDF, JPEG or PNG file first."
+        : undefined;
+
   return (
-    <div
-      role="presentation"
-      className={styles.scrim}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) dismiss();
+    <Dialog
+      open
+      onClose={dismiss}
+      title="Record document details"
+      closable={!saving}
+      data-testid="upload-forms-dialog"
+      secondary={[{ label: "Cancel", onAction: dismiss }]}
+      primary={{
+        label: saving ? "Saving…" : "Record document details",
+        onAction: submit,
+        loading: saving,
+        disabledReason: blockedReason,
       }}
     >
-      <div
-        ref={dialogRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={`${baseId}-upload-modal-title`}
-        className={styles.panel}
-      >
-        <div className={styles.head}>
-          <div className={styles.titleGroup}>
-            <FileUp aria-hidden="true" size={20} style={{ color: "var(--wf-accent)" }} />
-            <h2 id={`${baseId}-upload-modal-title`} className={styles.title}>
-              Record document details
-            </h2>
-          </div>
-          {/* DR-18: kit buttons, so both keep an edge in forced colours. */}
-          <Button
-            variant="ghost"
-            iconOnly
-            icon={X}
-            onClick={dismiss}
-            disabled={saving}
-            aria-label="Close dialog"
-            className={styles.closeButton}
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <div
+          style={{
+            padding: "0.75rem 1rem",
+            backgroundColor: "var(--wf-fit-tint)",
+            border: "1px solid var(--wf-fit-edge)",
+            borderRadius: "0.5rem",
+            fontSize: "0.875rem",
+            marginBottom: "1.25rem",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "0.5rem",
+          }}
+        >
+          <CircleCheck
+            aria-hidden="true"
+            size={18}
+            style={{ color: "var(--wf-success)", marginTop: "2px", flexShrink: 0 }}
           />
+          <span>
+            Only the file type, size and document type are recorded for the <strong>Transport</strong> screen. The file
+            name and contents are not stored or sent.
+          </span>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div
+        {/* Form Type */}
+        <div className={styles.uploadField}>
+          <label htmlFor={`${baseId}-form-type-select`} className={styles.fieldLabel}>
+            Document / Statutory Form Type
+          </label>
+          <select
+            id={`${baseId}-form-type-select`}
+            disabled={saving}
+            value={formName}
+            onChange={(e) => setFormName(e.target.value)}
             style={{
-              padding: "0.75rem 1rem",
-              backgroundColor: "var(--wf-fit-tint)",
-              border: "1px solid var(--wf-fit-edge)",
+              width: "100%",
+              minHeight: "48px",
+              padding: "0.625rem 0.75rem",
               borderRadius: "0.5rem",
-              fontSize: "0.875rem",
-              marginBottom: "1.25rem",
-              display: "flex",
-              alignItems: "flex-start",
-              gap: "0.5rem",
+              border: "1px solid var(--wf-line-ctl)",
+              backgroundColor: "var(--wf-surface)",
+              color: "var(--wf-ink-1)",
+              fontSize: "0.9375rem",
             }}
           >
-            <CircleCheck
-              aria-hidden="true"
-              size={18}
-              style={{ color: "var(--wf-success)", marginTop: "2px", flexShrink: 0 }}
-            />
-            <span>
-              Only the file type, size and document type are recorded for the <strong>Transport</strong> screen. The
-              file name and contents are not stored or sent.
-            </span>
-          </div>
-
-          {/* Form Type */}
-          <div className={styles.uploadField}>
-            <label htmlFor={`${baseId}-form-type-select`} className={styles.fieldLabel}>
-              Document / Statutory Form Type
-            </label>
-            <select
-              id={`${baseId}-form-type-select`}
-              disabled={saving}
-              value={formName}
-              onChange={(e) => setFormName(e.target.value)}
-              style={{
-                width: "100%",
-                minHeight: "48px",
-                padding: "0.625rem 0.75rem",
-                borderRadius: "0.5rem",
-                border: "1px solid var(--wf-line-ctl)",
-                backgroundColor: "var(--wf-surface)",
-                color: "var(--wf-ink-1)",
-                fontSize: "0.9375rem",
-              }}
-            >
-              <option value="" disabled>
-                Choose a document type
+            <option value="" disabled>
+              Choose a document type
+            </option>
+            {FORM_TYPE_OPTIONS.map((type) => (
+              <option key={type} value={type}>
+                {type}
               </option>
-              {FORM_TYPE_OPTIONS.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </div>
+            ))}
+          </select>
+        </div>
 
-          {/* Dropzone / Upload Area */}
-          <div className={styles.dropField}>
-            <label htmlFor={`${baseId}-ward-document-metadata-file`} className={styles.fieldLabel}>
-              Select a file to record its details
-            </label>
+        {/* Dropzone / Upload Area */}
+        <div className={styles.dropField}>
+          <label htmlFor={`${baseId}-ward-document-metadata-file`} className={styles.fieldLabel}>
+            Select a file to record its details
+          </label>
+          <div
+            style={{
+              border: isInputFocused ? "2px solid var(--wf-accent)" : "2px dashed var(--wf-line-ctl)",
+              borderRadius: "0.75rem",
+              padding: "1.5rem",
+              textAlign: "center",
+              backgroundColor: isInputFocused ? "var(--wf-accent-tint)" : "var(--wf-surface-2)",
+              cursor: "pointer",
+              position: "relative",
+              outline: isInputFocused ? "2px solid var(--wf-accent)" : "none",
+              outlineOffset: "2px",
+            }}
+          >
+            <input
+              id={`${baseId}-ward-document-metadata-file`}
+              type="file"
+              disabled={saving}
+              accept=".pdf,.png,.jpg,.jpeg"
+              onChange={handleFileSelect}
+              onFocus={() => setIsInputFocused(true)}
+              onBlur={() => setIsInputFocused(false)}
+              className={styles.fileInput}
+            />
+            <FileText aria-hidden="true" size={32} style={{ color: "var(--wf-accent)", margin: "0 auto 0.5rem" }} />
+            <div className={styles.fileName}>{fileName ? fileName : "Click to select a file"}</div>
             <div
-              style={{
-                border: isInputFocused ? "2px solid var(--wf-accent)" : "2px dashed var(--wf-line-ctl)",
-                borderRadius: "0.75rem",
-                padding: "1.5rem",
-                textAlign: "center",
-                backgroundColor: isInputFocused ? "var(--wf-accent-tint)" : "var(--wf-surface-2)",
-                cursor: "pointer",
-                position: "relative",
-                outline: isInputFocused ? "2px solid var(--wf-accent)" : "none",
-                outlineOffset: "2px",
-              }}
+              id={`${baseId}-upload-forms-file-requirement`}
+              style={{ fontSize: "0.8125rem", color: "var(--wf-ink-3)", marginTop: "0.25rem" }}
             >
-              <input
-                id={`${baseId}-ward-document-metadata-file`}
-                type="file"
-                disabled={saving}
-                accept=".pdf,.png,.jpg,.jpeg"
-                onChange={handleFileSelect}
-                onFocus={() => setIsInputFocused(true)}
-                onBlur={() => setIsInputFocused(false)}
-                className={styles.fileInput}
-              />
-              <FileText aria-hidden="true" size={32} style={{ color: "var(--wf-accent)", margin: "0 auto 0.5rem" }} />
-              <div className={styles.fileName}>{fileName ? fileName : "Click to select a file"}</div>
-              <div
-                id={`${baseId}-upload-forms-file-requirement`}
-                style={{ fontSize: "0.8125rem", color: "var(--wf-ink-3)", marginTop: "0.25rem" }}
-              >
-                {fileAttached
-                  ? `${Math.round(simulatedSize / 1024)} KB · Details ready to record`
-                  : "Select a non-empty PDF, JPEG or PNG."}
-              </div>
+              {fileAttached
+                ? `${Math.round(simulatedSize / 1024)} KB · Details ready to record`
+                : "Select a non-empty PDF, JPEG or PNG."}
             </div>
           </div>
+        </div>
 
-          {saveError ? <p role="alert">{saveError}</p> : null}
-          {/* Action Buttons */}
-          <div className={styles.actions}>
-            <button
-              type="button"
-              onClick={dismiss}
-              disabled={saving}
-              style={{
-                minHeight: "48px",
-                padding: "0.625rem 1.25rem",
-                borderRadius: "0.5rem",
-                border: "1px solid var(--wf-line-ctl)",
-                backgroundColor: "transparent",
-                color: "inherit",
-                fontSize: "0.9375rem",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Cancel
-            </button>
-            <Button
-              type="submit"
-              variant="pri"
-              size="lg"
-              loading={saving}
-              aria-disabled={saving || !formName || !fileAttached || simulatedSize <= 0 ? "true" : undefined}
-              onClick={
-                saving || !formName || !fileAttached || simulatedSize <= 0 ? ignoreUnavailableActivation : undefined
-              }
-              aria-describedby={
-                [
-                  !formName ? `${baseId}-upload-forms-type-requirement` : "",
-                  !fileAttached || simulatedSize <= 0 ? `${baseId}-upload-forms-file-requirement` : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ") || undefined
-              }
-              title={
-                !fileAttached || simulatedSize <= 0 ? "Select a non-empty PDF, JPEG or PNG file first." : undefined
-              }
-              data-testid="confirm-upload-form-button"
-              className={styles.primaryButton}
-            >
-              {saving ? "Saving…" : "Record document details"}
-            </Button>
-            {/* The document type opens blank, so the button says it is waiting for one. */}
-            {!saving && !formName ? (
-              <DisabledReason id={`${baseId}-upload-forms-type-requirement`}>
-                Choose the document type first.
-              </DisabledReason>
-            ) : null}
-          </div>
-        </form>
-      </div>
-    </div>
+        {saveError ? <p role="alert">{saveError}</p> : null}
+      </form>
+    </Dialog>
   );
 }

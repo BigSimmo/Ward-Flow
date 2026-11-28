@@ -106,3 +106,124 @@
   gap: 6px;
   white-space: nowrap;
 }
+
+/* Discharges (simplification mock-up, 26 Nov 2026): the three views share one cell, so the card is as
+   tall as its tallest view and nothing jumps; only the chosen one is seen. */
+.viewStack {
+  display: grid;
+}
+
+.viewStack > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.viewStack > :not([data-shown]) {
+  visibility: hidden;
+}
+
+/* The Held up view's own Held up / All switch, at the top of the view. */
+.viewTools {
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* More figures: the roster's fold, a full-width card bar on the page sheet. */
+.moreFigures {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+}
+
+.moreBar {
+  position: relative;
+}
+
+.moreBar:hover {
+  background: var(--wf-track);
+}
+
+.moreButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* The cover: the whole bar takes the press. */
+.moreButton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.moreButton:focus-visible {
+  outline: none;
+}
+
+.moreBar:has(.moreButton:focus-visible) {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.moreChevron {
+  display: inline-flex;
+  color: var(--wf-ink-3);
+  transition: transform var(--wf-t-micro);
+}
+
+.moreChevron[data-open] {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moreChevron {
+    transition: none;
+  }
+}
+
+/* Length of stay and Discharges at 1280 (simplification mock-up, 26 Nov 2026): the view switch keeps
+   its place beside the title, and the title and its caption stack, as they do at 1440, instead of
+   the switch dropping to a second row and the two heads sitting at different heights. */
+.tightHead [data-wf-card-head] {
+  flex-wrap: nowrap;
+}
+
+.tightHead [data-wf-card-head] > :has(> h2) {
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.tightHead [data-wf-card-head] > :last-child:not(:has(> h2)) {
+  flex: none;
+}
+
+/* Below 1440 the two heads' icon tiles give their width to the title, so the title and caption keep
+   one line each beside the switch and both heads stay one height. */
+@media (min-width: 64rem) and (max-width: 89.99rem) {
+  .tightHead [data-wf-card-head] > :first-child:not(:has(> h2)) {
+    display: none;
+  }
+}
+
+/* The shorter Discharges views fill the card's height (set by By day): Planning's figures at the
+   top and its outcome tiles at the foot; Held up's share line at the top and its bars at the foot. */
+.viewStack > [data-view="planning"] {
+  justify-content: space-between;
+}
+
+.viewStack > [data-view="held"] > section {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.viewStack > [data-view="held"] > section > [aria-hidden="true"] {
+  margin-top: auto;
+}

@@ -52,7 +52,7 @@ describe("phone bed grid", () => {
     // Wave 4 (D-191): one row, the kit Show choices and a sort button whose menu orders the beds.
     expect(screen.queryByRole("radiogroup", { name: "Narrow Bed board" })).toBeNull();
     expect(screen.getByRole("radiogroup", { name: "Show" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Order the beds" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sort beds" })).toBeInTheDocument();
     expect(screen.queryByRole("combobox")).toBeNull();
     // No side panel on a phone until a bed is chosen.
     expect(screen.queryByTestId("ward-board-detail")).toBeNull();
@@ -95,7 +95,9 @@ describe("phone bed grid", () => {
     renderBoard();
     // Redesign (Josh, 30 Oct 2026): a phone opens on the first 8 beds; Show more draws the rest.
     expect(within(screen.getByTestId("ward-board-beds")).getAllByRole("button")).toHaveLength(8);
-    fireEvent.click(screen.getByRole("button", { name: /^Show \d+ more beds?$/u }));
+    fireEvent.click(
+      within(screen.getByTestId("ward-board-beds").parentElement!).getByRole("button", { name: /^Show all \d+$/u }),
+    );
     // Drawer review (6 Nov 2026): the kit drawer sizes itself to its content on a phone, so the
     // old tall/content heights are gone; every bed still opens and closes.
     const kinds = new Set<string | null>();

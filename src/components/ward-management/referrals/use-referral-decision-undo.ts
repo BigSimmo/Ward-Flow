@@ -22,7 +22,7 @@ export function useReferralDecisionUndo(role: WardFlowRole, actingUnitId?: strin
       {
         success: title,
         undo: (at) => ({ type: "UNDO_REFERRAL_DECISION", role, now: at, referralId, actingUnitId }),
-        undone: "Decision undone",
+        undone: "Undone: Decision",
         // A refused decision is already said beside the control that raised it (the original
         // v10 Referrals rule), so it is not said a second time on the toast.
         refusalShownInline: true,

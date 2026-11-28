@@ -199,25 +199,23 @@ describe("ED and Delays on a phone (C1)", () => {
       </WardFlowProvider>,
     );
     expect(screen.queryByRole("button", { name: /^Locked bed/ })).toBeNull();
-    const fold = screen.getByTestId("delays-filter-fold");
-    expect(fold.textContent).toBe("Filter");
+    // Simplification mock-up (26 Nov 2026, built in r10): the saved views, Locked bed and No update 2h+
+    // fold into one kit Filters menu on the list head; on a phone it is an icon button that counts
+    // the filters that are on.
+    const fold = screen.getByTestId("delays-filters");
+    expect(fold).toHaveAttribute("aria-label", "Filters");
 
-    // A hero figure is a filter too, so it counts. Page tops (9 Nov 2026): a phone shows Past 24h,
-    // not Over 8h.
-    fireEvent.click(screen.getByTestId("delays-stat-over24-filter"));
-    expect(screen.getByTestId("delays-filter-fold").textContent).toMatch(/Filter·1filter on/);
+    fireEvent.click(fold);
+    const menu = screen.getByRole("menu", { name: "Filter the list" });
+    expect(within(menu).queryByRole("menuitemcheckbox", { name: /^Locked bed/ })).not.toBeNull();
+    fireEvent.click(within(menu).getByRole("menuitemcheckbox", { name: /^Locked bed/ }));
+    expect(screen.getByTestId("delays-filters")).toHaveAttribute("aria-label", "Filters, 1 on");
 
-    fireEvent.click(screen.getByTestId("delays-filter-fold"));
-    const sheet = screen.getByRole("dialog", { name: "Filter the list" });
-    // Design review (22 Oct 2026): the views sit together under a Views label in the sheet.
-    const views = within(sheet).getByRole("group", { name: "Views" });
-    expect(within(views).getAllByRole("button")).toHaveLength(4);
-    fireEvent.click(within(sheet).getByRole("button", { name: /^Locked bed/ }));
-    expect(
-      within(sheet)
-        .getByRole("button", { name: /^Locked bed/ })
-        .getAttribute("aria-pressed"),
-    ).toBe("true");
-    expect(screen.getByTestId("delays-filter-fold").textContent).toMatch(/Filter·2filters on/);
+    fireEvent.click(
+      within(screen.getByRole("menu")).getByRole("menuitemcheckbox", {
+        name: /^No update/,
+      }),
+    );
+    expect(screen.getByTestId("delays-filters")).toHaveAttribute("aria-label", "Filters, 2 on");
   });
 });

@@ -245,7 +245,8 @@
   :global(:root:not([data-theme="light"])) .wardShellTokens {
     color-scheme: dark;
     --ground-hi: #14181d;
-    --ground: #0f1216;
+    /* Audit four #88 (28 Nov 2026): one dark page ground on every page, the canvas colour. */
+    --ground: var(--wf-canvas, #0d141b);
     --ground-2: #0c0f12;
 
     --surface: #171b21;
@@ -341,7 +342,7 @@
 :global([data-theme="dark"]) .wardShellTokens {
   color-scheme: dark;
   --ground-hi: #14181d;
-  --ground: #0f1216;
+  --ground: var(--wf-canvas, #0d141b);
   --ground-2: #0c0f12;
 
   --surface: #171b21;

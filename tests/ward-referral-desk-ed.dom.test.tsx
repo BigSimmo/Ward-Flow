@@ -84,7 +84,7 @@ describe("Referrals, ED desk", () => {
     expect(within(raised).getByRole("heading", { name: /Open referrals/ })).toBeTruthy();
     // Long lists open on their first eight rows.
     expect(within(raised).getAllByRole("link", { name: /^Movement, / })).toHaveLength(Math.min(peelOpen.length, 8));
-    if (peelOpen.length > 8) expect(within(raised).getByRole("button", { name: /^Show \d+ more$/ })).toBeTruthy();
+    if (peelOpen.length > 8) expect(within(raised).getByRole("button", { name: /^Show all \d+$/ })).toBeTruthy();
 
     // No ED review asked and nothing chosen: no decision drawer (drawer review, 6 Nov 2026).
     expect(screen.queryByTestId("ward-referral-detail")).toBeNull();

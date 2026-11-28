@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -31,7 +31,7 @@ describe("A16-04: Out of area with no checked travel bands", () => {
       </WardFlowProvider>,
     );
     const empty = screen.getByTestId("ward-out-of-area-empty");
-    expect(empty).toHaveTextContent(/^Nobody is shown as far from home\. \d+ people have no travel time recorded\.$/u);
+    expect(empty).toHaveTextContent(/^\d+ people have no travel time recorded\. Checked at [\d:]+ [ap]m\.$/u);
     expect(empty).not.toHaveTextContent("Nobody on these records is in a bed far from home.");
   });
 
@@ -42,7 +42,7 @@ describe("A16-04: Out of area with no checked travel bands", () => {
   describe("at phone width", () => {
     afterEach(() => installMatchMediaStub(false));
 
-    it("says the same sentence in Everyone instead of an empty list", () => {
+    it("says how many have no travel time in the empty state instead of an empty list", () => {
       // D-193: the honest "not recorded" state is the one under test; adding checked times changes it.
       expect(CHECKED_TRAVEL_BANDS).toEqual([]);
       installMatchMediaStub(true);
@@ -51,12 +51,10 @@ describe("A16-04: Out of area with no checked travel bands", () => {
           <OutOfAreaBoard />
         </WardFlowProvider>,
       );
-      fireEvent.click(screen.getByRole("radio", { name: /^Everyone/u }));
+      // Audit four #104: with nobody away, Everyone has no entry; the empty state carries the count.
       const empty = screen.getByTestId("ward-out-of-area-phone-empty");
       expect(empty).toBeVisible();
-      expect(empty).toHaveTextContent(
-        /^Nobody is shown as far from home\. \d+ people have no travel time recorded\.$/u,
-      );
+      expect(empty).toHaveTextContent(/^\d+ people have no travel time recorded\.$/u);
       expect(screen.queryByTestId("ward-out-of-area-table")).toBeNull();
     });
   });

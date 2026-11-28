@@ -36,7 +36,7 @@ const NOW = NOW_ANCHOR;
  *  without first needing an ACCEPT_IN_PRINCIPLE to set up the post-acceptance path. */
 const seeded = seedWardFlowState();
 const TARGET = seeded.movements.find(
-  (movement) => isOpen(movement) && movement.acceptedUnitId === undefined && movement.referredUnitIds.length > 0,
+  (movement) => movement.id === "WF-015" && isOpen(movement) && movement.acceptedUnitId !== undefined,
 );
 
 /** Exposes the shared `dispatch` and a live read of whether `TARGET` is still open, the same
@@ -80,8 +80,11 @@ function renderScreen() {
   return result;
 }
 
-function queueRow(movementId: string) {
-  return screen.getByTestId(`ward-queue-row-${movementId}`);
+// Simplification 26 Nov 2026 (area 2 item 1): the Flow list folded away, so Home no longer lists plain
+// movements to pick. A movement is chosen from an alert row ("Open Late arrival for <name>"), which opens its
+// Placement shortlist, the same selection this guard protects.
+function chooseMovement() {
+  fireEvent.click(screen.getAllByRole("button", { name: /^Open Late arrival/u })[0]!);
 }
 
 beforeEach(() => {
@@ -90,21 +93,20 @@ beforeEach(() => {
 });
 
 describe("the coordinator screen never keeps a closed movement selected", () => {
-  it("has a real, open, unaccepted movement with a live referral to withdraw — or every assertion below is vacuous", () => {
+  it("has a real, open, accepted movement with an alert row to withdraw — or every assertion below is vacuous", () => {
     expect(
       TARGET,
       "the seed carries no open, unaccepted movement with a live referral — this suite's premise is wrong",
     ).toBeDefined();
     expect(isOpen(TARGET!)).toBe(true);
-    expect(TARGET!.acceptedUnitId).toBeUndefined();
-    expect(TARGET!.referredUnitIds.length).toBeGreaterThan(0);
+    expect(TARGET!.acceptedUnitId).toBeDefined();
   });
 
   it("selects the movement, closes it mid-session, and drops the selection rather than keeping it", () => {
     renderScreen();
 
     // Select an open movement's queue row, and the shortlist names it.
-    fireEvent.click(queueRow(TARGET!.id));
+    chooseMovement();
     const shortlist = screen.getByLabelText("Placement");
     expect(
       within(shortlist).getByTestId(`ward-shortlist-${TARGET!.id}`),
@@ -126,13 +128,14 @@ describe("the coordinator screen never keeps a closed movement selected", () => 
     expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
     expect(screen.queryByTestId(`ward-shortlist-${TARGET!.id}`)).not.toBeInTheDocument();
 
-    // No other movement is silently selected — the queue must show no row claiming selection.
-    // TARGET's own row is gone too (`queueOrder` drops it once closed), which is the non-vacuity
-    // floor for this assertion: there is a real population of rows to check, not zero.
-    const queueRows = screen.getAllByTestId(/^ward-queue-row-/);
-    expect(queueRows.length, "the queue rendered no rows at all, so this assertion proves nothing").toBeGreaterThan(0);
-    expect(queueRows.some((row) => row.getAttribute("aria-pressed") === "true")).toBe(false);
-    expect(screen.queryByTestId(`ward-queue-row-${TARGET!.id}`)).not.toBeInTheDocument();
+    // No other row is silently selected: Home's list shows rows, and none claims selection.
+    // The list still has rows, which is the non-vacuity floor for this assertion.
+    const list = screen.getByTestId("home-my-list");
+    const rowButtons = within(list).getAllByRole("button");
+    expect(rowButtons.length, "Home's list rendered no rows at all, so this assertion proves nothing").toBeGreaterThan(
+      0,
+    );
+    expect(rowButtons.some((button) => button.getAttribute("aria-pressed") === "true")).toBe(false);
 
     // Focus lands on a queue control or the queue container, never on the page at large.
     const regionGrid = screen.getByTestId("ward-coordinator-region-grid");

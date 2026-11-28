@@ -15,14 +15,14 @@ export function releaseUndoStep(movementId: string, success: string, undone: str
 
 /** The ward request withdrawal's Undo; the panel dispatches the withdrawal itself as a literal (merge of #1398 with main). */
 export function withdrawUndoStep(movementId: string, name: string): UndoableStep {
-  return releaseUndoStep(movementId, `Ward request withdrawn for ${name}.`, "Undone. The ward request is open again.");
+  return releaseUndoStep(movementId, `Ward request withdrawn for ${name}.`, "Undone: The ward request is open again");
 }
 
 /** Item 195: "Refer" to wards offers Undo on its toast, as the signed-in Activity does (`UNDO_REFER_TO_UNITS`). */
 export function referToUnitsUndoStep(movementId: string, name: string): UndoableStep {
   return {
-    success: `Referred ${name} to wards.`,
-    undone: `Referral to wards undone for ${name}.`,
+    success: `Referred ${name} to wards`,
+    undone: `Undone: Referral to wards for ${name}`,
     undo: (at) => ({ type: "UNDO_REFER_TO_UNITS", role: "coordinator", now: at, movementId }),
   };
 }

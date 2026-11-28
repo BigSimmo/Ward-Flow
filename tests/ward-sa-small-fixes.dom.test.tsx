@@ -45,6 +45,7 @@ describe("H-0097: the bed drawer opens on Close", () => {
           onClose={vi.fn()}
           onPrevBed={vi.fn()}
           onNextBed={vi.fn()}
+          bedPosition={{ index: 1, total: 4 }}
           drawerLeavingDestination={LEAVING_DESTINATIONS[0].id}
           setDrawerLeavingDestination={() => {}}
           onRecordLeft={vi.fn()}

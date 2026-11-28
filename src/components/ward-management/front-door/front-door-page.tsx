@@ -113,7 +113,7 @@ function DemoCodeDoor({ next }: { next: string }) {
           </span>
           <header className={styles.cardHead}>
             <h1>Explore the demo</h1>
-            <p>Enter the demo code you were given. The demo runs on made-up records across the network.</p>
+            <p>Enter the demo code you were given.</p>
           </header>
           {problem && (
             <DoorBanner id={`${uid}-problem`} tone="danger" icon="alert" title={problem.title} body={problem.body} />

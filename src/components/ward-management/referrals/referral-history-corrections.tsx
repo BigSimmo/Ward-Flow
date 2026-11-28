@@ -120,7 +120,7 @@ export function ReferralHistoryAndCorrections({
               className={styles.correctionNote}
               value={note}
               maxLength={REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS}
-              placeholder="Document clinical addendum or update..."
+              placeholder="Clinical addendum or update"
               onChange={(event) => setNote(event.target.value)}
               rows={2}
               data-gramm="false"

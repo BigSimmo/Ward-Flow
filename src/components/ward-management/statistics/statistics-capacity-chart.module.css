@@ -91,6 +91,12 @@
   border-top: 1.5px dashed var(--wf-ink-2);
 }
 
+/* The fixed alert line's value, as tall as the controls beside it so the summary row keeps its height. */
+.alertValue {
+  font: 500 var(--wf-fs-13) / var(--wf-h-sm) var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+
 .stepper {
   display: inline-flex;
   align-items: center;

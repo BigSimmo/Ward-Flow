@@ -1,13 +1,13 @@
 "use client";
 
 // Alerts redesign (1 Nov 2026): the Urgency, Lanes and Owner switch, at the end of the tab row.
-import { Columns3, List, Users } from "lucide-react";
+import { List, Users } from "lucide-react";
 
 import { Segmented } from "@/components/wf";
 
 import parts from "./alerts-screen-parts.module.css";
 
-export type ArrangeBy = "urgency" | "lanes" | "owner";
+export type ArrangeBy = "urgency" | "owner";
 
 export function ArrangeSwitch({
   value,
@@ -22,7 +22,7 @@ export function ArrangeSwitch({
   return (
     <div className={parts.viewSwitch}>
       <Segmented
-        label="Arrange by"
+        label="Group by"
         value={value}
         onChange={onChange}
         items={[
@@ -31,14 +31,6 @@ export function ArrangeSwitch({
             label: (
               <>
                 <List size={14} aria-hidden="true" /> Urgency
-              </>
-            ),
-          },
-          {
-            id: "lanes" as const,
-            label: (
-              <>
-                <Columns3 size={14} aria-hidden="true" /> Lanes
               </>
             ),
           },

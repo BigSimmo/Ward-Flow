@@ -3,7 +3,7 @@
 // The governance workbench's phone tree (v10), split out of `governance-registers.tsx`
 // (18 October 2026) to keep that file under the line cap.
 
-import { Check, ChevronRight, ClipboardList, Clock, Ellipsis } from "lucide-react";
+import { ChevronRight, ClipboardList, Clock, Ellipsis } from "lucide-react";
 import Link from "next/link";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { allOverrides } from "@/components/ward-management/ward-derivations";
@@ -24,7 +24,6 @@ import {
   Hero,
   HeroAct,
   HeroFigures,
-  HeroQuickChips,
   HeroTop,
   LiveChip,
   Menu,
@@ -64,6 +63,9 @@ import {
   when,
 } from "./governance-shared";
 import { type SiteGap } from "./governance-site-gaps";
+import { EverythingTodayGroup } from "./review/todays-review-screen";
+import { AccessLog } from "./settings/access-log";
+import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 
 /**
  * The phone tree of `GovernanceSession`, drawn from the session's own state, which it passes in
@@ -157,6 +159,7 @@ export function GovernancePhone({
   totalGaps,
   units,
 }: GovernancePhoneInputs) {
+  const router = useOptionalRouter();
   // Phone (v10): its own tree at 390. A compact hero with three figures, Review, Gaps and Audit as a
   // 44px segmented control, events as list rows, and a bottom sheet that records the review with
   // the button pinned at its foot. Registers and Reports sit behind two cards.
@@ -278,8 +281,8 @@ export function GovernancePhone({
                 action={
                   newest
                     ? {
-                        label: "Review next",
-                        phoneLabel: "Review",
+                        label: "Open newest",
+                        phoneLabel: "Open",
                         testId: "ward-governance-review-next",
                         onClick: () => openPhoneEvent(newest),
                       }
@@ -288,36 +291,8 @@ export function GovernancePhone({
               />
             )
           }
-          chips={
-            <HeroQuickChips
-              label="Governance actions"
-              items={[
-                // Shown whenever events wait; a desk that may not review is told why in the sheet.
-                ...(adminEmpty || !newest
-                  ? []
-                  : [
-                      {
-                        id: "record",
-                        label: "Record review",
-                        icon: <Check strokeWidth={1.75} aria-hidden="true" />,
-                        testId: "ward-governance-phone-record-review",
-                        onClick: () => openPhoneEvent(selected ?? newest),
-                      },
-                    ]),
-                // Role (access admin): a patient's chronology is not this desk's to open.
-                ...(adminDesk
-                  ? []
-                  : [
-                      {
-                        id: "pir",
-                        label: "PIR chronology",
-                        icon: <Clock strokeWidth={1.75} aria-hidden="true" />,
-                        href: PATIENT_CHRONOLOGY_HREF,
-                      },
-                    ]),
-              ]}
-            />
-          }
+          // Review (390): with Mark reviewed gone, PIR chronology would sit alone on a chip row, so it
+          // joins the tab row's More menu (an access admin has neither).
         />
       </Hero>
       <FolderTabs
@@ -328,11 +303,18 @@ export function GovernancePhone({
           // Registers and Reports sit behind More on a phone, as on Home.
           adminDesk ? undefined : (
             <Menu
-              label="More governance views"
+              label="More"
               align="end"
               items={[
                 { id: "registers", label: "Registers", onSelect: () => setPhoneMore("registers") },
                 { id: "reports", label: "Reports", onSelect: () => setPhoneMore("reports") },
+                {
+                  id: "pir",
+                  label: "PIR chronology",
+                  icon: Clock,
+                  onSelect: () =>
+                    router ? router.push(PATIENT_CHRONOLOGY_HREF) : window.location.assign(PATIENT_CHRONOLOGY_HREF),
+                },
               ]}
               trigger={(props) => (
                 <Button
@@ -342,7 +324,7 @@ export function GovernancePhone({
                   iconOnly
                   icon={Ellipsis}
                   className={folderTabClasses.more}
-                  aria-label="More governance views"
+                  aria-label="More"
                 />
               )}
             />
@@ -393,18 +375,20 @@ export function GovernancePhone({
                   : adminDesk
                     ? "No override, refused action or record access this session."
                     : "No override audit is recorded in this session."}
-                {/* Role (access admin): who opened which record lives in Settings, so point there. */}
+                {/* Audit two #124: who opened which record is the Audit trail's Access log. */}
                 {adminDesk ? (
                   <>
                     {" "}
-                    <Link href="/bedchart/settings#access" className={eventList.accessLink}>
+                    <button type="button" className={eventList.accessLink} onClick={() => changeTab("audit")}>
                       Open the Access log
-                    </Link>
+                    </button>
                   </>
                 ) : null}
               </p>
             </div>
           )}
+          {/* Batch 3 (one Handover): Today's review's "Everything today", the second group. */}
+          {adminDesk ? null : <EverythingTodayGroup />}
         </Card>
       ) : null}
       {phoneTab === "gaps" ? (
@@ -487,6 +471,8 @@ export function GovernancePhone({
           )}
         </Card>
       ) : null}
+      {/* Audit two #124 (Josh, 28 Nov 2026): the Access log's one home, under the audit trail. */}
+      {phoneTab === "audit" ? <AccessLog /> : null}
       <p className={thirdEdition.phoneNotice}>
         <Badge variant="plain" tone="neutral">
           Safety incidents not recorded here
@@ -499,6 +485,23 @@ export function GovernancePhone({
         title={selected ? actionLabels[selected.action] : "Review"}
         description={selected ? phoneSubjectLabel(selected) : undefined}
         height="content"
+        // Audit three review: the kit pager through the events to review, as on the desktop drawer.
+        pager={
+          selected
+            ? (() => {
+                const index = toReview.findIndex((event) => event.id === selected.id);
+                return {
+                  index,
+                  total: toReview.length,
+                  noun: "event",
+                  onStep: (delta: -1 | 1) => {
+                    const next = toReview[(Math.max(index, 0) + delta + toReview.length) % toReview.length];
+                    if (next) choose(next);
+                  },
+                };
+              })()
+            : undefined
+        }
         // Audit settings-4 and settings-10: Reviewed and Follow-up record the review in one tap (the
         // toast offers Undo), then the next waiting event loads in the same sheet. No greyed button.
         primary={
@@ -573,7 +576,7 @@ export function GovernancePhone({
             {selected.category !== "review" ? (
               <div className={thirdEdition.stackGap}>
                 <h3 className={thirdEdition.phoneDecisionHead}>Your review</h3>
-                <p className={thirdEdition.quiet}>You can undo a review.</p>
+                {history.length > 0 ? <p className={thirdEdition.quiet}>You can undo a review.</p> : null}
               </div>
             ) : (
               <p className={thirdEdition.quiet}>Review attempts cannot be reviewed.</p>

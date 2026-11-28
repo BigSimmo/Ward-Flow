@@ -1,13 +1,14 @@
 "use client";
 
+import { ReleasePulledBedSheet } from "@/components/ward-management/release-pulled-bed-sheet-lazy";
+
 import { arrivalTimingPhrase } from "@/components/ward-management/ward-arrival-timing";
 import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
 import { Clock, ArrowRight } from "lucide-react";
 import React from "react";
-import { Button, Dialog } from "@/components/wf";
+import { Button } from "@/components/wf";
 import styles from "./ward-arrivals-corridor.module.css";
 import { wardSafeRejectionReason } from "./ward-rejection-text";
-import { useWardCommandCompletion, wardCommandFailure, wardCommandKey } from "./use-ward-command-completion";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type {
   Unit,
@@ -33,7 +34,7 @@ import { deliveredAwaitingWard, movementStatusLabel } from "@/components/ward-ma
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   PULL_PATIENT: "Pull the bed",
-  PATIENT_ARRIVED: "Confirm arrival",
+  PATIENT_ARRIVED: "Record arrival",
   RELEASE_HELD_BED: "Release pulled bed",
   RELEASE_DIVERTED_BED: "Release pulled bed",
 };
@@ -125,33 +126,13 @@ export function WardArrivalsCorridor({
   // Audit 24-7 (CT-07): releasing a diverted journey's bed ends the journey, so it asks first too.
   const [releaseDivertedId, setReleaseDivertedId] = React.useState<string | null>(null);
   const releaseDivertedMovement = accepted.find((movement) => movement.id === releaseDivertedId);
-  // Q93: a pulled-bed release reads its own save answer; a failure stays on that person's card.
-  const completeCommand = useWardCommandCompletion();
   // Kept per person, so one failed release never hides another person's. Each remembers the screen's
   // last rejection when the release began, so only a rejection from this attempt replaces it.
-  const [releaseFailures, setReleaseFailures] = React.useState<
+  const [releaseFailures] = React.useState<
     Readonly<Record<string, { text: string; priorRejectionId: string | undefined }>>
   >({});
-  const releasePulledBed = (movementId: string, record: () => ReturnType<WardCommandDispatch>) => {
-    priorRejectionCountRef.current = rejections.length;
-    const priorRejectionId = lastActionRejection?.id;
-    setReleaseFailures((current) => {
-      const others = { ...current };
-      delete others[movementId];
-      return others;
-    });
-    completeCommand(wardCommandKey("release-pulled-bed", movementId), record, (outcome) => {
-      const failure = wardCommandFailure(outcome);
-      if (!failure || !outcome) return;
-      const text =
-        outcome.status === "refused"
-          ? `Release pulled bed not recorded: ${wardSafeRejectionReason(outcome.message ?? "The action was refused.")}`
-          : failure;
-      setReleaseFailures((current) => ({ ...current, [movementId]: { text, priorRejectionId } }));
-    });
-    // A local refusal is read back by the screen as this ward's last rejection, shown on the card.
-    setCheckToken((t) => t + 1);
-  };
+  // Simplification R1 (mock-up): a release now runs in the shared sheet, which says a refusal on
+  // its toast, so `releaseFailures` only keeps notes a later save answer may still add.
   const releaseFailureNote = (movementId: string) => {
     const failure = releaseFailures[movementId];
     if (!failure) return null;
@@ -195,7 +176,7 @@ export function WardArrivalsCorridor({
         ...(exception ? { exception } : {}),
       },
       {
-        success: `Arrival recorded for ${resolvePatientIdentity(movement).displayName}.`,
+        success: `Arrival recorded for ${resolvePatientIdentity(movement).displayName}`,
         who: resolvePatientIdentity(movement).displayName,
         undo: (at) => ({
           type: "UNDO_TRANSPORT_STEP",
@@ -633,75 +614,41 @@ export function WardArrivalsCorridor({
         </section>
       ) : null}
 
-      <Dialog
-        open={releaseHeldMovement !== undefined}
-        onClose={() => setReleaseHeldId(null)}
-        size="sm"
-        title="Release pulled bed?"
-        description={`The bed pulled for ${releaseHeldMovement ? resolvePatientIdentity(releaseHeldMovement).displayName : "this patient"} is offered again.`}
-        secondary={[{ label: "Keep as is", onAction: () => setReleaseHeldId(null) }]}
-        primary={{
-          label: "Release pulled bed",
-          onAction: () => {
-            setReleaseHeldId(null);
-            if (!releaseHeldMovement) return;
-            const movementId = releaseHeldMovement.id;
-            releasePulledBed(movementId, () =>
-              dispatch({
-                type: "RELEASE_HELD_BED",
-                role: "ward",
-                now,
-                movementId,
-                actingUnitId: unit.id,
-              }),
-            );
-          },
+      {/* Simplification R1 (mock-up): the one shared "Release pulled bed" sheet, for a stopped
+          transport and a diverted move alike. */}
+      <ReleasePulledBedSheet
+        target={
+          releaseHeldMovement
+            ? {
+                movementId: releaseHeldMovement.id,
+                kind: "held",
+                displayName: resolvePatientIdentity(releaseHeldMovement).displayName,
+                umrn: resolvePatientIdentity(releaseHeldMovement).umrn,
+                context: `Bed pulled at ${unit.name}.`,
+              }
+            : releaseDivertedMovement
+              ? {
+                  movementId: releaseDivertedMovement.id,
+                  kind: "diverted",
+                  displayName: resolvePatientIdentity(releaseDivertedMovement).displayName,
+                  umrn: resolvePatientIdentity(releaseDivertedMovement).umrn,
+                  context: `Bed pulled at ${unit.name}.`,
+                }
+              : undefined
+        }
+        role="ward"
+        actingUnitId={unit.id}
+        onClose={() => {
+          setReleaseHeldId(null);
+          setReleaseDivertedId(null);
         }}
-        data-testid="ward-release-stopped-confirm"
-      >
-        {releaseHeldMovement ? (
-          <p data-testid="ward-release-stopped-identity">
-            Check: {patientIdentityLine(resolvePatientIdentity(releaseHeldMovement))}
-          </p>
-        ) : null}
-      </Dialog>
-      <Dialog
-        open={releaseDivertedMovement !== undefined}
-        onClose={() => setReleaseDivertedId(null)}
-        size="sm"
-        title="Release pulled bed?"
-        description={`The bed pulled at ${unit.name} for ${releaseDivertedMovement ? resolvePatientIdentity(releaseDivertedMovement).displayName : "this patient"} is offered again and the diverted movement is closed. This cannot be undone.`}
-        secondary={[{ label: "Keep as is", onAction: () => setReleaseDivertedId(null) }]}
-        primary={{
-          label: "Release pulled bed",
-          onAction: () => {
-            setReleaseDivertedId(null);
-            if (!releaseDivertedMovement) return;
-            const movementId = releaseDivertedMovement.id;
-            releasePulledBed(movementId, () =>
-              dispatch({
-                type: "RELEASE_DIVERTED_BED",
-                role: "ward",
-                now,
-                movementId,
-                actingUnitId: unit.id,
-              }),
-            );
-          },
-        }}
-        data-testid="ward-release-diverted-confirm"
-      >
-        {releaseDivertedMovement ? (
-          <p data-testid="ward-release-diverted-identity">
-            Check: {patientIdentityLine(resolvePatientIdentity(releaseDivertedMovement))}
-          </p>
-        ) : null}
-      </Dialog>
+        testId="ward-release-pulled-bed-sheet"
+      />
       <TransportExceptionDialog
         open={arriveCheckMovement !== undefined}
         who={arriveCheckMovement ? resolvePatientIdentity(arriveCheckMovement).formalName : "this patient"}
         identity={arriveCheckMovement ? patientIdentityLine(resolvePatientIdentity(arriveCheckMovement)) : undefined}
-        action="Confirm arrival"
+        action="Record arrival"
         gaps={arriveCheckMovement ? arrivalGaps(arriveCheckMovement) : []}
         onClose={() => setArriveCheckId(null)}
         onConfirm={(reason) => {

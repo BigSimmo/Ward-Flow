@@ -13,7 +13,7 @@ The register of everyone, found by record number, place, stage or owner.
 5. This shift. What happened this shift, such as a pull that expired, with the time and the person.
 6. Everyone now. Open movements and stays. Open a row for the person's details.
 7. Sort and highlight. Sort by longest wait, tier or name. Highlight marks rows without hiding anyone.
-8. Copy list and Export. Copy list copies the rows as text. Export saves them as a spreadsheet.
+8. Share. Copy list copies the rows as text. Export saves them as a spreadsheet. Print is here too.
 
 ## On a phone
 

@@ -183,6 +183,12 @@ export function EdBoardRedesign({ edId }: EdScreenProps) {
       undone: edStepUndone(who, event),
     });
   }
+  // Audit two #94: the mock-up board saves the "Record a form" sheet as the ED page does, without
+  // that page's Undo offer.
+  const saveWrittenForm: EdScreenContext["saveWrittenForm"] = (input) => {
+    void raise("RECORD_LEGAL_FORM_WRITTEN", input);
+    return true;
+  };
   /** Phone: Board, Needs you and Lists are one tap apart (v10 ED page, phone). */
   const isPhone = useIsPhone();
   // DA-09: an ED desk cannot open Capacity or Governance, so those links are offered only to a desk that can.
@@ -388,6 +394,7 @@ export function EdBoardRedesign({ edId }: EdScreenProps) {
 
   const ctx: EdScreenContext = {
     thresholds,
+    saveWrittenForm,
     movements,
     units,
     referrals,

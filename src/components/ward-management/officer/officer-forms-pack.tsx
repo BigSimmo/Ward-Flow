@@ -1,13 +1,12 @@
 "use client";
 
-import { useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { FileUp, Upload, X } from "lucide-react";
+import { useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { FileUp, Upload } from "lucide-react";
 
-import { Button, Icon, StatusGlyph } from "@/components/wf";
+import { Button, Dialog, Icon, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
-import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import type { Movement, MovementUploadedForm } from "@/components/ward-management/ward-model";
 import { uploadedFileLabel, uploadedFileTypeOf } from "@/components/ward-management/ward-uploaded-file";
 import { formTitleForCode } from "@/lib/form-register";
@@ -194,8 +193,6 @@ function PackUploadDialog({
   const save = useWardFormSave(`officer-pack-${movement.id}-${slot.key}`);
   const [code, setCode] = useState<string | undefined>(slot.codes.length === 1 ? slot.codes[0] : initialCode);
   const [file, setFile] = useState<{ name: string; size: number; type: string } | null>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
-  useWardModalFocus(true, dialogRef, onClose);
   const needsCode = slot.codes.length > 1;
   // Arrow keys move the choice within the radio group, which keeps a single Tab stop.
   const moveCode = (event: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -208,117 +205,90 @@ function PackUploadDialog({
     event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="radio"]')[index]?.focus();
   };
   const ready = file !== null && file.size > 0 && file.name.trim() !== "" && (!needsCode || code !== undefined);
-  const titleId = `ward-officer-pack-upload-title-${movement.id}`;
-
+  // Audit two #38 (N3): the kit `Dialog` draws the frame and holds focus; the choices are as before.
   return (
-    <div className={styles.modalBackdrop} role="presentation" onClick={onClose}>
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
-      <div
-        ref={dialogRef}
-        className={styles.modalDialog}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className={styles.modalHead}>
-          <Icon icon={FileUp} size={16} />
-          <span className={styles.modalTitles}>
-            <h3 id={titleId} className={styles.modalTitle}>
-              Upload {slot.key === "risk" ? "risk assessment" : slot.key === "order" ? "Form 4A" : "referral or order"}
-            </h3>
-            <span className={styles.modalSub}>{who}</span>
-          </span>
-          <Button variant="ghost" size="sm" iconOnly icon={X} onClick={onClose} aria-label="Close upload" />
-        </header>
-        <div className={styles.modalBody}>
-          {needsCode ? (
-            // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
-            <div className={styles.codeChoice} role="radiogroup" aria-label="Which form" onKeyDown={moveCode}>
-              {slot.codes.map((option, index) => (
-                <button
-                  key={option}
-                  type="button"
-                  role="radio"
-                  aria-checked={code === option}
-                  tabIndex={code === option || (code === undefined && index === 0) ? 0 : -1}
-                  title={formTitleForCode(option) ?? undefined}
-                  onClick={() => setCode(option)}
-                >
-                  Form {option}
-                </button>
-              ))}
-            </div>
-          ) : null}
-          <label className={styles.drop}>
-            <Icon icon={FileUp} size={20} />
-            <span>
-              <strong>{file ? file.name : "Choose a file"}</strong>
-              <span>
-                {/* C15: an empty file reads as empty, not "1 KB". */}
-                {file
-                  ? file.size === 0
-                    ? "Empty file"
-                    : `${Math.max(1, Math.round(file.size / 1024))} KB`
-                  : "PDF or photo of the signed form"}
-              </span>
-            </span>
-            <input
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
-              aria-label="Form file"
-              onChange={(event) => {
-                const chosen = event.target.files?.[0];
-                setFile(chosen ? { name: chosen.name, size: chosen.size, type: chosen.type } : null);
-              }}
-            />
-          </label>
-          <p className={styles.modalLead}>
-            Records the file type and size on this job. The file name and contents are not stored.
-          </p>
-          {save.error ? (
-            <p role="alert" data-testid="ward-officer-pack-upload-error">
-              {save.error}
-            </p>
-          ) : null}
+    <Dialog
+      open
+      onClose={onClose}
+      title={`Upload ${slot.key === "risk" ? "risk assessment" : slot.key === "order" ? "Form 4A" : "referral or order"}`}
+      description={who}
+      closeLabel="Close upload"
+      secondary={[{ label: "Cancel", onAction: onClose }]}
+      primary={{
+        label: "Add to pack",
+        loading: save.pending,
+        disabledReason: ready
+          ? undefined
+          : needsCode && code === undefined
+            ? "Choose the form and a file first."
+            : file && file.size === 0
+              ? "This file is empty. Choose another file."
+              : "Choose a file first.",
+        onAction: () => {
+          if (!ready || !file) return;
+          save.submit(
+            () =>
+              raise("UPLOAD_PATIENT_FORM", {
+                movementId: movement.id,
+                formName: formNameFor(slot, code),
+                fileType: uploadedFileTypeOf(file.name, file.type),
+                sizeBytes: file.size,
+              }),
+            onClose,
+          );
+        },
+      }}
+    >
+      {needsCode ? (
+        // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
+        <div className={styles.codeChoice} role="radiogroup" aria-label="Which form" onKeyDown={moveCode}>
+          {slot.codes.map((option, index) => (
+            <button
+              key={option}
+              type="button"
+              role="radio"
+              aria-checked={code === option}
+              tabIndex={code === option || (code === undefined && index === 0) ? 0 : -1}
+              title={formTitleForCode(option) ?? undefined}
+              onClick={() => setCode(option)}
+            >
+              Form {option}
+            </button>
+          ))}
         </div>
-        <footer className={styles.modalFoot}>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            variant="pri"
-            size="sm"
-            loading={save.pending}
-            disabledReason={
-              ready
-                ? undefined
-                : needsCode && code === undefined
-                  ? "Choose the form and a file first."
-                  : file && file.size === 0
-                    ? "This file is empty. Choose another file."
-                    : "Choose a file first."
-            }
-            onClick={() => {
-              if (!ready || !file) return;
-              save.submit(
-                () =>
-                  raise("UPLOAD_PATIENT_FORM", {
-                    movementId: movement.id,
-                    formName: formNameFor(slot, code),
-                    fileType: uploadedFileTypeOf(file.name, file.type),
-                    sizeBytes: file.size,
-                  }),
-                onClose,
-              );
-            }}
-          >
-            Add to pack
-          </Button>
-        </footer>
-      </div>
-    </div>
+      ) : null}
+      <label className={styles.drop}>
+        <Icon icon={FileUp} size={20} />
+        <span>
+          <strong>{file ? file.name : "Choose a file"}</strong>
+          <span>
+            {/* C15: an empty file reads as empty, not "1 KB". */}
+            {file
+              ? file.size === 0
+                ? "Empty file"
+                : `${Math.max(1, Math.round(file.size / 1024))} KB`
+              : "PDF or photo of the signed form"}
+          </span>
+        </span>
+        <input
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png"
+          aria-label="Form file"
+          onChange={(event) => {
+            const chosen = event.target.files?.[0];
+            setFile(chosen ? { name: chosen.name, size: chosen.size, type: chosen.type } : null);
+          }}
+        />
+      </label>
+      <p className={styles.modalLead}>
+        Records the file type and size on this job. The file name and contents are not stored.
+      </p>
+      {save.error ? (
+        <p role="alert" data-testid="ward-officer-pack-upload-error">
+          {save.error}
+        </p>
+      ) : null}
+    </Dialog>
   );
 }
 

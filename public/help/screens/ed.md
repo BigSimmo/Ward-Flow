@@ -7,14 +7,14 @@ Every emergency department, with the people there waiting for a mental health be
 ## What is on the screen
 
 1. Waiting in EDs. How many wait across the EDs, the long waits and those with no bed yet. Each figure highlights those people.
-2. Longest wait. The ED with the longest wait. Enter opens its board.
+2. Longest wait. The ED with the longest wait. Open goes to its board.
 3. Common jobs. Find a bed, Call and contacts, and Under a form or Accepted to highlight those people.
 4. Views and services. Cards, Table or Lanes, and one health service's EDs.
-5. Filter and order. Filter by status, and choose the order. The count says how many EDs show.
+5. Filter and Sort. Filter by status, and Sort by longest wait or most waiting. The count says how many EDs show.
 6. Each ED. Every emergency department, with the people there waiting for a mental health bed.
 7. Preview who is waiting. Choose an ED's card to preview who is waiting there without leaving the list.
-8. Enter an ED. Enter opens that ED's board and each patient's next step.
-9. Nobody waiting. The EDs with nobody waiting now. Enter still opens their boards.
+8. Open an ED. Open goes to that ED's board and each patient's next step.
+9. Nobody waiting. The EDs with nobody waiting now. Open still goes to their boards.
 
 ## On a phone
 

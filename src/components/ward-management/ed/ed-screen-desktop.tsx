@@ -79,6 +79,7 @@ export function renderEdBoardTableRow(
   } = facts;
   const {
     accessTarget,
+    patientSort,
     isBoardRowDim,
     isTabletPortrait,
     setPhoneSheetReason,
@@ -339,12 +340,14 @@ export function renderEdBoardTableRow(
           />
         ) : null}
         <span
-          className={overTarget ? handover.overTarget : "sr-only"}
+          className={overTarget && patientSort !== "longest" ? handover.overTarget : "sr-only"}
           data-testid={`ward-ed-access-target-${movement.id}`}
           data-state={overTarget ? "over" : "under"}
           title={`Access target ${targetHoursText(accessTarget)}`}
         >
-          {overTarget ? (
+          {/* Audit two #61: grouped by wait, the "Over 24 hours" group head already says it; the
+              spoken words below stay on every row. */}
+          {overTarget && patientSort !== "longest" ? (
             <span aria-hidden="true">{minutesInDepartment > accessTarget ? "Over target" : "At target"}</span>
           ) : null}
           <span className="sr-only">
@@ -359,7 +362,6 @@ export function renderEdBoardTableRow(
       </td>
       {isTabletPortrait ? null : (
         <>
-          <td className={`${styles.a2Mono} ${styles.a2Quiet}`}>Not recorded</td>
           <td className={handover.pickCell}>
             <PresentationCell
               movementId={movement.id}
@@ -379,7 +381,8 @@ export function renderEdBoardTableRow(
               writtenTimeEntered={movement.formedAt !== undefined}
               emptyWords={noFormWords}
               now={now}
-              record={ctx.recordEdStep}
+              movement={movement}
+              onSaveWritten={ctx.saveWrittenForm}
               expiryWords={formExpiryFullWords}
             >
               {/* H11 (Josh, 3 Nov 2026): the short line on the row, the time exactly as typed; the full

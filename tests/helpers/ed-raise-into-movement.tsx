@@ -57,6 +57,10 @@ export function EdInboxReferralFixture({ edId }: { edId: string }) {
 export function openRaiseIntoMovementForm() {
   fireEvent.click(screen.getByTestId("fixture-ed-inbox-referral"));
   fireEvent.click(screen.getByTestId("fixture-ed-inbox-arrived"));
+  // The inbox now sits in the ED's My list panel (r10), opened by its switch in the page top.
+  if (screen.queryAllByTestId(/^ward-ed-inbox-raise-/u).length === 0) {
+    fireEvent.click(screen.getByRole("radio", { name: /^My list/u }));
+  }
   const raise = screen.getAllByTestId(/^ward-ed-inbox-raise-/u).at(-1);
   if (!raise) throw new Error("the received referral offers no Ask for a bed");
   fireEvent.click(raise);

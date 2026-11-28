@@ -136,13 +136,14 @@ describe("the shift digest", () => {
       admissions: seed.admissions,
     });
 
-  it("reads from the night shift's start on the first read at 07:05", () => {
+  // Audit three #10: one window. The digest reads the hero's own window (shift start) on every read,
+  // first read included, so the night before shows in the Since sheet and not in "What changed".
+  it("reads from the shift's start on the first read too, so the hero and the digest agree", () => {
     const digest = digestAt(FIRST_LOOK, true);
-    expect(digest.sinceClock).toBe("11:00 pm yesterday");
-    expect(digest.changed.find((line) => line.id === "escalated")?.value).toBe(1);
-    expect(digest.changed.find((line) => line.id === "opened")?.value).toBeGreaterThanOrEqual(1);
-    expect(digest.changed.find((line) => line.id === "absent")?.value).toBe(1);
-    expect(digest.changed.find((line) => line.id === "transferred")?.value).toBe(1);
+    expect(digest.sinceClock).toBe("7:00 am");
+    expect(digest.changed.find((line) => line.id === "escalated")).toBeUndefined();
+    expect(digest.changed.find((line) => line.id === "absent")).toBeUndefined();
+    expect(digest.changed.find((line) => line.id === "transferred")).toBeUndefined();
   });
 
   it("reads only the new shift on a later read", () => {
@@ -158,11 +159,8 @@ describe("the shift digest", () => {
     expect(digest.sinceClock).toBe("3:00 am");
   });
 
-  it("copies no names or record numbers on the widened read", () => {
+  it("copies no names or record numbers on the first read", () => {
     const text = handoverDigestText(digestAt(FIRST_LOOK, true));
-    expect(text).toContain("What changed since 11:00 pm yesterday");
-    expect(text).toMatch(/1 absent without leave \(1 /u);
-    expect(text).toMatch(/1 transfer out \(1 /u);
     expect(text).not.toContain(movedStay.id);
     for (const patient of seed.patients) {
       for (const name of [patient.familyName, patient.givenName]) expect(text).not.toMatch(new RegExp(`\\b${name}\\b`));

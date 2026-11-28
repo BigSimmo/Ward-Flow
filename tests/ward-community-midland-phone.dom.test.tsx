@@ -79,7 +79,8 @@ describe("Midland community team on a phone (approved design)", () => {
   it("opens a referral as a sheet and the full referral from it", () => {
     renderTeam();
     openMoreSection(/^Referrals/u);
-    fireEvent.click(screen.getAllByRole("button", { name: /^Open/u })[0]!);
+    // "Open next" now leads; a referral row reads "Open Surname, Given".
+    fireEvent.click(screen.getAllByRole("button").find((button) => /^Open\s+\S+,/u.test(button.textContent ?? ""))!);
     const sheet = screen.getByTestId("ward-community-phone-demo-referral");
     expect(within(sheet).getByRole("button", { name: "Accept for Midland" })).toBeInTheDocument();
     fireEvent.click(within(sheet).getByRole("button", { name: /Full referral/u }));

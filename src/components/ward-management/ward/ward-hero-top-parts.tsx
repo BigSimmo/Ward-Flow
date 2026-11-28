@@ -21,6 +21,12 @@ export type WardHeroTopInput = {
   arrivalsToday: number;
   openArrivals: () => void;
   actNowCount: number;
+  /** Audit two B7: the decisions due plus overdue, the same count as the Decisions tab badge. */
+  decisionsDue: number;
+  /** Something on Decisions is past its time (the morning numbers), so the step is red; else amber. */
+  decisionsOverdue: boolean;
+  /** Audit two #115: opens the first decision still due. */
+  openNextDecision: () => void;
   /** Ruling 10: stays with no observation level recorded (`obsNotRecordedCount`, ward-screen-derivations). */
   obsNotRecorded: number;
   /** The bed board's filter, so a figure that sets it says it is pressed. */
@@ -40,7 +46,9 @@ export function wardHeroTopParts({
   states,
   arrivalsToday,
   openArrivals,
-  actNowCount,
+  decisionsDue,
+  decisionsOverdue,
+  openNextDecision,
   bedFilter,
   pickBedFilter,
   openShiftTodo,
@@ -93,12 +101,21 @@ export function wardHeroTopParts({
       ]}
     />
   );
-  const action = { label: "Open this shift", phoneLabel: "Open", onClick: openShiftTodo, testId: "ward-hero-act-now" };
+  // Audit two B7 and #115 (Josh decides): one count family with the Decisions tab, and the step opens
+  // the next decision due. With nothing due the step opens This shift, as before.
   const wardAct =
-    actNowCount > 0 ? (
-      <HeroAct tone="danger" title={`${actNowCount} ${actNowCount === 1 ? "task" : "tasks"} due now`} action={action} />
+    decisionsDue > 0 ? (
+      <HeroAct
+        tone={decisionsOverdue ? "danger" : "warning"}
+        title={`${decisionsDue} ${decisionsDue === 1 ? "decision" : "decisions"} due`}
+        action={{ label: "Open next", phoneLabel: "Open", onClick: openNextDecision, testId: "ward-hero-act-now" }}
+      />
     ) : (
-      <HeroAct tone="calm" title="No tasks due now" action={action} />
+      <HeroAct
+        tone="calm"
+        title="No decisions due"
+        action={{ label: "Open this shift", phoneLabel: "Open", onClick: openShiftTodo, testId: "ward-hero-act-now" }}
+      />
     );
   return { wardFigures, wardAct };
 }

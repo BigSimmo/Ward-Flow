@@ -24,8 +24,11 @@ import { buttonClass } from "./button";
 import { PillTabs, TabPanel } from "./choice";
 import type { CountWindow } from "./primitives";
 import { cx } from "./cx";
+import { DrawerPager, type DrawerPagerProps } from "./drawer-pager";
 import s from "./drawer.module.css";
 import { Sheet } from "./sheet";
+
+export { DrawerPager, type DrawerPagerProps };
 
 export type DrawerTab<T extends string = string> = {
   id: T;
@@ -61,6 +64,8 @@ export type PanelDrawerProps<T extends string = string> = {
   onTabChange?: (id: T) => void;
   /** Accessible name of the tab list. */
   tabsLabel?: string;
+  /** Stem for the tab and panel ids ("<stem>-tab-<id>"), for a page that names them; one is made when omitted. */
+  tabsIdPrefix?: string;
   /** The body: the one scroll area. */
   children: ReactNode;
   /** Main actions, pinned under the body in a light band. */
@@ -83,6 +88,17 @@ export type PanelDrawerProps<T extends string = string> = {
    * the opener. Must be referentially stable (`useCallback`).
    */
   resolveReturnFocusTarget?: () => HTMLElement | null;
+  /**
+   * Audit three #34 (Josh, 28 Nov 2026): one pager in the head of every drawer opened from a list,
+   * as the referral drawer has: previous, "2 of 7" and next, before the tag and Close.
+   */
+  pager?: DrawerPagerProps;
+  /**
+   * Audit four #98: start the subtitle line with the tag even without a pager (a drawer opened from
+   * anywhere, with no list), so every moved drawer reads name and close on line one, then
+   * "[tag] · fact · fact". Off by default, so no other head moves.
+   */
+  tagBelow?: boolean;
 };
 
 export function PanelDrawer<T extends string = string>({
@@ -98,6 +114,7 @@ export function PanelDrawer<T extends string = string>({
   tab,
   onTabChange,
   tabsLabel = "Sections",
+  tabsIdPrefix,
   children,
   foot,
   footProps,
@@ -107,13 +124,17 @@ export function PanelDrawer<T extends string = string>({
   bodyClassName,
   testId,
   resolveReturnFocusTarget,
+  pager,
+  tagBelow = false,
 }: PanelDrawerProps<T>) {
   const ownTitleId = useId();
-  const tabsId = useId();
+  const ownTabsId = useId();
+  const tabsId = tabsIdPrefix ?? ownTabsId;
   const resolvedTitleId = titleId ?? ownTitleId;
   const hasTabs = Boolean(tabs && tabs.length > 0);
   const selectedTab = hasTabs ? (tab ?? tabs![0].id) : undefined;
 
+  const tagInSubtitle = Boolean(tag && (pager || tagBelow));
   const head = (
     <div className={s.head} data-drawer-head="">
       <div className={s.who}>
@@ -129,10 +150,42 @@ export function PanelDrawer<T extends string = string>({
             {title}
           </h2>
         )}
-        {subtitle ? <p className={s.subtitle}>{subtitle}</p> : null}
+        {subtitle || tagInSubtitle ? (
+          <p className={s.subtitle}>
+            {tagInSubtitle ? tag : null}
+            {/* Audit three review: each " · " part is its own item and the dot is drawn before it, so a
+                wrapped line never ends on a dangling dot. */}
+            {typeof subtitle === "string" && subtitle.includes(" · ") ? (
+              subtitle.split(" · ").map((part, index) => (
+                <span key={index} className={s.metaItem}>
+                  {part}
+                </span>
+              ))
+            ) : Array.isArray(subtitle) ? (
+              // Final r10 F3: rich parts passed as a list get the same leading dot.
+              subtitle.map((part, index) => (
+                <span key={index} className={s.metaItem}>
+                  {part}
+                </span>
+              ))
+            ) : tagInSubtitle && subtitle ? (
+              // Audit four (low): a lone fact after the leading tag gets the same leading dot,
+              // so the line reads "[tag] · fact" as a list does. A lone node (not a string) also gets
+              // metaLone, so a block-level node shares the dot's row instead of breaking under it.
+              <span className={typeof subtitle === "string" ? s.metaItem : `${s.metaItem} ${s.metaLone}`}>
+                {subtitle}
+              </span>
+            ) : (
+              subtitle
+            )}
+          </p>
+        ) : null}
       </div>
-      {/* The tag sits straight in the head row (no wrapper), so a page's own pill keeps its DOM. */}
-      {tag ?? null}
+      {pager ? <DrawerPager {...pager} /> : null}
+      {/* The tag sits straight in the head row (no wrapper), so a page's own pill keeps its DOM.
+          Gate r10 (one head grammar): with a pager, line one is name, pager, close, and the tag
+          starts the subtitle line, so the name and subtitle each keep one line. */}
+      {tagInSubtitle ? null : (tag ?? null)}
       <button
         type="button"
         className={buttonClass({ variant: "sec", size: "sm", iconOnly: true })}

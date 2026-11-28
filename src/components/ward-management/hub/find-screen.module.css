@@ -1,0 +1,158 @@
+/* Find: the frame adds no box. Each tab's hero keeps its own height; the tab row is in the hero. */
+.frame {
+  display: contents;
+}
+
+/* The Find tabs at the top of each hero. The hero's eyebrow is small caps; the tabs are not. */
+.heroTabs {
+  display: block;
+  max-width: 100%;
+  margin-bottom: var(--wf-s-2);
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: nowrap;
+}
+
+/* ---- The tab row is the hero's first line; the hero's right-hand chips line up with it. ---- */
+
+/* Laptop and tablet: the Demo chip is centred on the tab row (the row is 40px, the chip 22px). */
+@media (min-width: 46.5rem) {
+  .frame :global([data-wf-hero]) > [class*="hero_firstRow"] > [class*="hero_aside"] {
+    align-self: flex-start;
+    margin-top: 13px;
+  }
+
+  /* People: the Today figures sit on the title line at the right edge, the chip stays on the tab row. */
+  .frame :global([data-wf-hero]) > [class*="hero_firstRow"] > [class*="hero_aside"]:has(> [class*="titleBand"]) {
+    display: contents;
+  }
+
+  /* People: the title block keeps the Find tabs' full width; the Today figures take what is left. */
+  .frame
+    :global([data-wf-hero])
+    > [class*="hero_firstRow"]:has(> [class*="hero_aside"] > [class*="titleBand"])
+    > [class*="hero_titleBlock"] {
+    flex: 0 0 auto;
+  }
+
+  .frame :global([data-wf-hero]) > [class*="hero_firstRow"] > [class*="hero_aside"] > [class*="titleBand"] {
+    align-self: flex-end;
+    margin-left: auto;
+    margin-right: 0;
+    margin-bottom: 4px;
+  }
+
+  .frame
+    :global([data-wf-hero])
+    > [class*="hero_firstRow"]
+    > [class*="hero_aside"]:has(> [class*="titleBand"])
+    > :not([class*="titleBand"]) {
+    align-self: flex-start;
+    margin-top: 13px;
+    margin-left: var(--wf-s-4);
+  }
+}
+
+/* Audit four #23: on a tablet the People hero's Demo chip stays at the end of the tab row, level with
+   the tabs, instead of wrapping onto a row of its own under the title line. */
+@media (min-width: 46.5rem) and (max-width: 62.5rem) {
+  .frame :global([data-wf-hero]) > [class*="hero_firstRow"]:has(> [class*="hero_aside"] > [class*="titleBand"]) {
+    position: relative;
+  }
+
+  .frame
+    :global([data-wf-hero])
+    > [class*="hero_firstRow"]
+    > [class*="hero_aside"]:has(> [class*="titleBand"])
+    > :not([class*="titleBand"]) {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-left: 0;
+  }
+}
+
+/* Phone: the hero reserves room at the eyebrow's right for the Live chip, which would squeeze the tabs
+   to nothing. The tabs take their own line under the chip and scroll sideways. */
+@media (max-width: 46.4375rem) {
+  .frame :global([data-wf-hero]) :is([class*="hero_eyebrow"]):has(> .heroTabs) {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    clip-path: none !important;
+    padding: 0 !important;
+  }
+
+  /* The Demo chip sits at the right of the title line, as on each page before Find (the title already
+     keeps room for it); the tabs take the full width above, so no line is spent on the chip alone.
+     FindHeroTabs measures the title line; until then the chip keeps the hero's own place. */
+  .frame :global([data-wf-hero]):has(.heroTabs) :global([data-wf-live]) {
+    top: var(--find-title-top, calc(var(--wf-s-3) + 1px)) !important;
+  }
+
+  /* The tabs open the hero: no extra space above them, a short step down to the title. */
+  .frame :global([data-wf-hero]) :is([class*="hero_titleBlock"]):has(.heroTabs) {
+    padding-top: 0 !important;
+  }
+
+  .heroTabs {
+    margin-bottom: var(--wf-s-1);
+  }
+}
+
+/* Five tabs never wrap onto a second line; on a narrow screen the row scrolls sideways. */
+.heroTabs nav,
+.heroTabs nav > * {
+  flex-wrap: nowrap;
+}
+
+.heroTabs nav {
+  width: max-content;
+}
+
+.heroTabs nav > * {
+  flex: none;
+  white-space: nowrap;
+}
+
+.heroTabs nav {
+  max-width: none;
+}
+
+.heroTabs nav * {
+  white-space: nowrap;
+}
+
+/* A row cut at an edge fades into the hero there (the tab under the fade is still reachable by
+   scrolling the row, which also follows focus). */
+.heroTabs[data-fade-end] {
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - 40px), transparent);
+}
+
+.heroTabs[data-fade-start] {
+  -webkit-mask-image: linear-gradient(to left, black calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to left, black calc(100% - 40px), transparent);
+}
+
+.heroTabs[data-fade-start][data-fade-end] {
+  -webkit-mask-image: linear-gradient(to right, transparent, black 40px, black calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 40px, black calc(100% - 40px), transparent);
+}
+
+/* The row scrolls, but shows no scroll bar on the hero. */
+.heroTabs {
+  scrollbar-width: none;
+}
+
+/* A tab's heading takes focus from code only (the route announcer after a redirect into Find); it is
+   never a tab stop, so it draws no ring there. */
+.frame :global([data-wf-hero]) :is(h1, h2)[tabindex="-1"]:focus {
+  outline: none;
+  box-shadow: none;
+}

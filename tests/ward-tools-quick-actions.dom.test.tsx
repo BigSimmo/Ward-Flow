@@ -46,16 +46,20 @@ function atDesk(access: WardAccess) {
   );
 }
 
-describe("Coordinator Quick actions (Josh, 3 Nov 2026)", () => {
-  it("is one Tools row that opens six actions, Ward updates first, with nothing pre-selected", () => {
-    atDesk({ role: "coordinator", scope: { kind: "statewide" } });
-    fireEvent.click(screen.getByTestId("ward-tools-toggle-quick-actions"));
-    const group = screen.getByRole("group", { name: "Quick actions" });
-    const names = ["Ward updates", "Find a bed", "Bed summary", "Chase wards", "Ask wards", "Broadcast"];
-    for (const name of names) expect(within(group).getByText(name)).toBeTruthy();
-    expect(within(group).getByRole("button", { name: /Ward updates/u })).toHaveAttribute("aria-pressed", "true");
+/** Audit two #117: the tile grid is gone; the coordinator's one "Check counts" row opens the ask panel. */
+function updatesPanel(): HTMLElement {
+  return screen.getByText(/wards confirmed since/u).closest("div")!.parentElement as HTMLElement;
+}
 
-    const panel = screen.getByRole("region", { name: "Ward updates" });
+describe("Coordinator Quick actions (Josh, 3 Nov 2026)", () => {
+  it("is one Check counts row that opens the ask, with nothing pre-selected", () => {
+    atDesk({ role: "coordinator", scope: { kind: "statewide" } });
+    expect(screen.queryByRole("group", { name: "Quick actions" })).toBeNull();
+    const row = screen.getByTestId("ward-tools-toggle-quick-actions");
+    expect(row).toHaveTextContent("Check counts");
+    fireEvent.click(row);
+
+    const panel = updatesPanel();
     for (const box of within(panel).queryAllByRole("checkbox")) expect(box).not.toBeChecked();
     expect(within(panel).getByRole("button", { name: /^Ask (all )?\d+ wards? to confirm$/u })).not.toHaveAttribute(
       "aria-disabled",
@@ -66,7 +70,7 @@ describe("Coordinator Quick actions (Josh, 3 Nov 2026)", () => {
   it("sends the ask to every unconfirmed ward when none is ticked, once, and says so", async () => {
     atDesk({ role: "coordinator", scope: { kind: "statewide" } });
     fireEvent.click(screen.getByTestId("ward-tools-toggle-quick-actions"));
-    const panel = screen.getByRole("region", { name: "Ward updates" });
+    const panel = updatesPanel();
     const more = within(panel).queryByRole("button", { name: /^Show \d+ more$/u });
     if (more) fireEvent.click(more);
     const waiting = within(panel).getAllByRole("checkbox").length;
@@ -89,7 +93,7 @@ describe("Coordinator Quick actions (Josh, 3 Nov 2026)", () => {
   it("sends only to the wards ticked, then clears the ticks", async () => {
     atDesk({ role: "coordinator", scope: { kind: "statewide" } });
     fireEvent.click(screen.getByTestId("ward-tools-toggle-quick-actions"));
-    const panel = screen.getByRole("region", { name: "Ward updates" });
+    const panel = updatesPanel();
     const boxes = within(panel).getAllByRole("checkbox");
     fireEvent.click(boxes[0]);
     const ask = within(panel).getByRole("button", { name: "Ask 1 ward to confirm" });
@@ -108,7 +112,7 @@ describe("Coordinator Quick actions (Josh, 3 Nov 2026)", () => {
   it("skips a ward asked in the last 4 hours, so a second press never nags it", async () => {
     atDesk({ role: "coordinator", scope: { kind: "statewide" } });
     fireEvent.click(screen.getByTestId("ward-tools-toggle-quick-actions"));
-    const panel = screen.getByRole("region", { name: "Ward updates" });
+    const panel = updatesPanel();
     const before = within(panel).getByRole("button", { name: /^Ask (all )?\d+ wards? to confirm$/u }).textContent;
     fireEvent.click(within(panel).getAllByRole("checkbox")[0]);
     await act(async () => {
@@ -136,7 +140,7 @@ describe("Coordinator Quick actions (Josh, 3 Nov 2026)", () => {
   it("lists every unconfirmed ward, behind Show more when there are many, so each can be picked", () => {
     atDesk({ role: "coordinator", scope: { kind: "statewide" } });
     fireEvent.click(screen.getByTestId("ward-tools-toggle-quick-actions"));
-    const panel = screen.getByRole("region", { name: "Ward updates" });
+    const panel = updatesPanel();
     const [, confirmed, all] = /(\d+) of (\d+)/u.exec(panel.textContent ?? "") ?? [];
     const total = Number(all) - Number(confirmed);
     const more = within(panel).queryByRole("button", { name: /^Show \d+ more$/u });
@@ -147,13 +151,12 @@ describe("Coordinator Quick actions (Josh, 3 Nov 2026)", () => {
     expect(within(panel).getAllByRole("checkbox").length).toBe(total);
   });
 
-  it("gives another desk its own tiles, never the coordinator's (Josh, 4 Nov 2026)", () => {
+  it("gives another desk no Check counts row and no Quick actions tiles (audit two #117, Josh, 4 Nov 2026)", () => {
     atDesk({ role: "ed", scope: { kind: "ed", edId: "peel-ed" } });
-    fireEvent.click(screen.getByTestId("ward-tools-toggle-quick-actions"));
-    const grid = screen.getByRole("group", { name: "Quick actions" });
-    for (const name of ["Ward updates", "Chase wards", "Ask wards", "Broadcast"]) {
-      expect(within(grid).queryByText(name)).toBeNull();
+    expect(screen.queryByTestId("ward-tools-toggle-quick-actions")).toBeNull();
+    expect(screen.queryByRole("group", { name: "Quick actions" })).toBeNull();
+    for (const name of ["Check counts", "Ward updates", "Chase wards", "Ask wards", "Broadcast"]) {
+      expect(screen.queryByText(name)).toBeNull();
     }
-    expect(within(grid).getByText("New referral")).toBeTruthy();
   });
 });

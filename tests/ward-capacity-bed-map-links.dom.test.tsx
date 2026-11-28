@@ -40,7 +40,7 @@ describe("Capacity bed map links to each ward's own page (audit P093, redesign)"
         fireEvent.click(cards[index]!);
         const drawer = screen.getByTestId("ward-capacity-ward-drawer");
         expect(drawer, ward.unit.id).toHaveTextContent(ward.unit.name);
-        expect(within(drawer).getByRole("link", { name: "Open ward" }), ward.unit.id).toHaveAttribute(
+        expect(within(drawer).getByRole("link", { name: `Open ${ward.unit.name}` }), ward.unit.id).toHaveAttribute(
           "href",
           `/bedchart/ward/${ward.unit.id}`,
         );

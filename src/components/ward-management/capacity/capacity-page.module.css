@@ -484,6 +484,14 @@
   align-items: center;
   gap: var(--wf-s-2);
 }
+/* Audit three #17: the highlight chips in the Bed map's head, beside Find a bed. */
+.headHighlights {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
 /* Wave 4 (D-191): the highlight chips' mono ward counts ("Any ready 19"). */
 .chipWords {
   display: inline-flex;
@@ -1803,6 +1811,27 @@ button.helpLink {
   color: var(--wf-ink-3);
 }
 
+/* Gate r10 look upgrade 1: the Alerts drawer foot shape. Filled step full width on row one, the
+   quiet steps as equal halves on row two; one quiet step alone takes the full row. */
+.wdFoot.wdFoot {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wdFoot > .wdFootPri,
+.wdFootOne > :last-child {
+  grid-column: 1 / -1;
+}
+
+.wdFoot > * {
+  min-width: 0;
+  text-align: center;
+}
+
+.wdFoot > .wdFootPri {
+  white-space: normal;
+}
+
 /* ── Capacity issue 6 (Josh, 3 Nov 2026): Planned moves full width, then two equal cards ── */
 
 /* Planned moves: four lanes in the Movements stage strip style, then the grouped list. */
@@ -1990,7 +2019,8 @@ button.helpLink {
 }
 .pmRow {
   display: grid;
-  grid-template-columns: 60px minmax(0, 1.25fr) minmax(0, 1fr) 216px 18px;
+  /* States B review: 72px so "10:00 am" stays on one line in the time tile. */
+  grid-template-columns: 72px minmax(0, 1.25fr) minmax(0, 1fr) 216px 18px;
   align-items: center;
   gap: var(--wf-s-4);
   width: 100%;
@@ -2022,7 +2052,7 @@ button.helpLink {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 60px;
+  width: 72px;
   height: 44px;
   border-radius: var(--wf-r-md);
   background: var(--wf-surface-2);
@@ -2030,6 +2060,7 @@ button.helpLink {
 }
 .pmWhenTime {
   font-family: var(--wf-mono);
+  white-space: nowrap;
   font-size: var(--wf-fs-14);
   font-weight: 650;
   line-height: 1.15;
@@ -2143,7 +2174,7 @@ button.helpLink {
 }
 @media (max-width: 64rem) {
   .pmRow {
-    grid-template-columns: 60px minmax(0, 1fr) minmax(0, 1fr) 18px;
+    grid-template-columns: 72px minmax(0, 1fr) minmax(0, 1fr) 18px;
     row-gap: var(--wf-s-2);
   }
   .pmWhen {
@@ -2174,6 +2205,10 @@ button.helpLink {
   .pmWhen {
     grid-row: 1 / 4;
     width: 56px;
+  }
+  .pmWhen > .pmWhenTime {
+    white-space: normal;
+    text-align: center;
   }
   .pmRoute {
     grid-column: 2;
@@ -2406,6 +2441,17 @@ button.helpLink {
 .pmLegMeta {
   font-size: var(--wf-fs-13);
   color: var(--wf-ink-3);
+}
+/* States B review: on a phone the ready-count chip sat beside the ward and squeezed it to three lines;
+   it takes its own line under the ward and site. */
+@media (max-width: 46.4375rem) {
+  .pmLeg {
+    flex-wrap: wrap;
+    row-gap: var(--space-1);
+  }
+  .pmLeg > .pmLegText {
+    flex: 1 1 100%;
+  }
 }
 .pmLegReady {
   margin-left: auto;
@@ -2940,6 +2986,10 @@ button.helpLink {
   margin-top: 2px;
   font-size: var(--wf-fs-12);
 }
+/* Under the band: the words are said to a screen reader only; the line keeps its height. */
+.occBandsQuiet {
+  visibility: hidden;
+}
 /* UI sweep (16 Nov 2026): on a phone the bands take the figure's width instead of setting it, so
    "Under the 90% band" wraps under In use rather than pushing the fourth figure off the screen. */
 @media (max-width: 46.4375rem) {
@@ -3018,17 +3068,14 @@ button.helpLink {
   .overview {
     grid-template-columns: minmax(0, 1fr);
   }
+  /* Audit four item 22 (820): side by side, Held up stood half the height of Next few days and left a
+     hole under it; stretching it would only move the hole inside the card. The two cards stack full
+     width, each its own height, so neither card nor grid carries a blank band. */
   .rail {
     position: static;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
+    display: flex;
+    flex-direction: column;
     order: -1;
-  }
-}
-@container page (max-width: 699px) {
-  .rail {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -3202,12 +3249,28 @@ a.railRow:focus-visible,
 /* Phone (743 px and below): window words under their labels, the bed-type band as a 2 × 2 grid,
    rows and links with a 48 px tap cover. */
 @media (max-width: 46.4375rem) {
-  /* The window word (or, beside Ready, the window word and its comma) on a line of its own. */
+  /* The window word, or beside Ready the beds being made ready, on a line of its own. */
   .figLabel > .winWord,
-  .figLabel > .winJoin {
+  .figLabel > .readySub {
     display: flex;
   }
-  .figLabel {
+  /* Audit four item 28: the second line is the figure's quiet note, one line, never ragged. */
+  .figLabel > .readySub {
+    margin-top: 2px;
+    color: var(--wf-hero-ink-3);
+    font-weight: 400;
+    white-space: nowrap;
+  }
+  /* Gate r10 (2 FIX 10): an inline block takes no underline from the figure's link, so the second
+     line reads as the figure's quiet note in the muted on-hero ink, not as more of the label. */
+  html .figLabel > .readySub {
+    display: inline-block;
+    inline-size: 100%;
+    color: var(--wf-hero-ink-3);
+    text-decoration: none;
+  }
+  /* The html prefix beats the base nowrap whatever order the production build puts them in. */
+  html .figLabel {
     white-space: normal;
   }
   .capHero [data-testid="capacity-mismatch"] > ul {
@@ -3257,4 +3320,35 @@ button.railFoot {
   background: none;
   font-family: inherit;
   cursor: pointer;
+}
+/* Perfection (26 Nov 2026): at tablet width the four hero figures and the Bed meeting sheet chip
+   need a little more than the row, so the chip sat over In use's bands at 820. The figures' gutters
+   tighten from 18/24 px to 14/16 px there; the hairlines and every word stay. */
+/* Audit four item 22 (820): the four figures fill the hero's row, so the three job chips went one
+   over two beside them. Tablet sets the chips on one row under the figures, as the desktop reads. */
+@media (min-width: 46.5rem) and (max-width: 63.9375rem) {
+  .capHero [data-wf-hero-top] > :first-child {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--wf-s-3);
+  }
+  .capHero [data-wf-hero-top] > :first-child > ul {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+  }
+}
+@media (min-width: 46.5rem) and (max-width: 63.9375rem) {
+  .capHero [data-wf-hero-figure]:not(:first-child) {
+    padding-left: 14px;
+  }
+  .capHero [data-wf-hero-figure]:not(:last-child) {
+    padding-right: 16px;
+  }
+}
+
+/* Controls 16 (Josh): a highlight chip with no wards recedes on desktop (hidden on a phone, in code). */
+.chipZero {
+  color: var(--wf-ink-3);
+}
+.chipZero .chipN {
+  font-weight: 400;
 }

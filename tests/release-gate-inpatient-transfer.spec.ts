@@ -58,28 +58,47 @@ import { escapeForRegExp } from "./helpers/ward-place-names";
 
 test.describe.configure({ timeout: 240_000 });
 
-/** Open a ward's bed board from the Wards index: the ward's profile on desktop, its sheet on a phone. */
+/**
+ * Open a ward's bed board from the Wards index: the ward's panel on desktop, its sheet on a phone.
+ * r10: the Wards index is Find's Wards tab, the panel's one filled step is "Open <ward>", and the
+ * bed board is that ward page's Grid view (`/board` redirects there).
+ */
 async function openBedBoardFromWards(page: Page, unitName: string, unitId: string): Promise<void> {
   // The Wards index belongs to the coordinator; a ward desk cannot navigate to it.
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
-  await goViaNav(page, "/bedchart/wards", "ward-index");
+  await goViaNav(page, "/bedchart/hub", "ward-patient-search");
+  await page.locator('a[href="/bedchart/hub?tab=wards"]:visible').first().click();
+  await page.waitForURL((url) => url.pathname === "/bedchart/hub" && url.searchParams.get("tab") === "wards");
+  await waitForScreen(page, "ward-index");
   if (isPhoneLayout(page)) {
     await page
       .getByRole("region", { name: "Wards", exact: true })
       .getByRole("button", { name: new RegExp(`^${escapeForRegExp(unitName)}`, "u") })
       .first()
       .click();
-    await page.getByTestId("ward-index-phone-sheet").getByRole("button", { name: "Bed board", exact: true }).click();
+    await page
+      .getByTestId("ward-index-phone-sheet")
+      .getByRole("button", { name: `Open ${unitName}`, exact: true })
+      .click();
   } else {
-    // The ward card's name opens its side panel, which links to the Bed board (#1360).
+    // The ward card's name opens its side panel, whose foot opens the ward.
     await page
       .getByRole("button", { name: unitName.split(" — ")[0], exact: true })
       .first()
       .click();
-    await page.getByRole("dialog").getByRole("link", { name: "Bed board", exact: true }).click();
+    await page
+      .getByRole("dialog")
+      .getByRole("link", { name: `Open ${unitName}`, exact: true })
+      .click();
   }
-  await page.waitForURL(`**/bedchart/board/${unitId}`);
-  await waitForScreen(page, "ward-board");
+  await page.waitForURL((url) => url.pathname === `/bedchart/ward/${unitId}`);
+  await waitForScreen(page, "ward-unit-screen");
+  // The bed board is the ward page's Grid view.
+  const grid = page.getByRole("radio", { name: "Grid", exact: true }).filter({ visible: true }).first();
+  if ((await grid.getAttribute("aria-checked")) !== "true") await grid.click();
+  await expect(grid).toHaveAttribute("aria-checked", "true");
+  await page.waitForURL((url) => url.searchParams.get("view") === "grid");
+  await expect(page.getByTestId("ward-board-beds").filter({ visible: true }).first()).toBeVisible();
 }
 
 /** As the coordinator: the Out of area page, this person's return plan, on either layout. */
@@ -87,12 +106,15 @@ async function openReturnPlan(page: Page, admissionId: string) {
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
   await goViaNav(page, "/bedchart/out-of-area", "ward-out-of-area-board");
   if (isPhoneLayout(page)) {
-    // The phone lists people as cards, opening on those who need the coordinator; Everyone lists
-    // the whole register. A card opens a summary sheet, and the plan opens from it.
-    const everyone = page.getByRole("radio", { name: /^Everyone/u });
-    if ((await everyone.getAttribute("aria-checked")) !== "true") await everyone.click();
-    await page.getByTestId(`ward-out-of-area-card-${admissionId}`).click();
-    await page.getByRole("button", { name: /^(Plan return|Continue return plan|View recorded return)$/u }).click();
+    // The phone lists people as cards, opening on Away now. r10 (audit four #104): Everyone, the
+    // whole register, opens inside Away now from its "more" row, not a tab of its own. A card opens
+    // a summary sheet, and the plan opens from it.
+    const awayNow = page.getByRole("radio", { name: /^Away now/u });
+    if ((await awayNow.getAttribute("aria-checked")) !== "true") await awayNow.click();
+    const everyone = page.getByRole("region", { name: "Everyone", exact: true });
+    if (!(await everyone.isVisible())) await page.getByRole("button", { name: /show everyone/iu }).click();
+    await everyone.getByTestId(`ward-out-of-area-card-${admissionId}`).click();
+    await page.getByRole("button", { name: /^(Plan return|Continue return plan|Open recorded return)$/u }).click();
   } else {
     await page.getByTestId(`ward-out-of-area-row-${admissionId}`).click();
   }
@@ -119,29 +141,41 @@ async function expectOutOfAreaNotRecorded(page: Page, admissionId: string): Prom
   const notBanded = Number(/^(\d+) more could not be placed in a band\.$/u.exec(notBandedText)?.[1] ?? Number.NaN);
   expect(notBanded, `people with no travel time recorded: "${notBandedText}"`).toBeGreaterThan(0);
   if (isPhoneLayout(page)) {
-    // The phone has no empty-list sentence; Everyone lists nobody, and this stay has no card.
-    const everyone = page.getByRole("radio", { name: /^Everyone/u });
-    if ((await everyone.getAttribute("aria-checked")) !== "true") await everyone.click();
+    // r10: the phone's tabs are Away now and History, and Everyone opens inside Away now from its
+    // "more" row, which is not offered while nobody is away. Away now says so in the desktop's
+    // words, counting those with no travel time; no list of cards is drawn, and this stay has no card.
+    const awayNow = page.getByRole("radio", { name: /^Away now/u });
+    if ((await awayNow.getAttribute("aria-checked")) !== "true") await awayNow.click();
+    await expect(awayNow).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByTestId("ward-out-of-area-phone-needs-empty")).toContainText(
+      "Nobody is in a bed far from home",
+    );
+    await expect(page.getByTestId("ward-out-of-area-phone-empty")).toHaveText(
+      `${notBanded} ${notBanded === 1 ? "person has" : "people have"} no travel time recorded.`,
+    );
+    await expect(page.getByRole("button", { name: /show everyone/iu })).toHaveCount(0);
     await expect(page.getByTestId("ward-out-of-area-cards").locator("li")).toHaveCount(0);
     await expect(page.getByTestId(`ward-out-of-area-card-${admissionId}`)).toHaveCount(0);
     // The phone's plan sheet carries the subject test id, and no plan is open.
     await expect(page.getByTestId("ward-out-of-area-subject")).toHaveCount(0);
   } else {
+    // Audit three #68 (r10): with nobody away, the register and the overview cards give way to one
+    // empty state on Away now, which still counts those with no travel time (out-of-area-board.tsx).
+    await expect(page.getByTestId("ward-out-of-area-empty-state")).toContainText("Nobody is in a bed far from home");
     await expect(page.getByTestId("ward-out-of-area-empty")).toHaveText(
-      `Nobody is shown as far from home. ${notBanded} ${notBanded === 1 ? "person has" : "people have"} no travel time recorded.`,
+      new RegExp(
+        `^${notBanded} ${notBanded === 1 ? "person has" : "people have"} no travel time recorded\\. Checked at .+\\.$`,
+        "u",
+      ),
     );
     await expect(page.getByTestId("ward-out-of-area-table")).toHaveCount(0);
     await expect(page.getByTestId(`ward-out-of-area-row-${admissionId}`)).toHaveCount(0);
-    // With nobody chosen, the desktop's subject test id sits on the Ready to go home card (the
-    // help tour points at it), and that card lists nobody either.
-    const subject = page.getByTestId("ward-out-of-area-subject");
-    await expect(subject.getByTestId("ward-out-of-area-subject-empty")).toContainText(
-      "Nobody is past their discharge date",
-    );
-    await expect(subject.getByRole("button")).toHaveCount(0);
+    // Nobody is chosen and the Ready to go home card gave way to the empty state, so no plan
+    // drawer or subject card is drawn.
+    await expect(page.getByTestId("ward-out-of-area-subject")).toHaveCount(0);
   }
   await expect(
-    page.getByRole("button", { name: /^(Plan return|Continue return plan|View recorded return)$/u }),
+    page.getByRole("button", { name: /^(Plan return|Continue return plan|Open recorded return)$/u }),
   ).toHaveCount(0);
   // No return plan is open on either layout.
   await expect(page.locator("#ward-out-of-area-plan-title")).toHaveCount(0);
@@ -380,7 +414,7 @@ test("Inpatient transfer: a stay on one ward is referred, accepted and held at a
   await expectAccessible(page, testInfo, "receiving ward arrivals with the delivered transfer");
   await receivingScreen.getByTestId(`ward-confirm-arrival-${movementId}`).click();
   // Walk-through WT-11: the ward checks the name and UMRN before the arrival is recorded.
-  await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Confirm arrival" }).click();
+  await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Record arrival" }).click();
   await expect(receivingScreen.getByTestId(`ward-accepted-${movementId}`)).toHaveCount(0);
   await openWardHome(page);
   await expect.poll(() => wardFigure(page, "occupied")).toBe(receivingOccupiedBefore + 1);

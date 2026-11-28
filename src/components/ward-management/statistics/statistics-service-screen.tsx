@@ -2,13 +2,13 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { BedSingle, ChevronDown, Clock, LayoutList, MapPin, Network, Plane } from "lucide-react";
+import { BedSingle, ChevronDown, Clock, LayoutList, MapPin, Network } from "lucide-react";
 
 import {
   BarList,
   CardBody,
   CardFoot,
-  HeroStat,
+  HeroFigures,
   Icon,
   Menu,
   PhoneListRow,
@@ -556,6 +556,8 @@ function ServiceView({ model, slots }: { model: ServiceModel; slots: ServiceSlot
     togglePause,
   } = model;
   const isPhone = useIsPhone();
+  // Audit two (#100): Far from home and Out of area are one card with two views, as on a phone.
+  const [farView, setFarView] = useState<"bands" | "people">("bands");
   const section = statisticsSectionById("service")!;
   const small = statisticsCountText;
   const bandsShown = OUT_OF_AREA_BANDS.map((band) => small(bandCounts.get(band) ?? { kind: "withheld" }));
@@ -628,44 +630,56 @@ function ServiceView({ model, slots }: { model: ServiceModel; slots: ServiceSlot
         eyebrow: `Health service · ${serviceSites.length} ${serviceSites.length === 1 ? "hospital" : "hospitals"}`,
         sub: `${totalBedBase > 0 ? `${occupancyPct}% in use` : NO_BEDS_TEXT} · ${wardCount} ${wardCount === 1 ? "ward" : "wards"}`,
         stats: (
-          <>
-            <HeroStat value={totalBedBase} label="Beds" />
-            <HeroStat value={totalReady} label="Ready" />
-            <HeroStat value={small(edWaiting)} label="Open ED movements" tone={longEdWait ? "warning" : undefined} />
-          </>
+          <HeroFigures
+            label="Service figures"
+            items={[
+              { id: "beds", value: totalBedBase, label: "beds" },
+              { id: "ready", value: totalReady, label: "ready" },
+              {
+                id: "ed",
+                value: small(edWaiting),
+                label: "open ED movements",
+                tone: longEdWait ? "warning" : undefined,
+              },
+            ]}
+          />
         ),
       }}
       stats={
-        <>
-          <HeroStat
-            value={<span data-testid="ward-statistics-service-exec-total-beds">{totalBedBase}</span>}
-            label="Beds"
-          />
-          <HeroStat
-            value={
-              <span data-testid="ward-statistics-service-exec-occupancy">
-                {totalBedBase > 0 ? `${occupancyPct}%` : NO_BEDS_TEXT}
-              </span>
-            }
-            label="In use"
-          />
-          <HeroStat
-            value={<span data-testid="ward-statistics-service-exec-ready-beds">{totalReady}</span>}
-            label={pendingPreparation > 0 ? `Ready, ${pendingPreparation} being made ready` : "Ready"}
-          />
-          <HeroStat value={wardCount} label="Wards" />
-          {/* Five figures at most (v10). The ED count is on the ED waits card's head ("N waiting in
-              M EDs"), so the hero leaves it out; the export still carries it. */}
-          <HeroStat
-            value={<span data-testid="ward-statistics-service-exec-ooa">{small(outOfAreaCount)}</span>}
-            label={
-              <span className={styles.flagged}>
-                {positive(outOfAreaCount) ? <StatusGlyph tone="warning" size={9} /> : null}
-                Out of area
-              </span>
-            }
-          />
-        </>
+        <HeroFigures
+          label="Service figures"
+          items={[
+            {
+              id: "beds",
+              value: <span data-testid="ward-statistics-service-exec-total-beds">{totalBedBase}</span>,
+              label: "beds",
+            },
+            {
+              id: "in-use",
+              value: (
+                <span data-testid="ward-statistics-service-exec-occupancy">
+                  {totalBedBase > 0 ? `${occupancyPct}%` : NO_BEDS_TEXT}
+                </span>
+              ),
+              word: totalBedBase === 0,
+              label: "in use",
+            },
+            {
+              id: "ready",
+              value: <span data-testid="ward-statistics-service-exec-ready-beds">{totalReady}</span>,
+              label: pendingPreparation > 0 ? `ready, ${pendingPreparation} being made ready` : "ready",
+            },
+            { id: "wards", value: wardCount, label: wardCount === 1 ? "ward" : "wards" },
+            // Five figures at most (v10). The ED count is on the ED waits card's head ("N waiting in
+            // M EDs"), so the hero leaves it out; the export still carries it.
+            {
+              id: "out-of-area",
+              value: <span data-testid="ward-statistics-service-exec-ooa">{small(outOfAreaCount)}</span>,
+              label: "out of area",
+              tone: positive(outOfAreaCount) ? "warning" : undefined,
+            },
+          ]}
+        />
       }
     >
       {isPhone ? (
@@ -700,61 +714,82 @@ function ServiceView({ model, slots }: { model: ServiceModel; slots: ServiceSlot
               <StatCard
                 id="far-from-home"
                 icon={MapPin}
-                title="Far from home"
-                aside="Synthetic travel bands"
+                title="Far from home and out of area"
+                action={
+                  <Segmented<"bands" | "people">
+                    label="Far from home view"
+                    value={farView}
+                    onChange={setFarView}
+                    items={[
+                      { id: "bands", label: "Travel bands" },
+                      { id: "people", label: "People" },
+                    ]}
+                  />
+                }
                 data-testid="ward-statistics-service-out-of-area"
               >
-                <CardBody
-                  className={`${styles.bodyStack} ${detail.scrolls}`}
-                  tabIndex={0}
-                  role="region"
-                  aria-label="Out of area figures"
-                >
-                  <dl className={styles.figures}>
-                    <div className={styles.figure}>
-                      <dd className={styles.figureValue} data-testid="ward-statistics-service-out-of-area-value">
-                        {small(outOfAreaCount)}
-                      </dd>
-                      <dt className={styles.figureLabel}>Far from home</dt>
-                    </div>
-                    <div className={styles.figure}>
-                      <dd
-                        className={styles.figureValue}
-                        data-testid="ward-statistics-service-out-of-area-not-banded-value"
-                      >
-                        {small(outOfAreaNotBanded)}
-                      </dd>
-                      <dt className={styles.figureLabel}>Not banded</dt>
-                    </div>
-                  </dl>
-                  <BarList
-                    label="Patients far from home by travel band"
-                    axis
-                    max={countAxisMax(
-                      OUT_OF_AREA_BANDS.map(
-                        (band, index) =>
-                          withheldBar(exactStatisticsCount(bandCounts.get(band) ?? 0) ?? 0, bandsShown[index]!).value,
-                      ),
-                    )}
-                    labelWidth="13rem"
-                    rows={OUT_OF_AREA_BANDS.map((band, index) => ({
-                      id: band,
-                      label: TRAVEL_BAND_LABELS[band],
-                      ...withheldBar(exactStatisticsCount(bandCounts.get(band) ?? 0) ?? 0, bandsShown[index]!),
-                      display: String(bandsShown[index]),
-                    }))}
-                  />
-                  <ul className={styles.srOnly} data-testid="ward-statistics-service-out-of-area-bands">
-                    {OUT_OF_AREA_BANDS.map((band, index) => (
-                      <li key={band} data-testid={`ward-statistics-service-out-of-area-band-${band}`}>
-                        {TRAVEL_BAND_LABELS[band]},{" "}
-                        <span data-testid={`ward-statistics-service-out-of-area-band-${band}-count`}>
-                          {bandsShown[index]}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardBody>
+                {farView === "people" ? (
+                  <div data-testid="ward-statistics-service-repatriation">{slots.ledger}</div>
+                ) : (
+                  <CardBody
+                    className={`${styles.bodyStack} ${detail.scrolls}`}
+                    tabIndex={0}
+                    role="region"
+                    aria-label="Out of area figures"
+                  >
+                    <dl className={styles.figures}>
+                      <div className={styles.figure}>
+                        <dd className={styles.figureValue} data-testid="ward-statistics-service-out-of-area-value">
+                          {small(outOfAreaCount)}
+                        </dd>
+                        <dt className={styles.figureLabel}>Far from home</dt>
+                      </div>
+                      <div className={styles.figure}>
+                        <dd
+                          className={styles.figureValue}
+                          data-testid="ward-statistics-service-out-of-area-not-banded-value"
+                        >
+                          {small(outOfAreaNotBanded)}
+                        </dd>
+                        <dt className={styles.figureLabel}>Not banded</dt>
+                      </div>
+                    </dl>
+                    <BarList
+                      label="Patients far from home by travel band"
+                      axis
+                      max={countAxisMax(
+                        OUT_OF_AREA_BANDS.map(
+                          (band, index) =>
+                            withheldBar(exactStatisticsCount(bandCounts.get(band) ?? 0) ?? 0, bandsShown[index]!).value,
+                        ),
+                      )}
+                      labelWidth="13rem"
+                      rows={OUT_OF_AREA_BANDS.map((band, index) => ({
+                        id: band,
+                        label: TRAVEL_BAND_LABELS[band],
+                        ...withheldBar(exactStatisticsCount(bandCounts.get(band) ?? 0) ?? 0, bandsShown[index]!),
+                        display: String(bandsShown[index]),
+                      }))}
+                    />
+                    <ul className={styles.srOnly} data-testid="ward-statistics-service-out-of-area-bands">
+                      {OUT_OF_AREA_BANDS.map((band, index) => (
+                        <li key={band} data-testid={`ward-statistics-service-out-of-area-band-${band}`}>
+                          {TRAVEL_BAND_LABELS[band]},{" "}
+                          <span data-testid={`ward-statistics-service-out-of-area-band-${band}-count`}>
+                            {bandsShown[index]}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardBody>
+                )}
+                <CardFoot meta="Synthetic travel bands · repatriation is arranged on the out-of-area board">
+                  {countsOnly ? null : (
+                    <Link href={OUT_OF_AREA_HREF} className={styles.footLink}>
+                      Open out of area
+                    </Link>
+                  )}
+                </CardFoot>
               </StatCard>
             </Follow>
           </FlushRow>
@@ -768,24 +803,6 @@ function ServiceView({ model, slots }: { model: ServiceModel; slots: ServiceSlot
             data-testid="ward-statistics-service-ed-waits"
           >
             <CardBody className={detail.swarmBody}>{slots.swarm}</CardBody>
-          </StatCard>
-
-          <StatCard
-            id="out-of-area"
-            className={detail.anchor}
-            icon={Plane}
-            title="Out of area"
-            aside="In this service's beds"
-            data-testid="ward-statistics-service-repatriation"
-          >
-            {slots.ledger}
-            <CardFoot meta="Repatriation is arranged on the out-of-area board">
-              {countsOnly ? null : (
-                <Link href={OUT_OF_AREA_HREF} className={styles.footLink}>
-                  Open out of area
-                </Link>
-              )}
-            </CardFoot>
           </StatCard>
 
           <p className={detail.pageFoot}>
@@ -1155,8 +1172,8 @@ function Placement({
           value={view}
           onChange={setView}
           items={[
-            { id: "chart", label: "Chart" },
-            { id: "data", label: "Data" },
+            { id: "chart", label: "Graph" },
+            { id: "data", label: "Table" },
           ]}
         />
       }

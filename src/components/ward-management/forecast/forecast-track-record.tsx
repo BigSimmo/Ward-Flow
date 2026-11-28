@@ -19,7 +19,6 @@ import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { kindRangeWord } from "./forecast-by-kind";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { referralsByHour } from "./forecast-history";
-import { ForecastMissReasonControl } from "./forecast-miss-reason-control";
 import {
   FORECAST_MISS_REASON_LABELS,
   latestMissReasons,
@@ -28,6 +27,14 @@ import {
 } from "./forecast-miss-reasons";
 import { useForecastHistory, useForecastMissReasons, useForecastModel } from "./use-forecast-model";
 import styles from "./forecast.module.css";
+import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
+
+// Phone script budget (28 Nov 2026): the reason control (with the kit select) loads on its own. The
+// server still draws it, so a missed forecast's row looks the same while the code arrives.
+const ForecastMissReasonControl = dynamic(
+  withLoadRetry(() => import("./forecast-miss-reason-control").then((m) => m.ForecastMissReasonControl)),
+);
 
 /**
  * Discharge dates that were met, one row per ward with a recorded planned date, in the wards' own order.

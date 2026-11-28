@@ -17,6 +17,7 @@ import { ListFilter, X, type LucideIcon } from "lucide-react";
 import { OverlayPortal } from "./overlay-root";
 import { useWfBandBleed } from "./band";
 import { Button } from "./button";
+import { DrawerPager, type DrawerPagerProps } from "./drawer-pager";
 import { useIsPhone } from "./use-is-phone";
 import { cx, present } from "./cx";
 import type { DialogAction } from "./dialog";
@@ -69,6 +70,8 @@ export type PhoneSheetProps = {
    * slide-over: full height against the right edge, the same header, body and footer.
    */
   placement?: "bottom" | "right";
+  /** Audit three review: the kit list pager in the sheet head, before Close, as on the desktop drawer. */
+  pager?: DrawerPagerProps;
   className?: string;
   "data-testid"?: string;
 };
@@ -99,6 +102,7 @@ export function PhoneSheet({
   height = "content",
   placement = "bottom",
   className,
+  pager,
   ...data
 }: PhoneSheetProps) {
   const titleId = useId();
@@ -206,7 +210,7 @@ export function PhoneSheet({
           >
             <span className={styles.grip} />
           </div>
-          <div className={styles.sheetHeader}>
+          <div className={styles.sheetHeader} data-has-pager={pager ? "" : undefined}>
             <div className={styles.sheetTitleBlock}>
               <h2 id={titleId} className={styles.sheetTitle}>
                 {title}
@@ -217,6 +221,7 @@ export function PhoneSheet({
                 </p>
               ) : null}
             </div>
+            {pager ? <DrawerPager {...pager} /> : null}
             <Button
               ref={closeRef}
               variant="ghost"

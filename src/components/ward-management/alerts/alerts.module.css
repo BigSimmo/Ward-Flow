@@ -2019,3 +2019,75 @@ button.check[aria-pressed="true"] {
     min-height: 56px;
   }
 }
+
+/* Desktop band under the Today timeline: with the Broadcast cell gone when none is live, the cells
+   share the row in equal widths, so no half of it is left empty. */
+@media (min-width: 46.5rem) {
+  .bandShare ul {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+  }
+}
+
+/* Alerts hero (#48): the lone Broadcast chip sits at the act row's right end, level with the row. */
+.actWithChip {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.actWithChip > [data-wf-hero-next] {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Review fix: on a phone the next alert's age drops to its own subline, without a leading separator. */
+@media (max-width: 46.4375rem) {
+  html .actAgeSep {
+    display: none;
+  }
+  html .actAge {
+    display: block;
+    margin-top: 4px;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-3);
+  }
+}
+
+/* States B review: a refused More menu act shows its whole name with the reason on a second line
+   (the kit item is one nowrap line; this label wraps inside it). */
+.menuLabel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-block: var(--space-2);
+  white-space: normal;
+}
+
+.menuReason {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+}
+
+/* Gate r10 F8: phone row line two, the record number then the alert as a tag. */
+.phoneRowTagLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+  white-space: normal;
+}
+
+/* Gate r10 (1b upgrade 3): on desktop the time sits left of the row's one button, on one line, so
+   each row is back to about 54px and more Act now rows fit above the fold. */
+@media (min-width: 46.5rem) {
+  .queueRow .queueEnd {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--wf-s-3);
+  }
+}

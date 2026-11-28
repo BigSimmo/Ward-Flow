@@ -51,6 +51,9 @@ import {
   useMidlandDecisions,
 } from "./midland-decisions";
 import { useMidlandBoardMoment } from "./use-midland-board-moment";
+import { useWardClock } from "@/components/ward-management/ward-flow-provider";
+import { undoWindowUntil } from "@/components/ward-management/ward-undo-until";
+import { UNDO_WINDOW_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import wt from "@/components/ward-management/ward-table/ward-table.module.css";
 import t from "./team-2026.module.css";
 
@@ -93,6 +96,7 @@ export function useAnswer(name: string, id?: string) {
   const toast = useOptionalToast();
   const decisions = useMidlandDecisions();
   const boardMoment = useMidlandBoardMoment();
+  const clock = useWardClock(Number.NaN);
   const [local, setLocal] = useState<string | null>(null);
   const accepted = id ? (decisions[id]?.line ?? null) : local;
   const undo = () => (id ? undoMidlandDecision(id) : setLocal(null));
@@ -120,9 +124,11 @@ export function useAnswer(name: string, id?: string) {
         tone: persisted ? "success" : "warning",
         title: `Accepted ${name}`,
         body: midlandSavedLine(Boolean(id), persisted),
-        action: {
-          label: "Undo",
-          onAction: () => {
+        // B9 (audit two, 27 Nov 2026): the standard timed Undo with its clock time.
+        undo: {
+          ...(Number.isFinite(clock) ? { until: undoWindowUntil(clock) } : {}),
+          durationMs: UNDO_WINDOW_TOAST_MS,
+          onUndo: () => {
             if (midlandClearCount() === offeredAt) undo();
           },
         },
@@ -251,7 +257,6 @@ function DocViewer({ doc, onClose }: { doc: { name: string; meta: string; who: s
       title={doc?.name ?? "Document"}
       description={doc ? `${doc.who} · PDF · ${doc.meta}` : undefined}
       size="lg"
-      secondary={[{ label: "Download", onAction: () => undefined, disabledReason: "Not wired in this prototype." }]}
     >
       <div className={t.dvBody}>
         <div className={t.paper}>
@@ -732,9 +737,6 @@ export function TeamReferrals() {
                     <th scope="col">Since referral</th>
                     <th scope="col">From</th>
                     <th scope="col">Asking for</th>
-                    <th scope="col">
-                      <SrOnly>Action</SrOnly>
-                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -778,11 +780,6 @@ export function TeamReferrals() {
                         {r.needs === "—" ? null : (
                           <span className={t.sub}>Needs {r.needs.toLowerCase().replace("dari", "Dari")}</span>
                         )}
-                      </td>
-                      <td className={t.actCell}>
-                        <Button size="sm" data-ref={r.id} onClick={() => setPage(index)}>
-                          Open<SrOnly> full referral for {r.n}</SrOnly>
-                        </Button>
                       </td>
                     </tr>
                   ))}

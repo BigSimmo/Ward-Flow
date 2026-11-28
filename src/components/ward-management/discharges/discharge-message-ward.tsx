@@ -213,7 +213,7 @@ export function useAskOverdueWards({
       title: `Ask ${pending.length} ${pending.length === 1 ? "ward" : "wards"}?`,
       message: `${listNames(names)} will each be asked to confirm their overdue discharge dates or record new ones. It shows on their screen for ${ASK_WARDS_WINDOW_TEXT}.`,
       confirmLabel: "Send",
-      cancelLabel: "Not now",
+      cancelLabel: "Cancel",
     });
     if (!confirmed) return;
     setSending(true);

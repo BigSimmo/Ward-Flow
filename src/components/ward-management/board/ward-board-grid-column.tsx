@@ -12,14 +12,13 @@ import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import styles from "./board.module.css";
+import { BAND_CLASS, tileClassName } from "./ward-board-tile-class";
 import {
-  BAND_CLASS,
   BOARD_FILTERS,
   BOARD_FILTER_LABELS,
   BOARD_ORDERS,
   BOARD_ORDER_LABELS,
   BOARD_ORDER_NOTES,
-  tileClassName,
   tileDomId,
   type BoardFilter,
   type BoardOrder,
@@ -28,6 +27,7 @@ import {
 } from "./ward-board-model";
 
 import { useState, type Dispatch, type SetStateAction } from "react";
+import { createPortal } from "react-dom";
 import { Menu, Segmented, ShowMoreRow, StatusGlyph } from "@/components/wf";
 import { BedSquares, bedSquaresNotes, bedSquaresTag } from "@/components/ward-management/bed-squares";
 import redesign from "./ward-board-panels.module.css";
@@ -37,6 +37,7 @@ import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-f
 const PHONE_TILE_CAP = 8;
 
 export function WardBoardGridColumn({
+  embedded,
   bedFilter,
   bedOrder,
   chooseFilter,
@@ -57,6 +58,8 @@ export function WardBoardGridColumn({
   tiles,
   unit,
 }: {
+  /** Ward page Grid view: no heading of its own, and the desktop controls go to the card head. */
+  embedded?: { controlsSlot: HTMLElement | null };
   bedFilter: BoardFilter;
   bedOrder: BoardOrder;
   /** Sets the filter, and closes a chosen bed the new filter would hide. */
@@ -112,12 +115,39 @@ export function WardBoardGridColumn({
     else kinds.use += 1;
     if (tile.kind === "waiting") kinds.pulled += 1;
   }
+  const desktopBar = (
+    <div className={redesign.boardBar}>
+      <Segmented<BoardFilter>
+        label="Narrow Bed board"
+        size={embedded ? "sm" : "md"}
+        value={bedFilter}
+        onChange={chooseFilter}
+        items={BOARD_FILTERS.map((filter) => ({
+          id: filter,
+          label: BOARD_FILTER_LABELS[filter],
+          count: countText(filter),
+        }))}
+      />
+      <Segmented<BoardOrder>
+        label="Sort beds"
+        size="sm"
+        value={bedOrder}
+        onChange={setBedOrder}
+        items={BOARD_ORDERS.map((order) => ({ id: order, label: BOARD_ORDER_SHORT[order] }))}
+      />
+    </div>
+  );
+  const boardBar = embedded
+    ? embedded.controlsSlot
+      ? createPortal(desktopBar, embedded.controlsSlot)
+      : null
+    : desktopBar;
   return (
     <div className={styles.gridColumn}>
       {/* ✅ **THE GRID HAD NO HEADING AT ALL** — measured across the whole component, not inferred.
                 The drawing names it, and a grid of twenty tiles with nothing above it is unreachable
                 for anybody navigating this screen by heading. */}
-      <header className={`${styles.sectionHeading} ${redesign.gridHead}`}>
+      <header className={`${styles.sectionHeading} ${redesign.gridHead}`} hidden={embedded ? true : undefined}>
         <h2 id="ward-board-beds-heading">Every bed, and who is in it</h2>
         <span className={`${styles.sectionCount} ${redesign.gridCount}`}>
           Showing {drawnKeys.size} of {tiles.length} beds
@@ -148,7 +178,7 @@ export function WardBoardGridColumn({
               }))}
             />
             <Menu
-              label="Order the beds"
+              label="Sort beds"
               align="end"
               items={BOARD_ORDERS.map((order) => ({
                 id: order,
@@ -158,7 +188,7 @@ export function WardBoardGridColumn({
                 onSelect: () => setBedOrder(order),
               }))}
               trigger={(props) => (
-                <button {...props} type="button" className={redesign.phoneSortButton} aria-label="Order the beds">
+                <button {...props} type="button" className={redesign.phoneSortButton} aria-label="Sort beds">
                   <ArrowDownUp size={20} strokeWidth={1.75} aria-hidden="true" />
                 </button>
               )}
@@ -168,33 +198,25 @@ export function WardBoardGridColumn({
       ) : (
         // Final polish (31 Oct 2026): the filters as the kit's segmented control and Order as the
         // kit's select, as the other redesigned pages, in place of the board's black pills.
-        <div className={redesign.boardBar}>
-          <Segmented<BoardFilter>
-            label="Narrow Bed board"
-            size="md"
-            value={bedFilter}
-            onChange={chooseFilter}
-            items={BOARD_FILTERS.map((filter) => ({
-              id: filter,
-              label: BOARD_FILTER_LABELS[filter],
-              count: countText(filter),
-            }))}
-          />
-          <Segmented<BoardOrder>
-            label="Order the beds"
-            size="sm"
-            value={bedOrder}
-            onChange={setBedOrder}
-            items={BOARD_ORDERS.map((order) => ({ id: order, label: BOARD_ORDER_SHORT[order] }))}
-          />
-        </div>
+        boardBar
       )}
       {/* The legend explains the shades. It is not what makes the board readable without colour —
               the day count on every tile does that — it just saves a reader working the ranges out. */}
       <ul className={styles.legend} data-testid="ward-board-legend">
         {STAY_BANDS.map((band) => (
           <li key={band.id} className={styles.legendItem}>
-            <span className={`${styles.legendSwatch} ${BAND_CLASS[band.id]}`} aria-hidden="true" />
+            {embedded ? (
+              // Ward page Grid (review fix): the key draws the tile's own four-step stay bar, so it
+              // reads the same in light and dark, instead of tints the tiles no longer carry.
+              <span className={`${styles.stayBar} ${styles.legendBar}`} data-band={band.id} aria-hidden="true">
+                <span />
+                <span />
+                <span />
+                <span />
+              </span>
+            ) : (
+              <span className={`${styles.legendSwatch} ${BAND_CLASS[band.id]}`} aria-hidden="true" />
+            )}
             <span className="sr-only">Stay length: </span>
             {band.label}
           </li>
@@ -310,24 +332,22 @@ export function WardBoardGridColumn({
                       >
                         {tile.days}
                         <span className={styles.daysUnit}> day{tile.days === 1 ? "" : "s"}</span>
-                      </span>
+                      </span>{" "}
                       {tileOccupant !== undefined && (
                         <span className={styles.bedWho}>
                           {tileOccupant.sex} · {tileOccupant.homeRegion ?? "home region not recorded"}
                         </span>
                       )}
                     </span>
-                    {/* The stay band as four steps, the legend's own scale. It repeats the band
-                            label beside it, so nothing is carried by the bar alone. */}
+                    {/* The stay band as four steps, the legend's own scale. Audit two #59 (P54): the day
+                        count above says the stay in words, so the band word ("Over 3 months") left
+                        the tile; nothing is carried by the bar alone. */}
                     <span className={styles.stayBar} data-band={tile.bandId ?? "none"} aria-hidden="true">
                       <span />
                       <span />
                       <span />
                       <span />
                     </span>
-                    <span className={styles.bedNote}>{tile.bandLabel}</span>
-                    {/* BA-13 (front-end audit, 5 Nov 2026): the band label above is now visible on every
-                            occupied tile, so its screen-reader-only copy (read the band twice) is gone. */}
                     {tile.pastDate && (
                       <span className={styles.pastMark} data-testid={`ward-board-bed-${index + 1}-past`}>
                         <StatusGlyph tone="warning" size={10} className={styles.statusGlyph} /> <span>Past date</span>
@@ -414,10 +434,13 @@ export function WardBoardGridColumn({
           );
         })}
       </ul>
-      {foldedCount > 0 ? (
-        <ShowMoreRow onClick={() => setShowAllBeds(true)}>
-          Show {foldedCount} more {foldedCount === 1 ? "bed" : "beds"}
-        </ShowMoreRow>
+      {foldedCount > 0 || (isPhone && showAllBeds) ? (
+        // Audit four #44: the kit words, and the fold closes again.
+        <ShowMoreRow
+          onClick={() => setShowAllBeds((open) => !open)}
+          expanded={showAllBeds}
+          total={filteredTiles.length}
+        />
       ) : null}
       {filteredTiles.length === 0 && <p className={styles.filterEmpty}>No bed matches this filter.</p>}
 
@@ -433,6 +456,8 @@ export function WardBoardGridColumn({
       <p className={styles.occupancy} data-testid="ward-board-people-count">
         {occupants.length} of this ward&apos;s {unit.beds} bed{unit.beds === 1 ? "" : "s"}{" "}
         {occupants.length === 1 ? "is" : "are"} taken. {BOARD_ORDER_NOTES[bedOrder]}
+        {/* Ward page Grid (review fix): one footnote, not two split by a divider. */}
+        {embedded ? " Any diagnosis shown is tentative: a broad category, not one this ward has confirmed." : null}
       </p>
       {/*
        * THE LINE THAT QUALIFIES EVERY DIAGNOSIS ON THIS PAGE, and it replaced — deliberately,
@@ -447,9 +472,11 @@ export function WardBoardGridColumn({
        * It is the ONE place the qualification is stated in full, and every per-person line
        * repeats the word "tentative" rather than relying on a reader having scrolled past this.
        */}
-      <p className={styles.peopleAbsence}>
-        Any diagnosis shown is tentative: a broad category, not a diagnosis this ward has confirmed.
-      </p>
+      {embedded ? null : (
+        <p className={styles.peopleAbsence}>
+          Any diagnosis shown is tentative: a broad category, not a diagnosis this ward has confirmed.
+        </p>
+      )}
     </div>
   );
 }

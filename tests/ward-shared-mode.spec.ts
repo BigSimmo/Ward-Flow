@@ -176,11 +176,13 @@ test("different records at once: two desks change different records from the sam
   for (const desk of [one, two]) await expect(sharedStatus(desk.page)).toHaveText(new RegExp(`^${READY}`, "u"), POLL);
   const other = await anotherMovement(two.page);
   for (const desk of [one, two]) for (const movement of [MOVEMENT, other]) await revealRow(desk.page, movement);
+  // Both desks read both tiers alike on Waiting, before each opens its own movement's Placement
+  // (r10: Placement opens over Home from Waiting, so a desk sees only its own movement there).
+  for (const movement of [MOVEMENT, other])
+    await expect.poll(() => shownTier(two.page, movement)).toBe(await shownTier(one.page, movement));
   // Desk one changes the movement, desk two a different one, both from the board they hold now.
   const tierOne = await openUrgencyForm(one.page);
   const tierTwo = await openUrgencyForm(two.page, other);
-  for (const movement of [MOVEMENT, other])
-    await expect.poll(() => shownTier(two.page, movement)).toBe(await shownTier(one.page, movement));
   // Matching tiers do not prove matching revisions: an earlier save elsewhere may not have reached
   // one desk yet. Wait until both desks' polls name the same revision before holding desk two.
   await expect
@@ -211,8 +213,9 @@ test("different records at once: two desks change different records from the sam
   // Neither desk was told its record changed under it, and both show both changes.
   for (const desk of [one, two]) {
     await expect(sharedStatus(desk.page)).toHaveText(new RegExp(`^${READY}`, "u"), POLL);
-    await expect(queueRow(desk.page)).toContainText(first, POLL);
-    await expect(queueRow(desk.page, other)).toContainText(second, POLL);
+    // Each desk's Placement shows one movement, so both are read from Waiting.
+    await expect(await revealRow(desk.page)).toContainText(first, POLL);
+    await expect(await revealRow(desk.page, other)).toContainText(second, POLL);
   }
   // And a new page load reads both from the backend.
   await one.page.reload({ waitUntil: "domcontentloaded" });

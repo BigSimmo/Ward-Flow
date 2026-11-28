@@ -228,7 +228,7 @@ export function StatisticsEdSwarm({
             const past48 = row.entries.filter((e) => e.waitMinutes >= VERY_LONG_WAIT_MINUTES).length;
             const summary = `${row.name}: ${row.entries.length} waiting${
               middle !== undefined ? `, median ${hoursLabel(middle)}` : ""
-            }, ${noWard} with no ward yet, ${past24} past ${LONG_WAIT_HOURS} hours, ${past48} past ${VERY_LONG_WAIT_HOURS} hours`;
+            }, ${noWard} with no ward yet, ${past24} over ${LONG_WAIT_HOURS} hours, ${past48} over ${VERY_LONG_WAIT_HOURS} hours`;
             return (
               <li key={row.id} style={{ top, height }}>
                 {row.href ? (

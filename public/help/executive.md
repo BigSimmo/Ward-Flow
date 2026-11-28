@@ -9,7 +9,7 @@ Statistics
 ## Jobs you do most
 
 1. See the network. Statistics shows beds, occupancy and ED waits in one place.
-2. Check beds. Open Capacity for bed counts across your network or health service.
+2. Check counts. Open Capacity for bed counts across your network or health service.
 3. Compare. Set two wards or departments side by side.
 
 ## What you cannot do

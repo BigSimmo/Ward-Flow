@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
+import { delayPersonDrawer, openFollowUp } from "./helpers/delays-interactions";
 import { panelTitlesInOrder } from "./helpers/ward-panels";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
@@ -13,6 +14,20 @@ import type { Movement } from "@/components/ward-management/ward-model";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
+
+// r10: the person drawer is the shared movement drawer, which reads the App Router.
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}));
+
 /**
  * TASK D1 — the Delays screen's panel names must read exactly as the approved Delays page mockup
  * (October 2026) draws them (it superseded `design/third-edition-mockups/delays-third-edition.html`, which
@@ -96,24 +111,29 @@ describe("Delays — the drawing's panel names (task D1)", () => {
     // registers rail beside it, then the graphs. "Delays with no named person" is one quiet line
     // inside the rail rather than a panel of its own (design brief, Josh, 3 Nov 2026), and is
     // never dropped (Q-12 below).
-    expect(panelTitlesInOrder()).toEqual(["Whose move", "Waiting", "Escalations and resolved", "Delay graphs"]);
-    expect(
-      within(screen.getByRole("region", { name: "Escalations and resolved" })).getByRole("region", {
-        name: "Delays with no named person",
-      }),
-    ).toBeInTheDocument();
+    // Simplification mock-up (26 Nov 2026): Today's follow-up left the column beside the list and opens
+    // from the list head as a side sheet, so the page's own panels are these three.
+    expect(panelTitlesInOrder()).toEqual(["Whose move", "Waiting", "Delay graphs"]);
 
     // Choosing somebody opens their drawer; the page's panels stay as drawn.
     const [firstSelectButton] = screen.getAllByTestId(/^delays-select-/u);
     fireEvent.click(firstSelectButton);
-    expect(screen.getByRole("region", { name: "Why this person is waiting" })).toBeInTheDocument();
-    expect(panelTitlesInOrder()).toEqual(["Whose move", "Waiting", "Escalations and resolved", "Delay graphs"]);
+    expect(screen.getByTestId(/^delays-detail-/u)).toBeInTheDocument();
+    expect(panelTitlesInOrder()).toEqual(["Whose move", "Waiting", "Delay graphs"]);
 
     // Switching graph changes what the graph panel draws, never which panels exist.
     fireEvent.click(
       within(screen.getByRole("tablist", { name: "Delay graph" })).getByRole("tab", { name: "Next 4 hours" }),
     );
-    expect(panelTitlesInOrder()).toEqual(["Whose move", "Waiting", "Escalations and resolved", "Delay graphs"]);
+    expect(panelTitlesInOrder()).toEqual(["Whose move", "Waiting", "Delay graphs"]);
+
+    // The follow-up sheet is the one more panel, and it still holds the "no named person" note.
+    openFollowUp();
+    expect(
+      within(screen.getByRole("region", { name: "Escalations and resolved" })).getByRole("region", {
+        name: "Delays with no named person",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("keeps the fixed bands and names the ED target beside them (R-HOME-13)", () => {
@@ -128,6 +148,7 @@ describe("Delays — the drawing's panel names (task D1)", () => {
    */
   it("carries the register tabs in order", () => {
     renderScreen();
+    openFollowUp();
     const tabs = within(screen.getByRole("tablist", { name: "Today's follow-up" })).getAllByRole("tab");
     // Diagnosed issues W3 (Josh, 3 Nov 2026): Today's follow-up has three tabs, Attention first, and
     // the old System tab became a note under the lists.
@@ -157,6 +178,7 @@ describe("Delays — the drawing's panel names (task D1)", () => {
    */
   it("keeps the Q-12 items: the 'Attention' tab and 'Delays with no named person' (provenance panel removed per owner instruction 2026-09-21)", () => {
     renderScreen();
+    openFollowUp();
     expect(screen.getByRole("tab", { name: /Attention/u })).toBeInTheDocument();
     // Diagnosed issues W3 (Josh, 3 Nov 2026): the old System tab is now a note always shown under the
     // lists, so the Q-12 panel needs no tap to reach.
@@ -165,12 +187,12 @@ describe("Delays — the drawing's panel names (task D1)", () => {
 
   // 10 Oct 2026 (Josh approved): opening a person replaces the rail, so their panel carries the
   // same "Delays with no named person" note. Q-12 items are never dropped, even while a person is open.
-  it("keeps 'Delays with no named person' while a person's panel is open", () => {
+  it("keeps 'Delays with no named person' one tap away while a person's drawer is open", () => {
     renderScreen();
     const [firstSelectButton] = screen.getAllByTestId(/^delays-select-/u);
     fireEvent.click(firstSelectButton);
-    const panel = screen.getByRole("region", { name: "Why this person is waiting" });
-    const note = within(panel).getByRole("region", { name: "Delays with no named person" });
+    openFollowUp();
+    const note = screen.getByRole("region", { name: "Delays with no named person" });
     expect(note).toHaveTextContent("No statewide delays recorded.");
   });
 });
@@ -179,15 +201,15 @@ describe("Delays — the selected-person panel (task D1)", () => {
   it("keeps the detail panel closed before anybody is chosen", () => {
     renderScreen();
     expect(screen.queryByRole("region", { name: "Nobody selected" })).toBeNull();
-    expect(screen.queryByRole("region", { name: "Why this person is waiting" })).toBeNull();
+    expect(screen.queryByTestId(/^delays-detail-/u)).toBeNull();
   });
 
-  it("reads 'Why this person is waiting' once somebody is chosen", () => {
+  it("opens the person's drawer, with why they wait, once somebody is chosen", () => {
     renderScreen();
     const [firstSelectButton] = screen.getAllByTestId(/^delays-select-/u);
     expect(firstSelectButton, "no selectable person rendered — this guard proves nothing").toBeDefined();
     fireEvent.click(firstSelectButton);
-    expect(screen.getByRole("region", { name: "Why this person is waiting" })).toBeInTheDocument();
+    expect(screen.getByTestId(/^delays-detail-/u)).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Nobody selected" })).toBeNull();
   });
 });
@@ -208,29 +230,19 @@ describe("Delays — the dangling-originEdId sentence names the record, not the 
     );
     fireEvent.click(screen.getByTestId(`delays-select-${DANGLING_MOVEMENT.id}`));
 
-    const detailPanel = screen.getByTestId(`delays-detail-${DANGLING_MOVEMENT.id}`);
-
-    /*
-     * ⚠️ THE REACHED-THE-BRANCH ASSERTION, FIRST — before anything about wording. This proves the
-     * fixture's dangling id actually surfaces somewhere in the detail panel at all, so a pass below
-     * cannot be "the branch was never entered and the assertion below happened to still hold".
-     */
+    // The Movement drawer holds the person; the dangling id is named in its head and the row names it too.
+    const detailPanel = delayPersonDrawer(DANGLING_MOVEMENT.id);
     expect(
       within(detailPanel).getAllByText(new RegExp(DANGLING_ED_ID, "u"))[0],
-      "the dangling originEdId never appears in the detail panel — the fallback branch was not reached",
+      "the dangling originEdId never appears in the drawer — the fallback branch was not reached",
     ).toBeInTheDocument();
-
-    // Site 1 — the panel's sub line under the name.
-    expect(within(detailPanel).getByTestId("delays-panel-sub")).toHaveTextContent(
-      `This movement names a department we cannot find: "${DANGLING_ED_ID}"`,
-    );
+    // Site 1 — the drawer's origin line says the record is at fault, with the id visible.
+    expect(detailPanel).toHaveTextContent(`a department we cannot find: "${DANGLING_ED_ID}"`);
 
     // Site 2 — the person's row in the table, identical wording, no drift between the two.
-    // Round 8 (31 Oct 2026) removed the panel's "From" fact ("From is already in the header"), so
-    // the second site is now the row the person was chosen from, which names their department.
     const bodyText = document.body.textContent ?? "";
     expect(screen.getByTestId(`delays-select-${DANGLING_MOVEMENT.id}`)).toHaveTextContent(
-      `This movement names a department we cannot find: "${DANGLING_ED_ID}"`,
+      `a department we cannot find: "${DANGLING_ED_ID}"`,
     );
 
     // Neither site may still carry the old, network-blaming wording.

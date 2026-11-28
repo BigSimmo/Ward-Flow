@@ -15,6 +15,12 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { CommunityScreen } from "@/components/ward-management/community/community-screen";
 import { refusalReasonText, refusedActionText } from "@/components/ward-management/ward-refusal-words";
@@ -137,15 +143,8 @@ describe("the ward screen says pull, never hold, about an incoming patient", () 
     expect(section).not.toBeNull();
   });
 
-  it("explains the 'Closed' bed figure by contrast with the PULL, not with itself", () => {
-    renderWard("rph-adult-secure");
-    const disclosure = screen.getByText("What the squares mean", { selector: "summary" }).closest("details");
-    expect(disclosure).not.toBeNull();
-    expect(disclosure?.textContent?.replace(/\s+/gu, " ")).toContain(
-      "Closed means empty but not offered; pulled means allocated to a patient who has not arrived yet",
-    );
-    expect(screen.getByRole("region", { name: "Coming in" })).toBeInTheDocument();
-  });
+  // Simplification 26 Nov 2026 (item 6): off the phone the squares strip and its "What the squares mean"
+  // disclosure are gone, so the case that read the Closed-versus-pulled sentence there went with it.
 
   it("counts down the pull, offers its release, and names the reason list in the release form", () => {
     renderWard("bty-adult-secure");

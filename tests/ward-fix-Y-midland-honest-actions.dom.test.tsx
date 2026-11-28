@@ -43,7 +43,8 @@ function openFirstReferral() {
   );
   fireEvent.click(screen.getByTestId("community-top-more"));
   fireEvent.click(screen.getByRole("menuitem", { name: /^Referrals/u }));
-  fireEvent.click(screen.getAllByRole("button", { name: /^Open/u })[0]!);
+  // The hero also has "Open next"; the first referral row button is the one after it.
+  fireEvent.click(screen.getAllByRole("button", { name: /^Open(?! next)/u })[0]!);
   return screen.getByTestId("ward-community-phone-demo-referral");
 }
 

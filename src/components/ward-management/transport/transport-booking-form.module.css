@@ -199,3 +199,31 @@
 .slotEmpty {
   visibility: hidden;
 }
+
+/* Audit three review: in a phone sheet the Cancel / Save foot pins to the sheet's bottom edge on a
+   solid band, across the sheet's full width. The sheet drops its own end padding, so nothing shows
+   under the foot, and the foot's place in the flow keeps the last field clear of it. */
+html :global([data-phone-sheet-body]):has(.actions) {
+  padding-bottom: 0;
+}
+
+html :global([data-phone-sheet-body]) .actions {
+  bottom: 0;
+  margin-inline: calc(-1 * var(--wf-s-4));
+  padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+}
+
+/* Audit four 2: in the kit dialog (the ED "Record transport booking" popup on a phone) the foot pins to the
+   dialog's bottom edge on a solid band across its full width, and cancels the body's end padding, so the
+   legal status question never shows behind Cancel and Save. The phone sheet has its own rule above. */
+@media (max-width: 46.4375rem) {
+  html :global([role="dialog"]:not(:has([data-phone-sheet-body]))) .actions {
+    bottom: calc(-1 * var(--wf-s-4));
+    margin: 0 calc(-1 * var(--wf-s-4)) calc(-1 * var(--wf-s-4));
+    padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--wf-line);
+    background: var(--wf-surface);
+  }
+}

@@ -73,8 +73,8 @@ export const BOOKING_FORM: readonly ShowMeStep[] = [
     body: "Legal now shows under it to check against. If your answer differs, the form asks why.",
   },
   {
-    target: opened("button", "Save transport booking"),
-    title: "Save transport booking",
+    target: opened("button", "Record booking"),
+    title: "Record booking",
     body: "Saves once every answer is in. Pressed early, it takes you to the first answer still needed.",
   },
 ];
@@ -115,7 +115,7 @@ export const REFERRAL_FORM: readonly ShowMeStep[] = [
   },
   {
     target: [tid("ward-referral-send-locked"), tid("ward-referral-send-early"), tid("ward-referral-phone-continue")],
-    title: "Send referral",
-    body: "Stays locked until every step is in. Then Send referral shows a last check: press Confirm and send.",
+    title: "Review and send",
+    body: "Stays locked until every step is in. Then Review and send shows a last check: press Confirm and send.",
   },
 ];

@@ -1,10 +1,9 @@
 "use client";
 
-import { Bell, Clock, FileText, Ellipsis, Printer, Send } from "lucide-react";
+import { Bell, FileText, Ellipsis, Printer, Send } from "lucide-react";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   type Dispatch,
@@ -76,13 +75,14 @@ import {
   type BedPullUndoTarget,
   nextPullTarget,
 } from "@/components/ward-management/ward-bed-pull-undo";
-import { wardTransferNeedsCoordinator } from "@/components/ward-management/ward-referrals";
 import { useDeskRoleSwitch, useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { stepToastTitle, undoneToastTitle } from "@/components/ward-management/use-undoable-step";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { plural } from "@/components/ward-management/ward-plural";
-import { CheckingFoot, durMinutes, Menu, type MenuItem, useIsPhone, useOptionalToast } from "@/components/wf";
+import { CheckingFoot, StatusGlyph, type MenuItem, useIsPhone, useOptionalToast } from "@/components/wf";
+import { EarlyMenu } from "@/components/ward-management/menu-early";
 import { savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
 import { useActionToast } from "@/components/ward-management/use-action-toast";
 import { useWardUnitQueues } from "./use-ward-unit-queues";
@@ -90,7 +90,6 @@ import { declineToastText } from "./ward-decline-toast-text";
 import { bedPulledToast, undoableToast } from "./ward-undo-toast";
 import styles from "./ward.module.css";
 import { wardAlerts } from "./ward-alert-counts";
-import type { WaitingReferral } from "./ward-bed-board";
 import {
   type BoardPick,
   boardBedFits,
@@ -137,6 +136,7 @@ import {
 } from "./ward-screen-lazy";
 import { WardScreenBedDrawer } from "./ward-screen-bed-drawer-lazy";
 import { WardScreenReferralsTab } from "./ward-screen-referrals-tab";
+import { recordIdFromParam } from "../shell/ward-record-address";
 import { WardScreenTopBar } from "./ward-screen-top-bar";
 import { useWardScreenFigures } from "./use-ward-screen-figures";
 import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";
@@ -152,24 +152,9 @@ import { signOffUndo } from "./ward-sign-off-undo";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
 import { namedNotRecordedMessage, notRecordedMessage, wardLabels } from "./ward-screen-messages";
 import { WardScreenTabSections } from "./ward-screen-tab-sections";
+import { boardWaitingReferrals } from "./ward-screen-board-waiting";
+import { WARD_FLOW_TABS, WARD_SHIFT_VIEWS, WARD_TABS, type WardScreenProps, type WardTab } from "./ward-screen-tabs";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
-
-type WardScreenProps = {
-  departurePlanning?: boolean;
-  unitId: string;
-  presentation?: "overview" | "answer";
-};
-
-/**
- * One inpatient unit's scoped view, derived from the provider's live records. Unknown units
- * render an explicit empty state. Command feedback waits for that command's confirmed outcome;
- * counters and patient lists continue to come from authoritative state.
- */
-
-type WardTab = "attn" | "board" | "coming" | "out" | "beds" | "referrals" | "return";
-const WARD_TABS: readonly WardTab[] = ["attn", "board", "coming", "out", "beds", "referrals", "return"];
-const WARD_FLOW_TABS: readonly WardFlowTab[] = ["referrals", "admissions", "discharges"];
-const WARD_SHIFT_VIEWS: readonly WardShiftView[] = ["todo", "log"];
 
 export function WardScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
   const generation = useOptionalWardFlowSelect("worldGeneration")?.worldGeneration ?? 0;
@@ -563,7 +548,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                   (outcome) => {
                     dischargeCheckRef.current = {
                       prior: rejectionCountRef.current,
-                      success: `Undone. ${check.who} is back in their bed.`,
+                      success: undoneToastTitle("Discharge", check.who),
                       who: check.who,
                       codes: check.codes,
                       outcome,
@@ -667,7 +652,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 prior: rejectionCountRef.current,
                 bed: check.bed,
                 key: wardCommandKey("undo-board", check.bed),
-                success: "Undone. The bed and the person are back where they were.",
+                success: undoneToastTitle("Bed change", check.who),
                 who: check.who,
               },
             );
@@ -913,7 +898,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             prior: rejectionCountRef.current,
             bed: 0,
             key: wardCommandKey("undo-pull", target.movementId),
-            success: `Bed pull undone for ${who}.`,
+            success: undoneToastTitle("Bed pull", who),
             who,
           },
         );
@@ -932,7 +917,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         roleLimitReason(routeRole, "UNDO_ACCEPT_IN_PRINCIPLE") ??
         (check.outcome && recordSeq === undefined ? "No Undo record is available for this step." : undefined);
       toast.push(
-        undoableToast(`Accepted ${who} in principle.`, undoLimit, {
+        undoableToast(stepToastTitle("Accepted in principle", who), undoLimit, {
           durationMs: UNDO_TOAST_MS,
           onUndo: () => {
             if (wardUndoBlocked(check.outcome, warnToast)) return false;
@@ -950,7 +935,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                 prior: rejectionCountRef.current,
                 bed: 0,
                 key: wardCommandKey("undo-accept", undo.movementId),
-                success: `Acceptance undone for ${who}. The referral is back with this ward.`,
+                success: undoneToastTitle("Acceptance", who),
               },
             );
           },
@@ -1189,42 +1174,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   // Bed board: the referrals waiting for this ward that it can place, straight from the inbox,
   // then (v10 pass 3) the people the coordinator referred here, placed with ACCEPT_IN_PRINCIPLE.
-  const boardWaiting: WaitingReferral[] = [
-    ...inboxEntries
-      .filter(
-        (entry) =>
-          (entry.state === "queued" || entry.state === "accepted") &&
-          entry.withdrawnAt === undefined &&
-          !movements.some((movement) => movement.referralId === entry.id) &&
-          !admissions.some(
-            (admission) =>
-              admission.referralId === entry.id &&
-              (admission.state === "pulled" || admission.state === "occupied" || admission.state === "departed"),
-          ),
-      )
-      .map((entry) => ({
-        id: entry.id,
-        accepted: entry.state === "accepted",
-        name: resolvePatientIdentity(entry).formalName,
-        umrn: resolvePatientIdentity(entry).umrn,
-        sex: entry.destination.sex === "Female" ? "F" : entry.destination.sex === "Male" ? "M" : entry.destination.sex,
-        waitedMinutes: Math.max(0, now - entry.raisedAt),
-        secureBedNeeded: entry.destination.secureBedNeeded === true,
-        blockedReason:
-          entry.state === "queued" && wardTransferNeedsCoordinator(entry, unit.id, units)
-            ? "Coordinator accepts transfers from another hospital"
-            : undefined,
-      })),
-    ...incoming.map((movement) => ({
-      kind: "movement" as const,
-      id: movement.id,
-      name: resolvePatientIdentity(movement).formalName,
-      umrn: resolvePatientIdentity(movement).umrn,
-      sex: movement.sex === "Female" ? "F" : movement.sex === "Male" ? "M" : "Not recorded",
-      waitedMinutes: Math.max(0, now - (movement.referredAt ?? movement.openedAt)),
-      secureBedNeeded: movement.security === "Secure",
-    })),
-  ];
+  const boardWaiting = boardWaitingReferrals({
+    inboxEntries,
+    movements,
+    admissions,
+    incoming,
+    unitId: unit.id,
+    units,
+    now,
+    resolvePatientIdentity,
+  });
 
   const boardUnitId = unit.id;
 
@@ -1263,7 +1222,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     const check: BoardCheck = {
       prior: rejections.length,
       bed: move.bedNumber,
-      success: `Moved ${move.name} from bed ${bedNumberLabel(move.fromBed)} to bed ${bedNumberLabel(move.bedNumber)}.`,
+      success: `Moved ${move.name} from bed ${bedNumberLabel(move.fromBed)} to bed ${bedNumberLabel(move.bedNumber)}`,
       who: move.name,
       undo: { kind: "stay", admissionId: move.admissionId, unitId: boardUnitId },
       ...(reason === undefined ? { ask: move } : {}),
@@ -1308,7 +1267,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       const check: BoardCheck = {
         prior: rejections.length,
         bed: bedNumber,
-        success: `Placed ${pick.name} in bed ${bedNumberLabel(bedNumber)}. Accepted in principle.`,
+        success: `Placed ${pick.name} in bed ${bedNumberLabel(bedNumber)}. Accepted in principle`,
         who: pick.name,
         undo: {
           kind: "movement",
@@ -1338,7 +1297,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         {
           prior: rejections.length,
           bed: bedNumber,
-          success: `Pulled bed ${bedNumberLabel(bedNumber)} for ${pick.name}. Original acceptance kept.`,
+          success: stepToastTitle(`Bed ${bedNumberLabel(bedNumber)} pulled`, pick.name),
           who: pick.name,
         },
       );
@@ -1346,7 +1305,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       const check: BoardCheck = {
         prior: rejections.length,
         bed: bedNumber,
-        success: `Placed ${pick.name} in bed ${bedNumberLabel(bedNumber)}. Referral accepted.`,
+        success: `Placed ${pick.name} in bed ${bedNumberLabel(bedNumber)}. Referral accepted`,
         who: pick.name,
         undo: {
           kind: "referral",
@@ -1731,7 +1690,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     return `${resolved.umrn} · born ${formatDateOfBirth(resolved.patient?.dateOfBirth)}`;
   }
 
-  function handleDrawerRecordLeft(admissionId: string, who: string) {
+  function handleDrawerRecordLeft(admissionId: string, who: string, awaitingTransport = false) {
     if (!drawerLeavingDestination) return;
     const visit = drawerVisit.current;
     const resolved = resolvePatientIdentity(admissions.find((admission) => admission.id === admissionId));
@@ -1740,7 +1699,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     )?.label;
     const check = {
       prior: rejections.length,
-      success: `Recorded: ${who} has left the ward${destinationLabel ? ` (${destinationLabel.toLowerCase()})` : ""}.`,
+      success: awaitingTransport
+        ? `Recorded: ${who} has left the ward and is waiting for transport. The bed is ready.`
+        : `Recorded: ${who} has left the ward${destinationLabel ? ` (${destinationLabel.toLowerCase()})` : ""}.`,
       who,
       codes: resolved.patient ? [resolved.patient.id, admissionId] : [],
       undoAdmissionId: admissionId,
@@ -1749,11 +1710,12 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       wardCommandKey("departure", admissionId),
       () =>
         recordWardDeparture
-          ? recordWardDeparture(admissionId, unitId, drawerLeavingDestination)
+          ? recordWardDeparture(admissionId, unitId, drawerLeavingDestination, "ward", { awaitingTransport })
           : raise("RECORD_LEAVING", {
               admissionId,
               actingUnitId: unitId,
               leavingDestination: drawerLeavingDestination,
+              ...(awaitingTransport ? { awaitingTransport: true as const } : {}),
             }),
       (outcome) => {
         dischargeCheckRef.current = { ...check, outcome };
@@ -1946,6 +1908,21 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     setActiveTab("attn");
     setPhonePanel("shift");
   };
+  // Audit two #115 ward part: the hero's step opens the first decision still due, on the Decisions
+  // tab, rather than a list to pick from. The tab badge keeps the whole list.
+  const openNextDecision = () => {
+    setPhonePanel(null);
+    setActiveTab("return");
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        const first = document.querySelector<HTMLElement>(
+          '#tab-return ul button:not([aria-disabled="true"]), #tab-return [data-testid="ward-confirm-morning-rollup-btn"]',
+        );
+        first?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() });
+        first?.focus({ preventScroll: true });
+      });
+    });
+  };
   const obsNotRecorded = obsNotRecordedCount(unit.id, admissions ?? []);
   const wardHeroTop = {
     unit,
@@ -1954,31 +1931,21 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     arrivalsToday: arrivalsExpectedToday(accepted, now).length,
     openArrivals: () => showHome("ward-flow"),
     actNowCount,
+    // Audit two B7: the hero counts what the Decisions tab badge counts.
+    decisionsDue,
+    decisionsOverdue: !isRollupConfirmedToday && morningRollupDeadlinePassed,
+    openNextDecision,
     obsNotRecorded,
     bedFilter,
     pickBedFilter,
     openShiftTodo,
   };
-  // Page tops (9 Nov 2026): the bed list link, the roster note and the ward's legal status, on the
-  // desktop hero's last line and in the phone's details card.
+  // Audit two #11 (P50, P51): the checks card's line starts after what the hero already says. The
+  // shift is the hero title, the bed count is the Occupied figure (its press opens the bed list),
+  // and the roster is said once, on the Not checked line (D-270).
   const wardMeta = (
     <>
-      <Link
-        className={styles.heroBedListLink}
-        href="#bed-capacity"
-        data-testid="ward-hero-open-bed-list"
-        onClick={(event) => {
-          event.preventDefault();
-          setBedFilter("all");
-          showHome("bed-capacity");
-        }}
-      >
-        {/* Integration QA (3 Nov 2026): Ready sits once, in the hero figures above. */}
-        {unit.beds} beds
-      </Link>
-      {" · "}
-      {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}
-      <span>Roster not recorded</span> · {wardLabels(unit).authorisation}
+      {wardLabels(unit).authorisation}
       {(unit.intakeConstraints ?? []).length > 0
         ? ` · ${(unit.intakeConstraints ?? [])
             .map((constraint) => wardIntakeConstraintLabels[constraint] ?? constraint)
@@ -1992,21 +1959,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const wardHeroFoot = (
     <span className={styles.heroFootStack} data-testid="ward-checks-foot">
       <span className={styles.heroMeta}>
-        <Clock strokeWidth={1.75} size={14} aria-hidden="true" className={styles.heroMetaIcon} />
-        <span>{shiftLine(now)}</span>
-        {" · "}
         {wardMeta} · {staffedSpecialling} staff on constant observation{" "}
         {/* D-189 item 2: the sample day's observation levels are a sample mix until Josh sets one. */}
         <span data-testid="ward-hero-obs-sample">({SAMPLE_OBSERVATION_MIX_LABEL})</span>
       </span>
       <CheckingFoot
         items={[
-          {
-            id: "stale",
-            label: `Bed counts older than ${durMinutes(CLINICAL_VALUES.bedCountFresh.value)}`,
-            value: bedCountsStale ? 1 : 0,
-            tone: bedCountsStale ? "warning" : undefined,
-          },
+          // Audit two #11 (P52): count freshness is said once, by the confirmed time below.
           {
             id: "held",
             label: BED_RELEASE_BLOCKED_FIGURE_LABEL,
@@ -2028,7 +1987,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     </span>
   );
   const wardHeroFootAside = (
-    <span>
+    <span data-tone={bedCountsStale ? "warning" : undefined}>
+      {/* Audit two #11: the confirmed time takes the warning mark when the counts are old. */}
+      {bedCountsStale ? <StatusGlyph tone="warning" /> : null}
+      {bedCountsStale ? " " : null}
       {/* Walk-through WT-18: "Capacity", so it does not read as the morning bed numbers being confirmed. */}
       {unit.allocatable.source === "ward" ? "Capacity confirmed" : "Last capacity figure"}{" "}
       {formatInstant(unit.allocatable.confirmedAt)} · {ageText(unit.allocatable.confirmedAt, now)}
@@ -2042,72 +2004,98 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const handoverHref = wardHandoverHref(unit.id);
   // Page tops (9 Nov 2026): the menu sits at the end of the tab row on every layout. `notices` keeps the
   // Notices item on a phone (its bell left the hero); `extra` adds the desk's own links.
+  // Audit two #93: on Decisions the coordinator jobs strip already offers Notices and Shift brief, so
+  // More leaves them out there. A menu left with one item becomes that item as a plain chip.
+  const jobsStripShown = activeTab === "return";
   const wardMoreMenu = (
     triggerClassName: string,
     tablet: boolean,
     options: { notices?: boolean; iconOnly?: boolean; extra?: MenuItem[]; testId?: string } = {},
-  ) => (
-    <Menu
-      label="More ward actions"
-      align="end"
-      items={[
-        {
-          id: "notices",
-          label: "Notices",
-          icon: Bell,
-          meta: unreadAlertsCount > 0 ? String(unreadAlertsCount) : undefined,
-          onSelect: () => {
-            setNotificationCenterOpen(true);
-          },
+  ) => {
+    const items: MenuItem[] = [
+      {
+        id: "notices",
+        label: "Notices",
+        icon: Bell,
+        meta: unreadAlertsCount > 0 ? String(unreadAlertsCount) : undefined,
+        onSelect: () => {
+          setNotificationCenterOpen(true);
         },
-        {
-          id: "brief",
-          label: "Shift brief",
-          icon: FileText,
-          onSelect: () => {
-            setDailySheetOpen(true);
-          },
+      },
+      {
+        id: "brief",
+        label: "Shift brief",
+        icon: FileText,
+        onSelect: () => {
+          setDailySheetOpen(true);
         },
-        {
-          id: "handover",
-          // WH9 and WH10 (3 Nov 2026): named for the ward, as in Decisions, and opens the one Handover.
-          label: "Ward handover",
-          icon: Printer,
-          onSelect: () => {
-            if (router) router.push(handoverHref);
-            else window.location.assign(handoverHref);
-          },
+      },
+      {
+        id: "handover",
+        // WH9 and WH10 (3 Nov 2026): named for the ward, as in Decisions, and opens the one Handover.
+        label: "Ward handover",
+        icon: Printer,
+        onSelect: () => {
+          if (router) router.push(handoverHref);
+          else window.location.assign(handoverHref);
         },
-        ...(tablet
-          ? []
-          : [
-              {
-                id: "referral",
-                label: "New referral",
-                icon: Send,
-                disabled: !raiseReferralGate.allowed,
-                meta: raiseReferralGate.allowed ? undefined : raiseReferralGate.reason,
-                onSelect: handleRaiseWardReferral,
-              },
-            ]),
-        ...(options.extra ?? []),
-      ].filter((item) => tablet || options.notices || !isPhone || item.id !== "notices")}
-      trigger={(props) => (
+      },
+      ...(tablet
+        ? []
+        : [
+            {
+              id: "referral",
+              label: "New referral",
+              icon: Send,
+              disabled: !raiseReferralGate.allowed,
+              meta: raiseReferralGate.allowed ? undefined : raiseReferralGate.reason,
+              onSelect: handleRaiseWardReferral,
+            },
+          ]),
+      ...(options.extra ?? []),
+    ]
+      .filter((item) => tablet || options.notices || !isPhone || item.id !== "notices")
+      .filter((item) => !jobsStripShown || (item.id !== "notices" && item.id !== "brief"));
+    const lone = items.length === 1 ? items[0] : null;
+    const only = lone && (lone.kind === undefined || lone.kind === "item") ? lone : null;
+    if (only) {
+      const OnlyIcon = only.icon;
+      return (
         <button
           type="button"
-          {...props}
           className={triggerClassName}
-          // One name on every layout, so the ward tour's Shift brief step lights this trigger on a
-          // desk too; it starts with the visible word "More".
-          aria-label="More ward actions"
+          aria-label={typeof only.label === "string" ? only.label : undefined}
+          disabled={only.disabled}
           data-testid={options.testId ?? (tablet ? "ward-tools-more" : "ward-phone-chip-more")}
+          onClick={() => only.onSelect?.()}
         >
-          <Ellipsis strokeWidth={1.75} size={tablet ? 16 : 20} aria-hidden="true" />
-          {tablet && !options.iconOnly ? "More" : null}
+          {OnlyIcon ? <OnlyIcon strokeWidth={1.75} size={tablet ? 16 : 20} aria-hidden="true" /> : null}
+          {tablet && !options.iconOnly ? only.label : null}
         </button>
-      )}
-    />
-  );
+      );
+    }
+    return (
+      <EarlyMenu
+        label="More ward actions"
+        align="end"
+        items={items}
+        trigger={(props) => (
+          <button
+            type="button"
+            {...props}
+            className={triggerClassName}
+            // One name on every layout, so the ward tour's Shift brief step lights this trigger on a
+            // desk too; it starts with the visible word "More".
+            aria-label="More ward actions"
+            data-testid={options.testId ?? (tablet ? "ward-tools-more" : "ward-phone-chip-more")}
+          >
+            <Ellipsis strokeWidth={1.75} size={tablet ? 16 : 20} aria-hidden="true" />
+            {tablet && !options.iconOnly ? "More" : null}
+          </button>
+        )}
+      />
+    );
+  };
 
   const tabHome = (
     <button
@@ -2398,15 +2386,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           unit={unit}
           waiting={inboxWaiting}
           bedRequests={incoming.length}
-          onOpenBedRequests={() => {
-            setFlowTab("referrals");
-            if (isPhone) {
-              setActiveTab("attn");
-              setPhonePanel("flow");
-              return;
-            }
-            showHome("ward-flow");
-          }}
+          namedMovementId={recordIdFromParam(searchParams?.get("movement")) ?? undefined}
         />
 
         {/* ───────── TAB 5: TODAY'S DECISIONS & SHIFT COCKPIT ───────── */}

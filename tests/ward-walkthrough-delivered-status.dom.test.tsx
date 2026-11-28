@@ -123,7 +123,7 @@ describe("Update arrival offers the booked CAD number (WT-06)", () => {
     expect(screen.getByLabelText("How they are travelling")).toHaveValue("");
     expect(screen.getByText("Not set")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("How they are travelling"), { target: { value: "ambulance" } });
-    fireEvent.click(screen.getByTestId("save-arrival-plan-button"));
+    fireEvent.click(screen.getByRole("button", { name: "Save arrival plan" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Enter the estimated time of arrival.");
     // NOW_ANCHOR is 10:42 on the board clock, so +1h writes 11:42 into the typed box (D-91).
     fireEvent.click(screen.getByRole("button", { name: /^\+1h/u }));

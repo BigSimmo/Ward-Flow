@@ -14,7 +14,7 @@ health service. Both screens are read only. On a phone, your own **Settings** is
 ## Jobs you do most
 
 1. **See the network.** **Statistics** shows beds, occupancy and ED waits in one place.
-2. **Check beds.** Open **Capacity** for bed counts across your network or health service.
+2. **Check counts.** Open **Capacity** for bed counts across your network or health service.
 3. **Compare.** Use the ward and ED comparisons to set two wards or departments side by side.
 4. **Look for pressure.** Check ED waits, blocked discharges and expected discharges.
 5. **Export.** Use **CSV** to save a table of figures.

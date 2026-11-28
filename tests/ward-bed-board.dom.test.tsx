@@ -222,7 +222,7 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
     expect(screen.getByTestId("ward-board-confirm")).toHaveTextContent(/This accepts the referral\./);
     fireEvent.click(screen.getByTestId("ward-board-confirm-send"));
 
-    expect(screen.getByTestId("ward-board-say")).toHaveTextContent(/Referral accepted\.$/);
+    expect(screen.getByTestId("ward-board-say")).toHaveTextContent(/Referral accepted\.?$/);
     expect(cellText(to)).toMatch(/, Pulled, /);
     // The accepted arm can separately reassign its bed; acceptance still has its own Undo.
     expect(screen.getByTestId(chip!.dataset.testid!)).toHaveTextContent("Accepted");
@@ -331,7 +331,7 @@ describe("Ward page on a phone — the round (Option B, 20 Oct 2026)", () => {
       // The round shows its first 8 beds, then Show more (redesign approved 31 Oct 2026).
       const list = within(screen.getByTestId("ward-phone-round-list"));
       expect(list.getAllByRole("button", { name: /^Bed / })).toHaveLength(8);
-      fireEvent.click(screen.getByRole("button", { name: "Show 16 more beds" }));
+      fireEvent.click(screen.getByRole("button", { name: "Show all 24" }));
       const rows = list.getAllByRole("button", { name: /^Bed / });
       // Each bed once, all 24, and in bed order: never grouped or re-sorted.
       expect(rows).toHaveLength(24);

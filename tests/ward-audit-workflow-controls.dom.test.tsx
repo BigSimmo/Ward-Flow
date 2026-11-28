@@ -111,8 +111,10 @@ describe("ready-bed dossier tells the truth", () => {
         />
       </WardFlowProvider>,
     );
-    // WH1: the ready bed's hero says the candidate in a fact, without a full stop.
-    expect(screen.getByText("None recorded")).toBeInTheDocument();
+    // Audit two B4: a ready bed names who it is pulled for only when someone is; with nobody, the hero
+    // shows no fixed "Nobody" or "None recorded" cell, so no patient or reservation is invented.
+    expect(screen.queryByText("None recorded")).toBeNull();
+    expect(screen.queryByText("Nobody")).toBeNull();
     expect(screen.getByRole("link", { name: /Review current referrals/ })).toHaveAttribute(
       "href",
       "/bedchart/referrals",
@@ -313,7 +315,10 @@ describe("optional clinician-recorded ATS remains distinct from Ward Flow urgenc
     fireEvent.click(
       within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", { name: "Referral" }),
     );
-    const chooser = screen.getByRole("combobox", { name: "ATS category (optional)" });
+    // Audit four: ATS is an optional fold under Urgency; open it to reach the select.
+    const fold = within(screen.getByTestId("ward-referral-fold-ats")).queryByRole("button", { name: /ATS category/u });
+    if (fold && fold.getAttribute("aria-expanded") !== "true") fireEvent.click(fold);
+    const chooser = screen.getByRole("combobox", { name: "ATS category" });
     expect(chooser).toHaveValue("");
     expect(
       within(chooser)

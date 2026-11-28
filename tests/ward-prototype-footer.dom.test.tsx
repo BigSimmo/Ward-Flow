@@ -9,7 +9,9 @@ describe("the prototype footer (DA-33)", () => {
   it("names BedChart as a prototype, never a real organisation's product", () => {
     render(<WardPrototypeFooter />);
     const footer = screen.getByTestId("ward-prototype-footer");
-    expect(footer).toHaveTextContent("BedChart prototype · Synthetic data only");
+    // Audit three #49 (28 Nov 2026): one visible synthetic-data statement, beside the "Synthetic prototype" badge.
+    expect(footer).toHaveTextContent("Synthetic prototype");
+    expect(footer).toHaveTextContent("Synthetic data only");
     expect(footer.outerHTML).not.toContain("WA Health");
     expect(footer).toHaveTextContent("Not approved for clinical use");
     expect(footer).toHaveTextContent("Demo board clock");
@@ -26,7 +28,7 @@ describe("the prototype footer (DA-33)", () => {
       />,
     );
     const badge = screen.getByText("Synthetic prototype").outerHTML;
-    const authority = screen.getByText("BedChart prototype · Synthetic data only").parentElement!.outerHTML;
+    const authority = screen.getByText("Demo board clock").outerHTML;
     expect(screen.getByTestId("prototype-footer-before")).toHaveStyle({ opacity: "0.5" });
 
     rerender(
@@ -48,6 +50,6 @@ describe("the prototype footer (DA-33)", () => {
     expect(screen.queryByText("First synthetic note")).toBeNull();
     expect(screen.queryByText("First extra")).toBeNull();
     expect(screen.getByText("Synthetic prototype").outerHTML).toBe(badge);
-    expect(screen.getByText("BedChart prototype · Synthetic data only").parentElement!.outerHTML).toBe(authority);
+    expect(screen.getByText("Demo board clock").outerHTML).toBe(authority);
   });
 });

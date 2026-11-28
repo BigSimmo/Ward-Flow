@@ -4615,6 +4615,11 @@
     color: var(--wf-ink-2);
   }
 
+  /* Audit two B22: an Actions section with no actions hides its heading with it. */
+  .phoneSheetSection:has(> .nextGroup:empty) {
+    display: none;
+  }
+
   .phoneSheetSection .nextGroup {
     display: flex;
     flex-direction: column;
@@ -5019,6 +5024,15 @@
   color: var(--wf-ink-2);
 }
 
+/* Audit four 93: the patient cell's own sub line wraps in full too, so no line above a warning is cut. */
+.a2Patient > .a2Sub {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  overflow-wrap: anywhere;
+}
+
 .a2Value {
   display: inline-flex;
   align-items: center;
@@ -5148,7 +5162,9 @@
    the patient cell rather than being cut ("Arrival late — more than 60 minutes pa…"). Doubled to
    outrank `.a2Facts [class]:not(svg)` above. */
 .a2Facts .arrivalLate.arrivalLate,
-.a2Facts .transitBadgeOverdue.transitBadgeOverdue {
+.a2Facts .transitBadgeOverdue.transitBadgeOverdue,
+/* Audit four 93: a form-expiry warning wraps in full, and so does the line above it at tablet width. */
+.a2Facts .accessWarning.accessWarning {
   overflow: visible;
   overflow-wrap: anywhere;
   text-overflow: clip;
@@ -5796,4 +5812,23 @@
   white-space: normal;
   color: var(--wf-ink-1);
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* Sweep fix (26 Nov 2026), phone My list rows (not inside .lstWrap): the name has the row's full
+   width and wraps between words; the time sits under the row's words, not beside the name. */
+@media (max-width: 46.4375rem) {
+  .lstRow {
+    grid-template-columns: 0.875rem minmax(0, 1fr);
+  }
+
+  .lstRow > .lstEnd {
+    grid-column: 2;
+    justify-items: start;
+    text-align: left;
+  }
+
+  .lstRow .nameBtn {
+    text-align: left;
+    overflow-wrap: break-word;
+  }
 }

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
@@ -11,6 +11,11 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * the ED access target — never the deadline words "Due soon" / "Overdue", for sighted or
  * screen-reader users. Form-deadline chips elsewhere keep their own words.
  */
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+}));
+
 function waitCells(): HTMLElement[] {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>

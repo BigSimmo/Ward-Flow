@@ -6,6 +6,8 @@
 
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
+import { StateLine } from "@/components/wf";
+import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 
 export const WardAcceptDialog = dynamic(
   withLoadRetry(() => import("./ward-answer-accept-dialog").then((m) => m.WardAcceptDialog)),
@@ -19,5 +21,14 @@ export const WardScreenDecisionJobs = dynamic(
 );
 export const OverrideRegister = dynamic(
   withLoadRetry(() => import("@/components/ward-management/override-register").then((m) => m.OverrideRegister)),
-  { ssr: false, loading: () => <p role="status">Loading overrides…</p> },
+  { ssr: false, loading: () => <StateLine kind="loading" compact title="Loading overrides" /> },
 );
+
+// Phone script budget (28 Nov 2026): the decline reasons draw only after Decline is pressed. Fetched
+// when the browser is idle, so a press normally finds the code already there.
+const loadDeclineReasons = () => import("./ward-decline-reasons");
+export const WardDeclineReasons = dynamic(
+  withLoadRetry(() => loadDeclineReasons().then((m) => m.WardDeclineReasons)),
+  { ssr: false },
+);
+preloadWhenIdle(loadDeclineReasons);

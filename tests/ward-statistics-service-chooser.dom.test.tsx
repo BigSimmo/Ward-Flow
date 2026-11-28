@@ -13,8 +13,9 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+import { StatisticsServicesIndexScreen } from "@/components/ward-management/statistics/statistics-services-index";
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
-import { STATISTICS_SERVICE_CHOOSER_ID } from "@/components/ward-management/statistics/statistics-sections";
+import { STATISTICS_SERVICE_CHOOSER_HREF } from "@/components/ward-management/statistics/statistics-sections";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -40,9 +41,8 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 const SERVICE_ROUTE_PREFIX = "/bedchart/statistics/service";
 
 function renderHubMain(): HTMLElement {
-  // v6: the hub entry's fragment opens the "Open a unit" finder on this chooser's own tab, so
-  // arrive the way a person following that href does.
-  window.history.replaceState(null, "", `#${STATISTICS_SERVICE_CHOOSER_ID}`);
+  // 26 Nov 2026: the chooser folded into Network's Browse card; the hub entry's href ends at #browse.
+  window.history.replaceState(null, "", "/bedchart/statistics");
   const { container } = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <StatisticsScreen />
@@ -53,10 +53,28 @@ function renderHubMain(): HTMLElement {
   return main as HTMLElement;
 }
 
-/** The chooser's own service links inside the hub's main region — scoped by containment so the
- *  rail's own seeded links (a different route entirely) can never be mistaken for one of these. */
+/** The Services index's own page (the Browse card's Services segment shows its referrals matrix; the
+ *  per-service cards stay on this page and on the Bed board). */
+function renderServicesMain(): HTMLElement {
+  window.history.replaceState(null, "", "/bedchart/statistics/services");
+  const { container } = render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <StatisticsServicesIndexScreen />
+    </WardFlowProvider>,
+  );
+  return container;
+}
+
+/** The Services segment's own service links inside the hub's main region, one per service (the
+ *  segment may draw a name twice, as a table row and as a card, so the same href counts once). */
 function serviceLinksIn(main: HTMLElement): HTMLAnchorElement[] {
-  return [...main.querySelectorAll<HTMLAnchorElement>('a[data-testid^="ward-statistics-service-link-"]')];
+  const seen = new Set<string>();
+  return [...main.querySelectorAll<HTMLAnchorElement>("a[href]")].filter((anchor) => {
+    const href = anchor.getAttribute("href") ?? "";
+    if (!href.startsWith(`${SERVICE_ROUTE_PREFIX}/`) || seen.has(href)) return false;
+    seen.add(href);
+    return true;
+  });
 }
 
 describe("The health-service chooser's OWN reachability — the fourth section's own hub entry", () => {
@@ -67,10 +85,11 @@ describe("The health-service chooser's OWN reachability — the fourth section's
    * the index pointing at nothing — the exact defect class `tests/ward-community-index.dom.test.tsx`
    * guards for the community index's own rail entry.
    */
-  it("mounts the chooser at the id the fourth hub entry's href points to", () => {
+  it("mounts the Browse card at the id the fourth hub entry's href points to", () => {
     const main = renderHubMain();
-    const anchored = main.querySelector(`#${STATISTICS_SERVICE_CHOOSER_ID}`);
-    expect(anchored, `no element with id="${STATISTICS_SERVICE_CHOOSER_ID}" in the hub's main region`).not.toBeNull();
+    const anchor = STATISTICS_SERVICE_CHOOSER_HREF.split("#")[1];
+    const anchored = main.querySelector(`#${anchor}`);
+    expect(anchored, `no element with id="${anchor}" in the hub's main region`).not.toBeNull();
   });
 
   it("uses visible operational panels instead of the retired explanation: links every entry in HEALTH_SERVICES from the hub's own index above the chooser", () => {
@@ -80,7 +99,7 @@ describe("The health-service chooser's OWN reachability — the fourth section's
 
 describe("Health-service chooser — the links a person can actually reach", () => {
   it("links exactly the five HEALTH_SERVICES, once each, with every segment decoding back to its name", () => {
-    const anchors = serviceLinksIn(renderHubMain());
+    const anchors = serviceLinksIn(renderServicesMain());
     expect(anchors.length, "the chooser rendered no service links at all").toBeGreaterThan(0);
 
     const names = anchors.map((anchor) => {
@@ -104,7 +123,7 @@ describe("Health-service chooser — the links a person can actually reach", () 
   });
 
   it("renders no link inside a hidden, aria-hidden, inert or collapsed ancestor", () => {
-    const anchors = serviceLinksIn(renderHubMain());
+    const anchors = serviceLinksIn(renderServicesMain());
     expect(anchors.length, "the chooser rendered no service links at all").toBeGreaterThan(0);
 
     // Every one of these keeps a link in the DOM and takes it away from a person, so a markup scan
@@ -123,11 +142,9 @@ describe("Health-service chooser — the links a person can actually reach", () 
   });
 
   it("keeps service selection free of redundant explanatory prose", () => {
-    const main = renderHubMain();
+    const main = renderServicesMain();
     const rationale = main.querySelector('[data-testid="ward-statistics-service-chooser-rationale"]');
     expect(rationale).toBeNull();
-    expect(main.querySelectorAll('[data-testid^="ward-statistics-service-link-"]')).toHaveLength(
-      HEALTH_SERVICES.length,
-    );
+    expect(serviceLinksIn(main)).toHaveLength(HEALTH_SERVICES.length);
   });
 });

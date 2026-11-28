@@ -62,12 +62,10 @@ export function drawerFootStatus(f: {
   return {
     tone: f.itemsLeft ? "neutral" : f.warningCount ? "warning" : "success",
     // Audit 11 Oct 2026: the same unit as Ready to send, so "4 of 9" and this line agree.
+    // Audit three #40: while items are still needed the stepper and the checklist say how many, so
+    // the foot names only who it goes to.
     first:
-      f.itemsLeft > 0
-        ? `${f.itemsLeft} of ${f.itemsTotal} items still needed`
-        : f.warningCount
-          ? `All required items in · ${f.warningCount} not recorded`
-          : "All items in",
+      f.itemsLeft > 0 ? "" : f.warningCount ? `All required items in · ${f.warningCount} not recorded` : "All items in",
     second,
   };
 }

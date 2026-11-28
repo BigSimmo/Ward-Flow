@@ -9,6 +9,7 @@ import { Maximize2, Minimize } from "lucide-react";
 import { FolderTabs, PhoneFilterFold, PhoneListRow, Segmented, StatusGlyph, folderTabClasses } from "@/components/wf";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import { EdBoardChips } from "./ed-board-chips";
+import { edMyListCount } from "./ed-lists-desktop";
 import { edRowReferralStatus } from "./ed-referral-status";
 import type { EdScreenContext } from "./ed-screen-context";
 import { edWaitTone } from "./ed-screen-model";
@@ -24,7 +25,7 @@ import foldRow from "./ed-phone-fold.module.css";
  * uses `EdBoardTabs`; the redesigned ED board (`ed-board-redesign.tsx`) keeps this row.
  */
 export function EdPhonePanes({ ctx }: { ctx: EdScreenContext }) {
-  const { phonePane, setPhonePane, patients, needsYouItems, boardFilter } = ctx;
+  const { phonePane, setPhonePane, patients, boardFilter } = ctx;
   return (
     <div className={`${styles.phonePanes} ${foldRow.paneRow}`}>
       <div>
@@ -35,7 +36,7 @@ export function EdPhonePanes({ ctx }: { ctx: EdScreenContext }) {
           onChange={setPhonePane}
           items={[
             { id: "board" as const, label: "Board", count: patients.length },
-            { id: "needs" as const, label: "My list", count: needsYouItems.length },
+            { id: "needs" as const, label: "My list", count: edMyListCount(ctx) },
             { id: "lists" as const, label: "Lists" },
           ]}
         />
@@ -55,23 +56,15 @@ export function EdPhonePanes({ ctx }: { ctx: EdScreenContext }) {
 }
 
 /**
- * The ED board's tabs (page tops, Josh 9 Nov 2026): Board and My list on every size, Lists too on a
- * phone, as curved folder tabs under the hero (underline tabs on a desktop). C1 (19 Oct 2026): on a
+ * The ED board's tabs (page tops, Josh 9 Nov 2026): Board and My list on every size (Lists joined My
+ * list, 26 Nov 2026), as curved folder tabs under the hero (underline tabs on a desktop). C1 (19 Oct 2026): on a
  * phone the board's filter chips fold into one Filter button at the row's end, shown on the Board
  * only, where they apply. Wider screens end the row with Enlarge (the handover view).
  */
 export function EdBoardTabs({ ctx }: { ctx: EdScreenContext }) {
-  const {
-    phonePane,
-    setPhonePane,
-    patients,
-    needsYouItems,
-    boardFilter,
-    isPhone,
-    fullscreenBoard,
-    setFullscreenBoard,
-  } = ctx;
-  const pane = !isPhone && phonePane === "lists" ? "board" : phonePane;
+  const { phonePane, setPhonePane, patients, boardFilter, isPhone, fullscreenBoard, setFullscreenBoard } = ctx;
+  // Batch 1 item 14 (26 Nov 2026): Lists joined My list, so a stale "lists" pane reads as My list.
+  const pane = phonePane === "lists" ? "needs" : phonePane;
   return (
     <FolderTabs
       label="ED board views"
@@ -120,8 +113,7 @@ export function EdBoardTabs({ ctx }: { ctx: EdScreenContext }) {
         onChange={setPhonePane}
         items={[
           { id: "board" as const, label: "Board", count: patients.length },
-          { id: "needs" as const, label: "My list", count: needsYouItems.length },
-          ...(isPhone ? [{ id: "lists" as const, label: "Lists" }] : []),
+          { id: "needs" as const, label: "My list", count: edMyListCount(ctx) },
         ]}
       />
     </FolderTabs>
@@ -132,7 +124,7 @@ export function EdBoardTabs({ ctx }: { ctx: EdScreenContext }) {
 export function renderEdBoardPhoneRow(
   row: EdBoardRowModel,
   ctx: EdScreenContext,
-  { personSheet, phoneBay }: { personSheet: ReactNode; phoneBay: string },
+  { personSheet }: { personSheet: ReactNode },
 ): ReactNode {
   const { movement, minutesInDepartment, medicalClearance, patientInfo, nextAction, formExpiryTone } = row;
   const { accessTarget, now, dayZero, isBoardRowDim, isPhone, setPhoneSheetReason, setPhoneSheetFor } = ctx;
@@ -186,7 +178,6 @@ export function renderEdBoardPhoneRow(
           // No em-dash and no truncated destination; the form lives in the sheet. Change 2 (D-77):
           // the second line says where the referral stands, the same words as the board.
           formEndLine,
-          phoneBay,
           edRowReferralStatus(row, ctx).phone,
           ...(isPhone
             ? []

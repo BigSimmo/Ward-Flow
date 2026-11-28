@@ -38,24 +38,19 @@ describe("Record the time written takes a typed 24-hour time", () => {
         <FocusPanel
           movement={movement}
           name="Synthetic, Person"
-          umrn="UM000000"
           edName="Synthetic ED"
           wardName={null}
           now={NOW_ANCHOR}
           dayZero={DAY_ZERO}
-          onClose={() => {}}
           focusGap={null}
           refusal={undefined}
           onSaveWritten={onSaveWritten}
           onMarkReceived={() => {}}
           onExtend={() => {}}
-          onRecordNext={() => {}}
           onSaveDetails={() => {}}
           receivedText=""
           onReceivedTextChange={() => {}}
           onRequirements={() => {}}
-          onCopy={() => {}}
-          copied={false}
         />
       </WardFlowProvider>,
     );

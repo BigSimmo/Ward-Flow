@@ -173,7 +173,7 @@ describe("Task 6 — the shell is actually reached on a real route, not merely i
     expect(screen.queryByTestId("ward-shell-place")).toBeNull();
   });
 
-  it("exactly one role switcher renders on a real route — never zero, never two", async () => {
+  it("the bar and its Tools drawer carry no second role switcher on a real route", async () => {
     // "Present" is not enough: a regression that mounted a second copy would show up only as a
     // count of 2, never as an absence `getByRole` would also catch.
     //
@@ -185,7 +185,12 @@ describe("Task 6 — the shell is actually reached on a real route, not merely i
     const user = userEvent.setup();
     renderWardRoute();
     await user.click(screen.getByTestId("ward-bar-tools-trigger"));
-    // The Tools sheet is a `next/dynamic` chunk, and Change view sits at its top (Tools review).
-    expect(await screen.findAllByRole("button", { name: /change view/i }, { timeout: 15_000 })).toHaveLength(1);
+    // A27 (26 Nov 2026): Tools no longer repeats the switcher; the person button is the one door to
+    // Go to a desk. Open Tools first so a second, drawer-hidden copy would still be counted.
+    await screen.findByRole("dialog", { name: "Tools" }, { timeout: 15_000 });
+    expect(screen.queryAllByRole("button", { name: /change view/i })).toHaveLength(0);
+    // The one door (the rail's person) is mounted by the layout, which this replica does not re-type, so
+    // here neither the bar nor its Tools drawer may carry a copy.
+    expect(screen.queryAllByRole("button", { name: /go to a desk/i, hidden: true })).toHaveLength(0);
   });
 });

@@ -12,7 +12,6 @@ import {
   BedSingle,
   BellRing,
   CalendarCheck,
-  ClipboardCheck,
   CalendarClock,
   ChevronDown,
   ChevronLeft,
@@ -22,7 +21,6 @@ import {
   FileClock,
   FileText,
   FlaskConical,
-  Gauge,
   Inbox,
   Map as MapIcon,
   MapPinned,
@@ -35,15 +33,12 @@ import {
   Scale,
   SearchCheck,
   Ambulance,
-  Megaphone,
-  Send,
-  Zap,
   ListChecks,
   Tv,
   UserSearch,
   type LucideIcon,
 } from "lucide-react";
-import { QuickActionsPanel, useUnconfirmedWards, WardUpdatesRequest, type QuickTile } from "./ward-tools-quick-actions";
+import { useUnconfirmedWards, WardUpdatesRequest } from "./ward-tools-quick-actions";
 
 import {
   useDueSoonThresholds,
@@ -52,15 +47,13 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import { legalFormPopulation } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { clockStanding, isActNow } from "@/components/ward-management/legal-forms/legal-forms-view";
-import { WardRoleSwitcher } from "@/components/ward-management/ward-public-role-switcher";
 import { contactForTeam } from "@/components/ward-management/community/community-team-contact-mapping";
 import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF } from "@/components/ward-management/reports/report-routes";
 import { handoverHref } from "@/components/ward-management/shell/ward-facade";
 import { useAccessNavFilter, useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
-import { homeHrefFor, seesNetworkBedFigures, type WardAccessRole } from "@/components/ward-management/ward-role-access";
-import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
+import { seesNetworkBedFigures, type WardAccessRole } from "@/components/ward-management/ward-role-access";
 import {
   WardDemoConfirmHold,
   WardDemoPanel,
@@ -71,8 +64,8 @@ import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav
 import { useExecutiveStatisticsControl } from "@/components/ward-management/statistics/executive-statistics-context";
 // D-91: the one suburb lookup card, shared with Community and the ward's Discharges tab.
 import { SuburbLookupCard } from "@/components/ward-management/community/community-suburb-lookup-card";
-import { buttonClass, Count, SearchField, SrOnly } from "@/components/wf";
 import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
+import { buttonClass, Count, SearchField, SrOnly, StateLine } from "@/components/wf";
 
 import { ToolFeed, ReceiveNextFeedMessage, useFeedWaitingCount } from "./ward-tool-feed";
 import { ToolFigures } from "./ward-tool-figures";
@@ -89,7 +82,7 @@ import styles from "./ward-tools-sheet-v3.module.css";
 const ToolLogDelay = dynamic(
   withLoadRetry(() => import("./ward-tool-log-delay").then((m) => m.ToolLogDelay)),
   {
-    loading: () => <p role="status">Loading…</p>,
+    loading: () => <StateLine kind="loading" title="Loading" compact />,
   },
 );
 
@@ -166,123 +159,44 @@ const ROLE_ORDER: Record<WardAccessRole, Record<GroupId, readonly EntryKey[]>> =
     share: ["messages", "bed-meeting", "tv-board", "handover", "downtime", "chronology"],
   },
   bed_manager: {
-    do: ["quick-actions", "update-bed", "remind", "log-delay", "book-transport", "feed"],
+    do: ["update-bed", "remind", "log-delay", "book-transport", "feed"],
     look: ["bed-finder", "find-patient", "leave-due", "figures", "contacts", "form-times", "catchment", "legal-forms"],
     share: ["messages", "bed-meeting", "tv-board", "handover", "downtime"],
   },
   ward: {
-    do: ["quick-actions", "update-bed", "remind", "log-delay", "book-transport", "feed"],
+    do: ["update-bed", "remind", "log-delay", "book-transport", "feed"],
     look: ["leave-due", "find-patient", "form-times", "contacts", "bed-finder", "catchment", "legal-forms"],
     share: ["handover", "messages", "tv-board", "downtime"],
   },
   ed: {
-    do: ["quick-actions", "new-referral", "book-transport", "remind", "log-delay"],
+    do: ["new-referral", "book-transport", "remind", "log-delay"],
     look: ["bed-finder", "find-patient", "form-times", "contacts", "catchment", "legal-forms"],
     share: ["handover", "tv-board", "downtime"],
   },
   community: {
-    do: ["quick-actions", "new-referral", "remind", "log-delay"],
+    do: ["new-referral", "remind", "log-delay"],
     look: ["catchment", "contacts", "form-times", "legal-forms", "bed-finder"],
     share: ["downtime"],
   },
-  officer: { do: ["quick-actions", "remind"], look: ["contacts", "catchment"], share: [] },
+  officer: { do: ["remind"], look: ["contacts", "catchment"], share: [] },
   // The executive desk reads released reports only, so it has no tool that writes to or reads the live World.
   executive: {
-    do: ["quick-actions"],
+    do: [],
     look: ["figures", "bed-finder", "contacts", "catchment", "form-times"],
     share: ["messages", "bed-meeting", "downtime"],
   },
   admin: { do: [], look: ["contacts", "catchment"], share: [] },
 };
 
-/** A desk's Quick actions tile: a Tools row by key (keeps its gate), or a page link of its own. */
-type QuickSpec = EntryKey | (QuickTile & { href: string });
-
-/** Each desk's most used controls, most used first (Josh, 4 Nov 2026). The coordinator's are built inline. */
-const ROLE_QUICK: Partial<Record<WardAccessRole, readonly QuickSpec[]>> = {
-  bed_manager: [
-    "bed-finder",
-    "update-bed",
-    "leave-due",
-    "log-delay",
-    "book-transport",
-    { key: "broadcast", icon: Megaphone, name: "Broadcast", detail: "To your wards", href: `${root}/alerts` },
-  ],
-  ward: [
-    { key: "my-ward", icon: ClipboardCheck, name: "Confirm beds", detail: "Morning numbers", href: `${root}/wards` },
-    "leave-due",
-    "update-bed",
-    "log-delay",
-    "book-transport",
-    "remind",
-  ],
-  ed: [
-    { key: "refer", icon: Plus, name: "New referral", detail: "Start one", href: WARD_REFERRAL_INTAKE_HREF },
-    "bed-finder",
-    "book-transport",
-    "log-delay",
-    "form-times",
-    "contacts",
-  ],
-  community: [
-    { key: "inbox", icon: Inbox, name: "Referrals in", detail: "Accept or assign", href: `${root}/community` },
-    { key: "refer", icon: Plus, name: "New referral", detail: "Start one", href: WARD_REFERRAL_INTAKE_HREF },
-    "catchment",
-    "contacts",
-    "log-delay",
-    "remind",
-  ],
-  officer: [
-    { key: "jobs", icon: Ambulance, name: "My jobs", detail: "Steps and check-in", href: `${root}/transport/officer` },
-    { key: "alerts", icon: BellRing, name: "Alerts", detail: "Notices", href: `${root}/alerts` },
-    "contacts",
-    "remind",
-  ],
-  executive: [
-    "figures",
-    { key: "capacity", icon: Gauge, name: "Capacity", detail: "By service", href: `${root}/capacity` },
-    { key: "statistics", icon: ChartColumn, name: "Statistics", detail: "Reports", href: `${root}/statistics` },
-    "messages",
-    "contacts",
-  ],
-};
-
-/** Tiles that open the desk's own home page, wherever that desk sits. */
-const DESK_HOME_TILES = new Set(["my-ward", "inbox", "jobs"]);
-
-/** Tiles are narrow on a phone, so each borrowed row gets a two or three word line (Josh, 4 Nov 2026). */
-const TILE_DETAIL: Partial<Record<EntryKey, string>> = {
-  "leave-due": "Back today",
-  "update-bed": "Open or close",
-  "log-delay": "Why it waits",
-  "book-transport": "Log a transfer",
-  remind: "Set a nudge",
-  "bed-finder": "Ready beds",
-  "form-times": "Form expiry",
-  contacts: "Who is on",
-  catchment: "Team by suburb",
-  figures: "Beds and flow",
-  messages: "Copy text",
-};
-
-const QUICK_DETAIL: Partial<Record<WardAccessRole, string>> = {
-  bed_manager: "Beds, due back and more",
-  ward: "Confirm beds, due back and more",
-  ed: "Refer, find a bed and more",
-  community: "Referrals in, suburbs and more",
-  officer: "My jobs, alerts and on-call",
-  executive: "Figures, capacity and reports",
-};
-
 /** Q309: until a desk has used a tool, the row offers its three most likely ones. */
 const ROLE_SUGGESTED: Record<WardAccessRole, readonly ToolsSheetToolId[]> = {
-  coordinator: ["quick-actions", "bed-finder", "update-bed"],
-  bed_manager: ["quick-actions", "update-bed", "bed-finder"],
-  ward: ["quick-actions", "update-bed", "leave-due"],
-  ed: ["quick-actions", "bed-finder", "form-times"],
-  community: ["quick-actions", "catchment", "contacts"],
-  officer: ["quick-actions", "contacts", "catchment"],
-  executive: ["quick-actions", "figures", "messages"],
+  coordinator: ["bed-finder", "update-bed", "call-log"],
+  bed_manager: ["update-bed", "bed-finder"],
+  ward: ["update-bed", "leave-due"],
+  ed: ["bed-finder", "form-times"],
+  community: ["catchment", "contacts"],
+  officer: ["contacts", "catchment"],
+  executive: ["figures", "messages"],
   admin: ["contacts", "catchment"],
 };
 
@@ -460,38 +374,7 @@ function useFormsActNow(): number {
   return legalFormPopulation(movements).filter((movement) => isActNow(clockStanding(movement, now, thresholds))).length;
 }
 
-const DEMO_MOVED_KEY = "wf-demo-moved-seen";
-
-/** R-STRUCT-48: a one-word, once-per-device label that says the Demo panel moved here. */
-function DemoMovedLabel() {
-  // The sheet only draws in the browser after it opens, so reading the flag here cannot mismatch.
-  const [seen, setSeen] = useState(() => {
-    try {
-      return typeof window === "undefined" || window.localStorage.getItem(DEMO_MOVED_KEY) === "1";
-    } catch {
-      return true;
-    }
-  });
-  if (seen) return null;
-  return (
-    <button
-      type="button"
-      className={styles.groupCount}
-      data-testid="ward-tools-demo-moved"
-      aria-label="Moved here. Dismiss"
-      onClick={() => {
-        setSeen(true);
-        try {
-          window.localStorage.setItem(DEMO_MOVED_KEY, "1");
-        } catch {
-          // Storage blocked: the label returns next visit.
-        }
-      }}
-    >
-      Moved ×
-    </button>
-  );
-}
+// Audit four #53 (28 Nov 2026): the once-per-device "Moved" label on the Demo group is gone.
 
 export function WardToolsSheet(props: WardToolsSheetProps) {
   return useExecutiveStatisticsControl().executive ? (
@@ -522,7 +405,6 @@ function ToolsSheetView({
   counts,
   isPhone,
   twoPane = false,
-  roleLabel,
   onNavigate,
   onNewReferral,
   openRequest,
@@ -640,52 +522,11 @@ function ToolsSheetView({
       role === "coordinator"
         ? {
             key: "quick-actions",
-            icon: Zap,
-            name: "Quick actions",
-            detail: "Ward updates, beds and more",
+            icon: BellRing,
+            name: "Check counts",
+            detail: "Ask wards to confirm their beds",
             count: { n: unconfirmed, label: "wards not confirmed this shift", act: true },
-            body: (
-              <QuickActionsPanel
-                onNavigate={onNavigate}
-                tiles={[
-                  {
-                    key: "ward-updates",
-                    icon: BellRing,
-                    name: "Ward updates",
-                    detail: "not confirmed",
-                    count: unconfirmed,
-                    title: "Ward updates",
-                    body: <WardUpdatesRequest />,
-                  },
-                  {
-                    key: "bed-finder",
-                    icon: SearchCheck,
-                    name: "Find a bed",
-                    detail: "ready now",
-                    count: counts.bedsReady,
-                    title: "Find a bed",
-                    body: <ToolFindBed onNavigate={onNavigate} />,
-                  },
-                  {
-                    key: "messages",
-                    icon: MessageSquareText,
-                    name: "Bed summary",
-                    detail: "Copy for email",
-                    title: "Bed summary",
-                    body: <ToolMessages onNavigate={onNavigate} />,
-                  },
-                  { key: "chase", icon: PhoneCall, name: "Chase wards", detail: "Ward calls", href: root },
-                  { key: "ask", icon: Send, name: "Ask wards", detail: "For a patient", href: `${root}/waiting` },
-                  {
-                    key: "broadcast",
-                    icon: Megaphone,
-                    name: "Broadcast",
-                    detail: "To chosen units",
-                    href: `${root}/alerts`,
-                  },
-                ]}
-              />
-            ),
+            body: <WardUpdatesRequest />,
           }
         : null,
     "new-referral":
@@ -744,13 +585,13 @@ function ToolsSheetView({
         : {
             key: "book-transport",
             icon: Ambulance,
-            name: "Book transport",
-            detail: "Log a transfer",
+            name: "Record transport booking",
+            detail: "Record a transfer",
             href: canOpen(`${root}/transport/officer`) ? `${root}/transport/officer` : `${root}/movements`,
           },
     // Friction pass item 6c (Josh, 9 Nov 2026): a short form here in place of the Waiting page.
     "log-delay": canLogDelay
-      ? { key: "log-delay", icon: Clock3, name: "Log a delay", detail: "Patient and reason", body: <ToolLogDelay /> }
+      ? { key: "log-delay", icon: Clock3, name: "Record a delay", detail: "Patient and reason", body: <ToolLogDelay /> }
       : null,
     feed:
       !executive && (role === "coordinator" || role === "bed_manager" || role === "ward")
@@ -907,48 +748,15 @@ function ToolsSheetView({
     "tv-board": {
       key: "tv-board",
       icon: Tv,
-      name: "TV board",
+      name: "Open on TV",
       detail: "Large type, read only",
       href: `${root}/bed-meeting`,
     },
     demo: null,
   };
 
-  // Quick actions for every desk (Josh approved the mock-up, 4 Nov 2026): the coordinator keeps its
-  // own tiles above; every other desk gets its most used controls, built from the rows below so each
-  // tile keeps that row's gate. A tile this desk may not open simply drops out. The rows stay below
-  // too, so search and Recent still find them.
-  const deskSpecs = role === "coordinator" ? [] : (ROLE_QUICK[role] ?? []);
-  const deskTiles: QuickTile[] = deskSpecs.flatMap((spec): QuickTile[] => {
-    if (typeof spec !== "string") {
-      // A desk-home tile (the ward's Confirm beds, the team's Referrals in) opens this desk's own place.
-      const href = DESK_HOME_TILES.has(spec.key) ? homeHrefFor(access, communityTeamSlug) : spec.href;
-      return canOpen(href) ? [{ ...spec, href }] : [];
-    }
-    const entry = all[spec];
-    if (!entry || (entry.href && !canOpen(entry.href)) || (!entry.href && !entry.body)) return [];
-    return [
-      {
-        key: entry.key,
-        icon: entry.icon,
-        name: entry.name,
-        detail: TILE_DETAIL[entry.key] ?? entry.detail,
-        count: entry.count?.n,
-        title: entry.name,
-        body: entry.body,
-        href: entry.href,
-      },
-    ];
-  });
-  if (deskTiles.length > 0) {
-    all["quick-actions"] = {
-      key: "quick-actions",
-      icon: Zap,
-      name: "Quick actions",
-      detail: QUICK_DETAIL[role] ?? "Your most used controls",
-      body: <QuickActionsPanel onNavigate={onNavigate} tiles={deskTiles} />,
-    };
-  }
+  // Audit two (#117, 27 Nov 2026): no Quick actions tile for a desk other than the coordinator's own
+  // (its "Check counts" row above). The rows stay below, so search and Most used still find them.
 
   const words = query.trim();
   const order = ROLE_ORDER[role] ?? ROLE_ORDER.coordinator;
@@ -980,8 +788,14 @@ function ToolsSheetView({
   // four to do, four to look up and two to share); the rest are behind search or Show all tools.
   const [showAllTools, setShowAllTools] = useState(false);
   const mostUsedTake: Record<GroupId, number> = { do: 4, look: 4, share: 2 };
+  // Audit three #46 (Josh, 28 Nov 2026): when Due back sits in Needs you (below), it leaves Most used
+  // and the next tool in the desk's set order takes its slot, so the list stays ten long.
+  const dueBackInNeedsYou = !words && !executive && role === "coordinator" && (counts.leave ?? 0) > 0;
   const mostUsed = groups.flatMap((group) =>
-    group.entries.slice(0, mostUsedTake[group.id]).map((entry) => ({ entry, group: group.id })),
+    group.entries
+      .filter((entry) => !(dueBackInNeedsYou && entry.key === "leave-due"))
+      .slice(0, mostUsedTake[group.id])
+      .map((entry) => ({ entry, group: group.id })),
   );
   // D-276: a desk with ten tools or fewer has nothing to hide, so it shows its full list.
   const showMostUsed = !words && !showAllTools && matches > mostUsed.length;
@@ -1027,14 +841,6 @@ function ToolsSheetView({
           n: counts.formsActNow ?? 0,
           tone: "danger" as const,
           href: `${root}/legal-forms`,
-        },
-        {
-          key: "wards",
-          title: "Wards to call",
-          detail: "Beds not confirmed this shift",
-          n: unconfirmed,
-          tone: "warning" as const,
-          tool: all["call-log"] ? ("call-log" as const) : ("quick-actions" as const),
         },
         {
           key: "leave",
@@ -1193,22 +999,14 @@ function ToolsSheetView({
             as Home's Needs you tab): the coordinator's few things that need them, each one tap from
             its tool. Only what is due shows; with nothing due, the section is gone. */}
           {/* Q308: Viewing as joins the Demo controls at the head (R-STRUCT-23: Demo is the first row of Tools). */}
-          {!words ? (
+          {/* One door to Go to a desk (A27, 26 Nov 2026): the person button on the rail and the phone
+              Menu hold it, so Tools no longer repeats "Viewing as" and its switcher. */}
+          {!words && (isPhone || !executive) ? (
             <section className={styles.group} aria-label="Demo">
-              <h3 className={styles.groupHeading}>
-                Demo
-                <DemoMovedLabel />
-              </h3>
+              <h3 className={styles.groupHeading}>Demo</h3>
               <div className={styles.card}>
-                <div className={styles.viewingAs}>
-                  <span className={styles.viewingText}>
-                    <span>Viewing as</span>
-                    <strong>{roleLabel}</strong>
-                  </span>
-                  <WardRoleSwitcher withWords />
-                </div>
                 {/* The executive desktop keeps its own scenario controls, so the demo row shows there on phone only. */}
-                {isPhone || !executive ? renderRow(demoEntry, "share") : null}
+                {renderRow(demoEntry, "share")}
               </div>
             </section>
           ) : null}
@@ -1257,7 +1055,7 @@ function ToolsSheetView({
           ) : null}
 
           {/* Polish (3 Nov): chips show only tools this person has used; the desk order already leads with the likely ones. */}
-          {!words && recentIds.length > 0 ? (
+          {!words && role === "coordinator" && recentIds.length > 0 ? (
             <section className={styles.quick} aria-label={quickTitle}>
               <h3 className={styles.groupHeading}>{quickTitle}</h3>
               <div className={styles.chips}>

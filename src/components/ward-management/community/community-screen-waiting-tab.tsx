@@ -33,9 +33,6 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
     setDeclineDraft,
     setActiveDrawer,
     setSelectedPatientId,
-    setSelectedReferralId,
-    setPendingAcceptance,
-    setAcceptanceError,
     triageFilter,
     setTriageFilter,
     isDemoMode,
@@ -386,34 +383,21 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                               className={styles.cardActionButton}
                               onClick={() => handleActionClick("Contacted", referral)}
                             >
-                              Log team contact
+                              Record team contact
                             </button>
                             <button
                               type="button"
                               className={styles.cardActionButton}
                               onClick={() => handleActionClick("Review", referral)}
                             >
-                              Review
+                              Review referral
                             </button>
                             <button
                               type="button"
                               className={styles.cardActionButton}
                               onClick={() => handleActionClick("Assign", referral)}
                             >
-                              Assign
-                            </button>
-                            <button
-                              type="button"
-                              className={styles.cardActionButton}
-                              onClick={() => {
-                                setSelectedReferralId(referral.id);
-                                setPendingAcceptance(null);
-                                setAcceptanceError(null);
-                                setActiveDrawer("referralDrawer");
-                              }}
-                              title="Open full referral triage assessment"
-                            >
-                              Triage record
+                              Hand to
                             </button>
                           </div>
                           <div className={styles.declineActions}>

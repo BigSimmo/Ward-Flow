@@ -30,7 +30,12 @@ function asDesk(role: "admin" | "coordinator") {
 
 function renderEmpty() {
   const seed = seedWardFlowState();
-  return render(<GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW_ANCHOR} />);
+  // r10: the workbench reads the shared record (the Audit trail tab), so it needs the provider.
+  return render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW_ANCHOR} />
+    </WardFlowProvider>,
+  );
 }
 
 function withPhone(run: () => void) {
@@ -63,10 +68,10 @@ describe("Governance as the access admin", () => {
     asDesk("admin");
     renderEmpty();
     expect(screen.getByRole("heading", { name: "Nothing waiting for review" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open the Access log" })).toHaveAttribute(
-      "href",
-      "/bedchart/settings#access",
-    );
+    // Audit two #124 (28 Nov 2026): the Access log's one home is the Audit trail, so this opens that tab.
+    const accessLog = screen.getByRole("button", { name: "Open the Access log" });
+    fireEvent.click(accessLog);
+    expect(screen.getByRole("radio", { name: /^Audit trail/ })).toBeChecked();
     expect(screen.queryByRole("button", { name: "Record review" })).not.toBeInTheDocument();
     expect(screen.queryByRole("radiogroup", { name: "Show in the review list" })).not.toBeInTheDocument();
   });
@@ -82,8 +87,10 @@ describe("Governance as the access admin", () => {
         <Harness />
       </WardFlowProvider>,
     );
-    expect(screen.getByRole("button", { name: "Record review" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Open the Access log" })).not.toBeInTheDocument();
+    // r10: the hero's "Record review" chip is gone; Reviewed sits in the event drawer's foot, and the
+    // hero's action opens the newest waiting event.
+    expect(screen.getByTestId("ward-governance-review-next")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Open the Access log" })).not.toBeInTheDocument();
   });
 
   it("drops Gaps, Registers and Reports on a phone", () => {
@@ -95,7 +102,7 @@ describe("Governance as the access admin", () => {
       expect(screen.queryByRole("button", { name: /Registers/ })).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /Reports/ })).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /Review next/ })).not.toBeInTheDocument();
-      expect(screen.getByRole("link", { name: "Open the Access log" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Open the Access log" })).toBeInTheDocument();
       // WF-46: phone Audit trail tab matches the desktop label (was "Reviewed").
       expect(screen.getByRole("radio", { name: /^Audit trail/ })).toBeInTheDocument();
       // Without an api the audit read is refused — empty copy names who can read it.
@@ -114,6 +121,6 @@ describe("Governance as the coordinator", () => {
     expect(screen.getByRole("radio", { name: /^Forms to chase/ })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: /^Registers/ })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /PIR chronology/ })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Open the Access log" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Open the Access log" })).not.toBeInTheDocument();
   });
 });

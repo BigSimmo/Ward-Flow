@@ -921,31 +921,7 @@ describe("community hub — what it must never grow", () => {
   });
 });
 
-describe("community hub — the team switcher, and the route it resolves", () => {
-  /**
-   * The reachability figure `tests/ward-nav.test.ts` records for `community/[teamId]` counts
-   * CONCRETE hrefs, and the switcher builds the rest of them. What it actually covers is
-   * established here, by rendering the screen and reading the links back out of the markup.
-   */
-  it("links every other team, and never the page it is on", () => {
-    const [toA] = referralsNaming([TEAM_A.name], "Perth Metropolitan");
-    for (const team of [TEAM_A, TEAM_B]) {
-      const { unmount } = renderTeam(team.id, [admission({ id: "AD-A", referralId: toA.id })], [toA]);
-      const switcher = screen.getByRole("navigation", { name: "Other community teams" });
-      const hrefs = within(switcher)
-        .getAllByRole("link")
-        .map((link) => link.getAttribute("href"));
-
-      expect(hrefs).toHaveLength(COMMUNITY_TEAM_PAGES.length - 1);
-      expect(hrefs).not.toContain(communityTeamHref(team));
-      for (const other of COMMUNITY_TEAM_PAGES) {
-        if (other.id === team.id) continue;
-        expect(hrefs, `${team.name} does not link ${other.name}`).toContain(communityTeamHref(other));
-      }
-      unmount();
-    }
-  });
-
+describe("community hub — the route a team resolves to", () => {
   it("builds every href from the derived id, under the real route", () => {
     for (const team of COMMUNITY_TEAM_PAGES) {
       expect(communityTeamHref(team)).toBe(`/bedchart/community/${team.id}`);

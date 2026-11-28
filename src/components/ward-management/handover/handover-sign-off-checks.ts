@@ -17,6 +17,9 @@ export function handoverSignOffChecks({
   preparedAt,
   meetings,
   onCheckBeds,
+  onPrint,
+  onStartMeeting,
+  printable = true,
 }: {
   rows: readonly HandoverRow[];
   wards: readonly HandoverWard[];
@@ -26,6 +29,11 @@ export function handoverSignOffChecks({
   preparedAt: Instant | null;
   meetings: readonly { at: Instant; minutes: number }[];
   onCheckBeds?: () => void;
+  /** Audit three #29: the unmet print and meeting items carry their own step. */
+  onPrint?: () => void;
+  onStartMeeting?: () => void;
+  /** Gate r10 (call 12): false on the phone, which has no print step, so the unmet print row is left off. */
+  printable?: boolean;
 }): SignOffCheck[] {
   // Audit S-31: a ward is stale on the sign-off when either its feed or its ward-confirmed count is
   // past that figure's own limit, the rule the Wards page counts by (allocatable), so sign-off can
@@ -59,16 +67,30 @@ export function handoverSignOffChecks({
             staleWards.length === 1
               ? `${staleWards[0]!.name} counts are stale`
               : `${staleWards.length} wards with stale counts: ${staleWards.map((ward) => ward.name).join(", ")}`,
-          action: onCheckBeds ? { label: "Check beds", onClick: onCheckBeds } : undefined,
+          // Audit four item 102: the coordinator asking wards is "Check counts" (glossary).
+          action: onCheckBeds ? { label: "Check counts", onClick: onCheckBeds } : undefined,
         }
       : { id: "feeds", done: true, text: "Every ward feed is current" },
-    preparedAt !== null
-      ? { id: "print", done: true, text: `Copy prepared for printing ${formatInstantWithDay(preparedAt, now)}` }
-      : // Print and the meeting timer live once, in the hero (device audit 11 Oct 2026).
-        { id: "print", done: false, text: "No copy prepared for printing yet" },
+    ...(preparedAt !== null
+      ? [{ id: "print", done: true, text: `Copy prepared for printing ${formatInstantWithDay(preparedAt, now)}` }]
+      : printable
+        ? [
+            {
+              id: "print",
+              done: false,
+              text: "No copy prepared for printing yet",
+              action: onPrint ? { label: "Print handover", onClick: onPrint } : undefined,
+            },
+          ]
+        : []),
     meetings.length
       ? { id: "meet", done: true, text: `Meeting timed, ${meetings[0]!.minutes} min` }
-      : { id: "meet", done: false, text: "Meeting not timed" },
+      : {
+          id: "meet",
+          done: false,
+          text: "Meeting not timed",
+          action: onStartMeeting ? { label: "Start meeting timer", onClick: onStartMeeting } : undefined,
+        },
   ];
 }
 

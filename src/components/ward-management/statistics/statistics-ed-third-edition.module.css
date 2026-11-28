@@ -1,3 +1,6 @@
+/* Audit two B21: every table cell rule here starts with `html`, one element more than the kit's
+   `.table td` and `.table th`, so the page's own cell rules win in the production build as in dev,
+   whatever order the two style sheets load in. Order among this file's own rules is unchanged. */
 /* ═══════════════════════════════════════════════════════════════════════
    WARD FLOW ED STATISTICS — THIRD EDITION (CSS MODULE)
    Extracted from design/third-edition-mockups/statistics-emergency-department-third-edition.html
@@ -179,7 +182,7 @@
   border-collapse: collapse;
   font-size: var(--t-2);
 }
-.dataTable th {
+html .dataTable th {
   text-align: left;
   font-size: var(--t-0);
   letter-spacing: 0.1em;
@@ -189,26 +192,26 @@
   background: var(--surface-2);
   white-space: nowrap;
 }
-.dataTable td {
+html .dataTable td {
   color: var(--ink-soft);
   vertical-align: top;
   line-height: 1.45;
 }
-.dataTable td:first-child {
+html .dataTable td:first-child {
   color: var(--ink);
   font-weight: 600;
 }
 .dataTable .n,
-.dataTable th.n {
+html .dataTable th.n {
   text-align: right;
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.dataTable td.n {
+html .dataTable td.n {
   color: var(--ink);
 }
-.dataTable tbody tr:hover td {
+html .dataTable tbody tr:hover td {
   background: var(--sunk);
 }
 
@@ -576,7 +579,7 @@
   overscroll-behavior: contain;
 }
 
-.waitScroll thead th {
+html .waitScroll thead th {
   position: sticky;
   top: 0;
   z-index: 1;

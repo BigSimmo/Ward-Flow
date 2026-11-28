@@ -1,7 +1,11 @@
 "use client";
 
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
-import { notWaitingParts, waitingSplit } from "@/components/ward-management/ward-shared-figures";
+import { waitingSplit } from "@/components/ward-management/ward-shared-figures";
+import { movementBreakdownRows } from "@/components/ward-management/count-breakdown-rows";
+import { settledWardCommand } from "@/components/ward-management/ward-command-completion";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 
 import { useMemo, type FormEvent } from "react";
@@ -34,8 +38,7 @@ import { EdBoardSection } from "./ed-screen-board";
 import { EdAccessRiskCard } from "@/components/ward-management/forecast/forecast-lazy";
 import type { EdScreenContext } from "./ed-screen-context";
 import { deriveEdScreen } from "./ed-screen-derivations";
-import { EdListsSection } from "./ed-screen-lists";
-import { EdListsCard } from "./ed-lists-desktop";
+import { EdMyList } from "./ed-my-list";
 import { edStepSaid, edStepUndone, instantFromDateAndTimeInputs, type EdStepEvent } from "./ed-screen-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { EdPatientDialog } from "./ed-screen-patient-dialog";
@@ -167,7 +170,35 @@ export function EdScreen({ edId }: EdScreenProps) {
       undone: edStepUndone(who, event),
     });
   }
-  /** Phone: Board, Needs you and Lists are one tap apart (v10 ED page, phone). */
+  const ED_ROUTE_ROLE = "ed" as const;
+  // Audit two #94: the table's Form cell opens the Forms page's "Record a form" sheet; its Save lands
+  // here, records the form with its written time and offers the same Undo the Forms page does.
+  function saveWrittenForm(input: Parameters<EdScreenContext["saveWrittenForm"]>[0]) {
+    const who = patientOf({ movementId: input.movementId }).formalName;
+    const completion = settledWardCommand(raise("RECORD_LEGAL_FORM_WRITTEN", input));
+    const accepted = (outcome: Awaited<typeof completion>) => {
+      offerStep(
+        {
+          success: `Form ${input.formCode} recorded for ${who}`,
+          undo: (at) => ({
+            type: "UNDO_LEGAL_FORM_RECORD",
+            role: ED_ROUTE_ROLE,
+            now: at,
+            movementId: input.movementId,
+          }),
+          undone: `Undone: Form ${input.formCode} record for ${who}`,
+        },
+        { completion: outcome },
+      );
+      if (outcome?.status === "accepted") return outcome.isCurrent?.() ?? true;
+      return outcome?.status === "refused"
+        ? `Not recorded: ${outcome.message ?? "The action was refused."}`
+        : (outcome?.message ?? SAVE_NOT_CONFIRMED);
+    };
+    const unconfirmed = () => accepted({ commandId: "", status: "failed", message: SAVE_NOT_CONFIRMED });
+    return completion && "then" in completion ? completion.then(accepted, unconfirmed) : accepted(completion);
+  }
+  /** Phone: Board and My list are one tap apart (v10 ED page, phone; Lists joined My list 26 Nov 2026). */
   const isPhone = useIsPhone();
   // DA-09: an ED desk cannot open Capacity or Governance, so those links are offered only to a desk that can.
   const canOpen = useCanOpenHref();
@@ -397,6 +428,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     boardTable,
     needsRailSlides,
     recordEdStep,
+    saveWrittenForm,
     openPatientPage: (patientId) => router?.push(patientHref(patientId)),
     submitReferral,
     referralFieldsDisabled: referralSave.referralFieldsDisabled,
@@ -414,6 +446,8 @@ export function EdScreen({ edId }: EdScreenProps) {
   };
 
   const boardSplit = waitingSplit(patients);
+  // Audit two #115: the hero act opens the longest-waiting person over the access target.
+  const nextOverTarget = patients.filter(heroHighlightMatch.past).sort((a, b) => a.openedAt - b.openedAt)[0];
 
   return (
     <div
@@ -454,7 +488,23 @@ export function EdScreen({ edId }: EdScreenProps) {
             };
           })}
           onBoard={patients.length}
-          onBoardParts={[`${boardSplit.waiting} waiting`, ...notWaitingParts(boardSplit)]}
+          onBoardBreakdown={{
+            rows: () =>
+              movementBreakdownRows(
+                patients,
+                (movement) => {
+                  const person = resolveSubjectPatient(movement, { patients: registryPatients, referrals, movements });
+                  return person.patient
+                    ? { name: person.formalName, href: patientHref(person.patient.id) }
+                    : { name: "Name not recorded" };
+                },
+                now,
+                canOpen,
+              ),
+            waiting: boardSplit.waiting,
+            inTransit: boardSplit.notWaiting.in_transit,
+          }}
+          onOpenNext={nextOverTarget ? () => setPhoneSheetFor(nextOverTarget.id) : undefined}
           chips={heroChips}
           // Page tops (Josh, 9 Nov 2026): Board, My list (and Lists on a phone) are the page tabs.
           tabs={<EdBoardTabs ctx={ctx} />}
@@ -492,17 +542,19 @@ export function EdScreen({ edId }: EdScreenProps) {
         {/* Forecasting build (Josh, 23 Oct 2026, screen 4), loaded lazily for the phone budget. It stays a
             direct child here, outside the My list switch below, so hydration never remounts it and the
             board does not jump as the page loads (release gate layout shift, 9 Nov 2026). */}
-        {edDesk || (!isPhone && phonePane === "needs") ? null : <EdAccessRiskCard edId={thisEdId} now={now} />}
+        {/* Sweep fix (26 Nov 2026): My list never shows it, on a phone as at 820; it stays on the Board. */}
+        {edDesk || phonePane === "needs" ? null : <EdAccessRiskCard edId={thisEdId} now={now} />}
 
-        {/* Wider screens: My list shows the list in the board's place (page tops, 9 Nov 2026). */}
+        {/* Wider screens: My list shows the one My list card in the board's place (page tops, 9 Nov
+            2026; batch 1 item 14, 26 Nov 2026: the Lists card's parts joined it). */}
         {!isPhone && phonePane === "needs" ? (
-          <EdNeedsYou items={needsYouItems} data-pane="needs" />
+          <EdMyList ctx={ctx} />
         ) : (
           <>
             <EdBoardSection ctx={ctx} />
 
             {isPhone ? (
-              <EdNeedsYou items={needsYouItems} data-pane="needs" />
+              <EdMyList ctx={ctx} />
             ) : !needsRailSlides && !fullscreenBoard ? (
               <EdNeedsYou items={needsYouItems} data-pane="needs" data-rail="" />
             ) : null}
@@ -511,13 +563,6 @@ export function EdScreen({ edId }: EdScreenProps) {
         {/* Device audit 11 Oct 2026: the Statewide capacity table and the 24 hour timeline left the
             page; each is one link to the page that owns it. */}
         {fullscreenBoard || elsewhereLinks.length === 0 ? null : <EdElsewhereLinks links={elsewhereLinks} />}
-        {/* The phone keeps its Lists pane; wider screens show the one Lists card. */}
-        {fullscreenBoard ? null : isPhone ? (
-          <EdListsSection ctx={ctx} />
-        ) : (
-          // Handover build (Josh, 1 Nov 2026): one Lists card, open, with three lists.
-          <EdListsCard ctx={ctx} />
-        )}
 
         {selectedPatient ? <EdPatientDialog ctx={ctx} selectedPatient={selectedPatient} /> : null}
 

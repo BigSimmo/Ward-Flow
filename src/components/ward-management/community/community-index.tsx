@@ -73,6 +73,8 @@ import { downloadCsv } from "@/components/ward-management/statistics/statistics-
 
 import guideStyles from "./community-guide.module.css";
 import styles from "./community-index.module.css";
+import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
+import { recordSuburbLookup, useRecentSuburbs } from "./community-recent-suburbs";
 import { SuburbLookupCard } from "./community-suburb-lookup-card";
 
 /**
@@ -80,9 +82,9 @@ import { SuburbLookupCard } from "./community-suburb-lookup-card";
  *
  * **Why it exists.** That dynamic route serves one page per team in `COMMUNITY_TEAM_PAGES`, and
  * before this page existed **nothing linked to it from anywhere a person could get to**.
- * `community-screen.tsx` renders an "Other community teams" switcher that links every team but the
- * one you are looking at, which only helped somebody already standing on a team page — and the way
- * onto a team page was to type its address. Every one of those pages had a single entry condition,
+ * `community-screen.tsx` once rendered an "Other community teams" switcher (cut in the last audit)
+ * that linked every team but the one you were looking at, which only helped somebody already standing
+ * on a team page — and the way onto a team page was to type its address. Every one of those pages had a single entry condition,
  * and that condition was knowing a URL. This page is what closes that.
  *
  * ⚠️ **NO COUNT OF TEAMS IS WRITTEN INTO THIS COMMENT, AND THAT IS DELIBERATE.** An earlier draft
@@ -171,12 +173,17 @@ import { SuburbLookupCard } from "./community-suburb-lookup-card";
  * recently opened strip (the strip stores names only), and a selected-team bar with a "Refer to this
  * team" action (the referral form takes no team from its address).
  */
+/*
+ * #8 (audit two, 27 Nov 2026): the filter tabs say North, South, East, WACHS (then CAHS and Private,
+ * the order every service filter uses, where a page has them; no community team maps to either), and
+ * the long names stay in group heads (`label`, read by Statistics Teams).
+ */
 export const COMMUNITY_SERVICE_OPTIONS = [
-  { value: "all", label: "All" },
-  { value: "NMHS", label: "North Metro (NMHS)" },
-  { value: "SMHS", label: "South Metro (SMHS)" },
-  { value: "EMHS", label: "East Metro (EMHS)" },
-  { value: "WACHS", label: "Country Health (WACHS)" },
+  { value: "all", label: "All", short: "All" },
+  { value: "NMHS", label: "North Metro (NMHS)", short: "North" },
+  { value: "SMHS", label: "South Metro (SMHS)", short: "South" },
+  { value: "EMHS", label: "East Metro (EMHS)", short: "East" },
+  { value: "WACHS", label: "Country Health (WACHS)", short: "WACHS" },
 ] as const;
 
 type ServiceFilter = (typeof COMMUNITY_SERVICE_OPTIONS)[number]["value"];
@@ -218,15 +225,37 @@ export function communityTeamSearchFields(
 
 export function CommunityIndex({
   teams = COMMUNITY_TEAM_PAGES,
-  inPlaces = false,
+  inPlaces: inPlacesProp = false,
+  pageSwitch,
+  heroTabs,
+  findRow = true,
+  initialQuery = "",
+  onQueryChange,
+  findView = "teams",
 }: {
   teams?: readonly CommunityTeam[];
+  /** Find (mock-up): Suburbs is the lookup and Read alike; Community teams is the A to Z. */
+  findView?: "suburbs" | "teams";
+  /**
+   * Find (mock-up, 26 Nov 2026): the Find tabs take the Places switch's place in this page's tab row.
+   * Everything else reads as inside Places (the header's New referral is the one way in).
+   */
+  pageSwitch?: ReactNode;
+  /** Find (mock-up): the Find tabs, drawn at the top of the hero. */
+  heroTabs?: ReactNode;
+  /** Find: false when the tab row would hold only an empty pins strip; the row is then not drawn. */
+  findRow?: boolean;
+  /** Find: words carried from another tab's search box. */
+  initialQuery?: string;
+  /** Find: the search box's words, handed back so the next tab can carry them. */
+  onQueryChange?: (query: string) => void;
   /**
    * PL1 (Josh, 3 Nov 2026): rendered as the Catchments tab of Places. The band then carries the
    * Places switch, and the recently opened teams move to its right-hand side.
    */
   inPlaces?: boolean;
 }) {
+  const inPlaces = inPlacesProp || pageSwitch !== undefined;
   // Sorted here rather than trusted from upstream: this page makes the alphabetical claim in its own
   // copy, so it holds the sort itself. The id tie-break keeps the order total.
   const allTeams = useMemo(
@@ -250,15 +279,6 @@ export function CommunityIndex({
   // The family card is deliberately NOT scoped to the `teams` prop: it is the same derivation
   // whichever subset a caller renders, so an override to `[]` still gets the real families.
   const familyGroups = useMemo(() => communityNameCollisions(), []);
-
-  // The lookup's quick picks: the suburbs whose own row names more than one team, read off the rows.
-  const contestedPicks = useMemo(() => {
-    const names = new Set<string>();
-    for (const row of S2015_CATCHMENT_ROWS) {
-      if (parseFollowUpClinicSet(row.followUpClinicVerbatim).length > 1) names.add(row.suburb);
-    }
-    return [...names].sort((left, right) => left.localeCompare(right));
-  }, []);
 
   // Suburbs per clinic key, from the catchment rows. Feeds search, the row figure, the lookup and
   // the side-by-side families, so all four read one map.
@@ -314,7 +334,10 @@ export function CommunityIndex({
     return map;
   }, [allTeams]);
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
+  useEffect(() => {
+    onQueryChange?.(query);
+  }, [query, onQueryChange]);
   const [serviceFilter, setServiceFilter] = useState<ServiceFilter>("all");
   const [alikeOnly, setAlikeOnly] = useState(false);
   /** Hero chip: highlight the teams a suburb row names together with another team. */
@@ -323,11 +346,23 @@ export function CommunityIndex({
   const [drawerOpen, setDrawerOpen] = useState(false);
   /** Phone (v10): A to Z, Suburb, Alike and Services are one tap apart. */
   const isPhone = useIsPhone();
-  const [phonePane, setPhonePane] = useState<"az" | "suburb" | "alike" | "services">("suburb");
+  const [phonePane, setPhonePane] = useState<"az" | "suburb" | "alike" | "services">(
+    pageSwitch !== undefined && findView === "teams" ? "az" : "suburb",
+  );
 
   // `useSyncExternalStore` through `createBrowserStore`: the recent list lives in localStorage, and
   // a server render (and `renderToStaticMarkup` in tests) sees the empty server snapshot.
   const storedRecentNames = useRecentTeamNames();
+  // Audit three #65: the lookup's picks become the suburbs last looked up on this device, once any are.
+  // A suburb is recorded after the words have rested on one known suburb for a moment, by its document
+  // spelling only (community-recent-suburbs.ts).
+  const recentSuburbs = useRecentSuburbs();
+  const live = usePageLive();
+  useEffect(() => {
+    if (!query.trim()) return;
+    const timer = window.setTimeout(() => recordSuburbLookup(query), 900);
+    return () => window.clearTimeout(timer);
+  }, [query]);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const drawerTriggerRef = useRef<HTMLButtonElement>(null);
@@ -497,7 +532,7 @@ export function CommunityIndex({
     const onBoard = boardDayZero instanceof Date && Number.isFinite(boardNow);
     const dayZero = onBoard ? boardDayZero : demoDayZero(new Date());
     const at = onBoard ? boardNow : Math.floor((Date.now() - dayZero.getTime()) / 60_000);
-    const lines: (string | number)[][] = [["Team", "Health service", "Catchment suburbs", "Reads like another name"]];
+    const lines: (string | number)[][] = [["Team", "Health service", "Catchment suburbs", "Similar names"]];
     for (const team of allTeams) {
       const facts = teamFacts.get(team.name);
       lines.push([team.name, facts?.service ?? "", facts?.suburbs ?? 0, collisionByName.has(team.name) ? "Yes" : "No"]);
@@ -511,7 +546,7 @@ export function CommunityIndex({
 
   const serviceItems = COMMUNITY_SERVICE_OPTIONS.map((option) => ({
     id: option.value,
-    label: option.value === "all" ? "All" : option.value,
+    label: option.short,
     count: option.value === "all" ? allTeams.length : (serviceCounts.get(option.value)?.teams ?? 0),
   }));
 
@@ -539,39 +574,135 @@ export function CommunityIndex({
       </section>
     ) : null;
 
-  const folderTabs = isPhone ? (
-    <FolderTabs label="Catchment panes" value={phonePane} className={styles.paneTabs} testId="community-index-panes">
-      <Segmented
-        className={folderTabClasses.switch}
-        label="Show"
-        size="md"
-        value={phonePane}
-        onChange={setPhonePane}
-        items={[
-          // Suburb leads: "which team covers this suburb" is the phone job.
-          { id: "suburb" as const, label: "Suburb" },
-          { id: "az" as const, label: "A to Z" },
-          { id: "alike" as const, label: "Read alike" },
-          { id: "services" as const, label: "Services" },
-        ]}
-      />
-    </FolderTabs>
-  ) : inPlaces ? (
-    <FolderTabs label="Places views" value="catchments" testId="places-track">
-      {/* Review finding 25 (12 Nov 2026): the linked switch draws its own nav, so it takes its own
+  const teamsFind = pageSwitch !== undefined && findView === "teams";
+  const resultLine = (
+    <p
+      className={cx(styles.resultLine, teamsFind && styles.resultLineEnd)}
+      aria-live="polite"
+      data-testid="community-gateway-result-line"
+    >
+      {/* Core pages review: the count shows only when a filter narrows it; the title already says 64. */}
+      {filtersActive ? (
+        <>
+          <strong>{filteredTeams.length}</strong> of {allTeams.length} synthetic team names
+          <span className={styles.resultHint}>, all names stay</span>
+        </>
+      ) : null}
+    </p>
+  );
+
+  const chipRow = (
+    <HeroQuickChips
+      label="Catchment actions"
+      items={[
+        {
+          id: "guide",
+          label: "Catchment guide",
+          node: (
+            <button
+              ref={drawerTriggerRef}
+              type="button"
+              className={heroChipClassName}
+              onClick={() => setDrawerOpen(true)}
+              data-testid="community-action-catchment-guide"
+              aria-haspopup="dialog"
+              aria-expanded={drawerOpen}
+            >
+              <FileText size={16} strokeWidth={1.75} aria-hidden="true" />
+              Catchment guide
+            </button>
+          ),
+        },
+        ...(pageSwitch !== undefined && findView === "suburbs"
+          ? []
+          : [
+              {
+                id: "shared",
+                label: "Shared suburbs",
+                icon: <Users strokeWidth={1.75} aria-hidden="true" />,
+                count: sharedSuburbs.suburbs,
+                countTone: "quiet" as const,
+                countLabel: "suburbs",
+                pressed: sharedSuburbOnly,
+                onClick: () => setSharedSuburbOnly((value) => !value),
+                testId: "community-action-shared-suburbs",
+              },
+            ]),
+        // Find: its tabs are the way back, so the phone's Places chip is not drawn there.
+        ...(inPlaces && isPhone && !pageSwitch
+          ? [
+              {
+                id: "places",
+                label: "Places",
+                icon: <MapIcon strokeWidth={1.75} aria-hidden="true" />,
+                href: PLACES_HREF,
+              },
+            ]
+          : []),
+        // PL1: inside Places the header's own New referral is the one way in.
+        ...(inPlaces
+          ? []
+          : [
+              {
+                id: "referral",
+                label: "New referral",
+                icon: <Plus strokeWidth={1.75} aria-hidden="true" />,
+                href: "/bedchart/referrals/new",
+                testId: "community-action-raise-referral",
+              },
+            ]),
+      ]}
+    />
+  );
+
+  // Audit four #63: on Find the phone has no pane row of its own; the Find tabs are the panes. Teams is the
+  // A to Z with the Read alike chip beside the regions; Suburbs stacks the lookup, Read alike and Services.
+  const folderTabs =
+    isPhone && pageSwitch === undefined ? (
+      <FolderTabs label="Catchment panes" value={phonePane} className={styles.paneTabs} testId="community-index-panes">
+        <Segmented
+          className={folderTabClasses.switch}
+          label="Show"
+          size="md"
+          value={phonePane}
+          onChange={setPhonePane}
+          items={[
+            // Suburb leads: "which team covers this suburb" is the phone job.
+            { id: "suburb" as const, label: "Suburb" },
+            { id: "az" as const, label: "A to Z" },
+            { id: "alike" as const, label: "Similar names" },
+            { id: "services" as const, label: "Services" },
+          ]}
+        />
+        {/* Find (mock-up): the pinned and recent places, once used, take their own line under the panes. */}
+        {pageSwitch}
+      </FolderTabs>
+    ) : pageSwitch ? (
+      findRow ? (
+        <FolderTabs
+          label={findView === "suburbs" ? "Suburbs views" : "Community teams views"}
+          value={findView}
+          testId={`find-${findView}-track`}
+        >
+          {pageSwitch}
+        </FolderTabs>
+      ) : null
+    ) : inPlaces ? (
+      <FolderTabs label="Places views" value="catchments" testId="places-track">
+        {/* Review finding 25 (12 Nov 2026): the linked switch draws its own nav, so it takes its own
           name; two navs both called "Places views" failed axe's landmark-unique. */}
-      <Segmented
-        className={folderTabClasses.switch}
-        label="Places or Catchments"
-        size="md"
-        value="catchments"
-        items={[
-          { id: "places" as const, label: "Places", href: PLACES_HREF },
-          { id: "catchments" as const, label: "Catchments", count: allTeams.length, href: PLACES_CATCHMENTS_HREF },
-        ]}
-      />
-    </FolderTabs>
-  ) : null;
+        <Segmented
+          className={folderTabClasses.switch}
+          label="Places or Catchments"
+          size="md"
+          value="catchments"
+          items={[
+            { id: "places" as const, label: "Places", href: PLACES_HREF },
+            { id: "catchments" as const, label: "Catchments", count: allTeams.length, href: PLACES_CATCHMENTS_HREF },
+          ]}
+        />
+      </FolderTabs>
+    ) : null;
 
   return (
     <div className={styles.screen} data-testid="community-index">
@@ -582,11 +713,36 @@ export function CommunityIndex({
         <Hero
           level={1}
           className={cx(topTitle.hero, folderTabs && folderTabClasses.hero)}
-          eyebrow={<SrOnly>{inPlaces ? "Places · Catchments · Statewide" : "Community · Statewide"}</SrOnly>}
+          phoneEyebrow={heroTabs ? "show" : undefined}
+          // Audit four #23: on Find the Demo chip ends the tab row, as on the other Find tabs.
+          aside={
+            pageSwitch !== undefined ? (
+              // Gate r10 FIX 3: on Suburbs the pill drops its clock, so "Which team covers a suburb"
+              // holds one line on a phone.
+              <PageLiveChip paused={live.paused} onTogglePause={live.togglePause} compact={findView === "suburbs"} />
+            ) : undefined
+          }
+          eyebrow={
+            heroTabs ?? (
+              <SrOnly>
+                {pageSwitch
+                  ? `Find · ${findView === "suburbs" ? "Suburbs" : "Community teams"} · Statewide`
+                  : inPlaces
+                    ? "Places · Catchments · Statewide"
+                    : "Community · Statewide"}
+              </SrOnly>
+            )
+          }
           title={
-            <>
-              Which team <span className={topTitle.soft}>covers a suburb</span>
-            </>
+            pageSwitch !== undefined && findView === "teams" ? (
+              <>
+                Community teams <span className={topTitle.soft}>A to Z</span>
+              </>
+            ) : (
+              <>
+                Which team <span className={topTitle.soft}>covers a suburb</span>
+              </>
+            )
           }
         >
           <HeroTop
@@ -597,7 +753,11 @@ export function CommunityIndex({
                   className={styles.topSearch}
                   inputRef={searchInputRef}
                   label="Suburb or postcode"
-                  placeholder="Suburb, alias or postcode"
+                  placeholder={
+                    pageSwitch !== undefined && findView === "teams"
+                      ? "Team, suburb or postcode"
+                      : "Suburb, alias or postcode"
+                  }
                   autoComplete="off"
                   value={query}
                   onValueChange={setQuery}
@@ -609,77 +769,38 @@ export function CommunityIndex({
                   }}
                   shortcut={!isPhone}
                 />
-                <p className={styles.topNote}>From referral catchment documents</p>
               </div>
             }
             figures={
               <HeroFigures
                 label="Catchment figures"
                 items={[
-                  { id: "teams", value: allTeams.length, label: "community teams", testId: "community-figure-teams" },
-                  { id: "suburbs", value: suburbsMapped, label: "suburbs" },
-                  { id: "alike", value: alikeTeamCount, label: "read alike" },
-                ]}
-              />
-            }
-            chips={
-              <HeroQuickChips
-                label="Catchment actions"
-                items={[
-                  {
-                    id: "guide",
-                    label: "Catchment guide",
-                    node: (
-                      <button
-                        ref={drawerTriggerRef}
-                        type="button"
-                        className={heroChipClassName}
-                        onClick={() => setDrawerOpen(true)}
-                        data-testid="community-action-catchment-guide"
-                        aria-haspopup="dialog"
-                        aria-expanded={drawerOpen}
-                      >
-                        <FileText size={16} strokeWidth={1.75} aria-hidden="true" />
-                        Catchment guide
-                      </button>
-                    ),
-                  },
-                  {
-                    id: "shared",
-                    label: "Shared suburbs",
-                    icon: <Users strokeWidth={1.75} aria-hidden="true" />,
-                    count: sharedSuburbs.suburbs,
-                    countTone: "quiet",
-                    countLabel: "suburbs",
-                    pressed: sharedSuburbOnly,
-                    onClick: () => setSharedSuburbOnly((value) => !value),
-                    testId: "community-action-shared-suburbs",
-                  },
-                  ...(inPlaces && isPhone
+                  // Tier 3 item 11: "read alike" toggles the read-alike filter. #88 (audit two, 27 Nov
+                  // 2026): Find's Suburbs hero shows its three figures again, as Teams does and as the
+                  // approved shot; Catchments keeps the one figure.
+                  ...(pageSwitch !== undefined
                     ? [
                         {
-                          id: "places",
-                          label: "Places",
-                          icon: <MapIcon strokeWidth={1.75} aria-hidden="true" />,
-                          href: PLACES_HREF,
+                          id: "teams",
+                          value: allTeams.length,
+                          label: "community teams",
+                          testId: "community-figure-teams",
                         },
+                        { id: "suburbs", value: suburbsMapped, label: "suburbs" },
                       ]
                     : []),
-                  // PL1: inside Places the header's own New referral is the one way in.
-                  ...(inPlaces
-                    ? []
-                    : [
-                        {
-                          id: "referral",
-                          label: "New referral",
-                          icon: <Plus strokeWidth={1.75} aria-hidden="true" />,
-                          href: "/bedchart/referrals/new",
-                          testId: "community-action-raise-referral",
-                        },
-                      ]),
+                  {
+                    id: "alike",
+                    value: alikeTeamCount,
+                    label: "similar names",
+                    pressed: alikeOnly,
+                    onClick: () => setAlikeOnly((value) => !value),
+                    testId: "community-figure-alike",
+                  },
                 ]}
               />
             }
+            chips={chipRow}
           >
             {recentStrip}
           </HeroTop>
@@ -687,7 +808,13 @@ export function CommunityIndex({
 
         {folderTabs}
 
-        <div className={styles.layout} data-phone-pane={isPhone ? phonePane : undefined}>
+        <div
+          className={styles.layout}
+          data-phone-pane={
+            isPhone ? (pageSwitch !== undefined ? (findView === "teams" ? "az" : undefined) : phonePane) : undefined
+          }
+          data-find-view={pageSwitch !== undefined ? findView : undefined}
+        >
           {/* Core pages review: the suburb lookup, the most common job, is a full-width bar above the list. */}
           <div data-pane="suburb" className={`${styles.paneWrap} ${styles.suburbBar}`}>
             {/* D-91: the one suburb lookup card, shared with the ward's Discharges tab and Tools. */}
@@ -696,8 +823,9 @@ export function CommunityIndex({
               query={query}
               onQueryChange={setQuery}
               plainOnPhone
-              picks={contestedPicks}
-              picksLabel="Suburbs whose row names more than one team"
+              picks={recentSuburbs}
+              picksLabel="Suburbs looked up recently in this session"
+              picksHeading="Recent"
               teamMeta={(clinic) => {
                 const facts = factsFor(clinic);
                 return `${facts.service} · ${facts.suburbs} suburbs`;
@@ -739,24 +867,14 @@ export function CommunityIndex({
             data-testid="community-index-teams"
             data-ward-primitive="panel"
           >
-            <div data-ward-primitive="panel-header">
-              <CardHead
-                title="A–Z"
-                eyebrow
-                aside={
-                  <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">
-                    {/* Core pages review: the count shows only when a filter narrows it; the title already says 64. */}
-                    {filtersActive ? (
-                      <>
-                        <strong>{filteredTeams.length}</strong> of {allTeams.length} synthetic team names
-                        <span className={styles.resultHint}>, all names stay</span>
-                      </>
-                    ) : null}
-                  </p>
-                }
-              />
-            </div>
-            <div className={styles.toolbar}>
+            {/* #87 (audit two, 27 Nov 2026): on Find's Community teams the hero already says "A to Z", so
+                the card head goes and its result line moves to the end of the filter row. */}
+            {teamsFind ? null : (
+              <div data-ward-primitive="panel-header">
+                <CardHead title="A–Z" eyebrow aside={resultLine} />
+              </div>
+            )}
+            <div className={cx(styles.toolbar, teamsFind && styles.toolbarTop)}>
               <Segmented
                 label="Filter team names"
                 items={serviceItems}
@@ -764,7 +882,7 @@ export function CommunityIndex({
                 onChange={setServiceFilter}
               />
               <FilterChip pressed={alikeOnly} onPressedChange={setAlikeOnly} tone="warning">
-                Read alike
+                Similar names
               </FilterChip>
               {filtersActive ? (
                 <Button
@@ -779,6 +897,7 @@ export function CommunityIndex({
                   Reset
                 </Button>
               ) : null}
+              {teamsFind ? resultLine : null}
             </div>
             <div className={styles.directoryBody}>
               <nav className={styles.azRail} aria-label="Jump to letter">
@@ -833,7 +952,7 @@ export function CommunityIndex({
                     <span>Team</span>
                     <span>Service</span>
                     <span className={styles.numHead}>Suburbs</span>
-                    <span>Name check</span>
+                    <span>Similar names</span>
                     <span />
                   </div>
                   {[...grouped.keys()].sort().map((letter) => (
@@ -884,7 +1003,7 @@ export function CommunityIndex({
             >
               <CardHead
                 id="community-gateway-family-title"
-                title="Read alike"
+                title="Similar names"
                 eyebrow
                 aside={
                   <span className={styles.headNote}>
@@ -895,7 +1014,7 @@ export function CommunityIndex({
               <CardBody className={styles.familyBody}>
                 {familyGroups.length === 0 ? (
                   <p className={styles.muted} data-testid="community-gateway-family-empty">
-                    No name in this list reads like another.
+                    No name in this list is similar to another.
                   </p>
                 ) : (
                   <>
@@ -933,7 +1052,7 @@ export function CommunityIndex({
                 id="community-gateway-service-title"
                 title="Teams by service"
                 eyebrow
-                aside={<span className={styles.headNote}>Teams, and how many read alike</span>}
+                aside={<span className={styles.headNote}>Teams, and how many have similar names</span>}
               />
               <CardBody>
                 <ServiceBars serviceCounts={serviceCounts} />
@@ -963,19 +1082,17 @@ export function CommunityIndex({
               This is a way in, not a caseload. Rows show no counts of people, no discharges and no follow-up.
             </p>
             <p data-testid="community-index-marker-explanation">
-              A reads like others marker means a name is spelt like another, never that they are the same service. No
-              marker is not a guarantee a name appears only once.
+              A Similar to marker means a name is spelt like another, never that they are the same service. No marker is
+              not a guarantee a name appears only once.
             </p>
             <p data-testid="community-index-source">
-              Every team listed here comes from one extracted source document, and no team has agreed to be represented.
-              Nothing has been checked against a real service.
+              Every team and suburb listed here comes from the referral catchment documents, and no team has agreed to
+              be represented. Names come from referral vocabulary, not a roster of WA services. Nothing has been checked
+              against a real service.
             </p>
           </div>
         </details>
-        <WardPrototypeFooter
-          testId="community-index-governance"
-          note="Names come from referral vocabulary, not a roster of WA services."
-        />
+        <WardPrototypeFooter testId="community-index-governance" />
 
         <Drawer
           open={drawerOpen}
@@ -1037,7 +1154,7 @@ export function CommunityIndex({
               <ul className={guideStyles.guideLegend}>
                 <li>
                   <StatusGlyph tone="warning" size={9} />
-                  <strong>Reads like N</strong>
+                  <strong>Similar to N</strong>
                   <span>spelling close to another name</span>
                 </li>
                 <li>
@@ -1251,7 +1368,7 @@ function TeamRow({
         data-one={facts?.suburbs === 1 ? "true" : undefined}
         data-alike={
           collision
-            ? `reads like ${collision.names.length - 1} ${collision.names.length - 1 === 1 ? "other" : "others"}`
+            ? `similar to ${collision.names.length - 1} ${collision.names.length - 1 === 1 ? "other" : "others"}`
             : undefined
         }
       >
@@ -1283,7 +1400,7 @@ function ReadsAlikeMarker({ collision, onOpen }: { collision: CommunityNameColli
   return (
     <button type="button" className={styles.readsAlike} data-testid="community-gateway-reads-alike" onClick={onOpen}>
       <StatusGlyph tone="warning" size={9} />
-      Reads like {others} {others === 1 ? "other" : "others"}
+      Similar to {others} {others === 1 ? "other" : "others"}
       <SrOnly> — check you have the right one</SrOnly>
       <span className={styles.readsAlikePrint} aria-hidden="true">
         , check you have the right one
@@ -1328,7 +1445,7 @@ function FamilySideBySide({
       <div className={styles.sideTableWrap}>
         <table className={`${tableClasses.table} ${styles.sideTable}`}>
           <caption className="sr-only">
-            {lead}, {total} entries read alike
+            {lead}, {total} entries with similar names
           </caption>
           <thead>
             <tr>
@@ -1417,7 +1534,7 @@ function ServiceBars({ serviceCounts }: { serviceCounts: ReadonlyMap<string, { t
         <ul>
           {present.map((code) => (
             <li key={code}>
-              {SERVICE_BAR_LABEL[code]}, names that read alike: {serviceCounts.get(code)?.alike ?? 0}
+              {SERVICE_BAR_LABEL[code]}, similar names: {serviceCounts.get(code)?.alike ?? 0}
             </li>
           ))}
         </ul>
@@ -1444,7 +1561,7 @@ function SearchEmptyNotice({ query, alikeOnly }: { query: string; alikeOnly: boo
   return (
     <div className={styles.emptyNotice} data-testid="community-gateway-search-empty">
       <p>
-        <strong>{alikeOnly ? "No team in this service reads like another." : "No team matches these filters."}</strong>
+        <strong>{alikeOnly ? "No team in this service has a similar name." : "No team matches these filters."}</strong>
       </p>
       <p>Reset the filters to clear the highlight.</p>
     </div>

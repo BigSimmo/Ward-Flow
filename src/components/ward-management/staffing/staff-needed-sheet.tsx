@@ -63,7 +63,8 @@ export function StaffNeededSheet({
   actingUnitId?: string;
   returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
-  const [shift, setShift] = useState<StaffRequestShift | null>(null);
+  // Audit three #73 (28 Nov 2026): "This shift" starts chosen; count and reason are still chosen.
+  const [shift, setShift] = useState<StaffRequestShift | null>("this_shift");
   const [count, setCount] = useState<StaffRequestCount | null>(null);
   const [reasons, setReasons] = useState<StaffRequestReason[]>([]);
   const save = useWardFormSave(`staff-request:${unitId}`);
@@ -128,7 +129,7 @@ export function StaffNeededSheet({
               );
             }}
           >
-            {existing ? "Update staff request" : "Log staff request"}
+            {existing ? "Update staff request" : "Record staff request"}
           </Button>
         </div>
       }

@@ -1,7 +1,7 @@
 "use client";
 
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
-import { FileText, Stethoscope, Ambulance, Users } from "lucide-react";
+import { Stethoscope, Ambulance, Users, BedSingle } from "lucide-react";
 import { useState } from "react";
 import {
   arrivalEtaLabel,
@@ -17,11 +17,9 @@ import { allEmergencyDepartments } from "@/components/ward-management/ward-sites
 import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 import styles from "./ward-referral-drawer.module.css";
 import { communityTeamOptions } from "./referral-destination-options";
-import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
 import { communityTeamsMatching } from "./community-short-form";
 import { DocumentationPanel, documentationProblems } from "./referral-flow-panels";
-import { chartsCountText } from "./referral-document-links";
-import { DateTimeField, ErrorSummary, StatusGlyph } from "@/components/wf";
+import { DateTimeField, EmptyState, ErrorSummary, StatusGlyph } from "@/components/wf";
 import {
   CLEARANCE_CHECKS,
   CLEARANCE_CHECK_LABELS,
@@ -189,15 +187,12 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
     setSelectedUnitIds,
     selectedRecipient,
     setSelectedRecipient,
-    communityPurpose,
-    communityNeeds,
     previewOpen,
     confirmationOpen,
     setFlowError,
     setArrivalPlanOpen,
     liveMovement,
     effectiveCohort,
-    documentation,
     catchmentTeam,
     catchmentService,
     catchmentConfirmed,
@@ -213,8 +208,6 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
     currentPatient,
     realTimeMatch,
     selectedDestinations,
-    recipientLabels,
-    clearance,
     units,
     referralSex,
     referralGender,
@@ -304,11 +297,14 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
             ) : null}
           </div>
           <div className={styles.wardTable}>
-            <div className={styles.wardTableHead} aria-hidden="true">
-              <span>Ward</span>
-              <span>Ready</span>
-              <span>Waiting list</span>
-            </div>
+            {/* Gate r10 (2 upgrade 2): no column head over an empty list. */}
+            {realTimeMatch.sortedUnits.length ? (
+              <div className={styles.wardTableHead} aria-hidden="true">
+                <span>Ward</span>
+                <span>Ready</span>
+                <span>Waiting list</span>
+              </div>
+            ) : null}
             <div role="list" aria-label="Destinations">
               {realTimeMatch.sortedUnits.map((unit, index) => {
                 const selected = selectedUnitIds.includes(unit.unitId);
@@ -408,12 +404,17 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
               })}
             </div>
             {!realTimeMatch.sortedUnits.length && (
-              <p className={styles.bodyMeta}>
-                {/* A9-10: bed security starts unanswered, so the list waits for it. */}
-                {security
-                  ? "No wards match this cohort and bed security."
-                  : "Choose the bed security on the Referral step to see wards that fit."}
-              </p>
+              // A9-10: bed security starts unanswered, so the list waits for it. Gate r10 (2 upgrade 2):
+              // the kit empty state, quiet glyph and the one sentence, centred in the card.
+              <EmptyState
+                icon={BedSingle}
+                className={styles.wardEmpty}
+                title={
+                  security
+                    ? "No wards match this cohort and bed security."
+                    : "Choose the bed security on the Referral step to see wards that fit."
+                }
+              />
             )}
           </div>
         </section>
@@ -438,7 +439,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
               <input
                 type="search"
                 className={styles.fieldInput}
-                placeholder="Search teams or suburbs"
+                placeholder="Team or suburb"
                 aria-label="Search community teams"
                 autoComplete="off"
                 value={teamSearch}
@@ -521,54 +522,6 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
         </section>
       )}
 
-      <section className={styles.refCard}>
-        <CardHead icon={FileText} title="Referral summary" />
-        <div className={styles.cardBody}>
-          <dl className={styles.factGrid}>
-            <div>
-              <dt>Patient</dt>
-              <dd>{currentPatient.name}</dd>
-            </div>
-            <div>
-              <dt>Catchment</dt>
-              <dd>{catchmentConfirmed ? catchmentTeam : "Needs confirming"}</dd>
-            </div>
-            {community ? (
-              <>
-                <div>
-                  <dt>Purpose</dt>
-                  <dd>{communityPurpose ? communityReferralPurposeLabel(communityPurpose) : "Not chosen"}</dd>
-                </div>
-                <div>
-                  <dt>First contact</dt>
-                  <dd>{communityNeeds.firstContact ? `Within ${communityNeeds.firstContact}` : "Not chosen"}</dd>
-                </div>
-              </>
-            ) : (
-              <>
-                <div>
-                  <dt>Documents</dt>
-                  <dd>{chartsCountText(documentation.charts.length, documentation.toFollow?.length ?? 0)}</dd>
-                </div>
-                <div>
-                  <dt>Clearance</dt>
-                  <dd>{clearance.label}</dd>
-                </div>
-              </>
-            )}
-          </dl>
-          {recipientLabels.length ? (
-            <ul className={styles.tickList}>
-              {recipientLabels.map((label) => (
-                <li key={label}>
-                  <StatusGlyph tone="success" size={10} />
-                  {label}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      </section>
       {destType === "ward" && selectedDestinations.length > 0 && (
         <section className={styles.refCard}>
           <CardHead icon={Ambulance} title="Arrival plan">

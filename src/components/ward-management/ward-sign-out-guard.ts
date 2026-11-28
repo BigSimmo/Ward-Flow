@@ -10,7 +10,7 @@ export async function allowWardSignOut(
       message:
         "Some changes are not confirmed. Signing out clears changes waiting on this page. A change already sent may still have been saved. Review the board before repeating it.",
       confirmLabel: "Sign out",
-      cancelLabel: "Stay here",
+      cancelLabel: "Cancel",
     }),
 ): Promise<boolean> {
   if (!pending || forced) return true;

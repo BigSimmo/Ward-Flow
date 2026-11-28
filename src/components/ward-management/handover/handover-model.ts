@@ -251,7 +251,7 @@ export function handoverSignOffPlace(
   units: readonly Unit[] | undefined,
 ): string {
   if (record.unitId !== undefined) return units?.find((unit) => unit.id === record.unitId)?.name ?? "Ward not recorded";
-  return record.network === true ? "Whole network" : "Ward not recorded";
+  return record.network === true ? "Statewide" : "Ward not recorded";
 }
 
 function unitName(units: Unit[], id: string): string {
@@ -590,7 +590,7 @@ export function nextStep(
   } else if (row.stage === "moving") {
     text =
       row.transport?.leg === "Collected"
-        ? `Confirm arrival at ${row.to?.name ?? "the ward"}`
+        ? `Record arrival at ${row.to?.name ?? "the ward"}`
         : `Confirm collection for ${row.to?.name ?? "the ward"}`;
   } else if (row.stage === "handover_ready") {
     text = `Hand over to ${row.to?.name ?? "the ward"}`;

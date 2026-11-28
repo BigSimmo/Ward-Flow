@@ -1,5 +1,6 @@
 "use client";
 
+import { useShareOutput } from "./statistics-share";
 import { placeDisplayName } from "@/components/ward-management/ward-place-names";
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
@@ -10,7 +11,7 @@ import {
   Button,
   CardBody,
   CardFoot,
-  HeroStat,
+  HeroFigures,
   Icon,
   Menu,
   Meter,
@@ -614,54 +615,61 @@ function CommunityView({ model, slots }: { model: CommunityModel; slots: Communi
             ? `${dueOutText} discharges due in the next 7 days`
             : `Discharges due in the next 7 days: ${dueOutText}`,
         stats: (
-          <>
-            <HeroStat value={inBedCount === null ? figureText(figures.admitted) : small(inBedCount)} label="In a bed" />
-            <HeroStat value={phoneParts.withDate} label="With a date" />
-            {/* Role view (community clinician): No discharge date is in the card below. */}
-            {ownTeamDesk ? null : <HeroStat value={phoneParts.noDate} label="No date" />}
-          </>
+          <HeroFigures
+            label="Team figures"
+            items={[
+              {
+                id: "in-bed",
+                value: inBedCount === null ? figureText(figures.admitted) : small(inBedCount),
+                label: "in a bed",
+              },
+              { id: "with-date", value: phoneParts.withDate, label: "with a date" },
+              // Role view (community clinician): No discharge date is in the card below.
+              ...(ownTeamDesk ? [] : [{ id: "no-date", value: phoneParts.noDate, label: "no date" }]),
+            ]}
+          />
         ),
       }}
       stats={
-        <>
-          {/* Role view (community clinician): the hero leads with In a bed and With a discharge date;
-              the outcome counts are in the card, so three noughts no longer fill the header. */}
-          {(ownTeamDesk ? figureRows.slice(0, 2) : figureRows).map((row) => (
-            <HeroStat
-              key={row.key}
-              value={
+        <HeroFigures
+          label="Team figures"
+          items={[
+            // Role view (community clinician): the hero leads with In a bed and With a discharge date;
+            // the outcome counts are in the card, so three noughts no longer fill the header.
+            ...(ownTeamDesk ? figureRows.slice(0, 2) : figureRows).map((row) => ({
+              id: row.key,
+              value: (
                 <span
                   data-testid={`ward-statistics-community-kpi-${row.key}`}
                   data-unmeasured={isUnmeasured(row.figure) || undefined}
                 >
                   {row.figure.kind === "measured" ? small(row.figure.value) : figureText(row.figure)}
                 </span>
-              }
-              label={
+              ),
+              label:
                 ownTeamDesk && row.key === "admitted" ? (
                   <>
                     In a bed<SrOnly>, or with one pulled</SrOnly>
                   </>
                 ) : (
                   HERO_LABELS[row.key]
-                )
-              }
-            />
-          ))}
-          {ownTeamDesk ? null : (
-            <HeroStat
-              value={notArrangedText}
-              label={
-                <span className={styles.flagged}>
-                  {figures.discharged.kind === "measured" && positive(measuredValue(notArranged)) ? (
-                    <StatusGlyph tone="warning" size={9} />
-                  ) : null}
-                  No follow-up yet
-                </span>
-              }
-            />
-          )}
-        </>
+                ),
+            })),
+            ...(ownTeamDesk
+              ? []
+              : [
+                  {
+                    id: "no-follow-up",
+                    value: notArrangedText,
+                    label: "No follow-up yet",
+                    tone:
+                      figures.discharged.kind === "measured" && positive(measuredValue(notArranged))
+                        ? ("warning" as const)
+                        : undefined,
+                  },
+                ]),
+          ]}
+        />
       }
     >
       {isPhone ? (
@@ -1144,6 +1152,12 @@ function TeamComparison({
     });
   }
 
+  // With the hero's figures, the team comparison CSV is an item of the page's Share menu.
+  const csvShared = useShareOutput(
+    { id: "community-teams", kind: "csv", label: "Export team comparison", order: 1 },
+    exportCsv,
+  );
+
   return (
     <StatCard
       id="comparison"
@@ -1155,8 +1169,8 @@ function TeamComparison({
           value={view}
           onChange={setView}
           items={[
-            { id: "chart", label: "Chart" },
-            { id: "data", label: "Data" },
+            { id: "chart", label: "Graph" },
+            { id: "data", label: "Table" },
           ]}
         />
       }
@@ -1318,9 +1332,11 @@ function TeamComparison({
             {showAll ? "Show fewer" : `Show all ${sorted.length}`}
           </Button>
         ) : null}
-        <Button size="sm" variant="ghost" onClick={exportCsv}>
-          CSV
-        </Button>
+        {csvShared ? null : (
+          <Button size="sm" variant="ghost" onClick={exportCsv}>
+            CSV
+          </Button>
+        )}
       </CardFoot>
     </StatCard>
   );

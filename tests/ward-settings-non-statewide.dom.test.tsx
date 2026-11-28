@@ -90,7 +90,10 @@ describe("the Rules page for a coordinator who is not the statewide one", () => 
     expect(screen.getAllByText("Read only").length).toBeGreaterThan(0);
     cleanup();
     renderRules(STATEWIDE_COORDINATOR);
-    expect(screen.getByText("Changes wait for Save.")).toBeInTheDocument();
+    // Desktop: the save status sits in the hero (Simplify Settings), "All at default" or a count, never "Read only".
+    const saveBar = screen.getByTestId("ward-settings-save-bar");
+    expect(saveBar.textContent ?? "").toMatch(/All at default|changed from default|unsaved/);
+    expect(saveBar.textContent ?? "").not.toMatch(/Read only/);
   });
 
   it("offers no press, key or click that could change a rule", () => {

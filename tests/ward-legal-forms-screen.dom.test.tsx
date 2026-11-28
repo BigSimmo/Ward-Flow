@@ -17,6 +17,7 @@ import {
   legalFormGroupRows,
 } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { isOpen } from "@/components/ward-management/ward-derivations";
+import { hasGap, isOwnedLegalFormCode } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -300,6 +301,34 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     expect(screen.getByTestId("ward-legal-form-sheet")).toContainElement(screen.getByTestId("ward-legal-selected"));
   });
 
+  // Audit four #98: the one drawer pattern. Head: name, pager and close on line one; the form code
+  // then the UMRN and where on line two. Foot: the next step filled, then quiet Open move and Copy to
+  // notes. The body opens on the clock rail and repeats neither the name nor a foot action.
+  it("opens the form in the kit drawer with the name, code and pager in its head and the steps in its foot", () => {
+    renderScreen();
+    selectRowWithoutDueTime();
+    const target = noDeadline[0]!;
+    const sheet = screen.getByTestId("ward-legal-form-sheet");
+    const head = sheet.querySelector("[data-drawer-head]") as HTMLElement;
+    const foot = sheet.querySelector("[data-drawer-foot]") as HTMLElement;
+    const body = screen.getByTestId("ward-legal-selected");
+    const { formalName, umrn } = resolveSubjectPatient(target, seed);
+    expect(within(head).getByRole("heading", { level: 2 })).toHaveTextContent(formalName);
+    expect(within(head).getByTestId("wf-drawer-pager")).toHaveTextContent(/\d+ of \d+/u);
+    if (target.legalForm) expect(head).toHaveTextContent(target.legalForm.code);
+    expect(head).toHaveTextContent(umrn);
+    expect(within(body).queryByRole("heading", { name: formalName })).toBeNull();
+    expect(within(body).queryByRole("button", { name: "Close and show the summary" })).toBeNull();
+    const next = within(foot).getByTestId("ward-legal-form-next");
+    expect(next.className).toMatch(/pri/u);
+    expect(within(foot).getByRole("link", { name: "Open move" })).toBeInTheDocument();
+    expect(within(foot).getByRole("button", { name: "Copy to notes" })).toBeInTheDocument();
+    expect(within(body).queryByRole("link", { name: "Open move" })).toBeNull();
+    expect(within(body).queryByRole("button", { name: /Copy/u })).toBeNull();
+    fireEvent.click(within(head).getByRole("button", { name: "Next form" }));
+    expect(screen.getByTestId("ward-legal-form-sheet")).toBeInTheDocument();
+  });
+
   it("keeps the record-and-tell tasks one button away on desktop, and steps aside for a task", () => {
     renderScreen();
     fireEvent.click(screen.getByRole("button", { name: /^Record and tell/ }));
@@ -363,7 +392,7 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     const undoBtn = screen.getByRole("button", { name: "Undo" });
     fireEvent.click(undoBtn);
     expect(within(panel).getByText(/^Ended/u)).toBeInTheDocument();
-    expect(screen.getByText(`Form extension undone for ${name}.`)).toBeInTheDocument();
+    expect(screen.getByText(`Undone: Form extension for ${name}`)).toBeInTheDocument();
   });
 
   it("blocks Form 3C on a movement that arrived on Form 3D in Record a form and keeps the sheet open", () => {
@@ -418,6 +447,13 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
 
   it("disables Record next form and Extend recorded form with a reason when the active desk role is not allowed", () => {
     const target = withDeadline[0]!;
+    // Audit four #98: the drawer foot's filled step is the open gap's action when there is one, and
+    // every seeded form has one. So the record step is read on a form whose open gap is its written
+    // time: the filled step is then "Add time", which records on the form under the same role gate.
+    const writtenTarget = rows.find(
+      (movement) => hasGap(movement, "written") && isOwnedLegalFormCode(movement.legalForm?.code),
+    );
+    if (!writtenTarget) throw new Error("the fixture no longer carries a form with its written time to add");
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WorkedExamplesOn />
@@ -426,17 +462,24 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
       </WardFlowProvider>,
     );
     setDeskRole("officer");
-    try {
-      const row = document.querySelector(`[data-record-key="${target.id}"]`) as HTMLElement;
+    const open = (movement: (typeof rows)[number]) => {
+      const row = document.querySelector(`[data-record-key="${movement.id}"]`) as HTMLElement;
       fireEvent.click(within(row).getAllByRole("button")[0]!);
+    };
+    try {
+      open(target);
       const panel = screen.getByTestId("ward-legal-selected");
       const extend = within(panel).getByRole("button", { name: "Extend recorded form" });
-      const recordNext = within(panel).getByRole("button", { name: "Record next form" });
-      for (const button of [extend, recordNext]) {
-        expect(button).toHaveAttribute("aria-disabled", "true");
-        // The role gate's reason is announced with the button, not only the greyed state.
-        expect(button).toHaveAccessibleDescription(/\S/);
-      }
+      expect(extend).toHaveAttribute("aria-disabled", "true");
+      // The role gate's reason is announced with the button, not only the greyed state.
+      expect(extend).toHaveAccessibleDescription(/\S/);
+      open(writtenTarget);
+      // The next step is the kit drawer foot's filled button, not part of the body.
+      const recordNext = screen.getByTestId("ward-legal-form-next");
+      expect(recordNext).toHaveTextContent("Add time");
+      expect(screen.getByTestId("ward-legal-selected")).not.toContainElement(recordNext);
+      expect(recordNext).toHaveAttribute("aria-disabled", "true");
+      expect(recordNext).toHaveAccessibleDescription(/\S/);
     } finally {
       setDeskRole("coordinator");
     }

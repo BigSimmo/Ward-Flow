@@ -1,21 +1,18 @@
 import { expect, type Page } from "playwright/test";
 
 /**
- * Opens the ED board's Lists the way a clinician does, so a list row (the referral inbox, for one)
+ * Opens the ED board's lists the way a clinician does, so a list row (the referral inbox, for one)
  * can be read and used.
  *
- * On a desktop the Lists are one open card under the board (handover build, Josh, 1 Nov 2026), so
- * there is nothing to open. On a phone the Lists are a pane chosen from the board's pane switch; this
- * chooses Lists, and leaves a chosen pane as it is, so calling it twice does not close the Lists.
+ * Batch 1 item 14 (26 Nov 2026, r10): Lists joined My list, and the board's tabs are Board and My
+ * list on every size, so this chooses My list (the card that holds the referral inbox, Awaiting
+ * review, Expected and Forms). A chosen tab is left as it is, so calling it twice does not close it.
  */
 export async function openEdLists(page: Page) {
   const screen = page.getByTestId("ward-ed-screen");
-  const card = screen.getByRole("region", { name: /^Lists/u });
-  const pane = screen.getByRole("radio", { name: /^Lists/u });
-  await expect(card.or(pane).first(), "the ED board offers its Lists as a card or a pane").toBeVisible({
-    timeout: 15_000,
-  });
-  if ((await pane.count()) === 0) return;
+  const pane = screen.getByRole("radio", { name: /^My list/u });
+  await expect(pane, "the ED board offers its lists as the My list tab").toBeVisible({ timeout: 15_000 });
   if ((await pane.getAttribute("aria-checked")) !== "true") await pane.click();
   await expect(pane).toHaveAttribute("aria-checked", "true");
+  await expect(screen.getByTestId("ward-ed-my-list")).toBeVisible();
 }

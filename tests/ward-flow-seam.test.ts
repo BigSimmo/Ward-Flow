@@ -129,6 +129,21 @@ const APPROVED_SHARED_MODULES = new Map([
     "@/components/wf/missing-value",
     "the shared empty-value renderer, which distinguishes a field that CANNOT apply from one nobody filled in -- arrived with main and is a clinical-meaning distinction, not a convenience",
   ],
+  [
+    "@/components/wf/menu",
+    "D-284 (Josh, 28 Nov 2026): inside the approved wf folder. menu-early.tsx loads the kit menu late from its leaf, " +
+      "so the menu stays off a phone page's first load (r10 phone size trim).",
+  ],
+  [
+    "@/components/wf/overlay.module.css",
+    "D-284 (Josh, 28 Nov 2026): inside the approved wf folder. The overlay styles menu-early.tsx and the snooze " +
+      "control draw before the late-loaded menu or popover arrives (r10 phone size trim).",
+  ],
+  [
+    "@/components/wf/phone",
+    "D-284 (Josh, 28 Nov 2026): inside the approved wf folder. The transport officer's needs list reads PhoneSheet " +
+      "from its leaf so the officer phone page stays under its script budget (r10 phone size trim).",
+  ],
 ]);
 
 /**
@@ -349,7 +364,9 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // the kit's clock as well as the ward code, so it sits outside both.
     // 16 -> 17 on 2026-11-14: @/components/wf/info-tip, the tap-to-open ⓘ Josh ruled for every
     // explanatory tip (D-224), first read by the rail's Ready rule (R-BEDS-5).
-    expect(APPROVED_SHARED_MODULES.size).toBe(17);
+    // 17 -> 20 on 2026-11-28 (D-284, Josh): @/components/wf/menu, @/components/wf/overlay.module.css
+    // and @/components/wf/phone, leaf paths inside the approved kit folder for the r10 phone size trim.
+    expect(APPROVED_SHARED_MODULES.size).toBe(20);
     // ⚠️ AND THE MEMBERSHIP, NOT ONLY THE COUNT. A size pin cannot tell a widening from a SWAP:
     // remove one approved module, add another, and the count stays unchanged while Ward Flow's seam
     // has changed — which is the thing this list exists to control. The argument is already made
@@ -363,7 +380,10 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
       "@/components/wf",
       "@/components/wf/format",
       "@/components/wf/info-tip",
+      "@/components/wf/menu",
       "@/components/wf/missing-value",
+      "@/components/wf/overlay.module.css",
+      "@/components/wf/phone",
       "@/components/wf/sheet",
       "@/components/wf/sheet-focus",
       "@/components/wf/synthetic-mark",

@@ -16,12 +16,14 @@
  * - Optional quick picks, as one sliding row on a phone (the kit's `phoneRows`).
  *
  * Synthetic catchment data only. Typed words stay in memory: never in the address, a log or storage.
+ * (Community's picks may be its recent suburbs, kept by their document names: community-recent-suburbs.ts.)
  *
  * Example (the Tools sheet):
  *
  *     <SuburbLookupCard teamActions={(clinic) => <Button size="sm">Refer to {clinic}</Button>} />
  */
 import { useId, useMemo, useState, type ReactNode } from "react";
+import { Search } from "lucide-react";
 
 import {
   Badge,
@@ -60,6 +62,8 @@ export type SuburbLookupCardProps = {
   picks?: readonly string[];
   /** The quick picks' spoken name. */
   picksLabel?: string;
+  /** A visible word that leads the picks row ("Recent"), so a history row reads as one (audit three review). */
+  picksHeading?: string;
   /** A reviewed team's second line, for example its health service and suburb count. */
   teamMeta?: (clinic: string) => ReactNode;
   /** A reviewed team's own actions. Never drawn for a contested or unreviewed suburb. */
@@ -80,9 +84,10 @@ export type SuburbLookupCardProps = {
 
 export function SuburbLookupCard({
   title = "Suburb lookup",
-  note = "Which team covers it",
+  note,
   picks = [],
   picksLabel = "Suburbs to try",
+  picksHeading,
   teamMeta,
   teamActions,
   layout = "stacked",
@@ -115,7 +120,13 @@ export function SuburbLookupCard({
       aria-labelledby={`${id}-title`}
       data-testid="suburb-lookup-card"
     >
-      <CardHead id={`${id}-title`} title={title} eyebrow aside={<span className={styles.headNote}>{note}</span>} />
+      {/* #25 (audit two, 27 Nov 2026): no head aside by default; the page or tile already asks the question. */}
+      <CardHead
+        id={`${id}-title`}
+        title={title}
+        eyebrow
+        aside={note ? <span className={styles.headNote}>{note}</span> : undefined}
+      />
       <CardBody className={cx(styles.body, layout === "bar" && styles.bar)}>
         <div className={styles.ask}>
           {owned ? null : (
@@ -132,6 +143,11 @@ export function SuburbLookupCard({
           )}
           {picks.length > 0 ? (
             <div className={cx(styles.picks, phoneRows.chipRow)} role="group" aria-label={picksLabel}>
+              {picksHeading ? (
+                <span className={styles.picksHeading} aria-hidden="true">
+                  {picksHeading}
+                </span>
+              ) : null}
               {picks.map((pick) => (
                 <button
                   key={pick}
@@ -152,35 +168,42 @@ export function SuburbLookupCard({
 
         {/* Not a live region: as today, the answer is read when the reader moves to it, so no count
             is spoken on each keystroke without the words that say where it comes from. */}
-        <div className={styles.answer} id={`${id}-answer`}>
-          {trimmed === "" ? (
-            <p className={styles.hint}>Type a suburb or a 4-digit postcode.</p>
-          ) : lookups.length === 0 ? (
-            <p className={styles.hint}>No suburb is filed under postcode {trimmed} in the catchment documents.</p>
-          ) : (
-            <>
-              {isPostcodeQuery(trimmed) ? (
-                <p className={styles.postcodeLine}>
-                  <b className={styles.num}>{lookups.length}</b> {lookups.length === 1 ? "suburb" : "suburbs"} filed
-                  under {trimmed}
-                </p>
-              ) : null}
-              {shown.map((lookup, index) => (
-                <SuburbAnswer
-                  key={`${lookup.suburb ?? lookup.query}-${index}`}
-                  lookup={lookup}
-                  teamMeta={teamMeta}
-                  teamActions={teamActions}
-                />
-              ))}
-              {lookups.length > SUBURBS_SHOWN ? (
-                <ShowMoreRow onClick={() => setShowAll((all) => !all)} expanded={showAll} controls={`${id}-answer`}>
-                  {showAll ? "Show fewer" : `Show ${lookups.length - SUBURBS_SHOWN} more suburbs`}
-                </ShowMoreRow>
-              ) : null}
-            </>
-          )}
-        </div>
+        {/* #25 (audit two): with quick picks, an empty card shows the picks only, no "Type a suburb" hint. */}
+        {trimmed === "" && picks.length > 0 ? null : (
+          <div className={styles.answer} id={`${id}-answer`} data-empty={trimmed === "" ? "" : undefined}>
+            {trimmed === "" ? (
+              // Gate r10 FIX 2: the empty card's one quiet line spans the card, glyph then sentence.
+              <p className={cx(styles.hint, styles.hintEmpty)}>
+                <Search size={14} strokeWidth={1.75} aria-hidden="true" />
+                Type a suburb or a 4-digit postcode.
+              </p>
+            ) : lookups.length === 0 ? (
+              <p className={styles.hint}>No suburb is filed under postcode {trimmed} in the catchment documents.</p>
+            ) : (
+              <>
+                {isPostcodeQuery(trimmed) ? (
+                  <p className={styles.postcodeLine}>
+                    <b className={styles.num}>{lookups.length}</b> {lookups.length === 1 ? "suburb" : "suburbs"} filed
+                    under {trimmed}
+                  </p>
+                ) : null}
+                {shown.map((lookup, index) => (
+                  <SuburbAnswer
+                    key={`${lookup.suburb ?? lookup.query}-${index}`}
+                    lookup={lookup}
+                    teamMeta={teamMeta}
+                    teamActions={teamActions}
+                  />
+                ))}
+                {lookups.length > SUBURBS_SHOWN ? (
+                  <ShowMoreRow onClick={() => setShowAll((all) => !all)} expanded={showAll} controls={`${id}-answer`}>
+                    {showAll ? "Show fewer" : `Show all ${lookups.length}`}
+                  </ShowMoreRow>
+                ) : null}
+              </>
+            )}
+          </div>
+        )}
       </CardBody>
     </Card>
   );

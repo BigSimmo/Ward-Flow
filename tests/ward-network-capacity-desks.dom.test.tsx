@@ -65,27 +65,30 @@ describe("Capacity for the bed coordinator", () => {
     expect(screen.getByTestId("capacity-hero-ready")).toHaveTextContent(
       // D-179 item 8: the beds still being made ready are said beside Ready.
       new RegExp(
-        `^${totals.ready}\\s*/ ${totals.beds}\\s*Ready · now${totals.pendingPreparation ? `, ${totals.pendingPreparation} being made ready` : ""}$`,
+        `^${totals.ready}\\s*/ ${totals.beds}\\s*Ready${totals.pendingPreparation ? `, ${totals.pendingPreparation} being made ready` : ""}$`,
         "u",
       ),
     );
-    expect(screen.getByTestId("capacity-mismatch")).toHaveTextContent("By bed type · now");
+    expect(screen.getByTestId("capacity-mismatch")).toHaveTextContent("By bed type");
     // Wave 4 (D-191, ruling 8): the forecast is a rail card; the chart opens in its drawer.
-    expect(screen.getByRole("heading", { name: "Expected from recorded dates" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Next few days" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Bed map" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Bed meeting/ })).toBeInTheDocument();
     expect(screen.getByTestId("ward-capacity-governance")).toBeInTheDocument();
   });
 
-  it("keeps Open on TV in the Bed meeting menu, not on the hero (MU3, Josh 5 Nov 2026)", () => {
+  it("keeps Open on TV off the hero; the agenda is its own chip and the sheet holds the TV door (MU3, audit two #80)", () => {
     renderCapacity();
     expect(screen.queryByRole("link", { name: /Open on TV/ })).not.toBeInTheDocument();
-    // Wave 4 (D-191, ruling 8): the sheet is the hero's one action, one tap; the TV view and the
-    // agenda sit under its caret.
+    // Wave 4 (D-191, ruling 8): the sheet is the hero's one action, one tap. Audit two #80: Open on TV left
+    // the hero's menu, so the menu held one view and became the plain Agenda chip.
     expect(screen.getByRole("button", { name: "Bed meeting sheet" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /^More bed meeting views/ }));
-    expect(screen.getByRole("menuitem", { name: "Open on TV" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "Open the meeting agenda" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^More bed meeting views/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Open on TV" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open the meeting agenda" })).toBeInTheDocument();
+    // The door to the TV stays in the meeting sheet's own foot.
+    fireEvent.click(screen.getByRole("button", { name: "Bed meeting sheet" }));
+    expect(within(screen.getByRole("dialog")).getByText("Open on TV")).toBeInTheDocument();
   });
 
   it("opens a ward's drawer from the bed map", () => {
@@ -131,7 +134,7 @@ describe("Capacity for a site bed manager", () => {
     expect(screen.getByTestId("capacity-hero-ready")).toHaveTextContent(
       // D-179 item 8: the beds still being made ready are said beside Ready.
       new RegExp(
-        `^${totals.ready}\\s*/ ${totals.beds}\\s*Ready · now${totals.pendingPreparation ? `, ${totals.pendingPreparation} being made ready` : ""}$`,
+        `^${totals.ready}\\s*/ ${totals.beds}\\s*Ready${totals.pendingPreparation ? `, ${totals.pendingPreparation} being made ready` : ""}$`,
         "u",
       ),
     );

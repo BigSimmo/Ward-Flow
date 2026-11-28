@@ -13,6 +13,7 @@ import { useCallback, useState, type KeyboardEvent, type RefObject } from "react
 import { ContextualBackLink, navigateContextuallyBack } from "@/components/contextual-back-link";
 import { waitingText, type waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { HEALTH_SERVICES, type HealthService } from "@/components/ward-management/ward-model";
+import { healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import type {
   ReferralSheetCategory,
   ReferralSheetRequest,
@@ -260,6 +261,13 @@ export function WardBarServiceSelector({
         {/* Josh, 16 Nov 2026: a dot in the service's colour; Statewide's dot holds every service's. */}
         <span className={styles.serviceDot} data-service={activeSwatchKey} aria-hidden="true" />
         <span className={styles.scopeBadgeLabel}>{deskPlace ?? activeServiceBadgeLabel}</span>
+        {/* Audit four #7: a long page name on a phone keeps its room; the chip shrinks to its dot and
+            short code ("NMHS") first. Drawn only beside a long title (see ward-bar.module.css). */}
+        {isPhone && !deskPlace && activeService ? (
+          <span className={styles.scopeBadgeShort} aria-hidden="true">
+            {healthServiceAcronym(activeService)}
+          </span>
+        ) : null}
         {!isFixedJurisdiction && <ChevronDown className={styles.scopeCaret} aria-hidden="true" strokeWidth={1.75} />}
         <span className="sr-only">{deskPlace ?? activeServiceBadgeLabel}</span>
       </button>

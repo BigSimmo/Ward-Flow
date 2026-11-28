@@ -1,5 +1,7 @@
 "use client";
 
+import { ReleasePulledBedSheet } from "@/components/ward-management/release-pulled-bed-sheet-lazy";
+
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import {
   bedsPendingPreparation,
@@ -10,7 +12,6 @@ import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-manag
 import Link from "next/link";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { originPlaceLabel } from "@/components/ward-management/ward-movement-origin";
-import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -19,35 +20,32 @@ import React, { useEffect, useMemo, useRef, useState, useTransition } from "reac
 import styles from "./ward-home-tab.module.css";
 import { pendingDepartureLogRows, type WardShiftLogRow } from "./ward-departure-log";
 import { wardSafeRejectionReason } from "./ward-rejection-text";
-import type { Unit, Movement, Rejection, DeclineReason } from "@/components/ward-management/ward-model";
+import type { Movement } from "@/components/ward-management/ward-model";
 import { EXTRA_TRAVEL_HOLD_MINUTES } from "@/components/ward-management/ward-model";
-import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { withdrawalReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { overduePullNowActNowForWard } from "@/components/ward-management/ward-act-now-items";
 import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import { pullHoldText } from "@/components/ward-management/ward-bed-hold";
-import type { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import { heldUpDueByTomorrow } from "@/components/ward-management/ward-held-up";
-import { EXPECTED_TO_LEAVE_TODAY_LABEL } from "@/components/ward-management/ward-leaving-today";
 import {
   BED_RELEASE_BLOCKED_FIGURE_LABEL,
   deriveAfternoonDischarges,
   closureAwareVerdict,
   restrictionNotice,
-  type OverrideEntry,
 } from "@/components/ward-management/ward-derivations";
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { referralFit, wardStateLine } from "./ward-referral-fit";
 import { AwaitingFitLines, AwaitingIdentity, WardReferralDetailDrawer } from "./ward-awaiting-referral";
-import { OverrideRegister, WardAcceptDialog } from "./ward-on-demand";
+import { OverrideRegister, WardAcceptDialog, WardDeclineReasons } from "./ward-on-demand";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
-import { LayoutGrid, List } from "lucide-react";
+import { useAddressTab } from "@/components/ward-management/ward-url-state";
+import { useAlsoOnWardFigures, type AlsoOnWardFigure } from "../board/ward-board-also-on-ward";
+import { waitingForTransport } from "@/components/ward-management/ward-left-ward";
+import { collectedStep } from "../board/ward-board-collected-step";
 import { WardPlaceOrMove } from "./ward-place-or-move";
 import { pulledTileNote, tileStateLine, WardHomeTileText } from "./ward-home-tab-today";
-import { WardComingAndGoing, type ComingRowUndo } from "./ward-coming-and-going";
-import { WardDeclineReasons } from "./ward-decline-reasons";
+import { WardComingAndGoing } from "./ward-coming-and-going";
 import {
   arrivalRows,
   arrivalsExpectedToday,
@@ -58,21 +56,23 @@ import {
   shortDateLabel,
   type ComingRow,
 } from "./ward-coming-and-going-rows";
-import { WardEverySquares, bedSquareFor } from "./ward-every-bed-squares";
-import { BedSquare, BedSquaresKey } from "@/components/ward-management/bed-squares";
+import { WardEverySquares, bedSquareFor, squareCounts } from "./ward-every-bed-squares";
+import { BedSquare, BedSquaresKey, bedSquaresNotes, bedSquaresTag } from "@/components/ward-management/bed-squares";
 import { useWardTomorrowOutlook } from "./ward-home-outlook";
 import {
   Button,
   buttonClass,
   Card,
   CardHead,
+  ChipGroup,
   Count,
-  Dialog,
   Drawer,
+  FilterChip,
   durMinutes,
   PhoneSheet,
   Segmented,
   SrOnly,
+  StateLine,
   StatusGlyph,
   useIsPhone,
   useMediaQuery,
@@ -96,6 +96,7 @@ import {
   type WardFlowTab,
   type WardShiftView,
 } from "./ward-home-tab-model";
+import type { WardHomeTabProps } from "./ward-home-tab-props";
 
 export {
   canSubmitDecline,
@@ -113,131 +114,26 @@ import { withLoadRetry } from "@/components/ward-management/load-retry";
 /** One column below this width (`.homeTop` in the CSS module repeats it). */
 const WARD_HOME_STACKED_QUERY = "(max-width: 70rem)";
 
+// Fold the Bed board into Ward (Josh's approved version, item 13): the board's dense grid is Every
+// bed's Grid view, loaded when first chosen.
+const WardBoardGrid = dynamic(
+  withLoadRetry(() => import("@/components/ward-management/board/ward-board").then((m) => m.WardBoard)),
+  { ssr: false, loading: () => <StateLine kind="empty" compact title="Loading the grid" /> },
+);
+
+/** Every bed's views: the bed picture (default) and the Bed board's dense grid ("Full bed list" covers a list). */
+const BED_VIEWS = ["picture", "grid"] as const;
+type BedView = (typeof BED_VIEWS)[number];
+/** The "Also on this ward" chips under the bed picture's key, each lighting its beds. */
+type AlsoKey = Extract<AlsoOnWardFigure["key"], "awayAtEd" | "onLeave" | "overThreeMonths">;
+const ALSO_CHIPS: readonly AlsoKey[] = ["awayAtEd", "onLeave", "overThreeMonths"];
+
 const ArrivalIdentityDialog = dynamic(
   withLoadRetry(() =>
     import("@/components/ward-management/arrival-identity-dialog").then((m) => m.ArrivalIdentityDialog),
   ),
   { ssr: false },
 );
-
-interface WardHomeTabProps {
-  unit: Unit;
-  units: Unit[];
-  capacity: { available: number; occupied: number };
-  accepted: Movement[];
-  heldAfterStop?: Movement[];
-  incoming: Movement[];
-  withdrawn: Movement[];
-  overridesHere: OverrideEntry[];
-  now: Instant;
-  presentation: "overview" | "answer";
-  activeAnswerIndex: number;
-  setAnswerIndex: React.Dispatch<React.SetStateAction<number>>;
-  visibleIncoming: Movement[];
-  declineOpenFor: string | null | undefined;
-  toggleDecline: (movementId: string) => void;
-  declineReason: DeclineReason | "" | undefined;
-  setDeclineReason:
-    React.Dispatch<React.SetStateAction<DeclineReason | undefined>> | ((reason: DeclineReason | undefined) => void);
-  submitDecline: (event: React.FormEvent<HTMLFormElement>, movementId: string) => void;
-  priorRejectionCountRef: React.MutableRefObject<number>;
-  rejections: Rejection[];
-  dispatch: (action: WardFlowEvent) => void;
-  setCheckToken: React.Dispatch<React.SetStateAction<number>>;
-  recentAnswers: Array<{ key: string; movementId: string; outcome: string; reason?: string; at?: Instant }>;
-  breakdown: { confirmedToday: number; expectedToday: number; onLeave: number };
-  capacityConfirmationForm?: () => React.ReactNode;
-  pendingBedReleasesCount: number;
-  unitLeaveBedsCount: number;
-  resolvePatientIdentity: (movementOrAdmission: Parameters<typeof resolveSubjectPatient>[0]) => ResolvedPatientInfo;
-  lastActionRejection: Rejection | null | undefined;
-  overrideReasonForm: (movementId: string) => React.ReactNode;
-  onAcceptInPrinciple?: (movementId: string, unitId: string, extendedHold?: boolean) => void;
-  /** Why this desk may not answer the ward's referrals at all, such as the site bed manager (D-80). */
-  answerBlockedReason?: string;
-  liveFormAlerts: Array<{
-    key: string;
-    title: string;
-    countdown: string;
-    text: string;
-    tone: "critical" | "warning" | "info";
-    actionLabel?: string;
-    actionTarget?: "answer" | "arrival" | "discharges";
-    movementId?: string;
-  }>;
-  onOpenDecisions?: () => void;
-  morningRollupConfirmed?: boolean;
-  morningRollupTimeLabel?: string;
-  onConfirmMorningRollup?: () => void;
-  onConfirmBedsAndMorningRollup?: () => void;
-  onOpenConfirmNumbers?: () => void;
-  onOpenArrival?: (movementId: string) => void;
-  /** Pull a bed for an accepted patient from the Ward flow Admissions list (A1-6). */
-  onPullPatient?: (movementId: string, unitId: string) => void;
-  onOpenDischarges?: () => void;
-  onConfirmRelease?: (releaseId: string) => void; // WH4: the phone round's Confirm discharge
-  /** The ward's beds, as the bed board draws them. Drives Every bed. */
-  bedsList?: BedItem[];
-  /** Audit A3-1: this ward's absences on an order, from `absentOnOrder` (one Act now row each). */
-  absencesOnOrder?: ReturnType<typeof absentOnOrder>;
-  /** Opens the bed's dossier. */
-  onSelectBed?: (bedNumber: number) => void;
-  /** A quiet line under the bed squares (the coordinator's refresh request). */
-  squaresAfter?: React.ReactNode;
-  /** Wave 4 (W7): the inline Undo on an arrival row just pulled ("Undo pull · until 10:46"). */
-  undoPullFor?: (movementId: string) => ComingRowUndo | null;
-  /** Ruling 11 (D-191): Confirm arrival with no pulled bed opens the pull step, then the arrival. */
-  onPullThenArrive?: (movementId: string) => void;
-  /** The bed board's filter, owned by the screen so the hero pills can set it. */
-  bedFilter?: WardBedFilter;
-  onBedFilterChange?: (filter: WardBedFilter) => void;
-  /** Find box text from the screen's tool row: beds that do not match fade. */
-  bedQuery?: string;
-  /** Which list the Ward flow panel shows. */
-  flowTab?: WardFlowTab;
-  onFlowTabChange?: (tab: WardFlowTab) => void;
-  /** Which view This shift shows. */
-  shiftView?: WardShiftView;
-  onShiftViewChange?: (view: WardShiftView) => void;
-  /** True once the morning rollup is past its time and still not confirmed. */
-  morningRollupOverdue?: boolean;
-  /** Opens every arrival in full (the arrivals view). */
-  onOpenArrivals?: () => void;
-  /** Opens the full bed list. */
-  onOpenBeds?: () => void;
-  /** Lets the screen return focus to a bed's tile when its drawer closes. */
-  registerBedTrigger?: (bedNumber: number, element: HTMLButtonElement | null) => void;
-  /**
-   * Bed board (v10 pass 3, opened by Place or move): replaces Every bed and This shift, so Ward flow
-   * stays beside it in the rail exactly as on Home.
-   */
-  bedArea?: React.ReactNode;
-  /**
-   * Phone (v10): which of This shift or Ward flow is open as a bottom sheet. Passed only on a
-   * phone; when it is undefined the cards sit in the page as on desktop.
-   */
-  phonePanel?: "shift" | "flow" | null;
-  onPhonePanelChange?: (panel: "shift" | "flow" | null) => void;
-  /** Desktop and iPad (WH2, 3 Nov 2026): whether the This shift sheet is open over Ward home. */
-  shiftSheetOpen?: boolean;
-  onShiftSheetOpenChange?: (open: boolean) => void;
-  /** Phone: the hero's foot facts (shift, cohort, roster, checking), kept in Ward figures. */
-  phoneHeroFoot?: React.ReactNode;
-  /** Phone: the one line under Ward figures, right now, while it is closed. */
-  phoneFiguresSummary?: string;
-  /** Desktop and tablet: the checks card's counts on one line, shown while it is folded (D-276). */
-  checksSummary?: string;
-  /** Phone: the find box, which sits under Every bed. */
-  phoneFind?: React.ReactNode;
-  /** Phone: the shift name and hours, under the This shift sheet's title. */
-  phoneShiftLabel?: string;
-  /** Phone: tells the screen a bed's card is open in the round, so the ward card steps aside. */
-  onWalkingChange?: (walking: boolean) => void;
-  /** Opens placing and moving (the bed board) inside Ward home (`WardPlaceOrMove`). */
-  onOpenBoard?: () => void;
-  /** People accepted for this ward and waiting to be placed in a bed. */
-  boardWaitingCount?: number;
-}
 
 export function WardHomeTab({
   unit,
@@ -278,6 +174,7 @@ export function WardHomeTab({
   absencesOnOrder = [],
   onSelectBed,
   squaresAfter,
+  refreshMark,
   undoPullFor,
   onPullThenArrive,
   bedFilter: bedFilterProp,
@@ -385,7 +282,13 @@ export function WardHomeTab({
   const [innerShiftSheetOpen, setInnerShiftSheetOpen] = useState(false);
   const shiftSheetOpen = shiftSheetOpenProp ?? innerShiftSheetOpen;
   const setShiftSheetOpen = onShiftSheetOpenChange ?? setInnerShiftSheetOpen;
-  const [boardView, setBoardView] = useState<"board" | "list">("board");
+  const [bedView, setBedView] = useAddressTab<BedView>("view", BED_VIEWS, "picture");
+  // The Grid view's Show, Order and Narrow controls sit in the card head, drawn there by the grid.
+  const [gridControls, setGridControls] = useState<HTMLElement | null>(null);
+  const [alsoOn, setAlsoOn] = useState<AlsoKey | null>(null);
+  const alsoFigures = useAlsoOnWardFigures(unit);
+  // Grid takes the card's full width, as the board did, so the checks card folds under it.
+  const checksFolded = stackedLayout || bedView === "grid";
   const isPhone = useIsPhone();
   // Site bed manager (approved 31 Oct 2026): it looks after the site's beds, not the ward's own round
   // and reminder ticks, so those are left out for it and Morning bed numbers leads This shift.
@@ -554,7 +457,7 @@ export function WardHomeTab({
       : hold
         ? hold.short
         : delivered
-          ? "Confirm arrival"
+          ? "Record arrival"
           : awayAtEd
             ? `At ED ${bed.awayAtEdHours}h`
             : bed.blockReason
@@ -658,8 +561,11 @@ export function WardHomeTab({
     query === "" ||
     fieldsMatchEveryWord(query, [`bed ${row.number}`, row.bed.bedLabel, String(row.bed.patientAlias ?? "")], ["bed"]) ||
     row.number === query;
-  const highlighting = bedFilter !== "all" || query !== "";
-  const isLit = (row: (typeof bedRows)[number]) => matchesFilter(row) && matchesQuery(row);
+  const alsoIds = alsoOn ? alsoFigures.find((figure) => figure.key === alsoOn)?.ids : undefined;
+  const matchesAlso = (row: (typeof bedRows)[number]) =>
+    !alsoIds || (row.bed.admissionId !== undefined && alsoIds.has(row.bed.admissionId));
+  const highlighting = bedFilter !== "all" || query !== "" || alsoOn !== null;
+  const isLit = (row: (typeof bedRows)[number]) => matchesFilter(row) && matchesQuery(row) && matchesAlso(row);
   const litCount = bedRows.filter(isLit).length;
   const makingReady = bedRows.filter(
     (row) => row.bed.status === "ready" && row.bed.heldFor === undefined && row.bed.preparing === true,
@@ -833,7 +739,7 @@ export function WardHomeTab({
       title: "Morning bed numbers",
       detail: `Not confirmed, due ${morningRollupTimeLabel}`,
       tone: "danger",
-      action: { label: "Confirm", run: () => onConfirmMorningRollup?.() },
+      action: { label: "Confirm numbers", run: () => onConfirmMorningRollup?.() },
       secondaryAction:
         !capacityConfirmedThisShift && onConfirmBedsAndMorningRollup
           ? {
@@ -863,7 +769,7 @@ export function WardHomeTab({
       title: "Capacity numbers",
       detail: "Not confirmed this shift",
       tone: "neutral",
-      action: { label: "Confirm", run: () => onOpenConfirmNumbers?.() },
+      action: { label: "Confirm numbers", run: () => onOpenConfirmNumbers?.() },
       secondaryAction:
         !morningRollupConfirmed && onConfirmBedsAndMorningRollup
           ? {
@@ -897,7 +803,7 @@ export function WardHomeTab({
       title: "Morning bed numbers",
       detail: "Still due",
       tone: "neutral",
-      action: { label: "Confirm", run: () => onConfirmMorningRollup?.() },
+      action: { label: "Confirm numbers", run: () => onConfirmMorningRollup?.() },
       secondaryAction:
         !capacityConfirmedThisShift && onConfirmBedsAndMorningRollup
           ? {
@@ -1106,6 +1012,20 @@ export function WardHomeTab({
     />
   );
 
+  // Simplification 26 Nov 2026 (item 6): off the phone the squares strip is gone (the hero has
+  // Ready and Occupied, the filter counts the rest); what only the strip said stays readable as a
+  // quiet line in the Every bed head.
+  const squareTally = squareCounts(bedRows.map((row) => squareOf(row.bed)));
+  const bedsNotesLine = bedSquaresNotes({
+    heldUp: heldUp.length,
+    pulled: bedTally.pulled,
+    prep: squareTally.prep,
+    closed: squareTally.closed,
+    onLeave: unitLeaveBeds.length,
+  })
+    .map((note) => note.text)
+    .join(" · ");
+
   const bedKeyBlock = (
     <div className={styles.bedKey}>
       {/* Wave 4 (D-191): the squares' key, then the row glyphs, in one line at the card foot. */}
@@ -1134,14 +1054,6 @@ export function WardHomeTab({
         </button>
       ) : null}
     </div>
-  );
-
-  // WH5 (3 Nov 2026): a quiet, static mark that the figures are current. No pulse.
-  const liveMark = (
-    <span className={styles.liveMark}>
-      <span className={styles.liveDot} aria-hidden="true" />
-      Updated {formatInstantWithDay(now, now)}
-    </span>
   );
 
   function refusalUnder(movementId: string) {
@@ -1184,7 +1096,7 @@ export function WardHomeTab({
       // Screens send the route's role; the shell's desk stamp decides (D-222).
       { type: "PATIENT_ARRIVED", role: routeRole, now, movementId: movement.id, actingUnitId: unit.id },
       {
-        success: `Arrival recorded for ${who}.`,
+        success: `Arrival recorded for ${who}`,
         who,
         undo: (at) => ({
           type: "UNDO_TRANSPORT_STEP",
@@ -1203,7 +1115,6 @@ export function WardHomeTab({
     return (
       <WardComingAndGoing
         phone={phoneSheets}
-        updated={liveMark}
         arrivals={comingArrivals}
         laterArrivals={laterArrivals}
         backFromLeave={comingLeave}
@@ -1344,7 +1255,7 @@ export function WardHomeTab({
               )}
             </section>
             {incoming.length > 0 ? (
-              <Link className={styles.keyLink} href={`/bedchart/ward/${unit.id}/answer`}>
+              <Link className={styles.keyLink} href={`/bedchart/ward/${encodeURIComponent(unit.id)}?tab=referrals`}>
                 Answer one by one
               </Link>
             ) : null}
@@ -1360,6 +1271,30 @@ export function WardHomeTab({
         onPull={(row) => row.movementId && onPullPatient?.(row.movementId, unit.id)}
         onConfirmArrival={confirmArrival}
         onReleaseDiverted={(row) => row.movementId && setReleaseDivertedId(row.movementId)}
+        waitingForTransport={waitingForTransport(admissions, unit.id).map((entry) => {
+          const subject = admissions.find((admission) => admission.id === entry.admissionId) ?? {
+            id: entry.admissionId,
+          };
+          const resolved = resolvePatientIdentity(subject);
+          const name = resolved.patient ? resolved.formalName : "Name not recorded";
+          return {
+            key: entry.admissionId,
+            name,
+            since: formatInstantWithDay(entry.since, now),
+            // The Bed board's Collected step, with its Undo (item 18).
+            onCollected: () =>
+              runStep(
+                {
+                  type: "MARK_TRANSPORT_COLLECTED",
+                  role: routeRole,
+                  now,
+                  admissionId: entry.admissionId,
+                  actingUnitId: unit.id,
+                },
+                collectedStep(entry.admissionId, unit.id, name),
+              ),
+          };
+        })}
         onOpenArrival={(movementId) => onOpenArrival?.(movementId)}
         onOpenBed={(bedNumber) => onSelectBed?.(bedNumber)}
         onOpenArrivals={onOpenArrivals}
@@ -1434,6 +1369,36 @@ export function WardHomeTab({
     );
   }
 
+  // The grid's tile handlers: a stay opens its bed; an empty, closed or pulled tile names no bed, so it
+  // opens the ward's bed of the same state, in the same place among those beds (batch 3, A).
+  const gridOpeners: {
+    onOpenStay: (admissionId: string) => boolean;
+    onOpenTile: (tile: { kind: string; preparing: boolean; ordinal: number }) => boolean;
+  } = {
+    onOpenStay: (admissionId) => {
+      const bed = (bedsList ?? []).find((item) => item.admissionId === admissionId);
+      if (!bed || !onSelectBed) return false;
+      onSelectBed(Number(bed.bedNumber));
+      return true;
+    },
+    onOpenTile: ({ kind, preparing, ordinal }) => {
+      const beds = bedsList ?? [];
+      const same = beds.filter((bed) =>
+        kind === "empty"
+          ? bed.status === "ready" && (bed.preparing === true) === preparing
+          : kind === "closed" || kind === "blocked"
+            ? bed.status === "closed"
+            : kind === "waiting"
+              ? bed.status === "incoming"
+              : bed.status === "occupied" || bed.status === "leave",
+      );
+      const bed = same[ordinal] ?? same[0];
+      if (!bed || !onSelectBed) return false;
+      onSelectBed(Number(bed.bedNumber));
+      return true;
+    },
+  };
+
   // Phone: the place or move line sits above the round while someone is waiting for a bed.
   const phoneBoardHint =
     phoneSheets && !bedArea && !walkingOnPhone && onOpenBoard ? (
@@ -1448,16 +1413,43 @@ export function WardHomeTab({
           then the round. */}
       {phoneSheets && !bedArea && !walkingOnPhone ? (
         <>
-          <section className={styles.phoneSquares} aria-label={`Beds at ${unit.name}, in squares`}>
-            {everySquares}
-          </section>
+          {/* Final look (26 Nov 2026): Picture or Grid on a phone too, above the fold, and ?view=grid
+              opens the grid straight away, as the old phone Bed board did. The grid brings its own
+              squares, Show chips and sort, so it takes the squares card's place. */}
+          <div className={styles.phoneViewRow}>
+            <Segmented<BedView>
+              size="sm"
+              label="Bed view"
+              items={[
+                { id: "picture", label: "Picture" },
+                { id: "grid", label: "Grid" },
+              ]}
+              value={bedView}
+              onChange={setBedView}
+            />
+          </div>
+          {bedView === "grid" ? (
+            <section className={styles.phoneGrid} aria-label={`Beds at ${unit.name}, in a grid`}>
+              <WardBoardGrid unitId={unit.id} embedded={{ controlsSlot: null, ...gridOpeners }} />
+            </section>
+          ) : (
+            <section className={styles.phoneSquares} aria-label={`Beds at ${unit.name}, in squares`}>
+              {everySquares}
+            </section>
+          )}
           {renderFlowCard()}
         </>
       ) : null}
 
-      <div className={styles.homeTop} data-board={bedArea ? "true" : undefined}>
+      <div
+        className={styles.homeTop}
+        data-board={bedArea ? "true" : undefined}
+        data-view={bedView === "grid" ? "grid" : undefined}
+      >
         {bedArea ? <div className={styles.boardArea}>{bedArea}</div> : null}
-        {phoneSheets && !bedArea && !walkingOnPhone ? (
+        {/* Final look (26 Nov 2026): on a phone with Grid on, the grid above stands for every bed, so
+            the round list (and its head) is not drawn a second time. */}
+        {phoneSheets && !bedArea && !walkingOnPhone && bedView !== "grid" ? (
           <div className={styles.phoneBedsHead}>
             <h2 className={styles.phoneSectionHead}>
               <span id="ward-home-every-bed">Round</span>
@@ -1472,24 +1464,25 @@ export function WardHomeTab({
             counts on one line, so it is not a scroll below the whole bed grid. */}
         {!phoneSheets && phoneHeroFoot ? (
           <details
-            key={stackedLayout ? "stacked" : "side"}
-            open={!stackedLayout}
+            key={checksFolded ? "stacked" : "side"}
+            open={!checksFolded}
             className={`${styles.phoneFigures} ${styles.deskChecks}`}
             data-testid="ward-desk-checks"
           >
             <summary>
               <span className={styles.phoneFiguresTitle}>Checks and ward details</span>
-              {(stackedLayout ? checksSummary : phoneFiguresSummary) ? (
-                <span className={styles.phoneFiguresLine}>{stackedLayout ? checksSummary : phoneFiguresSummary}</span>
+              {(checksFolded ? checksSummary : phoneFiguresSummary) ? (
+                <span className={styles.phoneFiguresLine}>{checksFolded ? checksSummary : phoneFiguresSummary}</span>
               ) : null}
             </summary>
             <div className={styles.phoneFiguresBody}>
               <div className={styles.phoneFiguresFoot}>{phoneHeroFoot}</div>
+              {refreshMark}
             </div>
           </details>
         ) : null}
         <Card
-          hidden={bedArea ? true : undefined}
+          hidden={bedArea || (phoneSheets && !walkingOnPhone && bedView === "grid") ? true : undefined}
           className={`${styles.areaBeds} ${styles.v6Card}`}
           data-walking={walkingOnPhone ? "true" : undefined}
           id="bed-capacity"
@@ -1501,60 +1494,65 @@ export function WardHomeTab({
               id="ward-home-every-bed"
               className={styles.bedsHead}
               title="Every bed"
-              meta={<OutageMeta on={outageTags}>{liveMark}</OutageMeta>}
+              meta={
+                <OutageMeta on={outageTags}>
+                  {/* Fix 7 (audit three): no "Updated" stamp; the header clock governs the counts. */}
+                  <span className={styles.bedsNotes}>{bedSquaresTag(unit)}</span>
+                  {bedsNotesLine ? <span className={styles.bedsNotes}> · {bedsNotesLine}</span> : null}
+                </OutageMeta>
+              }
               action={
                 <span className={styles.headTools}>
                   <WardPlaceOrMove variant="head" waiting={boardWaitingCount} onOpen={onOpenBoard} />
-                  <Segmented
-                    label="Highlight beds"
+                  {bedView === "grid" ? null : (
+                    <Segmented
+                      className={styles.bedHighlight}
+                      label="Highlight beds"
+                      items={[
+                        { id: "all", label: "All", count: bedRows.length },
+                        { id: "look", label: "To check", count: bedRows.filter((row) => row.look).length },
+                        {
+                          id: "leaving",
+                          // Clearer label, no longer than the old (controls document, 26 Nov 2026).
+                          label: "Due out today",
+                          count: bedRows.filter((row) => row.leaving).length,
+                        },
+                        { id: "free", label: "Ready", count: bedRows.filter((row) => row.readyNow).length },
+                        // The hero's Occupied figure sets a filter this group does not list, so it joins
+                        // the group while on and a radio is always checked.
+                        ...(bedFilter === "occupied"
+                          ? [{ id: "occupied" as const, label: "Occupied", count: bedTally.occupied }]
+                          : []),
+                      ]}
+                      value={bedFilter}
+                      onChange={(next) => {
+                        setAlsoOn(null);
+                        setBedFilter(next);
+                      }}
+                    />
+                  )}
+                  <Segmented<BedView>
+                    className={styles.viewSwitchSeg}
+                    label="Bed view"
                     items={[
-                      { id: "all", label: "All", count: bedRows.length },
-                      { id: "look", label: "Needs a look", count: bedRows.filter((row) => row.look).length },
-                      {
-                        id: "leaving",
-                        label: EXPECTED_TO_LEAVE_TODAY_LABEL,
-                        count: bedRows.filter((row) => row.leaving).length,
-                      },
-                      { id: "free", label: "Ready", count: bedRows.filter((row) => row.readyNow).length },
-                      // The hero's Occupied figure sets a filter this group does not list, so it joins
-                      // the group while on and a radio is always checked.
-                      ...(bedFilter === "occupied"
-                        ? [{ id: "occupied" as const, label: "Occupied", count: bedTally.occupied }]
-                        : []),
+                      { id: "picture", label: "Picture" },
+                      { id: "grid", label: "Grid" },
                     ]}
-                    value={bedFilter}
-                    onChange={setBedFilter}
+                    value={bedView}
+                    onChange={setBedView}
                   />
-                  <span className={styles.viewSwitch} role="group" aria-label="Bed view">
-                    <button
-                      type="button"
-                      aria-pressed={boardView === "board"}
-                      aria-label="Board"
-                      title="Board"
-                      onClick={() => {
-                        setBoardView("board");
-                      }}
-                    >
-                      <LayoutGrid strokeWidth={1.75} size={16} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-pressed={boardView === "list"}
-                      aria-label="List"
-                      title="List"
-                      onClick={() => {
-                        setBoardView("list");
-                      }}
-                    >
-                      <List strokeWidth={1.75} size={16} aria-hidden="true" />
-                    </button>
-                  </span>
                 </span>
               }
             />
           )}
-          {phoneSheets ? null : <div className={styles.squaresHead}>{everySquares}</div>}
-          {highlighting && bedRows.length > 0 ? (
+          {/* Fable re-review: in Grid, Place or move and Picture/Grid share the title row, and the
+              grid's Show and Order controls take the row under it. */}
+          {bedView === "grid" && !phoneSheets ? (
+            <div className={styles.gridControlsRow}>
+              <span ref={setGridControls} className={styles.gridControls} data-testid="ward-grid-controls" />
+            </div>
+          ) : null}
+          {highlighting && bedRows.length > 0 && bedView !== "grid" ? (
             <p className={styles.highlightNote} data-testid="ward-bed-highlight-note">
               <span>
                 <b>{litCount}</b> of <b>{bedRows.length}</b> beds highlighted.
@@ -1563,11 +1561,12 @@ export function WardHomeTab({
               {bedFilter === "free" && makingReady > 0 ? (
                 <span>{makingReady} more being made ready, not counted as ready.</span>
               ) : null}
-              {bedFilter === "all" ? null : (
+              {bedFilter === "all" && alsoOn === null ? null : (
                 <button
                   type="button"
                   className={styles.keyLink}
                   onClick={() => {
+                    setAlsoOn(null);
                     setBedFilter("all");
                   }}
                 >
@@ -1594,7 +1593,15 @@ export function WardHomeTab({
               onConfirmRelease={onConfirmRelease}
               renderList={phoneRoundList}
             />
-          ) : boardView === "board" ? (
+          ) : bedView === "grid" ? (
+            <WardBoardGrid
+              unitId={unit.id}
+              embedded={{
+                controlsSlot: gridControls,
+                ...gridOpeners,
+              }}
+            />
+          ) : (
             <ul className={styles.bedTiles} aria-label={`Beds at ${unit.name}`}>
               {shownBeds.map((row) => (
                 <li key={row.bed.bedNumber}>
@@ -1635,64 +1642,34 @@ export function WardHomeTab({
                 </li>
               ))}
             </ul>
-          ) : (
-            <div className={styles.bedTableWrap}>
-              <table className={styles.bedTable} aria-label={`Beds at ${unit.name}, as a list`}>
-                <thead>
-                  <tr>
-                    <th scope="col">Bed</th>
-                    <th scope="col">Patient</th>
-                    <th scope="col">Stay</th>
-                    <th scope="col">Legal</th>
-                    <th scope="col">Going out</th>
-                    <th scope="col">Now</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {shownBeds.map((row) => (
-                    <tr
-                      key={row.bed.bedNumber}
-                      data-look={row.look ? "true" : undefined}
-                      data-dim={isLit(row) ? undefined : "true"}
-                    >
-                      <td>
-                        <button
-                          type="button"
-                          className={styles.bedTableBed}
-                          aria-haspopup="dialog"
-                          aria-label={row.accessibleName}
-                          onClick={() => {
-                            onSelectBed?.(Number(row.bed.bedNumber));
-                          }}
-                        >
-                          {row.glyph ? <StatusGlyph tone={row.glyph} size={9} /> : <span className={styles.glyphGap} />}
-                          {row.number}
-                        </button>
-                      </td>
-                      <td className={styles.bedTableName}>
-                        {row.name}
-                        {typeof row.bed.age === "number" || row.bed.sex ? (
-                          <span className={styles.bedTableSub}>
-                            {[typeof row.bed.age === "number" ? String(row.bed.age) : "", row.bed.sex ?? ""]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </span>
-                        ) : null}
-                      </td>
-                      {/* A stay belongs to someone in the bed: none for a free, closed or pulled bed. */}
-                      <td className={styles.bedTableMono}>
-                        {row.bed.status === "occupied" || row.bed.status === "leave" ? row.days || "Not recorded" : ""}
-                      </td>
-                      <td>{row.bed.legalStatusLabel ?? "Not recorded"}</td>
-                      <td>{row.free ? "" : (row.bed.expectedDischargeLabel ?? "Not recorded")}</td>
-                      <td className={styles.bedTableNow}>{row.note}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
           )}
-          {phoneSheets ? null : bedKeyBlock}
+          {phoneSheets || bedView === "grid" ? null : bedKeyBlock}
+          {phoneSheets || bedView === "grid" ? null : (
+            // Fold the Bed board into Ward (item 13): the board's "Also on this ward" figures with no
+            // other home, as one line of chips under the key; each lights its beds in the picture.
+            <ChipGroup label="Also on this ward" className={styles.alsoBand}>
+              <span className={styles.alsoTitle} aria-hidden="true">
+                Also on this ward
+              </span>
+              {ALSO_CHIPS.map((key) => {
+                const figure = alsoFigures.find((candidate) => candidate.key === key);
+                if (!figure) return null;
+                return (
+                  <FilterChip
+                    key={key}
+                    pressed={alsoOn === key}
+                    count={figure.value}
+                    onPressedChange={(on) => {
+                      setBedFilter("all");
+                      setAlsoOn(on ? key : null);
+                    }}
+                  >
+                    {figure.word}
+                  </FilterChip>
+                );
+              })}
+            </ChipGroup>
+          )}
         </Card>
         {phoneBoardHint !== null && boardWaitingCount === 0 ? phoneBoardHint : null}
         {phoneSheets && !bedArea && !walkingOnPhone ? (
@@ -1764,37 +1741,24 @@ export function WardHomeTab({
         );
       })()}
 
-      <Dialog
-        open={releaseDivertedMovement !== undefined}
+      {/* Simplification R1 (mock-up): the one shared "Release pulled bed" sheet. */}
+      <ReleasePulledBedSheet
+        target={
+          releaseDivertedMovement
+            ? {
+                movementId: releaseDivertedMovement.id,
+                kind: "diverted",
+                displayName: resolvePatientIdentity(releaseDivertedMovement).displayName,
+                umrn: resolvePatientIdentity(releaseDivertedMovement).umrn,
+                context: `Bed pulled at ${unit.name}.`,
+              }
+            : undefined
+        }
+        role={deskRole === "coordinator" ? "coordinator" : "ward"}
+        actingUnitId={unit.id}
         onClose={() => setReleaseDivertedId(null)}
-        size="sm"
-        title="Release pulled bed?"
-        description={`The bed pulled at ${unit.name} for ${releaseDivertedMovement ? resolvePatientIdentity(releaseDivertedMovement).displayName : "this patient"} is offered again and the diverted movement is closed. This cannot be undone.`}
-        secondary={[{ label: "Keep as is", onAction: () => setReleaseDivertedId(null) }]}
-        primary={{
-          label: "Release pulled bed",
-          onAction: () => {
-            setReleaseDivertedId(null);
-            if (!releaseDivertedMovement) return;
-            priorRejectionCountRef.current = rejections.length;
-            wardRaise(
-              dispatch,
-              deskRole === "coordinator" ? "coordinator" : "ward",
-              now,
-            )("RELEASE_DIVERTED_BED", {
-              movementId: releaseDivertedMovement.id,
-              actingUnitId: unit.id,
-            });
-          },
-        }}
-        data-testid="ward-home-release-diverted-confirm"
-      >
-        {releaseDivertedMovement ? (
-          <p data-testid="ward-home-release-diverted-identity">
-            Check: {patientIdentityLine(resolvePatientIdentity(releaseDivertedMovement))}
-          </p>
-        ) : null}
-      </Dialog>
+        testId="ward-home-release-diverted-sheet"
+      />
 
       {arriveRowMovement ? (
         <ArrivalIdentityDialog

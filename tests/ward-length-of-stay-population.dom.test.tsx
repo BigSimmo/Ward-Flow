@@ -90,7 +90,7 @@ function renderWith(admissions: Admission[]) {
 /** The all-stays average sits in the Length of stay card's Data view (owner polish, 3 Nov 2026). */
 function openStayData() {
   const card = screen.queryByTestId("statistics-ward-stays-chart");
-  if (card) fireEvent.click(within(card).getByRole("radio", { name: "Data" }));
+  if (card) fireEvent.click(within(card).getByRole("radio", { name: "Table" }));
 }
 
 describe("the average-stay sentence names the population the figure measures", () => {
@@ -157,12 +157,12 @@ describe("the Length of stay card covers the ward page's stay chart (owner polis
     );
     // Nobody here has left, so there is no completed-stay average, even in the Data view.
     expect(within(card).queryByTestId("ward-stat-length-of-stay")).toBeNull();
-    fireEvent.click(within(card).getByRole("radio", { name: "Data" }));
+    fireEvent.click(within(card).getByRole("radio", { name: "Table" }));
     expect(within(card).queryByTestId("ward-stat-length-of-stay")).toBeNull();
-    fireEvent.click(within(card).getByRole("radio", { name: "Days" }));
-    const days = card;
-    expect(days).toHaveTextContent("0 to 3 days");
-    expect(days).toHaveTextContent("29 days or more");
+    // Simplification mock-up (26 Nov 2026): the Days view left the switch; Bands and Table say the
+    // same counts, so the Table is the view read here (the Data view is now called Table).
+    expect(within(card).getByRole("region", { name: "Admission stay bands, scrollable table" })).toBeInTheDocument();
+    expect(within(card).queryByRole("radio", { name: "Days" })).toBeNull();
   });
 
   it("is on the phone page too, so the ward page's #ward-stay link lands on it there", () => {

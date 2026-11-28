@@ -9,19 +9,33 @@ import { HELP_TIPS_OFF_KEY } from "@/components/ward-management/help-content/war
 import { movementById } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
-import { homeFlowCard, openTodaysReview, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
+import {
+  homeFlowCard,
+  openPlacementFromWaiting,
+  openTodaysReview,
+  showAllFlowRows,
+  showEveryoneWaitingOn,
+} from "./helpers/ward-home-page";
 
 /**
- * Home placement redesign (Josh, 19 Oct 2026), then Home flow (Q340, Q345, 3 Nov 2026): each Flow
- * stage lists its oldest 5 and its own "Show all N" reveals the rest in place. Pick a row the way a
- * coordinator would: open the stages first when the row is further down.
+ * Home placement redesign (Josh, 19 Oct 2026), then r10 (simplification area 2 item 1): Flow folded
+ * into Waiting. Pick a movement the way a coordinator does: its Waiting row (opening folded groups
+ * when it is further down), the person's drawer, then the drawer's "Open on Home", which opens
+ * Home's Placement for it. Returns the Placement drawer, which names the chosen movement.
  */
 async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator> {
   await closePlacement(queue.page());
-  const row = queue.getByTestId(`ward-queue-row-${movementId}`);
-  if (!(await row.isVisible())) await showAllFlowRows(queue);
-  await row.click();
-  return row;
+  return openPlacementFromWaiting(queue.page(), movementId);
+}
+
+/** Waiting's movement rows (not their timeline rows). */
+function waitingRows(queue: Locator): Locator {
+  return queue.locator('[data-testid^="delays-row-"]:not([data-testid^="delays-row-timeline-"])');
+}
+
+/** The movement id of a Waiting row. */
+async function waitingRowId(row: Locator): Promise<string> {
+  return String(await row.getAttribute("data-testid")).replace("delays-row-", "");
 }
 
 /**
@@ -54,9 +68,8 @@ async function gotoCoordinator(page: Page) {
   // for (Josh, 30-31 Oct 2026), so wait for the bar itself and for no Data mode bar above the app.
   await expect(page.getByTestId("ward-bar")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("region", { name: "BedChart data mode" })).toHaveCount(0);
-  // Home v7 (Josh, 22 Oct 2026): Home opens on My list (Needs you since Q340); these journeys read
-  // the queue, now the Flow card.
-  await showEveryoneWaitingOn(page);
+  // r10 (simplification area 2 item 1): the queue is Waiting now; each journey opens it when it
+  // reads the queue, and Home keeps the ED strip and Placement.
 }
 
 /**
@@ -154,7 +167,8 @@ test.describe("@mockup BedChart coordinator screen", () => {
     await gotoCoordinator(page);
 
     await expect(page.getByRole("region", { name: "Emergency department pressure" })).toBeVisible();
-    await expect(homeFlowCard(page)).toBeVisible();
+    // r10 (simplification area 2 item 1): Home's own list is Needs you; the queue is Waiting.
+    await expect(page.getByTestId("home-my-list")).toBeVisible();
     // Home v7 (Josh, 22 Oct 2026): State bedflow moved to the foot of Capacity; Beds that fit
     // takes its place on Home.
     await expect(page.getByRole("region", { name: "State Bedflow", exact: true })).toHaveCount(0);
@@ -173,7 +187,8 @@ test.describe("@mockup BedChart coordinator screen", () => {
     // open shortlist" instead, and the shortlist landmark simply is not in the document yet. A
     // click is therefore a real precondition for this region existing at all now, not an
     // incidental step.
-    await page.locator('[data-testid^="ward-queue-row-"]').first().click();
+    await showEveryoneWaitingOn(page);
+    await pickQueueRow(homeFlowCard(page), await waitingRowId(waitingRows(homeFlowCard(page)).first()));
     await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toBeVisible();
     await closePlacement(page);
     // Home notes 4, issue 4 (Josh, 9 Nov 2026): Today's review replaced the Registers strip, so
@@ -199,27 +214,23 @@ test.describe("@mockup BedChart coordinator screen", () => {
 
     const queue = homeFlowCard(page);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
-    // Home v7 (Josh, 22 Oct 2026): nothing is pre-selected. Placement stays empty, with a prompt
-    // to choose a patient, until a row is chosen.
-    const rows = queue.locator('[data-testid^="ward-queue-row-"]');
-    const firstRow = rows.first();
-    const firstId = (await firstRow.getAttribute("data-testid"))?.replace("ward-queue-row-", "");
+    // Home v7 (Josh, 22 Oct 2026): nothing is pre-selected. Placement stays empty until a movement
+    // is chosen (r10: from its Waiting row, then Open on Home).
     await expect(shortlist).toHaveCount(0);
     await expect(page.getByTestId("home-placement-prompt")).toHaveCount(0); // notes 4: no at-rest prompt
-    await expect(firstRow).toHaveAttribute("aria-pressed", "false");
-    await firstRow.click();
-    await expect(firstRow).toHaveAttribute("aria-pressed", "true");
-    await expect(shortlist).toHaveAttribute("data-subject-movement", String(firstId));
+    await showEveryoneWaitingOn(page);
+    const rows = waitingRows(queue);
+    const firstId = await waitingRowId(rows.first());
+    const secondId = await waitingRowId(rows.nth(1));
+    expect(secondId).not.toBe(firstId);
+    await pickQueueRow(queue, firstId);
+    await expect(shortlist).toHaveAttribute("data-subject-movement", firstId);
 
-    // A second selection replaces the first rather than accumulating. The drawer covers the queue,
+    // A second selection replaces the first rather than accumulating. The drawer covers the page,
     // so the coordinator closes it first.
-    const secondRow = rows.nth(1);
-    const secondId = (await secondRow.getAttribute("data-testid"))?.replace("ward-queue-row-", "");
-    await closePlacement(page);
-    await secondRow.click();
-    await expect(secondRow).toHaveAttribute("aria-pressed", "true");
-    await expect(firstRow).toHaveAttribute("aria-pressed", "false");
-    await expect(shortlist).toHaveAttribute("data-subject-movement", String(secondId));
+    await pickQueueRow(queue, secondId);
+    await expect(shortlist).toHaveCount(1);
+    await expect(shortlist).toHaveAttribute("data-subject-movement", secondId);
   });
 
   // Task 8: the exceptions register is the coordinator's work list, not a report — its own count
@@ -244,20 +255,19 @@ test.describe("@mockup BedChart coordinator screen", () => {
     // review; its rows were already in My list, which is what selects a patient now.
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
-    const firstRow = page.locator('[data-testid^="ward-queue-row-"]').first();
-    const firstId = (await firstRow.getAttribute("data-testid"))?.replace("ward-queue-row-", "");
-    await firstRow.click();
+    await showEveryoneWaitingOn(page);
+    const firstId = await waitingRowId(waitingRows(homeFlowCard(page)).first());
+    await pickQueueRow(homeFlowCard(page), firstId);
     const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
     await expect(shortlist).toBeVisible();
-    await expect(shortlist).toHaveAttribute("data-subject-movement", String(firstId));
-    await expect(firstRow).toHaveAttribute("aria-pressed", "true");
+    await expect(shortlist).toHaveAttribute("data-subject-movement", firstId);
 
     // Phone: the queue survives, the diagram does not, and nothing overflows. Below 48rem the
     // shortlist is a bottom sheet over the page, so it is closed first, as a coordinator would.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole("button", { name: "Close placement and clear selection" }).click();
     await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toHaveCount(0);
-    await expect(homeFlowCard(page)).toBeVisible();
+    await expect(page.getByTestId("home-my-list")).toBeVisible();
     await expect(page.getByRole("region", { name: "State Bedflow", exact: true })).toBeHidden();
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -270,42 +280,65 @@ test.describe("@mockup BedChart coordinator screen", () => {
     await page.setViewportSize({ width: 1600, height: 1100 });
     await gotoCoordinator(page);
 
+    // r10 (simplification area 2 item 1): the queue is Waiting, grouped as Needs attention and then
+    // wait bands. Open every group and read every row.
+    await showEveryoneWaitingOn(page);
     const queue = homeFlowCard(page);
-    // Home flow (Q340, 3 Nov 2026): rows are grouped by stage, so open every stage and read them all.
+    await expect(waitingRows(queue).first()).toBeVisible();
     await showAllFlowRows(queue);
-    const rows = queue.locator('[data-testid^="ward-queue-row-"]');
+    const rows = waitingRows(queue);
     const rowCount = await rows.count();
 
     // A queue that renders zero rows must not be able to satisfy the ordering assertion below
     // by absence — `expect([]).toEqual([])` would otherwise pass silently if the tier badge
     // were ever removed from the row (Task 5 review Important 1). Pin the collected tier list
     // to the same length as the rendered rows, and require at least one row to exist.
+    // Waiting's tier mark leads each row (audit two #51): visible "TN" in the row's first cell.
     const tiers = await rows
-      .locator("[data-tier]")
-      .evaluateAll((nodes) => nodes.map((node) => Number(node.getAttribute("data-tier"))));
+      .locator('td:first-child > span > span[aria-hidden="true"]')
+      .evaluateAll((nodes) => nodes.map((node) => Number(/^T(\d)$/u.exec(node.textContent ?? "")?.[1])));
     expect(rowCount).toBeGreaterThan(0);
     expect(tiers).toHaveLength(rowCount);
+    for (const tier of tiers) expect(tier).toBeGreaterThan(0);
 
     // Audit 1, Josh 20 Oct (CS-04), superseding D-32: every row is longest wait first. Flags,
-    // act-now marks and tiers are badges and do not move a row. No row carries a score. Home flow
-    // (Q340, 3 Nov 2026): the order holds within each stage ("Oldest first in each stage").
-    await expect(queue).toContainText("Oldest first in each stage");
-    const stages = queue.locator("section[aria-label]");
-    expect(await stages.count()).toBeGreaterThan(1);
+    // act-now marks and tiers are badges and do not move a row. No row carries a score. r10: the
+    // order holds within each Waiting group (Needs attention, then each wait band). Waiting writes
+    // no order key, so the order is read off each row's own "… in ED" time, in minutes.
+    const groups = await queue
+      .locator(
+        'tr:has(> td > [data-testid="delays-attention-group"]), tr:has(> td > [data-testid^="delays-band-"]), tr[data-testid^="delays-row-"]:not([data-testid^="delays-row-timeline-"])',
+      )
+      .evaluateAll((nodes) => {
+        const result: { name: string; waits: number[] }[] = [];
+        for (const node of nodes) {
+          const head = node.querySelector('[data-testid="delays-attention-group"], [data-testid^="delays-band-"]');
+          if (head) {
+            result.push({ name: head.getAttribute("data-testid") ?? "", waits: [] });
+            continue;
+          }
+          const text = node.querySelector('[data-ward-type-floor="delays-wait"]')?.textContent ?? "";
+          const match = /(?:(\d+) d)?\s*(?:(\d+) h)?\s*(?:(\d+) min)?\s*in ED/u.exec(text);
+          const minutes = match
+            ? Number(match[1] ?? 0) * 1440 + Number(match[2] ?? 0) * 60 + Number(match[3] ?? 0)
+            : Number.NaN;
+          result.at(-1)?.waits.push(minutes);
+        }
+        return result;
+      });
+    expect(groups.length).toBeGreaterThan(0);
     let ordered = 0;
-    for (const stage of await stages.all()) {
-      const stageName = await stage.getAttribute("aria-label");
-      const waits = await stage
-        .locator('[data-testid^="ward-queue-row-"]')
-        .evaluateAll((nodes) => nodes.map((node) => Number(node.getAttribute("data-wait"))));
+    for (const { name, waits } of groups) {
       ordered += waits.length;
-      for (let i = 1; i < waits.length; i++) {
-        expect(waits[i], `${stageName} row ${i} must not have waited longer than row ${i - 1}`).toBeLessThanOrEqual(
+      for (let i = 0; i < waits.length; i++) {
+        expect(Number.isNaN(waits[i]), `${name} row ${i} shows its wait`).toBe(false);
+        if (i === 0) continue;
+        expect(waits[i], `${name} row ${i} must not have waited longer than row ${i - 1}`).toBeLessThanOrEqual(
           waits[i - 1],
         );
       }
     }
-    // Every rendered row sits in a stage, so none escapes the order check.
+    // Every rendered row sits in a group, so none escapes the order check.
     expect(ordered).toBe(rowCount);
     expect(rowCount).toBeGreaterThan(1);
     await expect(queue.locator("[data-score]")).toHaveCount(0);
@@ -339,10 +372,8 @@ test.describe("@mockup BedChart coordinator screen", () => {
     await expect(queue).not.toContainText("passed its deadline");
 
     // Selecting a movement drives the rest of the screen.
-    await rows.first().click();
-    const shortlist = page.getByRole("complementary", { name: "Placement", exact: true });
-    const selectedId = await queue.locator('[aria-pressed="true"]').getAttribute("data-testid");
-    const selectedMovementId = String(selectedId).replace("ward-queue-row-", "");
+    const selectedMovementId = await waitingRowId(rows.first());
+    const shortlist = await pickQueueRow(queue, selectedMovementId);
     // D-39: the journey id stays on the panel attribute; visible text is the patient, not WF-…
     await expect(shortlist).toHaveAttribute("data-subject-movement", selectedMovementId);
   });
@@ -395,33 +426,44 @@ test.describe("@mockup BedChart coordinator screen", () => {
     // filter that names the clicked department while quietly showing a different one's patients
     // is worse than no filter, and `after < before` alone cannot tell the two apart (Task 4
     // review Important 2).
-    const worstEdId = (await worst.getAttribute("data-testid"))?.replace("ward-ed-", "");
+    const worstEdId = String((await worst.getAttribute("data-testid"))?.replace("ward-ed-", ""));
     const worstWaiting = Number(await worst.getAttribute("data-waiting"));
+    // r10 (simplification area 2 item 1): the queue is Waiting, and an ED tile opens Waiting filtered
+    // to that department (`?ed=`), with a removable chip naming it and a note for everyone hidden.
+    await worst.click();
+    await page.waitForURL((url) => url.pathname === "/bedchart/waiting" && url.searchParams.get("ed") === worstEdId);
     const queue = homeFlowCard(page);
-    // Each Flow stage shows its oldest 5 first; open every stage so the counts compare every row.
+    await expect(queue).toBeVisible();
+    const chip = queue.getByRole("button", { name: /^Remove filter / });
+    await expect(chip).toHaveCount(1);
+    const edLabel = String(await chip.textContent()).trim();
+    expect(edLabel.length).toBeGreaterThan(0);
+    // Open every group so the counts compare every row.
+    const rows = waitingRows(queue);
+    await expect(rows.first()).toBeVisible();
     await showAllFlowRows(queue);
     await expect(queue.getByRole("button", { name: /^Show all \d+/u })).toHaveCount(0);
-    const before = await queue.locator('[data-testid^="ward-queue-row-"]').count();
-    // The tile counts people physically waiting in the department; the filtered queue lists every
-    // queued movement that came from it, including one already moving on. So the queue is compared
-    // with its own unfiltered rows for that origin, and the tile may not exceed it.
-    const expectedFiltered = await queue
-      .locator(`[data-testid^="ward-queue-row-"][data-origin-ed="${worstEdId}"]`)
-      .count();
-    await worst.click();
-    await expect(queue).toContainText("Filtered to");
-    const rows = queue.locator('[data-testid^="ward-queue-row-"]');
-    await expect(rows).toHaveCount(expectedFiltered);
-    expect(worstWaiting).toBeLessThanOrEqual(expectedFiltered);
-    const originIds = await rows.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-origin-ed")));
-    for (const originId of originIds) {
-      expect(originId).toBe(worstEdId);
-    }
+    const filtered = await rows.count();
+    // The tile counts people physically waiting in the department, the same people the filter keeps.
+    expect(filtered).toBeGreaterThan(0);
+    expect(worstWaiting).toBeLessThanOrEqual(filtered);
+    // Every row left is that department's: the row names its origin ED by the chip's short name.
+    for (const row of await rows.all())
+      await expect(row.locator('[data-testid^="delays-select-"]')).toContainText(edLabel);
+    // Filtered out is never placed: the table says how many it hides.
+    const hiddenNote = queue.getByTestId("delays-hidden-note");
+    await expect(hiddenNote).toBeVisible();
+    const hidden = Number(/(\d+) more/u.exec(String(await hiddenNote.textContent()))?.[1]);
+    expect(hidden).toBeGreaterThan(0);
+    const before = filtered + hidden;
     expect(worstWaiting).toBeLessThan(before);
 
     // And clearing restores it.
-    await queue.getByRole("button", { name: /Clear filter/ }).click();
-    await expect(queue.locator('[data-testid^="ward-queue-row-"]')).toHaveCount(before);
+    await chip.click();
+    await expect(chip).toHaveCount(0);
+    await expect(hiddenNote).toHaveCount(0);
+    await showAllFlowRows(queue);
+    await expect(rows).toHaveCount(before);
   });
 
   /**
@@ -798,7 +840,7 @@ test.describe("@mockup BedChart coordinator screen", () => {
     // WF-009's default candidate (Dabakarn) fails exactly one of the eleven gates
     // (prior_decline) — enough to prove ordering without depending on how many gates fail.
     const selectedRow = await pickQueueRow(queue, "WF-009");
-    await expect(selectedRow).toHaveAttribute("aria-pressed", "true");
+    await expect(selectedRow).toHaveAttribute("data-subject-movement", "WF-009");
     // Home v7 (Josh, 22 Oct 2026): Placement mounts only once a patient is chosen, so wait for its
     // gate list to render in full before reading the order.
     await expect(shortlist.locator('[data-testid^="ward-gate-"]')).toHaveCount(11);
@@ -858,7 +900,7 @@ test.describe("@mockup BedChart coordinator screen", () => {
     // WF-009: every one of its three candidates is ineligible, so there is no unit this
     // panel may honestly suggest.
     const ineligibleRow = await pickQueueRow(queue, "WF-009");
-    await expect(ineligibleRow).toHaveAttribute("aria-pressed", "true");
+    await expect(ineligibleRow).toHaveAttribute("data-subject-movement", "WF-009");
     await expect(shortlist).not.toContainText("Suggested destination");
     await expect(shortlist).toContainText("No eligible destination found yet.");
 
@@ -867,7 +909,7 @@ test.describe("@mockup BedChart coordinator screen", () => {
     // passes every gate, so presenting it as fact carries no hidden risk of recommending a failing
     // unit.
     const referredRow = await pickQueueRow(queue, "WF-017");
-    await expect(referredRow).toHaveAttribute("aria-pressed", "true");
+    await expect(referredRow).toHaveAttribute("data-subject-movement", "WF-017");
     await expect(shortlist).toContainText("Parallel referral: BTY Adult Secure");
     await expect(shortlist).not.toContainText("Suggested destination");
 
@@ -1150,8 +1192,11 @@ test.describe("@mockup BedChart coordinator screen", () => {
     await gotoCoordinator(page);
 
     const queue = homeFlowCard(page);
-    // Phone Home lists each Flow stage's oldest 5 with "Show all N"; WF-002 may sit further down.
+    // r10: the queue is Waiting. Open every group, and keep its full row count for the check below.
+    await showEveryoneWaitingOn(page);
+    await expect(waitingRows(queue).first()).toBeVisible();
     await showAllFlowRows(queue);
+    const rows = await waitingRows(queue).count();
     await pickQueueRow(queue, "WF-002");
 
     // No longer pinned (see this test's own doc comment) — the control sits in normal document
@@ -1165,8 +1210,8 @@ test.describe("@mockup BedChart coordinator screen", () => {
     await expect(referButton).toBeVisible();
 
     // And the queue keeps the room it was previously losing to a nested scroller: every movement
-    // the fixture holds is still really rendered, not truncated to make room for anything else.
-    const rows = await queue.locator('[data-testid^="ward-queue-row-"]').count();
+    // the fixture holds is still really rendered on Waiting, not truncated to make room for
+    // anything else.
     expect(rows).toBeGreaterThan(4);
   });
 

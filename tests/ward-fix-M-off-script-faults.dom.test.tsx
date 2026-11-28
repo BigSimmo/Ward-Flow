@@ -37,6 +37,8 @@ describe("A14-12: every row in the slipped-dates list opens a record", () => {
         <DischargeBoard />
       </WardFlowProvider>,
     );
+    // Audit four #127: the dates-overdue figure shows the list; it starts folded.
+    fireEvent.click(within(screen.getByTestId("ward-discharge-figure-overdue")).getByRole("button"));
     const card = screen.getByTestId("ward-discharge-slipping");
     const showAll = within(card).queryByRole("button", { name: /^Show all/u });
     if (showAll) fireEvent.click(showAll);
@@ -96,6 +98,8 @@ describe("K37: Change beside the No transport needed badge", () => {
     const unfold = screen.getByTestId(`ward-ed-unfold-${MOVEMENT}`);
     if (unfold.getAttribute("aria-expanded") !== "true") fireEvent.click(unfold);
     expect(screen.getByTestId(`ward-ed-no-transport-needed-${MOVEMENT}`)).toBeInTheDocument();
-    expect(screen.getByTestId(`ward-ed-book-transport-toggle-${MOVEMENT}`)).toHaveTextContent("Log transport booking");
+    expect(screen.getByTestId(`ward-ed-book-transport-toggle-${MOVEMENT}`)).toHaveTextContent(
+      "Record transport booking",
+    );
   });
 });

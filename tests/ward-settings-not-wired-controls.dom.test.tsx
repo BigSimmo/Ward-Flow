@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -18,11 +18,13 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { findSettings, SETTINGS_SEARCH_ENTRIES } from "@/components/ward-management/settings/settings-search-index";
 import { findRedesignSettings } from "@/components/ward-management/settings/settings-tabs";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider } from "@/components/wf";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
  * Per owner decision D4 (docs/history/plans-2026-09/2026-09-16-drawings-new-look-with-rules.md), a
@@ -273,13 +275,19 @@ describe("settings screen: deleted Preview controls stay out of every build", ()
     "the desk drawer offers no desk that has no screen yet (%s)",
     (build) => {
       vi.stubEnv("NEXT_PUBLIC_WARD_ENVIRONMENT", build);
+      // A27 (26 Nov 2026): the person button holds the one door to Go to a desk, so Find a setting no
+      // longer offers a second one; the drawer is mounted here as that button opens it.
       renderSettings();
-      // D-91 (Josh, 31 Oct 2026): Settings opens Go to a desk from Find a setting, not a button of its own.
       fireEvent.change(screen.getByRole("combobox", { name: "Find a setting" }), {
         target: { value: "workstation" },
       });
-      // Settings by role (3 Nov 2026): the row reads "Try another desk (demo)"; the drawer keeps its name.
-      fireEvent.click(screen.getByRole("option", { name: /Try another desk \(demo\)/ }));
+      expect(screen.queryByRole("option", { name: /Try another desk \(demo\)/ })).toBeNull();
+      cleanup();
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <OperatorSwitcherModal isOpen onClose={() => {}} />
+        </WardFlowProvider>,
+      );
       const drawer = screen.getByRole("dialog", { name: "Go to a desk" });
       expect(within(drawer).queryByRole("button", { name: /Bed manager/ })).toBeNull();
       expect(within(drawer).queryByRole("button", { name: /Executive/ })).toBeNull();

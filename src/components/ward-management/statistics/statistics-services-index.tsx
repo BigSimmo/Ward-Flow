@@ -1,9 +1,10 @@
 "use client";
 
+import { LeadsBrowse, useBrowseEmbedded } from "./statistics-browse-slot";
 import Link from "next/link";
 import { ArrowLeftRight, Send } from "lucide-react";
 
-import { BarList, Donut, HeroStat, PhoneListRow, SrOnly, StatusGlyph, cx, useIsPhone } from "@/components/wf";
+import { BarList, Donut, HeroFigures, PhoneListRow, SrOnly, StatusGlyph, cx, useIsPhone } from "@/components/wf";
 import { serviceStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
@@ -246,6 +247,8 @@ function ServicesIndexView({
   const section = statisticsSectionById("service");
   if (!section) throw new Error("Statistics service section is missing.");
   const isPhone = useIsPhone();
+  // Network's Browse card, Services segment: the services card leads.
+  const embedded = useBrowseEmbedded();
   const shown = (count: StatisticsCount) => statisticsCountText(count);
   const positive = (count: StatisticsCount) => {
     const value = exactStatisticsCount(count);
@@ -282,30 +285,34 @@ function ServicesIndexView({
         title: `${servicesOver} with a ward over ${BED_ALERT_THRESHOLD_PERCENT}%`,
         sub: "Each ring shows the share of beds in use",
         stats: (
-          <>
-            <HeroStat value={services.length} label="Services" />
-            <HeroStat value={totalBeds} label="Beds" />
-            <HeroStat
-              value={shown(totalWaiting)}
-              label={<ShortLabel short="Open movements" full="Open ED movements" />}
-            />
-          </>
+          <HeroFigures
+            label="Service figures"
+            items={[
+              { id: "services", value: services.length, label: "services" },
+              { id: "beds", value: totalBeds, label: "beds" },
+              {
+                id: "waiting",
+                value: shown(totalWaiting),
+                label: <ShortLabel short="open movements" full="open ED movements" />,
+              },
+            ]}
+          />
         ),
       }}
       stats={
-        <>
-          {withBeds.map((entry) => (
-            <HeroStat
-              key={entry.service}
-              value={`${Math.round(entry.share * 100)}%`}
-              label={entry.service}
-              tone={entry.over > 0 ? "warning" : undefined}
-            />
-          ))}
-        </>
+        <HeroFigures
+          label="In use by health service"
+          items={withBeds.map((entry) => ({
+            id: entry.service,
+            value: Math.round(entry.share * 100),
+            unit: "%",
+            label: entry.service,
+            tone: entry.over > 0 ? ("warning" as const) : undefined,
+          }))}
+        />
       }
     >
-      {isPhone ? (
+      {isPhone && !embedded ? (
         <PhoneBody testId="ward-statistics-services-phone">
           <PhoneList label="Health services">
             {services.map((entry) => (
@@ -344,7 +351,7 @@ function ServicesIndexView({
             ))}
           </PhoneList>
           <PhoneDotKey testId="ward-statistics-services-dot-key">
-            {`Amber dot: an open ED movement is past ${LONG_WAIT_HOURS} hours`}
+            {`Amber dot: an open ED movement is over ${LONG_WAIT_HOURS} hours`}
           </PhoneDotKey>
           <PhoneSheetRow
             icon={Send}
@@ -381,170 +388,176 @@ function ServicesIndexView({
         </PhoneBody>
       ) : (
         <>
-          <StatCard
-            id="services"
-            className={index.anchorTarget}
-            title="Health services"
-            meta={`${services.length} services · ${totalWards} ${wardsWord(totalWards)}`}
-            action={<span className={redesign.facts}>In use, pulled, closed and ready</span>}
-            data-testid="ward-statistics-services"
-          >
-            <Strip label="Health services" cols={3}>
-              {tiles.map((entry) => {
-                const title = (
-                  <ServiceLink
-                    href={entry.openable === false ? undefined : serviceStatisticsHref(entry.service)}
-                    className={cx(redesign.nameLink, redesign.nameSub)}
-                  >
-                    <ServiceDot service={entry.service} />
-                    {entry.service}
-                  </ServiceLink>
-                );
-                const ed = entry.departments === 0 ? "No ED" : shown(entry.waiting);
-                const pastLine = positive(entry.over24) ? (
-                  <SrOnly>{`, ${shown(entry.over24)} past ${LONG_WAIT_HOURS} hours`}</SrOnly>
-                ) : null;
-                if (entry.beds === 0) {
+          {/* In Network's Browse card the Bed board's own service cards sit just above, so this one
+              is left out and the referrals matrix leads, full width. */}
+          {embedded ? null : (
+            <StatCard
+              id="services"
+              className={index.anchorTarget}
+              title="Health services"
+              meta={`${services.length} services · ${totalWards} ${wardsWord(totalWards)}`}
+              action={<span className={redesign.facts}>In use, pulled, closed and ready</span>}
+              data-testid="ward-statistics-services"
+            >
+              <Strip label="Health services" cols={3}>
+                {tiles.map((entry) => {
+                  const title = (
+                    <ServiceLink
+                      href={entry.openable === false ? undefined : serviceStatisticsHref(entry.service)}
+                      className={cx(redesign.nameLink, redesign.nameSub)}
+                    >
+                      <ServiceDot service={entry.service} />
+                      {entry.service}
+                    </ServiceLink>
+                  );
+                  const ed = entry.departments === 0 ? "No ED" : shown(entry.waiting);
+                  const pastLine = positive(entry.over24) ? (
+                    <SrOnly>{`, ${shown(entry.over24)} over ${LONG_WAIT_HOURS} hours`}</SrOnly>
+                  ) : null;
+                  if (entry.beds === 0) {
+                    return (
+                      <Tile
+                        key={entry.service}
+                        muted
+                        testId={`ward-statistics-services-card-${entry.service}`}
+                        title={title}
+                        now={<Now>{`${entry.wards} ${wardsWord(entry.wards)}`}</Now>}
+                      >
+                        <p className={redesign.outside}>No inpatient beds recorded</p>
+                        <Facts items={[{ value: ed, label: "Open ED movements" }]} />
+                        {pastLine}
+                      </Tile>
+                    );
+                  }
+                  const percent = Math.round(entry.share * 100);
+                  // The warning sits on "N of M wards at 85%+", so it follows that count, as the hero stat does.
+                  const hot = entry.over > 0;
                   return (
                     <Tile
                       key={entry.service}
-                      muted
                       testId={`ward-statistics-services-card-${entry.service}`}
                       title={title}
                       now={<Now>{`${entry.wards} ${wardsWord(entry.wards)}`}</Now>}
+                      fig={`${percent}%`}
+                      unit={`${entry.inUse} of ${entry.beds} beds in use`}
+                      sub={entry.sites.join(", ")}
                     >
-                      <p className={redesign.outside}>No inpatient beds recorded</p>
-                      <Facts items={[{ value: ed, label: "Open ED movements" }]} />
+                      <BedStack
+                        label={`${entry.service} beds`}
+                        used={entry.inUse}
+                        pulled={entry.pulled}
+                        closed={entry.closed}
+                        ready={entry.ready}
+                        beds={entry.beds}
+                      />
+                      <Facts
+                        items={[
+                          {
+                            value: `${entry.over} of ${entry.wards}`,
+                            label: `wards at ${BED_ALERT_THRESHOLD_PERCENT}%+`,
+                            tone: hot ? "warning" : undefined,
+                            warn: hot,
+                          },
+                          { value: entry.ready, label: "ready" },
+                          { value: entry.pending, label: "being made ready" },
+                          { value: entry.pulled, label: "pulled" },
+                          { value: ed, label: "open ED" },
+                        ]}
+                      />
                       {pastLine}
                     </Tile>
                   );
-                }
-                const percent = Math.round(entry.share * 100);
-                // The warning sits on "N of M wards at 85%+", so it follows that count, as the hero stat does.
-                const hot = entry.over > 0;
-                return (
-                  <Tile
-                    key={entry.service}
-                    testId={`ward-statistics-services-card-${entry.service}`}
-                    title={title}
-                    now={<Now>{`${entry.wards} ${wardsWord(entry.wards)}`}</Now>}
-                    fig={`${percent}%`}
-                    unit={`${entry.inUse} of ${entry.beds} beds in use`}
-                    sub={entry.sites.join(", ")}
-                  >
-                    <BedStack
-                      label={`${entry.service} beds`}
-                      used={entry.inUse}
-                      pulled={entry.pulled}
-                      closed={entry.closed}
-                      ready={entry.ready}
-                      beds={entry.beds}
-                    />
-                    <Facts
-                      items={[
-                        {
-                          value: `${entry.over} of ${entry.wards}`,
-                          label: `wards at ${BED_ALERT_THRESHOLD_PERCENT}%+`,
-                          tone: hot ? "warning" : undefined,
-                          warn: hot,
-                        },
-                        { value: entry.ready, label: "ready" },
-                        { value: entry.pending, label: "being made ready" },
-                        { value: entry.pulled, label: "pulled" },
-                        { value: ed, label: "open ED" },
-                      ]}
-                    />
-                    {pastLine}
-                  </Tile>
-                );
-              })}
-            </Strip>
-            <Foot link={<MoreLink href={STATISTICS_COMPARE_HREF}>Compare wards</MoreLink>}>
-              Pulled beds count as in use
-            </Foot>
-          </StatCard>
-
-          <Grid>
-            <StatCard
-              id="referrals"
-              className={index.anchorTarget}
-              title="Where referrals were accepted"
-              meta="Every referral on record"
-              data-testid="ward-statistics-services-referrals"
-            >
-              <div
-                className={redesign.tableWrap}
-                tabIndex={0}
-                role="region"
-                aria-label="Where referrals were accepted, scrollable table"
-              >
-                <table className={redesign.heat}>
-                  <caption className={styles.srOnly}>
-                    Referrals for a bed, by the referring service (rows) and the service whose ward accepted (columns)
-                  </caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">From, to</th>
-                      {HEALTH_SERVICES.map((service) => (
-                        <th key={service} scope="col" title={service}>
-                          <span>
-                            <ServiceDot service={service} />
-                            <span aria-hidden="true">{service.replace(/ Metro$/u, "")}</span>
-                            <span className={styles.srOnly}>{service}</span>
-                          </span>
-                        </th>
-                      ))}
-                      <th scope="col">Not yet</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {services.map(({ service: from }) => (
-                      <tr key={from}>
-                        <th scope="row">
-                          <span>
-                            <ServiceDot service={from} />
-                            {from}
-                          </span>
-                        </th>
-                        {[...HEALTH_SERVICES, null].map((to) => {
-                          const count = to
-                            ? (accepted.get(`${from}|${to}`) ?? unknownCount)
-                            : (notYet.get(from) ?? unknownCount);
-                          const exact = exactStatisticsCount(count);
-                          return (
-                            <td key={to ?? "not-yet"}>
-                              <span
-                                className={redesign.cell}
-                                data-l={heatLevel(exact)}
-                                data-own={to === from ? "" : undefined}
-                              >
-                                {exact === 0 ? (
-                                  <>
-                                    <span aria-hidden="true">·</span>
-                                    <SrOnly>0</SrOnly>
-                                  </>
-                                ) : (
-                                  shown(count)
-                                )}
-                              </span>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <Foot>
-                <span className={redesign.heatKey} aria-hidden="true">
-                  Fewer <i data-l="1" />
-                  <i data-l="2" />
-                  <i data-l="3" />
-                  <i data-l="4" /> More <i className={redesign.own} /> Own service
-                </span>
-                <span> · Not yet: no ward has accepted so far</span>
+                })}
+              </Strip>
+              <Foot link={<MoreLink href={STATISTICS_COMPARE_HREF}>Compare wards</MoreLink>}>
+                Pulled beds count as in use
               </Foot>
             </StatCard>
+          )}
+
+          <BrowseRow embedded={embedded}>
+            <LeadsBrowse>
+              <StatCard
+                id="referrals"
+                className={index.anchorTarget}
+                title="Where referrals were accepted"
+                meta="Every referral on record"
+                data-testid="ward-statistics-services-referrals"
+              >
+                <div
+                  className={redesign.tableWrap}
+                  tabIndex={0}
+                  role="region"
+                  aria-label="Where referrals were accepted, scrollable table"
+                >
+                  <table className={redesign.heat}>
+                    <caption className={styles.srOnly}>
+                      Referrals for a bed, by the referring service (rows) and the service whose ward accepted (columns)
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">From, to</th>
+                        {HEALTH_SERVICES.map((service) => (
+                          <th key={service} scope="col" title={service}>
+                            <span>
+                              <ServiceDot service={service} />
+                              <span aria-hidden="true">{service.replace(/ Metro$/u, "")}</span>
+                              <span className={styles.srOnly}>{service}</span>
+                            </span>
+                          </th>
+                        ))}
+                        <th scope="col">Not yet</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {services.map(({ service: from }) => (
+                        <tr key={from}>
+                          <th scope="row">
+                            <span>
+                              <ServiceDot service={from} />
+                              {from}
+                            </span>
+                          </th>
+                          {[...HEALTH_SERVICES, null].map((to) => {
+                            const count = to
+                              ? (accepted.get(`${from}|${to}`) ?? unknownCount)
+                              : (notYet.get(from) ?? unknownCount);
+                            const exact = exactStatisticsCount(count);
+                            return (
+                              <td key={to ?? "not-yet"}>
+                                <span
+                                  className={redesign.cell}
+                                  data-l={heatLevel(exact)}
+                                  data-own={to === from ? "" : undefined}
+                                >
+                                  {exact === 0 ? (
+                                    <>
+                                      <span aria-hidden="true">·</span>
+                                      <SrOnly>0</SrOnly>
+                                    </>
+                                  ) : (
+                                    shown(count)
+                                  )}
+                                </span>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <Foot>
+                  <span className={redesign.heatKey} aria-hidden="true">
+                    Fewer <i data-l="1" />
+                    <i data-l="2" />
+                    <i data-l="3" />
+                    <i data-l="4" /> More <i className={redesign.own} /> Own service
+                  </span>
+                  <span> · Not yet: no ward has accepted so far</span>
+                </Foot>
+              </StatCard>
+            </LeadsBrowse>
 
             <StatCard
               id="ed-waits"
@@ -571,11 +584,16 @@ function ServicesIndexView({
                 <Glyph tone="warning" /> Someone waiting past the long-wait line
               </Foot>
             </StatCard>
-          </Grid>
+          </BrowseRow>
         </>
       )}
     </StatisticsPage>
   );
+}
+
+/** Side by side on the page; full width, one under the other, in Network's Browse card. */
+function BrowseRow({ embedded, children }: { embedded: boolean; children: React.ReactNode }) {
+  return embedded ? <>{children}</> : <Grid>{children}</Grid>;
 }
 
 function ServiceLink({ href, children, ...props }: Omit<React.ComponentProps<"a">, "href"> & { href?: string }) {

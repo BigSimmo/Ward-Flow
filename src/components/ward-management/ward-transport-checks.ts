@@ -302,6 +302,17 @@ export type TransportBookingAnswers = {
   estimatedDay?: "today" | "tomorrow";
 };
 
+/** Answers before anything is chosen. Re-applied on every open, so one patient's answers never reach the next. */
+export const BLANK_TRANSPORT_BOOKING: TransportBookingAnswers = {
+  provider: undefined,
+  escortRequired: undefined,
+  cadNumber: "",
+  transportLegalStatus: undefined,
+  estimatedTime: "",
+  // Neither Today nor Tomorrow until the person picks one (Josh, 31 Oct 2026).
+  estimatedDay: undefined,
+};
+
 /** What each unanswered booking question asks, in the order the popups show them. */
 const TRANSPORT_ANSWER_ASKS = {
   provider: "choose who is collecting the patient",

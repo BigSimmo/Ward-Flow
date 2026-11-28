@@ -106,7 +106,7 @@ function compareRow(teamId: string) {
   // v6 (7 Oct 2026): the comparison's exact table sits behind its Data view.
   const card = screen.getByTestId("ward-statistics-community-comparison");
   if (!within(card).queryByTestId("ward-statistics-community-comparison-table")) {
-    fireEvent.click(within(card).getByRole("radio", { name: "Data" }));
+    fireEvent.click(within(card).getByRole("radio", { name: "Table" }));
   }
   const table = screen.getByTestId("ward-statistics-community-comparison-table");
   return within(table).getByTestId(`ward-statistics-community-compare-row-${teamId}`);

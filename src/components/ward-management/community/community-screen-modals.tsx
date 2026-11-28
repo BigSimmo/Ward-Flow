@@ -6,6 +6,7 @@
  * are unchanged; the frame, layout and buttons are the redesign.
  */
 
+import { DEMO_FIGURES } from "./team-2026/midland-demo";
 import { useCallback, useState } from "react";
 import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { Button, Dialog } from "@/components/wf";
@@ -85,7 +86,7 @@ function AssignReferralDialog({ view, referral }: { view: CommunityScreenView; r
       open
       onClose={close}
       // The title is the step; the person (surname first, D-83) is the line under it.
-      title="Assign referral"
+      title="Hand to"
       description={<strong className={styles.who}>{identityOf(referral)}</strong>}
       closeLabel="Close dialog"
       size="md"
@@ -150,10 +151,14 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
     noteModalRef,
     noteModalOverlayRef,
     teamConfig,
-    waitingReferrals,
+    waitingCount,
     caseloadRows,
     recordedCtoCount,
+    isDemoMode,
+    midlandDemo,
   } = view;
+  // Audit four #3: the print view's figures are the page's own (hero caseload, Referrals tab count).
+  const caseloadCount = midlandDemo ? DEMO_FIGURES.caseload : isDemoMode ? teamConfig.caseload : caseloadRows.length;
   const flow = useOptionalWardFlowSelect("dayZero");
   // The page's own modal-focus hook (inert page, Tab wrap, Escape, focus return) holds these two
   // refs; they point at the kit Dialog's panel and scrim, so that hook keeps working round the frame.
@@ -244,11 +249,11 @@ export function CommunityScreenNoteModal({ view }: { view: CommunityScreenView }
               <dl className={styles.tiles}>
                 <div className={styles.tile}>
                   <dt className={styles.tileLabel}>active caseload</dt>
-                  <dd className={styles.tileValue}>{caseloadRows.length}</dd>
+                  <dd className={styles.tileValue}>{caseloadCount}</dd>
                 </div>
                 <div className={styles.tile}>
                   <dt className={styles.tileLabel}>waiting referrals</dt>
-                  <dd className={styles.tileValue}>{waitingReferrals.length}</dd>
+                  <dd className={styles.tileValue}>{waitingCount}</dd>
                 </div>
                 <div className={styles.tile}>
                   <dt className={styles.tileLabel}>recorded Form 5A/5B</dt>

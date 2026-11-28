@@ -250,7 +250,7 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
     (/^\/bedchart\/statistics\/service\//u.test(pathname) ? "Service statistics" : undefined) ??
     (/^\/bedchart\/movements\/[^/]+\/?$/u.test(pathname) ? "Patient" : undefined) ??
     // PL1 (3 Nov 2026): Catchments is a tab of Places, so the bar keeps the page's name.
-    (/^\/bedchart\/hub\/catchments\/?$/u.test(pathname) ? "Places" : undefined) ??
+    (/^\/bedchart\/hub\/catchments\/?$/u.test(pathname) ? "Find" : undefined) ??
     (pathname === WARD_ED_HREF ? "All EDs" : undefined) ??
     (pathname === settingsHref() ? "Settings" : undefined) ??
     (pathname === officerHref() ? "Transport" : undefined) ??

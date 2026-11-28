@@ -4,7 +4,8 @@
 // answered referrals. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import { useState } from "react";
 
-import { Dialog, StatusGlyph } from "@/components/wf";
+import { StatusGlyph } from "@/components/wf";
+import { ReleasePulledBedSheet } from "@/components/ward-management/release-pulled-bed-sheet-lazy";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import { arrivalTimingPhrase } from "@/components/ward-management/ward-arrival-timing";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -22,7 +23,11 @@ import { EdRecordGender } from "./ed-record-gender";
 import { edStageLabel } from "./ed-referral-status";
 import styles from "./ed.module.css";
 
-export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
+/**
+ * `inline` (My list, 26 Nov 2026): the same content under My list's Referred head, always shown,
+ * with its two parts as sub-heads; without it, the phone Lists tab panel as before.
+ */
+export function EdReferredPanel({ ctx, inline = false }: { ctx: EdScreenContext; inline?: boolean }) {
   const {
     now,
     department,
@@ -41,6 +46,7 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
   } = ctx;
   // Audit 24-7 (CT-07): releasing a diverted journey's bed ends the journey, so it asks first,
   // naming the person and the ward holding the bed.
+  const SubHeading = inline ? "h3" : "h2";
   const [releaseDivertedId, setReleaseDivertedId] = useState<string | null>(null);
   const releaseDiverted = outbox.find((movement) => movement.id === releaseDivertedId);
   const releaseDivertedPatient = releaseDiverted
@@ -68,18 +74,22 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
    */
   return (
     <section
-      id="ward-ed-outbox-panel"
-      role="tabpanel"
-      aria-labelledby="ward-ed-referred-tab"
-      hidden={departmentListTab !== "referred"}
-      aria-label="Referred · Still to be moved"
+      {...(inline
+        ? { "aria-label": "Referred" }
+        : {
+            id: "ward-ed-outbox-panel",
+            role: "tabpanel",
+            "aria-labelledby": "ward-ed-referred-tab",
+            hidden: departmentListTab !== "referred",
+            "aria-label": "Referred · Still to be moved",
+            tabIndex: 0,
+          })}
       className={styles.lstWrap}
-      tabIndex={0}
     >
       <div className={styles.referredSubSection} data-testid="ward-ed-outbox">
-        <h2 className={styles.sectionHeading}>
+        <SubHeading className={styles.sectionHeading}>
           Still to be moved &middot; {outbox.length} patient{outbox.length === 1 ? "" : "s"}
-        </h2>
+        </SubHeading>
         <p className={styles.unitMeta}>Referred onward, still in {department.name}.</p>
         {outbox.length === 0 ? (
           <p className={styles.placeholder} data-testid="ward-ed-outbox-empty">
@@ -243,13 +253,13 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
        * feature works; the distinct prefix is what keeps them passing while proving something new.
        */}
       <div className={styles.referredSubSection} data-testid="ward-ed-answered">
-        <h2 className={styles.sectionHeading}>
+        <SubHeading className={styles.sectionHeading}>
           Recent &middot;{" "}
           {answeredAll.length > ANSWERED_VISIBLE_CAP
             ? `${answered.length} of ${answeredAll.length}`
             : answeredAll.length}{" "}
           referral{answeredAll.length === 1 ? "" : "s"}
-        </h2>
+        </SubHeading>
         <p className={styles.unitMeta}>Most recently decided first. Shows the latest {ANSWERED_VISIBLE_CAP}.</p>
         {answeredAll.length === 0 ? (
           <p className={styles.placeholder} data-testid="ward-ed-answered-empty">
@@ -289,27 +299,23 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
           </ul>
         )}
       </div>
-      <Dialog
-        open={releaseDiverted !== undefined}
+      {/* Simplification R1 (mock-up): the one shared "Release pulled bed" sheet. */}
+      <ReleasePulledBedSheet
+        target={
+          releaseDiverted && releaseDivertedPatient
+            ? {
+                movementId: releaseDiverted.id,
+                kind: "diverted",
+                displayName: releaseDivertedPatient.formalName,
+                umrn: releaseDivertedPatient.umrn,
+                context: `Bed pulled at ${releaseDivertedUnit?.name ?? "the accepting ward"}.`,
+              }
+            : undefined
+        }
+        role="ed"
         onClose={() => setReleaseDivertedId(null)}
-        size="sm"
-        title="Release pulled bed?"
-        description={`The bed pulled at ${releaseDivertedUnit?.name ?? "the accepting ward"} for ${releaseDivertedPatient?.formalName ?? "this patient"} is offered again and the diverted journey is closed. This cannot be undone.`}
-        secondary={[{ label: "Cancel", onAction: () => setReleaseDivertedId(null) }]}
-        primary={{
-          label: "Release pulled bed",
-          onAction: () => {
-            setReleaseDivertedId(null);
-            if (!releaseDiverted) return;
-            raise("RELEASE_DIVERTED_BED", { movementId: releaseDiverted.id });
-          },
-        }}
-        data-testid="ward-ed-release-diverted-confirm"
-      >
-        {releaseDivertedPatient ? (
-          <p data-testid="ward-ed-release-diverted-identity">Check: {patientIdentityLine(releaseDivertedPatient)}</p>
-        ) : null}
-      </Dialog>
+        testId="ward-ed-release-diverted-sheet"
+      />
     </section>
   );
 }

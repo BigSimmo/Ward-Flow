@@ -237,7 +237,7 @@
 }
 
 .foldTitle {
-  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
 }
 
 .foldSummary {
@@ -501,6 +501,12 @@
 @media (min-width: 64rem) {
   .layout {
     grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+  }
+
+  /* Q32: with no Just added card the form keeps a readable width and centres under the hero. */
+  .layout.layoutSolo {
+    grid-template-columns: minmax(0, 64rem);
+    justify-content: center;
   }
 
   .grid {

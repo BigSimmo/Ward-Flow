@@ -138,8 +138,10 @@ describe("the discharges board's column contract", () => {
       fireEvent.click(within(row).getAllByRole("button")[0]);
       // Drawer review (6 Nov 2026): the chosen release opens in the kit drawer (PanelDrawer).
       const details = screen.getByTestId("ward-discharge-detail");
-      const reported = within(details).getByText("Last reported", { selector: "dt" }).nextElementSibling;
-      expect(reported?.textContent, "freshness remains available in the selected release detail").toMatch(
+      expect(details).toBeInTheDocument();
+      // Last reported now sits in the drawer head's meta line, not a row of the detail.
+      const reported = screen.getByText(/^Last reported/u);
+      expect(reported.textContent, "freshness remains available in the selected release drawer").toMatch(
         /Confirmed \d{1,2}:\d{2} [ap]m|Never confirmed/u,
       );
     }

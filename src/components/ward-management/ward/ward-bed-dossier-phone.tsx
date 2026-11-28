@@ -3,67 +3,60 @@
 import type { WardCommandDispatch } from "../ward-shared-client";
 
 import React, { type ReactNode } from "react";
-import Link from "next/link";
-import { ChevronRight, X } from "lucide-react";
 import styles from "./ward-bed-dossier-drawer.module.css";
 import { type BedItem } from "./ward-bed-tone";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { BlockerEditor, type BlockerSave } from "./ward-bed-blocker-editor";
-import { Button, Icon, StatusGlyph, buttonClass, cx, type WfTone } from "@/components/wf";
+import { StatusGlyph, type WfTone } from "@/components/wf";
 import type { Observation } from "@/components/ward-management/ward-observation";
-import { WardObservationControl } from "./ward-observation-control";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
-import {
-  BedActions,
-  ChoiceChips,
-  FactTile,
-  NotLeftNotice,
-  Row,
-  shortLegal,
-  type BedAction,
-  type mainActionId,
-} from "./ward-bed-dossier-bits";
+import { ChoiceChips, FactTile, NotLeftNotice, Row, shortLegal } from "./ward-bed-dossier-bits";
 
-// Preview copy of the phone bed sheet from `ward/ward-bed-dossier-drawer.tsx`, split out of the
-// drawer copy to keep both under the line cap.
+// The phone bed record's body, split out of `ward/ward-bed-dossier-drawer.tsx` to keep both under the
+// line cap. Audit four #98: the phone opens the same kit PanelDrawer as tablet and desktop, so this
+// draws the body only; the head, the foot, focus, Escape and the return of focus are the kit's.
 
 const LEAVING_CHOICES = LEAVING_DESTINATIONS.map(({ id, label }) => ({ id, label }));
 
 const CHIP_LABEL = new Map<WfTone, string>([
   ["danger", "Act now"],
   ["warning", "Needs a look"],
-  ["success", "Ready"],
 ]);
 
+/**
+ * The status chip the phone head showed beside the bed pill ("Act now", "Needs a look"), in the
+ * desktop hero's soft pill. Audit four #98: it now follows the bed pill on the kit head's line two.
+ * A ready bed draws none: its title already reads "Ready bed".
+ */
+export function PhoneBedChip({ tone }: { tone: WfTone | null }) {
+  const chip = tone ? CHIP_LABEL.get(tone) : undefined;
+  if (!chip || !tone) return null;
+  return (
+    <span className={styles.heroPill} data-tone={tone} data-testid="bed-record-phone-chip">
+      {chip}
+    </span>
+  );
+}
+
 interface PhoneBedSheetProps {
-  bedLabel: string;
   bedItem: BedItem | undefined;
   isReady: boolean;
   /** C03: a closed bed with nobody in it, in the bed list's words, or null. */
   closedEmpty: { state: string; reason: string } | null;
-  occupantAlias: string;
   isOccupied: boolean;
-  isAwayAtEd: boolean;
-  tone: WfTone | null;
   /** Which day of the stay today is (Perth calendar days, arrival day = Day 1), or null. */
   stayDay: number | null;
-  observation: string;
   expectedPlan: ReactNode;
   timeline: { at: number; tone: WfTone; label: string }[];
   now: number;
-  personHref: string | null;
-  selectedBed: number;
   quickBlockerOpen: boolean;
-  setQuickBlockerOpen: (open: boolean) => void;
   selectedBlocker: BedReleaseBlocker | "";
   setSelectedBlocker: (blocker: BedReleaseBlocker | "") => void;
   blockerSelectRef: React.RefObject<HTMLDivElement | null>;
   drawerLeavingDestination: LeavingDestination | "";
   setDrawerLeavingDestination: (dest: LeavingDestination) => void;
-  onClose: () => void;
-  onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination | "") => void;
   /** The blocker save; its `submit` is absent where this desk may not record one. */
   blockerSave: BlockerSave;
   onSetObservation?: (
@@ -73,17 +66,6 @@ interface PhoneBedSheetProps {
   ) => ReturnType<WardCommandDispatch>;
   /** The observation editing token, the same one the desktop drawer sends. */
   observationToken?: string;
-  onMarkAtEd?: (bedNumber: number) => void;
-  onMarkBack?: (bedNumber: number) => void;
-  onMove?: () => void;
-  onOpenBoard?: () => void;
-  /** Set only for a bed being made ready (A4-24). */
-  onMarkReady?: () => void;
-  onRaiseReferral?: () => void;
-  fullReferralHref?: string | null;
-  roleLockNote?: ReactNode;
-  bedDrawerRef: React.RefObject<HTMLElement | null>;
-  onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
   /** Top 25: extra Plan to leave rows (flagged), built once by the drawer for both layouts. */
   planRows?: ReactNode;
   /** Top 25: a short note under Plan to leave (flagged). */
@@ -91,77 +73,70 @@ interface PhoneBedSheetProps {
   planCriteria?: ReactNode;
   /** D-80: the urgency and legal status controls for the journey this ward sent. */
   sentJourney?: ReactNode;
-  /** D-64: the criteria led discharge note beside "Record that they have left". Warns, never blocks. */
-  leavingCriteriaNote?: string | null;
   /** Top 25: a short note on a bed being made ready (flagged). */
   readyNote?: ReactNode;
   /** Feature item 4: the under 18 on an adult ward notice, under the four facts. */
   safetyNote?: ReactNode;
-  /** WT-02: the paper an involuntary stay needs first; while shown, "Record that they have left" waits. */
+  /** WT-02: the paper an involuntary stay needs first; while shown, "Record discharge" waits. */
   leavePaper?: ReactNode;
   /** The expected leaving line as plain words, for the not-left notice. */
   notLeftPlan: string;
   /** Redesign: the desktop's Going out and Observation tiles, so both layouts show the same four facts. */
   goingOut: string;
   observationShort: string;
-  /** Redesign: the same steps the desktop drawer lists, and which one is filled for this stay. */
-  actions: BedAction[];
-  mainId: ReturnType<typeof mainActionId>;
+  /** Audit two #30: the change level control, under the Observation fact. */
+  observationControl?: ReactNode;
+  /** Audit two B5: the drawer's own rows, so both layouts list the same facts in the same order. */
+  shiftRows?: ReactNode;
+  whyRows: ReactNode;
+  diagnosisTool?: ReactNode;
+  personRows?: ReactNode;
+  confirmation: string;
+  dateMoves?: string | null;
+  readyTool?: ReactNode;
 }
 
 /**
- * Phone (v10 bed sheet): one scrolling sheet, no tabs. Bed and name lead, then four facts, then
- * This person, Leaving and History as plain label rows, the words the desktop drawer uses. Move bed and the blocker sit in the
- * footer; every other action the desktop drawer offers stays in the sheet body.
+ * Phone (v10 bed sheet) body: one scroll, no tabs. Four facts, then This person, Leaving and History
+ * as plain label rows, the words the desktop drawer uses. Audit four #98: the bed and name are in
+ * the kit head, and Patient page, Review current referrals, the steps and the closure controls are
+ * in the kit foot, exactly as on tablet and desktop.
  */
 export function PhoneBedSheet({
-  bedLabel,
   bedItem,
   isReady,
   closedEmpty,
-  occupantAlias,
   isOccupied,
-  tone,
   stayDay,
-  observation,
   expectedPlan,
   timeline,
   now,
-  personHref,
   quickBlockerOpen,
   selectedBlocker,
   setSelectedBlocker,
   blockerSelectRef,
   drawerLeavingDestination,
   setDrawerLeavingDestination,
-  onClose,
   blockerSave,
-  onSetObservation,
-  observationToken,
-  onOpenBoard,
-  onMarkReady,
-  roleLockNote,
-  bedDrawerRef,
-  onKeyDown,
   planRows,
   planNote,
   planCriteria,
   sentJourney,
-  leavingCriteriaNote,
   readyNote,
   safetyNote,
   leavePaper,
-  actions,
-  mainId,
   notLeftPlan,
   goingOut,
   observationShort,
+  observationControl,
+  shiftRows,
+  whyRows,
+  diagnosisTool,
+  personRows,
+  confirmation,
+  dateMoves,
+  readyTool,
 }: PhoneBedSheetProps) {
-  const chip = tone ? CHIP_LABEL.get(tone) : undefined;
-  // Redesign: sex moves up from a fact tile to the line under the name, as on the desktop drawer.
-  const sub = [bedItem?.umrn, isReady || closedEmpty ? null : bedItem?.sex, bedItem?.podLabel ?? bedItem?.designation]
-    .filter(Boolean)
-    .join(" · ");
   const admissionId = bedItem?.admissionId;
   const timelineList = (
     <ul className={styles.timeline}>
@@ -174,247 +149,139 @@ export function PhoneBedSheet({
       ))}
     </ul>
   );
+  if (closedEmpty) {
+    return (
+      <>
+        <div className={styles.phoneFacts}>
+          <FactTile label="Now" value="Closed" tone="closed" />
+          <FactTile label="Offered" value="Not offered" />
+        </div>
+        <dl className={styles.phoneKv} data-testid="ward-drawer-closed-reason">
+          <Row label="Closed">{closedEmpty.state}</Row>
+          <Row label="Reason">{closedEmpty.reason}</Row>
+        </dl>
+        {timeline.length > 0 ? (
+          <>
+            <h3 className={styles.phoneSec}>History</h3>
+            {timelineList}
+          </>
+        ) : null}
+      </>
+    );
+  }
+  if (isReady) {
+    return (
+      <>
+        <div className={styles.phoneFacts}>
+          <FactTile
+            label="Now"
+            value={bedItem?.preparing ? BED_STATE_LABELS.beingMadeReady : "Ready"}
+            tone={bedItem?.preparing ? "neutral" : "success"}
+          />
+          {/* Audit two B4: Pulled for shows only when someone is; otherwise the bed type fills the pair. */}
+          {bedItem?.heldFor ? (
+            <FactTile label="Pulled for" value={bedItem.heldFor} />
+          ) : (
+            <FactTile label="Bed" value={bedItem?.designation ?? "Empty bed"} />
+          )}
+        </div>
+        {bedItem?.heldFor && bedItem.designation ? (
+          <dl className={styles.phoneKv}>
+            <Row label="Bed">{bedItem.designation}</Row>
+          </dl>
+        ) : null}
+        {readyNote}
+        {/* Live audit item 13: an empty bed's closures and reopenings, when it has any. */}
+        {timeline.length > 0 ? (
+          <>
+            <h3 className={styles.phoneSec}>History</h3>
+            {timelineList}
+          </>
+        ) : null}
+      </>
+    );
+  }
   return (
     <>
-      <div
-        className={`${styles.drawerScrim} ${styles.show}`}
-        onClick={onClose}
-        aria-hidden="true"
-        data-sheet-scrim=""
+      <div className={styles.phoneFacts}>
+        {/* Redesign: the same four facts as the desktop drawer. */}
+        <FactTile label="Stay" value={stayDay === null ? "Not recorded" : `Day ${stayDay}`} />
+        <FactTile label="Legal" value={shortLegal(bedItem?.legalStatusLabel)} />
+        <FactTile label="Going out" value={goingOut} tone={bedItem?.pastDate ? "warning" : null} />
+        <FactTile label="Observation" value={observationShort} />
+      </div>
+      {observationControl}
+      <NotLeftNotice bedItem={bedItem} expectedPlan={notLeftPlan} isOccupied={isOccupied} />
+      {safetyNote}
+      {/* Audit two B5: the desktop drawer's facts in its order (Now, then Leaving), built once
+          by the drawer. #30: no Observation row; the level is the fact tile above. */}
+      {shiftRows ? (
+        <>
+          <h3 className={styles.phoneSec}>This shift</h3>
+          <dl className={styles.phoneKv}>{shiftRows}</dl>
+        </>
+      ) : null}
+      <h3 className={styles.phoneSec}>Why they are here</h3>
+      <dl className={styles.phoneKv}>{whyRows}</dl>
+      {diagnosisTool}
+      {personRows ? (
+        <>
+          <h3 className={styles.phoneSec}>This person</h3>
+          <dl className={styles.phoneKv}>{personRows}</dl>
+        </>
+      ) : null}
+      <h3 className={styles.phoneSec}>Leaving</h3>
+      <dl className={styles.phoneKv}>
+        <Row label="Expected">{expectedPlan}</Row>
+        <Row label="Confirmed">{confirmation}</Row>
+        {dateMoves ? <Row label="Date moves">{dateMoves}</Row> : null}
+        {planRows}
+      </dl>
+      {planNote}
+      {readyTool}
+      <BlockerEditor
+        save={blockerSave}
+        blockReason={bedItem?.blockReason}
+        open={quickBlockerOpen}
+        selected={selectedBlocker}
+        setSelected={setSelectedBlocker}
+        selectRef={blockerSelectRef}
       />
-      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
-      <aside
-        ref={bedDrawerRef}
-        className={cx(styles.drawer, styles.show, styles.phoneSheet)}
-        data-testid="bed-telemetry-drawer"
-        aria-labelledby="drawer-bed-title"
-        role="dialog"
-        aria-modal="true"
-        tabIndex={-1}
-        onKeyDown={(event) => {
-          onKeyDown(event);
-          if (event.key === "Escape") {
-            event.preventDefault();
-            event.stopPropagation();
-          }
-        }}
-      >
-        <div className={styles.grab} aria-hidden="true" />
-        <header className={styles.phoneHead}>
-          <div className={styles.drawerHeading}>
-            <h2 id="drawer-bed-title" className={styles.phoneTitle}>
-              {bedLabel} ·{" "}
-              {isReady
-                ? bedItem?.preparing
-                  ? BED_STATE_LABELS.beingMadeReady
-                  : "Ready bed"
-                : closedEmpty
-                  ? "Closed bed"
-                  : occupantAlias}
-            </h2>
-            {sub ? <p className={styles.drawerKicker}>{sub}</p> : null}
-            {/* WH4 polish: the same soft pill as the desktop hero, tinted by the bed's tone. */}
-            {chip && tone ? (
-              <span className={cx(styles.heroPill, styles.phonePill)} data-tone={tone}>
-                {chip}
-              </span>
-            ) : null}
-          </div>
-          {/* Redesign: the kit sheet's close, a 36 px face with a larger invisible tap area. */}
-          <Button
-            variant="ghost"
-            size="sm"
-            iconOnly
-            icon={X}
-            aria-label="Close bed drawer"
-            className={styles.phoneClose}
-            onClick={onClose}
-            data-sheet-autofocus="true"
+      {isOccupied && admissionId ? (
+        <>
+          <h3 className={styles.phoneSec}>Going to</h3>
+          <ChoiceChips
+            label="Where are they going?"
+            items={LEAVING_CHOICES}
+            value={drawerLeavingDestination}
+            onChange={setDrawerLeavingDestination}
+            testId="drawer-leaving-dest"
           />
-        </header>
-
-        <div className={styles.phoneBody}>
-          {closedEmpty ? (
-            <>
-              <div className={styles.phoneFacts}>
-                <FactTile label="Now" value="Closed" tone="closed" />
-                <FactTile label="Offered" value="Not offered" />
-              </div>
-              <dl className={styles.phoneKv} data-testid="ward-drawer-closed-reason">
-                <Row label="Closed">{closedEmpty.state}</Row>
-                <Row label="Reason">{closedEmpty.reason}</Row>
-              </dl>
-              {timeline.length > 0 ? (
-                <>
-                  <h3 className={styles.phoneSec}>History</h3>
-                  {timelineList}
-                </>
-              ) : null}
-            </>
-          ) : isReady ? (
-            <>
-              <div className={styles.phoneFacts}>
-                <FactTile
-                  label="Now"
-                  value={bedItem?.preparing ? BED_STATE_LABELS.beingMadeReady : "Ready"}
-                  tone={bedItem?.preparing ? "neutral" : "success"}
-                />
-                <FactTile label="Pulled for" value={bedItem?.heldFor ?? "Nobody"} />
-              </div>
-              <h3 className={styles.phoneSec}>Placement</h3>
-              <dl className={styles.phoneKv}>
-                <Row label="Candidate">None recorded.</Row>
-                {bedItem?.designation ? <Row label="Bed">{bedItem.designation}</Row> : null}
-              </dl>
-              {readyNote}
-              {/* Live audit item 13: an empty bed's closures and reopenings, when it has any. */}
-              {timeline.length > 0 ? (
-                <>
-                  <h3 className={styles.phoneSec}>History</h3>
-                  {timelineList}
-                </>
-              ) : null}
-            </>
-          ) : (
-            <>
-              <div className={styles.phoneFacts}>
-                {/* Redesign: the same four facts as the desktop drawer. */}
-                <FactTile label="Stay" value={stayDay === null ? "Not recorded" : `Day ${stayDay}`} />
-                <FactTile label="Legal" value={shortLegal(bedItem?.legalStatusLabel)} />
-                <FactTile label="Going out" value={goingOut} tone={bedItem?.pastDate ? "warning" : null} />
-                <FactTile label="Observation" value={observationShort} />
-              </div>
-              <NotLeftNotice bedItem={bedItem} expectedPlan={notLeftPlan} isOccupied={isOccupied} />
-              {safetyNote}
-              <h3 className={styles.phoneSec}>This person</h3>
-              <dl className={styles.phoneKv}>
-                {bedItem?.preferredName ? <Row label="Known as">{bedItem.preferredName}</Row> : null}
-                <Row label="Observation">{observation}</Row>
-                <Row label="Community team">{bedItem?.catchmentCommunityTeam ?? "No community team yet"}</Row>
-              </dl>
-              {bedItem?.observation && admissionId ? (
-                <WardObservationControl
-                  key={`observation-${admissionId}`}
-                  observation={bedItem.observation}
-                  now={now}
-                  showCurrent={false}
-                  editingToken={observationToken}
-                  draftKey={`observation:${admissionId}`}
-                  onSave={
-                    onSetObservation ? (next, expected) => onSetObservation(admissionId, next, expected) : undefined
-                  }
-                />
-              ) : null}
-              <h3 className={styles.phoneSec}>Leaving</h3>
-              <dl className={styles.phoneKv}>
-                <Row label="Expected">{expectedPlan}</Row>
-                {planRows}
-                {isOccupied && admissionId ? (
-                  // The longest destinations do not fit beside the label at 390px, so the chips take their own line.
-                  <Row label="Going to" wide>
-                    <ChoiceChips
-                      label="Where are they going?"
-                      items={LEAVING_CHOICES}
-                      value={drawerLeavingDestination}
-                      onChange={setDrawerLeavingDestination}
-                      testId="drawer-leaving-dest"
-                    />
-                  </Row>
-                ) : null}
-              </dl>
-              {planNote}
-              <BlockerEditor
-                save={blockerSave}
-                blockReason={bedItem?.blockReason}
-                open={quickBlockerOpen}
-                selected={selectedBlocker}
-                setSelected={setSelectedBlocker}
-                selectRef={blockerSelectRef}
-              />
-              {planCriteria}
-              {sentJourney ? (
-                <>
-                  <h3 className={styles.phoneSec}>Movement this ward sent</h3>
-                  {sentJourney}
-                </>
-              ) : null}
-              <h3 className={styles.phoneSec}>History</h3>
-              {timeline.length > 0 ? (
-                timelineList
-              ) : (
-                <p className={styles.phoneEmpty}>Nothing recorded for this stay yet.</p>
-              )}
-            </>
-          )}
-
-          <div className={styles.phoneMore}>
-            {isOccupied && admissionId ? (
-              <>
-                {/* Audit A1-12: the phone says plainly which destination "Has left" records too. */}
-                <p className={styles.footDestination} id="drawer-leaving-summary-phone">
-                  Going to{" "}
-                  <strong>
-                    {LEAVING_DESTINATIONS.find((destination) => destination.id === drawerLeavingDestination)?.label ??
-                      "Not chosen yet"}
-                  </strong>
-                </p>
-                {leavingCriteriaNote ? (
-                  <p
-                    className={styles.footCriteria}
-                    id="drawer-leaving-criteria-phone"
-                    data-testid="ward-drawer-leaving-criteria"
-                  >
-                    {leavingCriteriaNote}
-                  </p>
-                ) : null}
-                {leavePaper}
-              </>
-            ) : null}
-            {isReady ? (
-              <Link className={buttonClass({ variant: "sec", className: styles.pill })} href="/bedchart/referrals">
-                Review current referrals
-              </Link>
-            ) : null}
-            {roleLockNote}
-            {personHref ? (
-              <Link className={buttonClass({ variant: "ghost", className: styles.pill })} href={personHref}>
-                Patient page
-                <Icon icon={ChevronRight} size={14} />
-              </Link>
-            ) : null}
-          </div>
+        </>
+      ) : null}
+      {planCriteria}
+      {sentJourney ? (
+        <>
+          <h3 className={styles.phoneSec}>Movement this ward sent</h3>
+          {sentJourney}
+        </>
+      ) : null}
+      <h3 className={styles.phoneSec}>History</h3>
+      {timeline.length > 0 ? timelineList : <p className={styles.phoneEmpty}>Nothing recorded for this stay yet.</p>}
+      {isOccupied && admissionId ? (
+        <div className={styles.phoneMore}>
+          {/* Audit A1-12: the phone says plainly which destination "Record discharge" records too;
+              the foot's step names this line (`drawer-leaving-summary-phone`). */}
+          <p className={styles.footDestination} id="drawer-leaving-summary-phone">
+            Going to{" "}
+            <strong>
+              {LEAVING_DESTINATIONS.find((destination) => destination.id === drawerLeavingDestination)?.label ??
+                "Not chosen yet"}
+            </strong>
+          </p>
+          {leavePaper}
         </div>
-
-        {(isReady && (onOpenBoard || onMarkReady)) || actions.length > 0 ? (
-          <footer className={styles.phoneFoot}>
-            {isReady && onMarkReady ? (
-              <Button variant="pri" size="lg" className={styles.pill} onClick={onMarkReady}>
-                Ready
-              </Button>
-            ) : isReady && onOpenBoard && !bedItem?.preparing ? (
-              <Button variant="pri" size="lg" className={styles.pill} onClick={onOpenBoard}>
-                Place someone here
-              </Button>
-            ) : null}
-            {actions.length > 0 ? (
-              <BedActions
-                phone
-                mainId={mainId}
-                actions={actions.map((action) =>
-                  action.id === "leave" && action.describedBy
-                    ? {
-                        ...action,
-                        describedBy: leavingCriteriaNote
-                          ? "drawer-leaving-summary-phone drawer-leaving-criteria-phone"
-                          : "drawer-leaving-summary-phone",
-                      }
-                    : action,
-                )}
-              />
-            ) : null}
-          </footer>
-        ) : null}
-      </aside>
+      ) : null}
     </>
   );
 }

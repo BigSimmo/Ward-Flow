@@ -141,8 +141,8 @@ describe("the Capacity screen's bed map controls", () => {
 
   it("keeps the highlight's lit set and the full card set consistent across a folded service and a ward selection", () => {
     renderScreen();
-    fireEvent.click(highlightChip("Any ready"));
-    expect(highlightChip("Any ready")).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(highlightChip("Has ready"));
+    expect(highlightChip("Has ready")).toHaveAttribute("aria-pressed", "true");
 
     const toggles = within(bedMap())
       .getAllByRole("button", { expanded: true })
@@ -165,33 +165,23 @@ describe("the Capacity screen's bed map controls", () => {
 
   it("pressing the pressed chip again clears the highlight: no ward is dimmed and every ward stays", () => {
     renderScreen();
-    fireEvent.click(highlightChip("Any ready"));
+    fireEvent.click(highlightChip("Has ready"));
     expect(litIds().size, "the 'Any ready' chip dimmed nothing — this guard proved nothing").toBeLessThan(
       networkRows.length,
     );
 
-    fireEvent.click(highlightChip("Any ready"));
+    fireEvent.click(highlightChip("Has ready"));
 
-    expect(highlightChip("Any ready")).toHaveAttribute("aria-pressed", "false");
+    expect(highlightChip("Has ready")).toHaveAttribute("aria-pressed", "false");
     expect(wardCards()).toHaveLength(networkRows.length);
     expect(litIds()).toEqual(new Set(networkRows.map((row) => row.unit.id)));
   });
 
-  // Page tops (Josh, 9 Nov 2026): the hero's Locked ready shortcut went with the new top, so the
-  // bed map's own "Locked ready" highlight is the one control; it marks exactly the locked-ready wards.
-  it("the bed map's 'Locked ready' highlight marks exactly the wards with a locked bed ready", () => {
+  // Area 3 item 17 (26 Nov 2026): the Locked ready highlight is gone with the hero shortcut.
+  it("offers no 'Locked ready' highlight", () => {
     renderScreen();
-    const lockedWards = networkRows.filter((row) => row.lockedReady > 0);
-    expect(lockedWards.length, "no ward has a locked bed ready — this guard proved nothing").toBeGreaterThan(0);
-    expect(highlightChip("Locked ready")).toHaveAttribute("aria-pressed", "false");
-
-    fireEvent.click(highlightChip("Locked ready"));
-
-    expect(highlightChip("Locked ready")).toHaveAttribute("aria-pressed", "true");
-    expect(highlightChip("Locked ready")).toHaveTextContent(
-      `${lockedWards.length} ${lockedWards.length === 1 ? "ward" : "wards"}`,
-    );
-    expect(litIds()).toEqual(new Set(lockedWards.map((row) => row.unit.id)));
+    const group = within(screen.getByRole("group", { name: "Highlight wards" }));
+    expect(group.queryByRole("button", { name: /^Locked ready/u })).toBeNull();
   });
 
   /**
@@ -227,8 +217,8 @@ describe("the Capacity screen's bed map controls", () => {
   it("highlight chips activate from the keyboard, on both Enter and Space, like any native button", async () => {
     renderScreen();
     const user = userEvent.setup();
-    const readyChip = highlightChip("Any ready");
-    const lockedChip = highlightChip("Locked ready");
+    const readyChip = highlightChip("Has ready");
+    const lockedChip = highlightChip("Count old");
     expect(readyChip).toHaveAttribute("aria-pressed", "false");
 
     readyChip.focus();

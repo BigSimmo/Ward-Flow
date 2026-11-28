@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { RedirectToFind } from "@/components/ward-management/hub/find-redirect";
 import { EdIndex } from "@/components/ward-management/ed/ed-index";
 
 export const metadata: Metadata = {
@@ -14,5 +15,9 @@ export const metadata: Metadata = {
  * arbitrary department with no way to see the others side by side.
  */
 export default function EdIndexPage() {
-  return <EdIndex />;
+  return (
+    <RedirectToFind tab="eds">
+      <EdIndex />
+    </RedirectToFind>
+  );
 }

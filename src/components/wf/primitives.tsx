@@ -75,9 +75,28 @@ export function WindowWord({ word, of, className }: { word: CountWindow; of?: Re
  * Count in a rounded square (`.k`), mono. Sits behind a hairline in tabs, segments and buttons.
  * Pass `label` when the number alone would be ambiguous to a screen reader ("7 open").
  */
-export function Count({ n, label, className }: { n: number | string; label?: string; className?: string }) {
+export function Count({
+  n,
+  label,
+  shape = "pill",
+  urgent = false,
+  className,
+}: {
+  n: number | string;
+  label?: string;
+  /**
+   * Audit two #81 (K6): one count part with three shapes. `pill` (default) beside a label; `bubble`
+   * round, as on the header Tasks button; `circle` the 18px edged circle of the rail and phone dock.
+   * Each draws exactly as `CountBubble` and `CountCircle` do, which stay for their callers.
+   */
+  shape?: "pill" | "bubble" | "circle";
+  /** `circle` only: the amber edge of an urgent count. */
+  urgent?: boolean;
+  className?: string;
+}) {
+  if (shape === "circle") return <CountCircle n={n} label={label} urgent={urgent} className={className} />;
   return (
-    <span className={cx(styles.count, className)}>
+    <span className={cx(styles.count, shape === "bubble" && styles.bubble, className)}>
       <span aria-hidden={label ? true : undefined}>{n}</span>
       {label ? <SrOnly>{label}</SrOnly> : null}
     </span>

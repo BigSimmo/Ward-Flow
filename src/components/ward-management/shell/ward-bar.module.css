@@ -1769,6 +1769,14 @@
   .scopeBadgeBtn > * {
     transition: none;
   }
+
+  /* Look check F3: the global reduced-motion rule turns every element's 0s transitions into a
+     0.01ms one, so the chip's flex-shrink lagged and usePhoneChipFit measured the old layout. */
+  .titleGroup,
+  .scopeBadgeContainer,
+  .scopeBadgeBtn {
+    transition: none;
+  }
 }
 
 @media (forced-colors: active) {
@@ -4232,13 +4240,63 @@
     letter-spacing: -0.02em;
   }
 
+  /* Audit four #7 (28 Nov 2026): the page name has priority. The chip gives way first (it shrinks
+     a hundred times faster) down to its dot and caret, and beside a long name it shows the short
+     service code instead of the full name. The title ends in an ellipsis only after that. */
   .scopeBadgeContainer.scopeBadgeContainer {
-    flex: 0 0 auto;
+    flex: 0 100 auto;
     width: auto;
+    min-width: 2.75rem;
   }
 
   .scopeBadgeBtn.scopeBadgeBtn {
     font-size: var(--wf-fs-14);
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .scopeBadgeBtn.scopeBadgeBtn .scopeBadgeLabel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .scopeBadgeShort {
+    display: none;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  .bar[data-long-title] .scopeBadgeBtn.scopeBadgeBtn .scopeBadgeLabel:has(+ .scopeBadgeShort) {
+    display: none;
+  }
+
+  .bar[data-long-title] .scopeBadgeShort {
+    display: inline;
+  }
+
+  /* Look check F3: a long name that still clips beside the short code takes two lines at 16px in
+     the same 56px bar (two 18px lines), keeping the code; usePhoneChipFit sets data-title-wrap. */
+  .bar.bar[data-title-wrap] .place.place {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+    font-size: var(--wf-fs-16);
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  /* The wrapping title gives up width before the short code chip does, so the code is kept. */
+  .bar[data-long-title="wrap"] .scopeBadgeContainer.scopeBadgeContainer {
+    flex-shrink: 0;
+  }
+
+  /* Gate r10 F3: chip gives way by fit (next-bar.tsx usePhoneChipFit); last step is the dot alone. */
+  .bar[data-long-title="dot"] .scopeBadgeShort,
+  .bar[data-long-title="dot"] .scopeBadgeBtn.scopeBadgeBtn .scopeBadgeLabel {
+    display: none;
   }
 
   /* Spec item 9 (13 Nov 2026): the pinned header is solid slate (the band's foot colour), so no row
@@ -4334,4 +4392,19 @@
     var(--wf-svc-dot-cahs) 0 300deg,
     var(--wf-svc-dot-private) 0 360deg
   );
+}
+
+/* r10 (final-b1 #8, final-b2 #9, final-a1 F2): over a navy band hero the bar is flat hero-1 from its
+   first paint. Before the page sets `data-band` (the loading placeholder, the first frame of a band
+   page) the glass sheen and its white rim were still drawn over the navy, so the bar faded from near
+   white at its top edge. The sheen and rim go wherever the bar already takes the band's navy. */
+@media (min-width: 46.5rem) {
+  .bar.bar:where(
+      :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band])
+    )::before,
+  .bar.bar:where(
+      :global([data-wf-scroller]:has([data-wf-hero="band"]:not([data-band="off"]))) :not([data-band])
+    )::after {
+    display: none;
+  }
 }

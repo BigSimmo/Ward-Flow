@@ -1,9 +1,8 @@
 /*
  * Forms side panel (Josh, 1 Nov 2026: "components are broken, not extended edge to edge").
  *
- * The panel fills its drawer or phone sheet: one 16px gutter for every block, sections divided by
- * full-width hairlines, and the action bar anchored to the bottom (sticky, so it stays in reach
- * when the panel scrolls). Tone is shown by the status glyph and a soft tint, never a coloured
+ * The panel fills the kit drawer's scroll at every width: one 16px gutter for every block, sections
+ * divided by full-width hairlines. Its actions are the kit drawer's foot (audit four #98). Tone is shown by the status glyph and a soft tint, never a coloured
  * side edge. Controls are 40px; no text is under 12px.
  */
 
@@ -322,39 +321,6 @@
 
 .check[data-muted="true"] .checkLabel {
   color: var(--wf-ink-3);
-}
-
-/* The action bar sits on the bottom edge of the drawer and stays there while the body scrolls. */
-.foot.foot {
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
-  margin-top: auto;
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
-  background: var(--wf-surface);
-}
-
-.foot > a,
-.foot > button {
-  height: 40px;
-  min-height: 40px;
-}
-
-/* Phone sheet: the sheet's own pinned foot carries Copy and the next step, so the panel's bar keeps
- * only Open move, flat. The panel cancels the sheet body's 16px padding to run edge to edge. */
-@media (max-width: 46.4375rem) {
-  .panel.panel {
-    margin: calc(-1 * var(--wf-s-4));
-    min-height: 0;
-  }
-
-  .foot.foot {
-    position: static;
-    justify-content: center;
-    padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-4);
-    border-top: 0;
-  }
 }
 
 /* The next step leads with a tinted icon chip, as on the rebuilt Home and Waiting stat rows. */

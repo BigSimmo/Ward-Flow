@@ -31,19 +31,15 @@ function renderBoard() {
 // v10 (10 Oct 2026): the build guide replaced the hero's Plan departure with the Ready to leave
 // checklist in the release panel. Departure planning stays on the ward's own Decisions tab.
 describe("departure readiness lives in the release panel", () => {
-  it("has no Plan departure in the hero, and a release opens with Ready to leave and Undo", () => {
+  it("has no Plan departure in the hero, and a release no longer opens with a Ready to leave checklist", () => {
+    // S-29 moved (Josh, 27 Nov 2026): the Ready to leave checklist and its Undo toast are gone.
     renderBoard();
     expect(screen.queryByTestId("ward-discharge-plan-departure")).toBeNull();
     const blockedRow = document.querySelector<HTMLElement>('tr[data-act="true"]');
     expect(blockedRow).not.toBeNull();
     fireEvent.click(blockedRow!);
-    const ready = screen.getByTestId("ward-discharge-ready-to-leave");
-    const item = within(ready).getByTestId("ward-discharge-ready-medicines");
-    const before = item.getAttribute("aria-pressed");
-    fireEvent.click(item);
-    expect(item.getAttribute("aria-pressed")).not.toBe(before);
-    fireEvent.click(within(screen.getByTestId("ward-discharge-ready-toast")).getByRole("button", { name: "Undo" }));
-    expect(item.getAttribute("aria-pressed")).toBe(before);
+    expect(screen.queryByTestId("ward-discharge-ready-to-leave")).toBeNull();
+    expect(screen.queryByTestId("ward-discharge-ready-toast")).toBeNull();
   });
 
   // Live audit item 7 (11 Nov 2026): the checklist's ticks are invented for the demo, so the

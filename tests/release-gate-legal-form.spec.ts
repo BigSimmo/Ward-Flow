@@ -88,7 +88,8 @@ test("Legal form: a Form 1A gets its time written and is marked received, the re
 
   // A receipt marked by mistake comes back from its toast, and the written time stays.
   await receivedToast.getByRole("button", { name: "Undo", exact: true }).click();
-  await expect(toastFor(page, `Received mark undone for ${name}`)).toBeVisible();
+  // r10 toast words: the undo names what it undid ("Undone: Received mark for <name>").
+  await expect(toastFor(page, `Undone: Received mark for ${name}`)).toBeVisible();
   await expect(panel.getByText("Form 1A received", { exact: true })).toHaveCount(0);
   await expect(panel.getByText("Written 9:30 am on the form")).toBeVisible();
 
@@ -97,7 +98,8 @@ test("Legal form: a Form 1A gets its time written and is marked received, the re
   await expectNoReloadSince(page, "filing the form");
 
   // The move's own page reads the same live record.
-  await panel.getByRole("link", { name: "Open move" }).click();
+  // Audit four #98: the form opens in one kit drawer, whose foot (outside the panel) holds Open move.
+  await page.getByTestId("ward-legal-form-sheet").getByRole("link", { name: "Open move" }).click();
   await page.waitForURL("**/bedchart/movements/**");
   await waitForScreen(page, "ward-person-screen");
   // Its Legal now panel names the form the coordinator just filed.

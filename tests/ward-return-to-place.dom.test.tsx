@@ -1,6 +1,13 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
-import { afterEach, beforeEach, expect, it } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+
+// The movement pop-up now reads the router, so the screen needs one (as the other screen suites mock it).
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(window.location.search),
+}));
 
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -124,12 +131,14 @@ it("Movements keeps its order and focuses the opened worklist row on Back", asyn
   const row = first.container.querySelector<HTMLElement>("li[data-ward-primitive='record-row'][data-record-key]")!;
   const id = row.getAttribute("data-record-key")!;
   fireEvent.click(row);
-  fireEvent.click(screen.getByRole("radio", { name: "Longest wait" }));
+  // Simplification 26 Nov 2026: Sort is one menu button on the list head, its choices menu radios.
+  fireEvent.click(screen.getByTestId("ward-movements-sort"));
+  fireEvent.click(screen.getByRole("menuitemradio", { name: /^Longest wait/u }));
   first.unmount();
   go("/bedchart/people/P-1");
 
   back("/bedchart/movements");
   renderMovements();
-  expect(screen.getByRole("radio", { name: "Longest wait" })).toHaveAttribute("aria-checked", "true");
+  expect(screen.getByTestId("ward-movements-sort")).toHaveTextContent("Sort: Longest wait");
   await waitFor(() => expect(document.activeElement).toBe(findRow(id)));
 });

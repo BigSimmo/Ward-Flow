@@ -741,3 +741,33 @@
 }
 
 /* No side marker (owner ruling, 31 Oct 2026): the cell's glyph and words carry act now. */
+
+/* Audit two (a), 28 Nov 2026: on "Choose a bed" a name breaks between words, never inside one, so a
+   tile grows to two lines at most at 1440; no ellipsis. Only a single word wider than the whole tile
+   still breaks, so the name stays in full (Josh, 6 Nov 2026). Every row takes the tallest tile's
+   height, so the grid stays even. */
+html .cells {
+  grid-auto-rows: 1fr;
+}
+
+html .cellWord,
+html .cellInitial {
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
+  text-wrap: balance;
+}
+
+/* Audit three review: a single surname word too wide for its tile drops one size step, set by
+   useLongWordShrink in ward-bed-board.tsx; wrapping between words is unchanged. */
+html .cellWord[data-shrink="true"] {
+  font-size: var(--wf-fs-12);
+}
+
+/* Final r10 F8: below 1440 a one-pod board's six tiles a row broke long surnames mid-word
+   ("Whistleco/mbe"); five a row gives each name the room to sit whole. */
+@media (min-width: 46.5rem) and (max-width: 89.9375rem) {
+  html .cells[data-six="true"] {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}

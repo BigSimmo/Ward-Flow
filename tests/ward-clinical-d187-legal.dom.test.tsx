@@ -183,26 +183,26 @@ describe("D-187 item 16 (Q38): the Mark absent Undo says what it restores", () =
     fireEvent.click(
       within(screen.getByTestId("ward-patient-change-card")).getByRole("button", { name: "Mark absent" }),
     );
-    // A12-02 (D-263): the kit's styled confirm asks first, and nothing changes until Confirm.
+    // A12-02 (D-263): the kit's styled confirm asks first, and nothing changes until its Mark absent.
     expect(await screen.findByText("Mark absent without leave?")).toBeVisible();
     expect(root).toHaveAttribute("data-patient-mode", "ward");
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+      fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Mark absent" }));
     });
     expect(root).toHaveAttribute("data-patient-mode", "awol");
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /Undo/ }));
     });
     expect(root).toHaveAttribute("data-patient-mode", "ward");
-    expect(await screen.findByText("Undone. Back on the ward.")).toBeInTheDocument();
-    expect(screen.queryByText("Undone. Back on leave.")).not.toBeInTheDocument();
+    expect(await screen.findByText("Undone: Back on the ward")).toBeInTheDocument();
+    expect(screen.queryByText("Undone: Back on leave")).not.toBeInTheDocument();
   });
 
   it("marked absent from leave: Undo still says 'Back on leave'", async () => {
     const root = renderPatient();
     fireEvent.click(screen.getByRole("button", { name: "Start synthetic leave" }));
     fireEvent.click(within(screen.getByTestId("ward-patient-leave-card")).getByRole("button", { name: "Mark absent" }));
-    const confirm = await screen.findByRole("button", { name: "Confirm" });
+    const confirm = within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Mark absent" });
     await act(async () => {
       fireEvent.click(confirm);
     });
@@ -211,6 +211,6 @@ describe("D-187 item 16 (Q38): the Mark absent Undo says what it restores", () =
       fireEvent.click(screen.getByRole("button", { name: /Undo/ }));
     });
     expect(root).toHaveAttribute("data-patient-mode", "leave");
-    expect(await screen.findByText("Undone. Back on leave.")).toBeInTheDocument();
+    expect(await screen.findByText("Undone: Back on leave")).toBeInTheDocument();
   });
 });

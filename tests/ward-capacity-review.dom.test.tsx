@@ -62,24 +62,24 @@ describe("capacity review corrections", () => {
 
   // Page tops (Josh, 9 Nov 2026): the hero's Locked / Open ready shortcuts went with the old top; the
   // bed map's own "Open ready" highlight is the control, held to the same keyboard and never-hide rule.
-  it("Space and Enter activate the 'Open ready' highlight and keep every ward on the bed map", async () => {
+  it("Space and Enter activate the 'Has ready' highlight and keep every ward on the bed map", async () => {
     const user = userEvent.setup();
     renderCapacity();
     const before = wardCards().length;
     expect(before).toBe(networkRows.length);
 
-    const open = highlightChip("Open ready");
+    const open = highlightChip("Has ready");
     expect(open.tagName).toBe("BUTTON");
     open.focus();
     await user.keyboard(" ");
-    expect(highlightChip("Open ready")).toHaveAttribute("aria-pressed", "true");
+    expect(highlightChip("Has ready")).toHaveAttribute("aria-pressed", "true");
     expect(wardCards().filter((card) => /dimmed/u.test(card.className)).length).toBeGreaterThan(0);
     expect(wardCards()).toHaveLength(before);
 
     // Pressing the same highlight a second time clears it.
-    highlightChip("Open ready").focus();
+    highlightChip("Has ready").focus();
     await user.keyboard("{Enter}");
-    expect(highlightChip("Open ready")).toHaveAttribute("aria-pressed", "false");
+    expect(highlightChip("Has ready")).toHaveAttribute("aria-pressed", "false");
     expect(wardCards().filter((card) => /dimmed/u.test(card.className))).toHaveLength(0);
     expect(wardCards()).toHaveLength(before);
   });
@@ -94,8 +94,7 @@ describe("capacity review corrections", () => {
       `Showing ${scoped.length} of ${networkRows.length} wards, in North Metro.`,
     );
     expect(wardCards()).toHaveLength(scoped.length);
-    expect(highlightChip("Any ready")).toHaveTextContent(wards(scoped.filter((row) => row.ready > 0).length));
-    expect(highlightChip("Locked ready")).toHaveTextContent(wards(scoped.filter((row) => row.lockedReady > 0).length));
+    expect(highlightChip("Has ready")).toHaveTextContent(wards(scoped.filter((row) => row.ready > 0).length));
     expect(highlightChip("Count old")).toHaveTextContent(
       wards(scoped.filter((row) => !isConfirmationFresh(row.unit, NOW_ANCHOR)).length),
     );

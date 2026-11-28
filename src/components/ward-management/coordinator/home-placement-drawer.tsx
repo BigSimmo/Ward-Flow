@@ -15,7 +15,7 @@
  * - An alert with no journey (a booking, H10) shows its facts, with its own action pinned.
  */
 import { PatientPeekLink } from "@/components/ward-management/patients/patient-peek-link";
-import { BedSingle, ChevronRight, FileText, Inbox } from "lucide-react";
+import { BedSingle, ChevronRight, FileText } from "lucide-react";
 import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
 import { BookingsPeekLink } from "@/components/ward-management/alerts/bookings-peek";
@@ -24,12 +24,20 @@ import { useId, useState } from "react";
 import { ownerShort, type QueueEntry } from "@/components/ward-management/alerts/alerts-queue";
 import d from "@/components/ward-management/movements/movement-drawer.module.css";
 import { movementHref, patientHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
-import { buttonClass, DrawerFacts, DrawerFootRow, PanelDrawer, StatusGlyph } from "@/components/wf";
+import {
+  buttonClass,
+  DrawerFacts,
+  DrawerFootRow,
+  PanelDrawer,
+  StatusGlyph,
+  type DrawerPagerProps,
+} from "@/components/wf";
 
 import { ChosenAlertCard } from "./chosen-alert-card";
 import p from "./home-placement-drawer.module.css";
@@ -63,6 +71,7 @@ export function HomePlacementDrawer({
   onSelectUnit,
   onRefer,
   networkNote,
+  pager,
 }: {
   subject: PlacementSubject;
   now: Instant;
@@ -72,6 +81,8 @@ export function HomePlacementDrawer({
   onRefer: (movement: Movement, unitIds: string[]) => void;
   /** Shown when a service is chosen: the shortlist still weighs every ward in the network. */
   networkNote?: string;
+  /** Audit four #31: the kit pager in the head, through My list in its order. */
+  pager?: DrawerPagerProps;
 }) {
   const titleId = useId();
   // The foot band is the drawer's own; the placement panel draws its next step and Refer into it.
@@ -107,6 +118,7 @@ export function HomePlacementDrawer({
         ? `${referral.ageBand} · ${referral.homeRegion ?? HOME_REGION_NOT_RECORDED}`
         : undefined;
   const tier = movement?.urgency ?? referral?.urgency;
+  const canOpenHref = useCanOpenHref();
   const recordHref =
     entry?.subject.patientHref ??
     (person?.patient ? patientHref(person.patient.id) : movement ? movementHref(movement.id) : undefined);
@@ -142,7 +154,8 @@ export function HomePlacementDrawer({
             href={recordHref}
           >
             <FileText size={14} strokeWidth={1.75} aria-hidden="true" />
-            Patient record
+            {/* Audit two #4 (O24): the words say where a plain click goes. */}
+            {movement && canOpenHref(movementHref(movement.id)) ? "Quick look" : "Patient page"}
           </PatientPeekLink>
         ) : null}
         {accepted ? (
@@ -152,13 +165,8 @@ export function HomePlacementDrawer({
             title={`Open the ${accepted.name} bed board`}
           >
             <BedSingle size={14} strokeWidth={1.75} aria-hidden="true" />
-            Ward board
-          </Link>
-        ) : null}
-        {referral ? (
-          <Link className={buttonClass({ variant: "sec", size: "sm" })} href="/bedchart/referrals">
-            <Inbox size={14} strokeWidth={1.75} aria-hidden="true" />
-            All referrals
+            {/* Audit two #5 (O25). */}
+            Open ward
           </Link>
         ) : null}
       </DrawerFootRow>
@@ -172,6 +180,7 @@ export function HomePlacementDrawer({
       titleId={titleId}
       eyebrow={title}
       title={name}
+      pager={pager}
       subtitle={
         <>
           <span className={d.mono}>{umrn}</span>

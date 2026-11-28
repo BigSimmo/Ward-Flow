@@ -89,9 +89,10 @@ describe("referral drawer footer once every step is done (P155)", () => {
     expect(foot(0, 1)).toBe("All required items in · 1 not recorded");
   });
 
-  it("keeps the overall count while step items also remain", () => {
-    expect(foot(7, 5)).toBe("7 of 19 items still needed");
-    expect(foot(3, 0)).toBe("3 of 19 items still needed");
+  // Audit three #40: while items remain the stepper and checklist say how many; the foot names only who it goes to.
+  it("leaves the count to the stepper while step items remain", () => {
+    expect(foot(7, 5)).toBe("");
+    expect(foot(3, 0)).toBe("");
     expect(foot(0, 0)).toBe("All items in");
   });
 });

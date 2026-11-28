@@ -127,7 +127,7 @@ describe("Amber dot keys on the phone lists (phone review F-25)", () => {
     );
     unmount();
     renderInProvider(<StatisticsServicesIndexScreen />);
-    expect(screen.getByTestId("ward-statistics-services-dot-key")).toHaveTextContent(`past ${LONG_WAIT_HOURS} hours`);
+    expect(screen.getByTestId("ward-statistics-services-dot-key")).toHaveTextContent(`over ${LONG_WAIT_HOURS} hours`);
   });
 });
 

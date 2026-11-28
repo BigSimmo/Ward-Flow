@@ -173,11 +173,11 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
   it("opens the actual triage record for Review and accurately describes row contacts", () => {
     start();
     fireEvent.click(screen.getByRole("button", { name: "Create referral" }));
-    fireEvent.click(screen.getByRole("button", { name: "Log team contact" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record team contact" }));
     expect(screen.getByTestId("community-action-toast")).toHaveTextContent(
       "does not record patient or referral contact",
     );
-    fireEvent.click(screen.getByRole("button", { name: "Review" }));
+    fireEvent.click(screen.getByRole("button", { name: "Review referral" }));
     const referralId = screen.getByTestId("referral-id").textContent!;
     expect(screen.getByRole("dialog", { name: /^Referral triage: / })).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: new RegExp(referralId) })).toBeNull();
@@ -188,7 +188,7 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     openPatient(seed.patients[0]!.id);
     expect(screen.queryByRole("button", { name: "Edit dossier" })).not.toBeInTheDocument();
     expect(document.body).not.toHaveTextContent("digital audit signature");
-    fireEvent.click(screen.getByRole("button", { name: "Arrange follow-up" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Record contact" }));
     expect(screen.getByTestId("community-patient-care")).toHaveTextContent("No matching admission is available");
   });
 
@@ -204,7 +204,7 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     start({ teamId: team.id });
     openPatient(admission.patientId!);
     const before = Number(screen.getByTestId("recorded-appointments").textContent);
-    fireEvent.click(screen.getByRole("button", { name: "Arrange follow-up" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Record contact" }));
     const care = screen.getByRole("region", { name: "Care journey" });
     fireEvent.change(within(care).getByRole("combobox", { name: "Responsible clinician" }), {
       target: { value: "demo-adult-clinician" },

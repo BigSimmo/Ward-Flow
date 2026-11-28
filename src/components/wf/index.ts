@@ -49,7 +49,8 @@ export {
   type HeroBandCell,
   type HeroRenderPress,
 } from "./hero-top";
-export { FolderTabs, folderTabClasses } from "./folder-tabs";
+export { FolderTabs } from "./folder-tabs";
+export { folderTabClasses } from "./folder-tab-classes";
 export { useWfBandActive, useWfBandBleed, registerWfBandHero, WF_BAND_SCROLLED_PX } from "./band";
 export {
   CheckingFoot,
@@ -88,6 +89,7 @@ export {
 } from "./choice";
 export { DataRow, TierTile, tableClasses } from "./table";
 export { Sheet, Drawer } from "./sheet";
+export { DrawerPager, type DrawerPagerProps } from "./drawer-pager";
 export {
   PanelDrawer,
   DrawerFacts,
@@ -117,18 +119,13 @@ export {
   useLivePause,
   useSharedRefreshLate,
 } from "./live";
-export {
-  Field,
-  TextInput,
-  Textarea,
-  Select,
-  Checkbox,
-  Radio,
-  Switch,
-  Stepper,
-  ErrorSummary,
-  type ErrorSummaryItem,
-} from "./form";
+export { Field } from "./form-field";
+export { TextInput, Textarea } from "./form-text";
+export { Select } from "./form-select";
+export { Checkbox, Radio } from "./form-choice";
+export { Switch } from "./form-switch";
+export { Stepper } from "./form-stepper";
+export { ErrorSummary, type ErrorSummaryItem } from "./form-error-summary";
 export { Timeline, Avatar, EmptyState, StatusLine, type TimelineItem } from "./feed";
 export { BarList, ColumnChart, Donut, type BarListRow } from "./chart";
 export {
@@ -179,3 +176,4 @@ export { RowUndo } from "./row-undo";
 export { SyntheticMark } from "./synthetic-mark";
 // The tap-to-open ⓘ that replaces hover-only tips (D-224).
 export { InfoTip } from "./info-tip";
+export { Umrn } from "./umrn";

@@ -44,6 +44,11 @@ export type HeroFigureItem = Press & {
   /** The value is a word ("Bed agreed"), set in the text face rather than the figures' mono. */
   word?: boolean;
   label: ReactNode;
+  /**
+   * Audit two (#109, #128): one quiet line under the label (12px, the slate's third ink), for what a
+   * delta or a glance strip used to add ("3 people", "52 of 60 in use now"). It never wraps.
+   */
+  sub?: ReactNode;
   /** Red only when the figure names something to act on now. */
   tone?: "danger" | "warning" | "ok";
   testId?: string;
@@ -119,6 +124,7 @@ function HeroFigure({ item }: { item: HeroFigureItem }) {
       ) : (
         <span className={labelClass}>{item.label}</span>
       )}
+      {item.sub ? <span className={styles.figSub}>{item.sub}</span> : null}
     </div>
   );
 }
@@ -209,6 +215,11 @@ export type HeroChipItem = Press & {
   countTone?: "warning" | "quiet";
   /** Words read after the count ("to do" reads "Ward updates, 1 to do"). */
   countLabel?: string;
+  /**
+   * Audit two (#51): the count is extra to what the label names ("+4" more within the hour), so a
+   * bare number is not read as a total. Drawn only; the spoken name keeps the count and its words.
+   */
+  countPlus?: boolean;
   /** A toggle chip's state (`aria-pressed`). */
   pressed?: boolean;
   /** A chip that opens a panel below (`aria-expanded`), in place of `pressed`. */
@@ -250,7 +261,11 @@ export function HeroQuickChips({ label, items }: { label: string; items: HeroChi
               <b className={styles.chipCount} data-tone={item.countTone ?? "warning"}>
                 {/* The leading space keeps the label and count apart in the chip's text (not drawn: a
                     flex item trims it), so a spoken name that repeats them matches it (WCAG 2.5.3). */}
-                <span aria-hidden="true"> {item.count}</span>
+                <span aria-hidden="true">
+                  {" "}
+                  {item.countPlus ? "+" : ""}
+                  {item.count}
+                </span>
                 <span className="sr-only">
                   , {item.count}
                   {item.countLabel ? ` ${item.countLabel}` : ""}

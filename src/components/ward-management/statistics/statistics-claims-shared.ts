@@ -86,9 +86,6 @@ export const COMMUNITY_INDEX = "src/components/ward-management/community/communi
 export const WARD_NAV = "src/components/ward-management/ward-nav.ts";
 export const COMMUNITY_DERIVATIONS = "src/components/ward-management/community/community-derivations.ts";
 export const COMMUNITY_SCREEN = "src/components/ward-management/community/community-screen.tsx";
-/** The team screen's hero section, where its "Other community teams" switcher now lives (the
- *  screen was split into sections on 15 Oct 2026, fix list 2.5 and 9.6). */
-export const COMMUNITY_SCREEN_HERO = "src/components/ward-management/community/community-screen-hero.tsx";
 export const WARD_FACADE = "src/components/ward-management/shell/ward-facade.ts";
 export const DESTINATION_OPTIONS = "src/components/ward-management/referrals/referral-destination-options.ts";
 

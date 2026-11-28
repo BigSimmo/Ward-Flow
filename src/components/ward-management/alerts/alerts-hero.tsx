@@ -1,11 +1,11 @@
 "use client";
 
 // The Alerts screen's top. Page tops (Josh, 9 Nov 2026): one hero at every width, as on Home: the
-// act now, waiting and oldest figures, the next alert as the act row, Yours and Broadcast as chips
+// act now, waiting and oldest figures, the next alert as the act row with Broadcast at its end
 // and one slim Today band. On a desktop the Today timeline sits above that band. Moved out of
 // `alerts-screen.tsx` for the line cap.
 import type { ReactNode } from "react";
-import { Bell, BellRing, Copy, Ellipsis, Radio, User } from "lucide-react";
+import { Bell, BellRing, ChevronDown, Copy, Radio } from "lucide-react";
 
 import {
   Button,
@@ -14,6 +14,7 @@ import {
   Hero,
   HeroAct,
   HeroBand,
+  heroChipClassName,
   HeroFigures,
   HeroQuickChips,
   HeroTop,
@@ -77,9 +78,26 @@ export function AlertsToolsMenu({
   notifyOn: boolean;
   onNotify: () => void;
 }) {
+  // Simplification R4 (mock-up, 26 Nov 2026): with nothing to copy the menu held one item, so that
+  // item stands as a plain button with its own label.
+  if (!canCopy)
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        icon={notifyOn ? BellRing : Bell}
+        aria-pressed={notifyOn}
+        title="No patient detail"
+        className={folderTabClasses.more}
+        onClick={onNotify}
+        data-testid="alerts-notify-toggle"
+      >
+        Notify me in this tab
+      </Button>
+    );
   return (
     <Menu
-      label="More alert tools"
+      label="More"
       align="end"
       items={[
         ...(canCopy ? [{ id: "copy", label: "Copy for handover", icon: Copy, onSelect: onCopy }] : []),
@@ -93,7 +111,18 @@ export function AlertsToolsMenu({
         },
       ]}
       trigger={(props) => (
-        <Button {...props} variant="ghost" size="sm" iconOnly icon={Ellipsis} aria-label="More alert tools" />
+        // Audit four item 39: the dots menu is named More, as on every other page; its two items stay.
+        <Button
+          {...props}
+          variant="ghost"
+          size="sm"
+          iconEnd={ChevronDown}
+          // Audit four item 25: the tab row's own ink, so More reads on the band in light and dark.
+          className={`${folderTabClasses.more} ${folderTabClasses.moreOutlined}`}
+          aria-label="More alert tools"
+        >
+          More
+        </Button>
       )}
     />
   );
@@ -107,7 +136,6 @@ export function AlertsHero({
   live,
   actCount,
   waitEntries,
-  filters: { yours, act } = {},
   handleNext,
   openComposer,
   broadcastDisabledReason,
@@ -159,37 +187,57 @@ export function AlertsHero({
   const nextFrom = next ? shownAgeFrom(next.item, next.raised) : undefined;
   const flagged = checks?.filter((check) => check.n > 0).length ?? 0;
 
+  // #48: Yours moved into the Open filter chips; Broadcast is the only hero chip left.
+  // The composer returns focus to the button that opened it.
+  const onBroadcast = (event: { currentTarget: HTMLButtonElement }) => openComposer(event.currentTarget);
   const chips: HeroChipItem[] = [
-    ...(yours
-      ? [
-          {
-            id: "yours",
-            label: "Yours",
-            icon: <User {...ICON} />,
-            count: yours.count,
-            countTone: "quiet" as const,
-            pressed: yours.on,
-            onClick: yours.toggle,
-            testId: "ward-alerts-yours",
-          },
-        ]
-      : []),
     ...(canBroadcast
       ? [
-          {
-            id: "broadcast",
-            label: "Broadcast alert",
-            icon: <Radio {...ICON} />,
-            testId: "ward-alerts-broadcast",
-            onClick: () => {
-              // The composer returns focus to the button that opened it.
-              const trigger = document.querySelector<HTMLButtonElement>('[data-testid="ward-alerts-broadcast"]');
-              if (trigger) openComposer(trigger);
-            },
-          },
+          isPhone
+            ? {
+                // Review (390): the label does not fit beside Next, so the phone's chip is icon only.
+                id: "broadcast",
+                label: "Broadcast alert",
+                node: (
+                  <button
+                    type="button"
+                    className={heroChipClassName}
+                    aria-label="Broadcast alert"
+                    title="Broadcast alert"
+                    data-testid="ward-alerts-broadcast"
+                    data-wf-hero-chip=""
+                    onClick={onBroadcast}
+                  >
+                    <Radio {...ICON} />
+                  </button>
+                ),
+              }
+            : {
+                id: "broadcast",
+                label: "Broadcast alert",
+                icon: <Radio {...ICON} />,
+                testId: "ward-alerts-broadcast",
+                onClick: () => {
+                  const trigger = document.querySelector<HTMLButtonElement>('[data-testid="ward-alerts-broadcast"]');
+                  if (trigger) openComposer(trigger);
+                },
+              },
         ]
       : []),
   ];
+
+  // A single chip never gets a row of its own: it sits at the act row's right end at every width.
+  const chipsNode = chips.length > 0 ? <HeroQuickChips label="Alert actions" items={chips} /> : undefined;
+  const chipBesideAct = chipsNode !== undefined;
+  const wrapAct = (node: ReactNode) =>
+    chipBesideAct ? (
+      <div className={styles.actWithChip}>
+        {node}
+        {chipsNode}
+      </div>
+    ) : (
+      node
+    );
 
   return (
     <Hero
@@ -222,7 +270,7 @@ export function AlertsHero({
                 value: actCount,
                 label: "act now",
                 tone: actCount > 0 ? "danger" : undefined,
-                ...(act ? { onClick: act.toggle, pressed: act.on } : {}),
+                // The Act now chip in the Open filter row does the same filter, so the figure is a plain number.
                 testId: "ward-alerts-figure-act",
               },
               { id: "wait", value: waitEntries.length, label: "waiting", testId: "ward-alerts-figure-wait" },
@@ -239,7 +287,7 @@ export function AlertsHero({
             ]}
           />
         }
-        act={
+        act={wrapAct(
           next ? (
             <HeroAct
               tone={next.group === "act" ? "danger" : "warning"}
@@ -248,7 +296,13 @@ export function AlertsHero({
                 <>
                   {next.item.title}
                   {nextFrom !== undefined ? (
-                    <span className={titles.soft}> · {minutesText(Math.max(0, now - nextFrom))}</span>
+                    <span className={`${titles.soft} ${styles.actAge}`}>
+                      <span className={styles.actAgeSep} aria-hidden="true">
+                        {" "}
+                        ·{" "}
+                      </span>
+                      {minutesText(Math.max(0, now - nextFrom))}
+                    </span>
                   ) : null}
                 </>
               }
@@ -266,12 +320,11 @@ export function AlertsHero({
               titleTestId="ward-alerts-calm"
               title={wardName ? `No alert for ${wardName}` : "No alert needs you"}
             />
-          )
-        }
-        chips={chips.length > 0 ? <HeroQuickChips label="Alert actions" items={chips} /> : undefined}
+          ),
+        )}
       >
         {isPhone ? null : todayBand}
-        <div className={isPhone ? styles.todayReserve : undefined}>
+        <div className={isPhone ? styles.todayReserve : styles.bandShare}>
           <HeroBand
             // On a desktop the timeline above already heads it "Today".
             title={isPhone ? "Today" : <SrOnly>Today</SrOnly>}
@@ -279,7 +332,8 @@ export function AlertsHero({
             cells={[
               {
                 id: "raised",
-                label: "Raised",
+                // Audit three #26: says what it counts, so it is not read as the 9 waiting.
+                label: isPhone ? "Raised" : "Raised today",
                 value: today.raised,
                 onClick: isPhone ? onToday : undefined,
                 ariaLabel: isPhone ? `Raised ${today.raised}, open the Today timeline` : undefined,
@@ -316,8 +370,8 @@ export function AlertsHero({
                     onClick: onOpenBroadcast,
                     testId: "ward-alerts-broadcast-live",
                   }
-                : { id: "broadcast", label: "Broadcast", value: "none live", quiet: true },
-            ]}
+                : undefined,
+            ].filter((cell): cell is NonNullable<typeof cell> => cell !== undefined)}
           />
         </div>
       </HeroTop>

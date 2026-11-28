@@ -117,10 +117,6 @@ function Brand({ demo }: { demo: boolean }) {
           <Lock aria-hidden="true" />
           {points.lock.pill}
         </li>
-        <li>
-          <Info aria-hidden="true" />
-          Synthetic records only
-        </li>
       </ul>
       <ul className={styles.assure}>
         <li>
@@ -139,14 +135,6 @@ function Brand({ demo }: { demo: boolean }) {
           <span>
             <b>{points.lock.title}</b>
             {points.lock.body}
-          </span>
-        </li>
-        <li>
-          <span className={styles.ai}>
-            <Info aria-hidden="true" />
-          </span>
-          <span>
-            <b>Synthetic records only</b>A prototype. Not for clinical decisions.
           </span>
         </li>
       </ul>
@@ -254,14 +242,10 @@ export function DoorScreen({
               <Lock aria-hidden="true" />
               {points.lock.pill}
             </li>
-            <li>
-              <Info aria-hidden="true" />
-              Synthetic records only
-            </li>
           </ul>
           <p className={styles.safety}>
             <TriangleAlert aria-hidden="true" />
-            <span>Prototype with synthetic data. Never enter real patient details.</span>
+            <span>Synthetic data. Never enter real patient details.</span>
           </p>
         </div>
       </main>

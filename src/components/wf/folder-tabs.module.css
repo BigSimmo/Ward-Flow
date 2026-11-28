@@ -98,6 +98,29 @@
   }
 }
 
+/* Tablet (audit two B16a): the end slot stays on the tab row instead of dropping to a band of its
+   own under the filters. The tabs give way and scroll sideways; the slot keeps its place on the right,
+   at least the row's 12px gap after the last tab; the filters take the next line. */
+@media (min-width: 46.5rem) and (max-width: 63.99rem) {
+  .nav.nav > .switch.switch.switch.switch {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  .nav.nav > .moreSlot.moreSlot {
+    order: 1;
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+
+  .nav.nav > .filters.filters {
+    order: 2;
+  }
+}
+
 /* Wider screens anchor the shape here. */
 @media (min-width: 46.5rem) {
   .nav.nav {
@@ -334,6 +357,12 @@
 
 .more.more.more.more:focus-visible {
   --wf-focus-ring: var(--wf-hero-ink);
+}
+
+/* Gate r10 look upgrade 3: a named tab-row control (Alerts More, Handover Open on TV) is the quiet
+   outlined button, as Movements' Share, at the row's control height: the band's own edge, no fill. */
+.moreOutlined.moreOutlined.moreOutlined.moreOutlined {
+  border: 1px solid var(--wf-hero-edge);
 }
 
 /* Phone: the row runs edge to edge as before, without its canvas strip, since the folder draws it. */

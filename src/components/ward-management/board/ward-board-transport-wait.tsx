@@ -8,6 +8,8 @@ import type { LeavingDestination } from "@/components/ward-management/ward-admis
 import { leftWardAllowedFor, type WaitingForTransportEntry } from "@/components/ward-management/ward-left-ward";
 import styles from "./board.module.css";
 
+export { collectedStep } from "./ward-board-collected-step";
+
 export function WardBoardTransportWait({
   entries,
   nameFor,
@@ -87,11 +89,11 @@ function leavingConfirmWords(confirm: { kind: string; offerTransport?: boolean; 
   const leaving = confirm.kind === "leaving";
   return {
     title: confirm.offerTransport
-      ? "Confirm left the ward"
+      ? "Record discharge"
       : leaving
-        ? "Confirm discharge"
+        ? "Record discharge"
         : "Confirm emergency department transfer",
-    action: confirm.awaitingTransport ? "Record left ward" : leaving ? "Record discharge" : "Record ED transfer",
+    action: confirm.awaitingTransport || leaving ? "Record discharge" : "Record ED transfer",
   };
 }
 
@@ -123,20 +125,5 @@ export function transportConfirm(
     awaiting,
     unanswered: offers && awaiting === undefined,
     words: leavingConfirmWords({ kind: confirm?.kind ?? "", offerTransport: offers, awaitingTransport: awaiting }),
-  };
-}
-
-/** Item 18: the Collected step's message and Undo, for the board's undoable departure runner. */
-export function collectedStep(admissionId: string, actingUnitId: string, who: string) {
-  return {
-    success: `Collected: ${who} has gone.`,
-    undo: (at: Instant) => ({
-      type: "UNDO_DEPARTURE" as const,
-      role: "ward" as const,
-      now: at,
-      admissionId,
-      actingUnitId,
-    }),
-    undone: `Undone. ${who} is back on the Waiting for transport list.`,
   };
 }

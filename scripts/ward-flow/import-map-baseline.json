@@ -1,5 +1,5 @@
 {
-  "note": "M139 (10 Nov 2026, main 29352cd0). Frozen by scripts/ward-flow/import-map.ts and tests/ward-import-map-guard.test.ts. Counts may only fall: lower them with --update-baseline, never raise them by hand.",
+  "note": "M139 (10 Nov 2026, main 29352cd0). Frozen by scripts/ward-flow/import-map.ts and tests/ward-import-map-guard.test.ts. Counts may only fall: lower them with --update-baseline, never raise them by hand. Raised 564 to 582 on 28 Nov 2026 (Josh approved the r10 build): the r10 build added 18 screen-to-screen imports (Find hub composing Wards, ED, Community and Patients; Handover to Today's review; Delays to Movements, Patients and Legal forms; Alerts to Home sheet; Ward home to Board parts). Lower it again by moving shared parts to the ward root or kit.",
   "cycles": [],
-  "screenToScreenImports": 564
+  "screenToScreenImports": 582
 }

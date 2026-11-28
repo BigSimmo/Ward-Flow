@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode, type RefObject } from "react";
-import { Info, Phone, Plus, Shapes, Users, type LucideIcon } from "lucide-react";
+import { Info, Phone, Plus, Users, type LucideIcon } from "lucide-react";
 
 import {
   Button,
@@ -90,7 +90,7 @@ export type CommunityPhoneTool = {
   onPress: () => void;
 };
 
-type InfoSheet = "reach" | "duty" | "samples";
+type InfoSheet = "reach" | "duty";
 
 /** A long phone list shows its first eight rows, then Show more (redesign, approved 31 Oct 2026). */
 const LIST_ROWS_SHOWN = 8;
@@ -151,7 +151,6 @@ export function CommunityTeamPhone({
   howToReach,
   onDuty,
   coverage,
-  samples,
   actions,
   attention,
 }: {
@@ -175,7 +174,6 @@ export function CommunityTeamPhone({
   onDuty: ReactNode;
   /** Provenance, coverage limits and team facts. Inside About this data. */
   coverage: ReactNode;
-  samples: { id: string; label: string; onPress: () => void }[];
   /** The team's own actions, as chips after the two sheets (Record contact, CTO register, MDT). */
   actions: CommunityPhoneTool[];
   attention: ReactNode[];
@@ -194,9 +192,6 @@ export function CommunityTeamPhone({
     { id: "duty", label: "On duty", icon: Users, onPress: () => setSheet("duty") },
   ];
   const intakeChip: CommunityPhoneTool = { id: "intake", label: "Refer from team", icon: Plus, onPress: onIntake };
-  const tailChips: CommunityPhoneTool[] = [
-    { id: "samples", label: "Samples", icon: Shapes, onPress: () => setSheet("samples") },
-  ];
 
   return (
     <div className={css.phone} data-testid="ward-community-phone">
@@ -235,13 +230,13 @@ export function CommunityTeamPhone({
         {since}
 
         <ScrollRow className={css.chipsFrame} rowClassName={css.chips} role="group" aria-label="Team tools">
-          {[...sheetChips, intakeChip, ...actions, ...tailChips].map((chip) => (
+          {[...sheetChips, intakeChip, ...actions].map((chip) => (
             <button
               key={chip.id}
               type="button"
               className={buttonClass({ variant: "sec", className: css.chip })}
               onClick={chip.onPress}
-              aria-haspopup={sheetChips.includes(chip) || tailChips.includes(chip) ? "dialog" : undefined}
+              aria-haspopup={sheetChips.includes(chip) ? "dialog" : undefined}
               data-testid={`ward-community-phone-chip-${chip.id}`}
             >
               <chip.icon size={16} aria-hidden="true" />
@@ -294,24 +289,6 @@ export function CommunityTeamPhone({
       </PhoneSheet>
       <PhoneSheet open={sheet === "duty"} onClose={close} title="On duty today" description="Sample roster">
         <div className={css.sheetBody}>{onDuty}</div>
-      </PhoneSheet>
-      <PhoneSheet open={sheet === "samples"} onClose={close} title="Samples" description="Illustrative only">
-        <div className={css.sheetBody}>
-          <ul className={css.card}>
-            {samples.map((sample) => (
-              <li key={sample.id} className={css.rowItem}>
-                <PhoneListRow
-                  name={sample.label}
-                  leading={<Shapes size={16} aria-hidden="true" />}
-                  onSelect={() => {
-                    close();
-                    sample.onPress();
-                  }}
-                />
-              </li>
-            ))}
-          </ul>
-        </div>
       </PhoneSheet>
     </div>
   );

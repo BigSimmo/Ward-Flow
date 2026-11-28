@@ -20,14 +20,14 @@ import { referralForMovement } from "@/components/ward-management/ward-derivatio
 import { type HandoverScope } from "./handover-scope";
 
 export function allRecordsScopeLabel(access: WardAccess): string {
-  return accessIsWholeNetwork(access) ? "Whole network" : "All records you can access";
+  return accessIsWholeNetwork(access) ? "Statewide" : "All records you can access";
 }
 
 /** THE SCOPE'S NAME */
 export function handoverScopeLabel(
   scope: HandoverScope,
   units: Unit[],
-  allRecordsLabel = "Whole network",
+  allRecordsLabel = "Statewide",
 ): string | undefined {
   switch (scope.kind) {
     case "network":

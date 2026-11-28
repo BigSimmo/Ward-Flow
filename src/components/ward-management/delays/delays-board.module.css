@@ -633,6 +633,42 @@ button.stat:hover .statV {
   }
 }
 
+/* Simplification mock-up (26 Nov 2026), full-width list on a laptop: Waited and Held up by take the
+   room Person does not need, and Last update fits "10 h 00 min ago" on one line. Below this width the
+   widths above stand. */
+@media (min-width: 74rem) {
+  .colW {
+    width: 15rem;
+  }
+
+  .colT {
+    width: 3rem;
+  }
+
+  .colB {
+    width: 11rem;
+  }
+
+  .colL {
+    width: 8.5rem;
+  }
+
+  .colU {
+    width: 9.5rem;
+  }
+
+  /* Waited reads as the figure and its words, with the wait bar under them, not squeezed beside. */
+  .tbl .cWait .wcell {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 3px;
+  }
+
+  .tbl .cWait .wbw {
+    flex: 0 0 auto;
+  }
+}
+
 /* Device audit (11 Oct 2026): on a tablet the table sits inside a narrower column, so it may give
    up its minimum width rather than scroll. */
 @media (min-width: 46.5rem) and (max-width: 73.75rem) {
@@ -3095,4 +3131,18 @@ button.legalChip {
   .x {
     min-width: 40px;
   }
+}
+
+/* Audit four #92 (28 Nov 2026): in dark the "Under 8h" segment and its key swatch were 1.4 to 1
+ * against the card and nearly vanished. A slate between the neutral and the track lifts it to
+ * about 3.4 to 1, and its greyer hue keeps it apart from the blue "8 to 12h" band. Dark only; the
+ * other bands stay. */
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme="light"])) .band0 {
+    background: color-mix(in srgb, var(--wf-neutral) 55%, var(--wf-data-3));
+  }
+}
+
+:global(:root[data-theme="dark"]) .band0 {
+  background: color-mix(in srgb, var(--wf-neutral) 55%, var(--wf-data-3));
 }

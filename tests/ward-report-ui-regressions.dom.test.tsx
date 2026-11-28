@@ -37,7 +37,7 @@ describe("people-list triggers", () => {
     expect(open).toHaveBeenCalledOnce();
   });
 
-  it("exposes the selected stage as a dialog trigger", () => {
+  it("exposes the selected stage as a pressed highlight toggle", () => {
     const open = vi.fn();
     const stage = {
       id: "placement_requested",
@@ -46,19 +46,13 @@ describe("people-list triggers", () => {
       movements: [],
     } as JourneyStage;
     render(
-      <StagePipeline
-        stages={[stage]}
-        now={10}
-        accessTarget={100}
-        highlight="stage:placement_requested"
-        onToggle={open}
-      />,
+      <StagePipeline stages={[stage]} now={10} accessTarget={100} selected="placement_requested" onToggle={open} />,
     );
     const button = screen.getByRole("button");
-    expect(button).toHaveAttribute("aria-haspopup", "dialog");
-    expect(button).not.toHaveAttribute("aria-pressed");
+    // A stage highlights its rows in the worklist (the Movements redesign), so it is a pressed toggle, not a dialog.
+    expect(button).not.toHaveAttribute("aria-haspopup");
+    expect(button).toHaveAttribute("aria-pressed", "true");
     expect(button).toHaveAttribute("data-highlighted", "true");
-    expect(button).toHaveAccessibleDescription(/Highlighted in worklist/u);
     fireEvent.click(button);
     expect(open).toHaveBeenCalledWith("placement_requested");
   });

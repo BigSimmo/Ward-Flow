@@ -136,6 +136,23 @@
   padding-top: var(--wf-s-1);
 }
 
+/* Gate r10 (1b F5): with a pager, the pager and Close take their own row and the name and its chips
+   get the full sheet width under them, as the kit drawer head does on a phone. */
+.sheetHeader[data-has-pager] {
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 0;
+}
+
+.sheetHeader[data-has-pager] > .sheetTitleBlock {
+  flex-basis: 100%;
+  order: 1;
+}
+
+.sheetHeader[data-has-pager] > .sheetClose {
+  margin-inline-start: auto;
+}
+
 .sheetTitle {
   margin: 0;
   font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-font);

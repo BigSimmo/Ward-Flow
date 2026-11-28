@@ -3,7 +3,7 @@
 import { ChevronRight, Eye, Send, X } from "lucide-react";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import styles from "./ward-referral-drawer.module.css";
-import { StatusGlyph } from "@/components/wf";
+import { Icon, StatusGlyph, buttonClass } from "@/components/wf";
 import { DESTINATIONS, sectionLabel } from "./ward-referral-drawer-model";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
@@ -97,9 +97,10 @@ function ReferralDrawerPhoneHero({ s }: { s: WardReferralDrawerState }) {
                   <span>Urgency</span>
                 </span>
               )}
+              {/* States B review: one inline chip, icon left of its label, not a stacked figure. */}
               <button
                 type="button"
-                className={styles.phFigure}
+                className={buttonClass({ variant: "onHero", size: "sm", className: styles.phPreview })}
                 aria-pressed={previewOpen}
                 data-testid="ward-referral-phone-preview-letter"
                 onClick={() => {
@@ -108,8 +109,8 @@ function ReferralDrawerPhoneHero({ s }: { s: WardReferralDrawerState }) {
                   if (bodyRef.current) bodyRef.current.scrollTop = 0;
                 }}
               >
-                <Eye aria-hidden="true" />
-                <span>Preview letter</span>
+                <Icon icon={Eye} size={14} />
+                Preview letter
               </button>
             </>
           )}
@@ -271,12 +272,10 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
           {/* WT-28: nothing is pre-filled for a patient just added in this form, so no banner says so. */}
           {offersJump(s) && !patientAddedInForm ? (
             <div className={`${styles.fastTrackBar} ${styles.fastTrackInset}`} data-testid="ward-referral-fast-track">
-              {/* The two Jump buttons beside it already name where they go, so the line says only
-                  what happened, with the app's own glyph instead of a typed tick. */}
+              {/* Audit four 62: the step rows are the jumps, so the line says only what happened. */}
               <span className={styles.fastTrackText}>
                 <StatusGlyph tone="success" size={9} /> Patient and referral details pre-filled from the record
               </span>
-              <ReferralJumpButtons s={s} />
             </div>
           ) : null}
         </>
@@ -293,41 +292,6 @@ function offersJump(s: WardReferralDrawerState): boolean {
     !sentReferralId &&
     !noPatientChosen &&
     Boolean(patientRecord || liveMovement || fromEntryPoint || (initialUnitIds && initialUnitIds.length > 0))
-  );
-}
-
-/**
- * Jump to Clearance and Jump to the placement step. WS-19 (H-0983): on a phone the open step sheet
- * covers the head, so the sheet's own head carries them too, leaving out the step already open.
- */
-function ReferralJumpButtons({ s, inSheet = false }: { s: WardReferralDrawerState; inSheet?: boolean }) {
-  const { destType, isPhone, phOpenStep, selectSection, activeSection } = s;
-  // D-77: the community short form asks clearance on its Referral step.
-  const clearanceStep = destType === "community" ? "referral" : "documentation";
-  const go = (step: typeof clearanceStep | "placement") => (isPhone ? phOpenStep(step) : selectSection(step));
-  return (
-    <div className={styles.fastTrackActions}>
-      {inSheet && activeSection === clearanceStep ? null : (
-        <button
-          type="button"
-          className={styles.fastTrackBtn}
-          data-testid={inSheet ? "ward-referral-sheet-jump-clearance" : "ward-referral-jump-clearance"}
-          onClick={() => go(clearanceStep)}
-        >
-          Jump to Clearance →
-        </button>
-      )}
-      {inSheet && activeSection === "placement" ? null : (
-        <button
-          type="button"
-          className={styles.fastTrackBtn}
-          data-testid={inSheet ? "ward-referral-sheet-jump-placement" : "ward-referral-jump-placement"}
-          onClick={() => go("placement")}
-        >
-          {`Jump to ${sectionLabel("placement", destType)} →`}
-        </button>
-      )}
-    </div>
   );
 }
 
@@ -368,7 +332,6 @@ export function ReferralDrawerPhoneSheetHead({ s }: { s: WardReferralDrawerState
           <X aria-hidden="true" />
         </button>
       </div>
-      {!previewOpen && !confirmationOpen && offersJump(s) ? <ReferralJumpButtons s={s} inSheet /> : null}
     </div>
   );
 }

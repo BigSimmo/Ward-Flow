@@ -5,9 +5,74 @@ import { Button, Sheet } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "./ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "./ward-flow-provider";
 import { SharedAccessContext } from "./shell/ward-shared-access-context";
-import { SinceLastLookSheetBody, sinceLastLookCount, useSinceLastLook } from "./coordinator/since-last-look-panel";
+import { sinceLastLookCount, useSinceLastLook } from "./coordinator/since-last-look-panel";
+import { loadEarly } from "./load-early";
+import { preloadWhenIdle } from "./preload-when-idle";
 import type { ChangesSinceLastLook } from "./coordinator/since-last-look";
 import styles from "./since-last-look-pill.module.css";
+
+// Phone script budget (PR #1742): the sheet's lines draw only once the Updates sheet opens, so their
+// code stays off the first load. It is fetched when the browser is idle and draws in the same render
+// once there (`loadEarly`), so an opened sheet does not wait a frame for it.
+const sheetBody = loadEarly(() =>
+  import("./coordinator/since-last-look-sheet-body").then((m) => m.SinceLastLookSheetBody),
+);
+const SinceLastLookSheetBody = sheetBody.Card;
+preloadWhenIdle(async () => sheetBody.start());
+
+/**
+ * Audit two #36 (O23): the one "since you looked" sheet, titled "Since HH:MM" wherever it opens
+ * (Ward and ED pill, Ward chip, Home banner, Handover phone). The body is the shared review; a
+ * screen may pass a note (the 15-minute window, "now marked seen"), its own lines `after` the
+ * review (the Ward page's Since yesterday) and the sheet's body semantics.
+ */
+export function SinceLastLookSheet({
+  open,
+  onClose,
+  changes,
+  since,
+  now,
+  windowMinutes,
+  note,
+  after,
+  bodyTabIndex,
+  bodyLabel,
+  resolveReturnFocusTarget,
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** The review captured when the sheet opened; `undefined` while closed. */
+  changes: ChangesSinceLastLook | undefined;
+  /** The time the review runs from; it names the sheet. */
+  since: Instant;
+  now: Instant;
+  /** The look-back window, shown as the sheet's note ("15-minute window"). */
+  windowMinutes?: number;
+  /** Any other note for the sheet's description, after the window. */
+  note?: string;
+  /** A screen's own lines under the review. */
+  after?: ReactNode;
+  bodyTabIndex?: number;
+  bodyLabel?: string;
+  resolveReturnFocusTarget?: () => HTMLElement | null;
+}) {
+  const notes = [windowMinutes ? `${windowMinutes}-minute window` : null, note ?? null].filter(Boolean);
+  const description = notes.length ? notes.join(" · ") : undefined;
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title={`Since ${formatInstantWithDay(since, now)}`}
+      description={description}
+      bodyTabIndex={bodyTabIndex}
+      bodyLabel={bodyLabel}
+      resolveReturnFocusTarget={resolveReturnFocusTarget}
+    >
+      <SinceLastLookSheetBody changes={changes} />
+      {after}
+    </Sheet>
+  );
+}
 
 /** Subscribe here so review/open state never rerenders the Ward/ED screen. */
 /**
@@ -110,15 +175,15 @@ function ScopedReview({
           {count} {count === 1 ? "update" : "updates"} since {formatInstantWithDay(changes.since, now)}
         </Button>
       )}
-      <Sheet
+      <SinceLastLookSheet
         open={open}
         onClose={() => setReview(null)}
-        title="Since you last looked"
-        description={`Updates since ${formatInstantWithDay(review?.since ?? changes.since, now)} · 15-minute window`}
+        changes={open ? review : undefined}
+        since={review?.since ?? changes.since}
+        now={now}
+        windowMinutes={15}
         resolveReturnFocusTarget={returnFocusTarget}
-      >
-        <SinceLastLookSheetBody changes={open ? review : undefined} />
-      </Sheet>
+      />
     </span>
   );
 }
@@ -128,7 +193,11 @@ function ScopedReview({
  * it as a hero chip ("Updates 1"). The page draws the chip from `count` and `open`, and renders
  * `sheet` once. The review resets when the scope, user, world or scenario changes, as the pill's does.
  */
-export function useSinceLastLookReview(scopeKey: string): {
+export function useSinceLastLookReview(
+  scopeKey: string,
+  /** A screen's own lines under the review (the Ward page's Since yesterday, 26 Nov 2026 mock-up). */
+  after?: ReactNode,
+): {
   count: number;
   since: Instant;
   open: () => void;
@@ -164,14 +233,15 @@ export function useSinceLastLookReview(scopeKey: string): {
       markSeen();
     },
     sheet: (
-      <Sheet
+      <SinceLastLookSheet
         open={review !== null}
         onClose={() => setOpened(null)}
-        title="Since you last looked"
-        description={`Updates since ${formatInstantWithDay(review?.since ?? changes.since, now)} · 15-minute window`}
-      >
-        <SinceLastLookSheetBody changes={review ?? undefined} />
-      </Sheet>
+        changes={review ?? undefined}
+        since={review?.since ?? changes.since}
+        now={now}
+        windowMinutes={15}
+        after={after}
+      />
     ),
   };
 }

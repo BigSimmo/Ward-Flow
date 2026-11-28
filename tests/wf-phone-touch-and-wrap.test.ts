@@ -30,7 +30,7 @@ describe("phone touch: 40px drawn, 48px cover", () => {
 
   it("All EDs filter chips and Status and order are 40px faces with a 48px cover", () => {
     const ed = css("ward-management/ed/ed-index.module.css");
-    expect(ed).toMatch(/\.phoneFilterRow > \.phoneFilterButton\s*\{\s*width:\s*40px;\s*height:\s*40px;/u);
+    expect(ed).toMatch(/\.phoneFilterRow \.phoneFilterButton\s*\{[^}]*width:\s*40px;\s*height:\s*40px;/u);
     expect(ed).toMatch(/\.phoneServices\.phoneServices :global\(\[role="radio"\]\)\s*\{\s*height:\s*40px;/u);
     expect(ed).toMatch(/\.phoneServices\.phoneServices :global\(\[role="radio"\]\)::after\s*\{\s*inset:\s*-4px 0;/u);
     expect(ed).not.toMatch(/height:\s*32px/u);
@@ -88,5 +88,6 @@ describe("one sticky bar, solid when pinned", () => {
 });
 
 it("names the held-up link with its visible words first", () => {
-  expect(HELD_UP_LINK_LABEL.startsWith("See all")).toBe(true);
+  // Audit four #75: the link reads "Open Discharges", so the visible words still come first in the name.
+  expect(HELD_UP_LINK_LABEL.startsWith("Open Discharges")).toBe(true);
 });

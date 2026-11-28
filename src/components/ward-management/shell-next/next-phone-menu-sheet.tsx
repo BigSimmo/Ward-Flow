@@ -3,8 +3,6 @@
 // Fork of src/components/ward-management/shell/ward-phone-menu-sheet.tsx (shell-next, Josh, 31 Oct 2026):
 // the phone Menu gains a top block (the desk's capacity card and Activity) passed in as `top`.
 
-import dynamic from "next/dynamic";
-import { withLoadRetry } from "@/components/ward-management/load-retry";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -13,8 +11,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type ComponentProps,
-  type ComponentType,
   type MouseEvent,
   type ReactNode,
   type RefObject,
@@ -47,7 +43,6 @@ import {
   Pin,
   Plus,
   Repeat,
-  Search,
   SearchCheck,
   Send,
   Settings,
@@ -63,8 +58,6 @@ import { Dot } from "@/components/wf";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { WARD_ADD_PERSON_HREF, WARD_TRIAGE_NEW_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel, type WardNavCount } from "@/components/ward-management/ward-nav-counts";
-import type { SearchResultItem } from "@/components/ward-management/ward-global-search";
-import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 
 import { useWardDataMode } from "@/components/ward-management/ward-shared-access";
@@ -88,7 +81,6 @@ import {
   chipText,
   CountChip,
   countIn,
-  MenuSearching,
   type PageRowRender,
   Section,
 } from "@/components/ward-management/shell/ward-phone-menu-parts";
@@ -110,12 +102,11 @@ import {
   useDeskPersona,
 } from "@/components/ward-management/shell/ward-desk-personas";
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
-import type { CountMap, DrawerId, NeedRow, PhoneMenuModel } from "@/components/ward-management/shell/ward-phone-menu";
+import type { CountMap, DrawerId, PhoneMenuModel } from "@/components/ward-management/shell/ward-phone-menu";
 import type { DockOption } from "@/components/ward-management/shell-next/next-phone-menu";
 import styles from "@/components/ward-management/shell/ward-phone-menu.module.css";
 import editStyles from "@/components/ward-management/shell-next/next-create-edit.module.css";
 import dockStyles from "@/components/ward-management/shell-next/next-phone-dock.module.css";
-import actNowStyles from "@/components/ward-management/shell/ward-phone-menu-act-now.module.css";
 
 /**
  * What the + starts. New referral is real; the rest open the page where that work is done.
@@ -136,7 +127,7 @@ const CREATE_LINKS: readonly {
   icon: LucideIcon;
   href?: string;
 }[] = [
-  { id: "delays", label: "Log a delay", meta: "Choose the patient, then the reason", icon: Clock3 },
+  { id: "delays", label: "Record a delay", meta: "Choose the patient, then the reason", icon: Clock3 },
   { id: "wards", label: "Update a bed", meta: "Open or close a bed", icon: BedSingle },
   {
     id: "add-patient",
@@ -146,47 +137,6 @@ const CREATE_LINKS: readonly {
     href: WARD_ADD_PERSON_HREF,
   },
 ];
-
-function NeedRowLink({ row, onGo, onTasks }: { row: NeedRow; onGo: () => void; onTasks: () => void }) {
-  const face = (
-    <>
-      <RowBody
-        icon={row.icon}
-        label={row.label}
-        meta={
-          <>
-            <Dot tone={row.actNow ? "danger" : "warning"} />
-            <span>{row.meta}</span>
-          </>
-        }
-      />
-      <CountChip value={row.count} className={styles.count} />
-      <Chevron />
-    </>
-  );
-  // Site review, 12 Oct 2026: the act-now row takes the approved tint and rounded marker
-  // (`ward-phone-menu-act-now.module.css`), not the full red box the shared row rule drew.
-  const common = {
-    className: row.actNow ? `${styles.row} ${actNowStyles.actNow}` : styles.row,
-    "data-act-marker": row.actNow || undefined,
-    // axe 4.14: the name keeps the row's visible order (label, its words, then the count chip).
-    "aria-label": `${row.label}, ${row.meta}: ${chipText(row.count)}`,
-    "data-testid": "ward-phone-menu-need",
-  };
-  return (
-    <li>
-      {row.href ? (
-        <Link href={row.href} prefetch={true} {...common} onClick={onGo}>
-          {face}
-        </Link>
-      ) : (
-        <button type="button" {...common} onClick={onTasks}>
-          {face}
-        </button>
-      )}
-    </li>
-  );
-}
 
 function RowBody({ icon: Icon, label, meta }: { icon: typeof Plus; label: string; meta?: ReactNode }) {
   return (
@@ -353,7 +303,7 @@ function MoreSection({
         <HelpRow onClose={onClose} />
         <DeskRow onSwitch={onSwitch} onClose={onClose} />
         <SignOutRow />
-        <DataModeRow onClose={onClose} />
+        <DataModeRow />
       </ul>
       <p className={styles.note}>
         <Dot tone="neutral" />
@@ -387,10 +337,10 @@ function HelpRow({ onClose }: { onClose: () => void }) {
 
 /**
  * The data mode, still reachable on a phone now the header's Prototype pill is desktop only: a
- * quiet row saying which data this is, and the (unavailable) hospital records door. Nothing when
+ * quiet row saying which data this is. Nothing when
  * the page sits outside `WardSharedAccess`.
  */
-function DataModeRow({ onClose }: { onClose: () => void }) {
+function DataModeRow() {
   const dataMode = useWardDataMode();
   if (!dataMode) return null;
   return (
@@ -399,17 +349,6 @@ function DataModeRow({ onClose }: { onClose: () => void }) {
         <span className={styles.rowLabel}>Data mode: Prototype</span>
         <span className={styles.dataModeDetail}>{dataMode.detail}</span>
       </span>
-      <button
-        type="button"
-        className={styles.dataModeButton}
-        data-testid="ward-phone-menu-hospital-records"
-        onClick={() => {
-          onClose();
-          dataMode.openHospitalRecords();
-        }}
-      >
-        Hospital records (unavailable)
-      </button>
     </li>
   );
 }
@@ -998,7 +937,7 @@ function CreateSheet({
           {
             key: "transport" as const,
             icon: Ambulance,
-            label: "Book transport",
+            label: "Record transport booking",
             meta: "For a patient ready to move",
             href: "/bedchart/transport/officer",
           },
@@ -1090,87 +1029,10 @@ function CreateSheet({
   );
 }
 
-/**
- * Repo score follow-up (16 October 2026): the menu's search results need the app's whole search
- * engine, which a phone's first load no longer carries. They load once the browser is idle, so a
- * search normally finds them already there, and read "Searching…" until then.
- */
-const loadMenuResults = () => import("@/components/ward-management/shell/ward-phone-menu-results");
-type MenuSearchResultsProps = ComponentProps<
-  (typeof import("@/components/ward-management/shell/ward-phone-menu-results"))["MenuSearchResults"]
->;
-// A failed load (offline before the code arrived) draws `MenuSearchRetry` in its place rather than
-// failing the whole shell.
-const MenuSearchResults = dynamic(
-  withLoadRetry(() =>
-    loadMenuResults().then(
-      (m) => m.MenuSearchResults,
-      () => MenuSearchRetry,
-    ),
-  ),
-  { ssr: false, loading: () => <MenuSearching /> },
-);
-preloadWhenIdle(loadMenuResults);
-
-/**
- * Stands in for the results when their code could not load. It tries again on each keystroke and
- * each time the menu opens, and shows the real results once they arrive.
- */
-function MenuSearchRetry(props: MenuSearchResultsProps) {
-  const [Results, setResults] = useState<ComponentType<MenuSearchResultsProps> | null>(null);
-  const [failed, setFailed] = useState(false);
-  const retryKey = Results ? "" : props.query;
-  useEffect(() => {
-    let live = true;
-    loadMenuResults().then(
-      (m) => {
-        if (live) setResults(() => m.MenuSearchResults);
-      },
-      () => {
-        if (live) setFailed(true);
-      },
-    );
-    return () => {
-      live = false;
-    };
-  }, [retryKey]);
-  if (Results) return <Results {...props} />;
-  if (!failed) return <MenuSearching />;
-  return (
-    <Section label="Search unavailable">
-      <li className={styles.empty}>Search could not load. Check the connection, then type again.</li>
-    </Section>
-  );
-}
-
-function MenuSearch({ query, onQuery }: { query: string; onQuery: (value: string) => void }) {
-  return (
-    <label className={styles.search}>
-      <Search aria-hidden="true" strokeWidth={1.75} />
-      <span className="sr-only">Go to a page or patient</span>
-      <input
-        type="search"
-        value={query}
-        placeholder="Go to a page or patient"
-        autoComplete="off"
-        autoCorrect="off"
-        autoCapitalize="none"
-        enterKeyHint="search"
-        onChange={(event) => onQuery(event.target.value)}
-        data-testid="ward-phone-menu-search"
-      />
-    </label>
-  );
-}
-
-/** With a search typed, the matching pages and records. Without one, Needs you, every page by group, then More. */
+/** Every page by group, then More. */
 function MenuPages({
-  query,
-  entries,
-  needs,
   groups,
   pageRow,
-  onResult,
   onDrawer,
   onClose,
   onSwitch,
@@ -1186,30 +1048,14 @@ function MenuPages({
    * or at the end of the desk's own section where Referrals sits in the dock.
    */
   triageRow?: ReactNode;
-  query: string;
-  entries: RailEntry[];
-  /** Act-now and overdue rows only (device audit option A). */
-  needs: NeedRow[];
   groups: PhoneMenuModel["groups"];
   pageRow: PageRowRender;
-  onResult: (item: SearchResultItem) => void;
   onDrawer: (id: DrawerId) => void;
   onClose: () => void;
 }) {
   const hasReferralsRow = groups.some((group) => group.entries.some((entry) => entry.id === "referrals"));
-  if (query.trim().length > 0) {
-    return <MenuSearchResults query={query} entries={entries} pageRow={pageRow} onGo={onResult} />;
-  }
   return (
     <>
-      {/* UX audit (21 Oct 2026): "Needs you" is Home's one list; this section says what it holds. */}
-      <Section label="Act now and overdue" rich>
-        {needs.length === 0 ? (
-          <li className={styles.empty}>Nothing is act-now or overdue.</li>
-        ) : (
-          needs.map((row) => <NeedRowLink key={row.id} row={row} onGo={onClose} onTasks={() => onDrawer("tasks")} />)
-        )}
-      </Section>
       {groups.map((group, groupIndex) => (
         <Section key={group.label} label={group.label}>
           {group.entries.map((entry) =>
@@ -1248,15 +1094,11 @@ function MenuPages({
 export function PhoneMenuSheets({
   open,
   onClose,
-  query,
-  onQuery,
   returnFocusRef,
   pathname,
   shellRole,
   counts,
-  entries,
   byId,
-  needs,
   groups,
   onGo,
   onRefer,
@@ -1273,22 +1115,18 @@ export function PhoneMenuSheets({
 }: {
   /** Edit bar (Josh, 16 Nov 2026): the bottom bar's spots, their choices, and saving them. */
   bar: EditBarProps;
-  /** shell-next: drawn under the search box while nothing is typed. */
+  /** shell-next: drawn at the top of the Menu, under the who row. */
   top?: ReactNode;
   /** Activity gets a Menu row when the dock does not carry it (Josh, 8 Nov 2026). */
   activityRow?: boolean;
   open: boolean;
   onClose: () => void;
-  query: string;
-  onQuery: (value: string) => void;
   returnFocusRef: RefObject<HTMLButtonElement | null>;
   /** The shell's role. The who row now names the desk's person instead (DK1). */
   shellRole: WardChromeRole;
   pathname: string;
   counts: CountMap;
-  entries: RailEntry[];
   byId: PhoneMenuModel["byId"];
-  needs: NeedRow[];
   groups: PhoneMenuModel["groups"];
   onGo: (entry: RailEntry) => void;
   onRefer: () => void;
@@ -1340,19 +1178,11 @@ export function PhoneMenuSheets({
         closeButtonClassName={styles.close}
         bodyClassName={styles.body}
       >
-        <MenuSearch query={query} onQuery={onQuery} />
-        {query.trim() ? null : top}
+        {top}
         <MenuPages
-          query={query}
-          entries={entries}
-          needs={needs}
           groups={groups}
           pageRow={pageRow}
           triageRow={triageRow}
-          onResult={(item) => {
-            announceToWardShell(`${item.title}.`);
-            onClose();
-          }}
           onDrawer={onDrawer}
           activityRow={activityRow}
           onClose={onClose}

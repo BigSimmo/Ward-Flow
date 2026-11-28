@@ -331,8 +331,9 @@ describe("LiveChip", () => {
   // a freshness line."
   it("shows nothing on tablet and desktop while live, keeps the phone's freshness line, and says stale and offline in words", () => {
     const { container, rerender } = render(<LiveChip state="live" age="10:42" onHero />);
-    // Desktop: no pill, no clock; the status line stays for screen readers.
-    expect(container.querySelector('[aria-hidden="true"]')).toBeNull();
+    // Desktop: audit three #50 (28 Nov 2026) keeps the Demo pill on a hero at every size, but it shows no
+    // age or clock; the status line stays for screen readers.
+    expect(container.querySelector('[aria-hidden="true"]')).toHaveTextContent(/^Demo$/);
     expect(container).not.toHaveTextContent("10:42");
     expect(screen.getByRole("status")).toHaveTextContent(/^Demo$/);
     rerender(<LiveChip state="stale" asAt={new Date("2026-10-07T10:26:00+08:00")} onHero />);

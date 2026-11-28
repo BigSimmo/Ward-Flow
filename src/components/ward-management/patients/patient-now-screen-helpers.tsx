@@ -102,3 +102,13 @@ export function etaAndNext(
   if (job?.diversion !== undefined || etaAt === undefined) return { value: next, label: "next step", next };
   return { value: clockOn(etaAt, context.now), label: `ward ETA · next: ${next}`, next };
 }
+
+/**
+ * The Legal status figure: the status's first word ("Voluntary"), but "Not recorded" stays whole
+ * rather than shrinking to "Not" or "Legal".
+ */
+export function legalStatusFigure(status: string | undefined): string {
+  const words = status?.trim();
+  if (!words || /^(?:legal status )?not recorded$/i.test(words)) return "Not recorded";
+  return words.split(" ")[0] ?? "Not recorded";
+}

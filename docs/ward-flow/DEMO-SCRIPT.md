@@ -280,11 +280,11 @@ outcome**.
 > still go ahead, but the screen would ask why every time, and you could still go on without a
 > reason."
 
-**Do:** on the **Transport** row press **Log booking**. The **Transport** panel opens. From the **Who
+**Do:** on the **Transport** row press **Record booking**. The **Transport** panel opens. From the **Who
 is collecting** list choose **Ambulance (St John)**. Type a synthetic number such as `CAD-DEMO-0001` in
 **CAD transport number**, press **+30m** for the estimated time, press **No escort required**, then
 **Involuntary** for the transport question. Press
-**Save transport booking**, then **Esc**.
+**Record booking**, then **Esc**.
 
 **Say:**
 
@@ -321,8 +321,8 @@ choose **Paper copy sighted** and press **Mark moving, record reason**.
 
 **Screen:** still Keira's page, **Destination and placement** panel.
 
-**Do:** press **Confirm arrival · receiving ward**. A check, "Confirm arrival at Dabakarn", shows her name,
-UMRN, date of birth and where she is coming from, to check against her wristband. Press **Confirm arrival**.
+**Do:** press **Confirm arrival · receiving ward**. A check, "Record arrival at the ward?", names Dabakarn, shows her name,
+UMRN, date of birth and where she is coming from, to check against her wristband. Press **Record arrival**.
 Press **Esc**, and point to "Arrived · transfer complete" on her page.
 
 **Say:**
@@ -330,7 +330,7 @@ Press **Esc**, and point to "Arrived · transfer complete" on her page.
 > "The ward checks it is the right person and confirms she has arrived. The journey is closed, and
 > her page now belongs to the ward."
 
-**Do:** in the left-hand menu press **More**, then **All wards**, then **Open ward** on the
+**Do:** in the left-hand menu press **More**, then **All wards**, then **Open Dabakarn** on the
 **Dabakarn** card. Point to Keira in the bed grid. Then, in the **Checks and ward details** card
 beside it, point to "… staff on constant observation", which counts staff assigned to constant
 observation (none on this ward just now). In the **Checking** line below it, **Obs not recorded**
@@ -352,7 +352,7 @@ counts people on the ward with no observation level recorded. It is a count only
 Pick two of these three if time is short. None of them needs typing.
 
 **A. The ward sees the full referral before it answers.** In the left-hand menu press **More**,
-then **All wards**, and press **Open ward** on **Graylands Adult Secure**. In the **Coming and going**
+then **All wards**, and press **Open Graylands Adult Secure**. In the **Coming and going**
 card, under **Referrals · now**, press **Loxbury, Saoirse** (synthetic). The full referral opens:
 reason, risk, legal, observation, medical clearance, physical health, medications, referrer, arrival
 and documents. Point to **To check** under "Passes the 6 bed checks.": five rows for Saoirse, the
@@ -549,14 +549,14 @@ Keep this beside you. Each row is a press to avoid on the day, why, and what to 
 
 | Don't press                                                                        | Why                                                                                                                                      | If it happens                                                                                                                                                                                                                                                                                                                                 |
 | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Anything but **Esc** in Keira's ED panel, above all **Record no transport needed** | Act 4's **Log booking** disappears                                                                                                       | **Undo** on its message, or **Change** on her Transport row, brings it back; otherwise **Reset demo**, restart from Act 2                                                                                                                                                                                                                     |
-| **Log booking** before **Record clearance**                                        | The booking asks for a reason ('Fit to travel not recorded. Record why, or save without a reason.'), and so does **Mark handover ready** | Choose **Confirmed with the treating team** under **Reason**, or save without one. The booking is never held. **Mark handover ready** is then only in the **Destination** panel, as **Mark handover ready · sending team**. Its box offers **Continue without a reason**, or choose a reason and press **Mark handover ready, record reason** |
+| Anything but **Esc** in Keira's ED panel, above all **Record no transport needed** | Act 4's **Record booking** disappears                                                                                                    | **Undo** on its message, or **Change** on her Transport row, brings it back; otherwise **Reset demo**, restart from Act 2                                                                                                                                                                                                                     |
+| **Record booking** before **Record clearance**                                     | The booking asks for a reason ('Fit to travel not recorded. Record why, or save without a reason.'), and so does **Mark handover ready** | Choose **Confirmed with the treating team** under **Reason**, or save without one. The booking is never held. **Mark handover ready** is then only in the **Destination** panel, as **Mark handover ready · sending team**. Its box offers **Continue without a reason**, or choose a reason and press **Mark handover ready, record reason** |
 | **Confirm** after **Mark absent** on Keira's page after arrival                    | Dabakarn shows her absent without leave                                                                                                  | **Record return** on her page                                                                                                                                                                                                                                                                                                                 |
 | **See it as** in Tools, or any other desk                                          | The desk changes. The other desks are not ready to show                                                                                  | **Back to coordinator**, in the bar at the top, or **Reset demo**                                                                                                                                                                                                                                                                             |
 | **Open patient** in the ED panel as a way to her page                              | It opens an ED side panel instead                                                                                                        | Press **/**, type `Keira`, press the **down arrow**, then **Enter** (or click her name in the list)                                                                                                                                                                                                                                           |
 | The phone numbers on her page                                                      | They are dial links                                                                                                                      | Close the chooser. Use the copy button beside each                                                                                                                                                                                                                                                                                            |
 | Browser zoom                                                                       | The left-hand menu loses its words                                                                                                       | Zoom back to 100% (**Ctrl+0**)                                                                                                                                                                                                                                                                                                                |
-| **Esc** in **Record a form** or the ED board's **Log transport booking**           | Esc does nothing there                                                                                                                   | Press **Close**                                                                                                                                                                                                                                                                                                                               |
+| **Esc** in **Record a form** or the ED board's **Record transport booking**        | Esc does nothing there                                                                                                                   | Press **Close**                                                                                                                                                                                                                                                                                                                               |
 | The body of a ward card on **All wards**                                           | The side panel shows invented "Admits" lines                                                                                             | **Esc**. Press **Open ward** only                                                                                                                                                                                                                                                                                                             |
 | **Lock as TV**                                                                     | Every open tab goes to the TV view, and Reset demo is out of reach until unlocked                                                        | **Unlock**, then **Unlock**                                                                                                                                                                                                                                                                                                                   |
 | **Print sheet** in front of the audience                                           | Two pages, and a longer document than the screen                                                                                         | Close the print box                                                                                                                                                                                                                                                                                                                           |
@@ -588,15 +588,15 @@ Things that happen without a wrong press:
 
 ## Quick reference
 
-| Act | Where                                            | Press                                                                                                                                                             |
-| --- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Capacity                                         | Bed meeting sheet, Close                                                                                                                                          |
-| 2   | All EDs, Enter (RPH ED)                          | Pellingworth, Keira; Esc; Home, Later today, Pellingworth, Keira; Placement steps                                                                                 |
-| 3   | Referrals, Coldharbour, Cyril (Place tab)        | Scroll to the groups; choose a ward under Fits, bed ready (do not accept); Esc; browser Back; Pull the bed, Pull the bed; Esc                                     |
-| 4   | Keira's page                                     | Record clearance; Log booking; Mark handover ready; X on both messages; Destination row; Provider accepted job, Vehicle en route, Mark moving · patient collected |
-| 5   | Destination and placement                        | Confirm arrival · receiving ward, Confirm arrival; Esc; More, All wards, Open ward (Dabakarn)                                                                     |
-| 6   | Graylands Adult Secure; More, Legal forms; clock | Loxbury, Saoirse, Esc; Seclusion tab; Board time, Demo clock                                                                                                      |
-| -   | Home                                             | -                                                                                                                                                                 |
+| Act | Where                                            | Press                                                                                                                                                                |
+| --- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Capacity                                         | Bed meeting sheet, Close                                                                                                                                             |
+| 2   | All EDs, Enter (RPH ED)                          | Pellingworth, Keira; Esc; Home, Later today, Pellingworth, Keira; Placement steps                                                                                    |
+| 3   | Referrals, Coldharbour, Cyril (Place tab)        | Scroll to the groups; choose a ward under Fits, bed ready (do not accept); Esc; browser Back; Pull the bed, Pull the bed; Esc                                        |
+| 4   | Keira's page                                     | Record clearance; Record booking; Mark handover ready; X on both messages; Destination row; Provider accepted job, Vehicle en route, Mark moving · patient collected |
+| 5   | Destination and placement                        | Confirm arrival · receiving ward, Record arrival; Esc; More, All wards, Open Dabakarn                                                                                |
+| 6   | Graylands Adult Secure; More, Legal forms; clock | Loxbury, Saoirse, Esc; Seclusion tab; Board time, Demo clock                                                                                                         |
+| -   | Home                                             | -                                                                                                                                                                    |
 
 Before every run, as the audience sits down: **Tools**, **Board time**, **Reset demo**, confirm. Avoid
 reloads and typed addresses; if "Part of this page did not load" appears, press **Reload page**.

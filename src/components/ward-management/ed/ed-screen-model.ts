@@ -726,13 +726,13 @@ export type EdStepEvent = Extract<
 export function edStepSaid(event: EdStepEvent, who: string): string {
   // A12-01 (Josh, 18 Nov 2026, D-263): "Record no transport needed" stays one press, and its message
   // says that Undo brings the booking step back, because recording it hides Log booking.
-  if (removesBooking(event)) return `${edStepFact(event)} for ${who}. Undo brings Log booking back.`;
+  if (removesBooking(event)) return `${edStepFact(event)} for ${who}. Undo brings Record booking back.`;
   return `${edStepFact(event)} for ${who}`;
 }
 
 /** What the toast says once an ED next step is undone, naming the same person. */
 export function edStepUndone(who: string, event?: EdStepEvent): string {
-  if (event && removesBooking(event)) return `Undone for ${who}. Log booking is back.`;
+  if (event && removesBooking(event)) return `Undone for ${who}. Record booking is back.`;
   return `Undone for ${who}. Back as it was.`;
 }
 

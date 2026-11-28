@@ -201,3 +201,43 @@
     display: none;
   }
 }
+
+/* Desktop and tablet landscape: one list, so "Needs you" is a plain section heading with More at its
+ * right, not a one-tab tab bar. Tokens only. */
+.needsHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.needsTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16, 24px) var(--wf-font);
+  letter-spacing: -0.01em;
+}
+
+.needsCount {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.needsCount[data-act="true"] {
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--wf-danger);
+  color: light-dark(white, var(--wf-surface));
+  font-weight: 600;
+  line-height: 18px;
+}

@@ -17,9 +17,9 @@ import {
   Inbox,
   LayoutGrid,
   LockKeyhole,
-  MapPin,
   PhoneOff,
   Presentation,
+  Search,
   ShieldCheck,
   Signpost,
   Siren,
@@ -87,8 +87,9 @@ export const WARD_NAV_ICONS: Record<WardNavId, LucideIcon> = {
   "on-call": PhoneOff,
   // D-72: a closed door for the seclusion room, distinct from every other glyph in the rail.
   seclusion: DoorClosed,
-  // Places, the index of every site: a map pin. It was a magnifier, which read as a second Search.
-  hub: MapPin,
+  // Find (audit two, B11 and #26): the rail row is labelled Find, so it takes the kit search glyph
+  // (the magnifier SearchField draws). Patients keeps the person card, so the two never match.
+  hub: Search,
   // An open door (icon audit): LogOut is the Sign out icon in the rail's own foot. Seclusion keeps
   // the closed door.
   discharges: DoorOpen,

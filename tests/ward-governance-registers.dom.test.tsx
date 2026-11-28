@@ -123,7 +123,7 @@ describe("GovernanceAccessRecordPanel", () => {
     const panel = screen.getByTestId("ward-governance-access-record");
     expect(panel).toHaveTextContent("Kept for this session only, and none is sent anywhere.");
     expect(within(panel).getByTestId("ward-governance-access-record-scope")).toHaveTextContent(
-      "no row names who looked",
+      "No row names who looked",
     );
   });
 });
@@ -148,11 +148,15 @@ describe("removed session, legacy, and effectiveness tabs", () => {
 describe("the override and decision registers hold only what this session records", () => {
   it("starts empty, says so, and states no invented safety record", () => {
     const seed = seedWardFlowState();
-    const { container } = render(<GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW} />);
+    const { container } = render(
+      <WardFlowProvider initialNow={NOW}>
+        <GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW} />
+      </WardFlowProvider>,
+    );
     fireEvent.click(screen.getByRole("radio", { name: /^Review/ }));
     const text = container.textContent ?? "";
     expect(text).toContain("No override audit is recorded in this session.");
-    expect(text).toContain("Safety incidents not recorded");
+    expect(text).toContain("Safety incidents are not recorded here");
     // Page tops (9 Nov 2026): the title reads "Review this session".
     expect(text).toContain("this session");
     for (const invented of ["Pendelton", "OVR-107", "Zero Safety Incidents", "Past 24 Hours Statewide"]) {
@@ -160,7 +164,7 @@ describe("the override and decision registers hold only what this session record
     }
   });
 
-  it("opens the endorse form empty, so nobody records a review they did not write", () => {
+  it("opening a waiting event records nothing; a review is only the drawer's own Reviewed press", () => {
     function Harness() {
       const flow = useWardFlow();
       return <GovernanceWorkbench movements={flow.movements} units={flow.units} now={NOW} api={flow} />;
@@ -170,17 +174,16 @@ describe("the override and decision registers hold only what this session record
         <Harness />
       </WardFlowProvider>,
     );
-    // Redesign (Josh, 31 Oct 2026): on a wide screen the review pane opens on the newest event
-    // waiting, so Record review is ready on arrival; the form still opens empty.
-    const recordReview = screen.getByRole("button", { name: "Record review" });
-    expect(recordReview).not.toHaveAttribute("aria-disabled", "true");
+    // Audit four item 100: the Record review chip and its form (verdict, role, notes) are gone, so there
+    // is no empty form to open. Opening an event must still record nothing on its own.
+    expect(screen.queryByRole("button", { name: "Record review" })).toBeNull();
     const firstRow = document.querySelector<HTMLButtonElement>("[data-audit-row]");
     expect(firstRow).not.toBeNull();
     fireEvent.click(firstRow!);
-    fireEvent.click(screen.getByRole("button", { name: "Record review" }));
-    expect((document.getElementById("endorseVerdict") as HTMLSelectElement).value).toBe("");
-    expect((document.getElementById("endorseRole") as HTMLSelectElement).value).toBe("");
-    expect((document.getElementById("endorseNotes") as HTMLTextAreaElement).value).toBe("");
+    const reviewedBefore = screen.getByRole("radio", { name: /^Review/ }).textContent;
+    expect(document.getElementById("endorseVerdict")).toBeNull();
+    expect(screen.getByRole("radio", { name: /^Review/ }).textContent).toBe(reviewedBefore);
+    expect(document.body.textContent).not.toContain("Reviewed recorded");
     expect(document.body.textContent).not.toContain("no adverse patient safety events");
   });
 });
@@ -234,11 +237,11 @@ describe("Governance phone review sheet (audit settings-4, 13 Oct 2026)", () => 
           <Harness />
         </WardFlowProvider>,
       );
-      fireEvent.click(screen.getByRole("button", { name: /Review next/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Open newest" }));
       const sheet = screen.getByRole("dialog");
       const firstTitle = within(sheet).getByRole("heading", { level: 2 }).textContent;
-      // Page tops (9 Nov 2026): the top's Record review chip is never greyed either.
-      expect(screen.getByRole("button", { name: /Record review/ })).not.toHaveAttribute("aria-disabled", "true");
+      // Audit four item 100: the Record review chip is gone; Reviewed in the sheet is the one review.
+      expect(screen.queryByRole("button", { name: /Record review/ })).toBeNull();
       const reviewed = within(sheet).getByRole("button", { name: "Reviewed" });
       expect(reviewed).not.toHaveAttribute("aria-disabled", "true");
       fireEvent.click(reviewed);
@@ -281,7 +284,7 @@ describe("Governance phone audit fixes (13 Oct 2026)", () => {
 
   it("shows the recorded before, requested and after facts and an Open movement link in the review sheet", () => {
     withPhone(() => {
-      fireEvent.click(screen.getByRole("button", { name: /Review next/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Open newest" }));
       const facts = screen.getByTestId("ward-governance-phone-facts");
       expect(facts).toHaveTextContent("Before");
       expect(facts).toHaveTextContent("Requested");
@@ -296,7 +299,7 @@ describe("Governance phone audit fixes (13 Oct 2026)", () => {
       const hero = screen.getByTestId("ward-governance-phone");
       expect(hero).toHaveTextContent(/3\s*overrides/);
       // Page tops (9 Nov 2026): Registers sits behind More on a phone.
-      fireEvent.click(screen.getByRole("button", { name: "More governance views" }));
+      fireEvent.click(screen.getByRole("button", { name: "More" }));
       fireEvent.click(screen.getByRole("menuitem", { name: /Registers/ }));
       expect(screen.getByTestId("ward-governance-overrides-session")).toHaveTextContent(
         "3 override events from this session wait in Review.",
@@ -312,7 +315,7 @@ describe("Governance phone audit fixes (13 Oct 2026)", () => {
       // Page tops (9 Nov 2026): the Review tab carries the waiting count, the act row the follow-ups.
       const reviewTab = () => screen.getByRole("radio", { name: /^Review/ });
       expect(reviewTab()).toHaveTextContent("6");
-      fireEvent.click(screen.getByRole("button", { name: /Review next/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Open newest" }));
       fireEvent.click(screen.getByRole("button", { name: "Follow-up" }));
       // A follow-up stays in the list (so the tab still counts it); the act row names it apart.
       expect(reviewTab()).toHaveTextContent("6");
@@ -322,7 +325,7 @@ describe("Governance phone audit fixes (13 Oct 2026)", () => {
 
   it("announces the phone review only once the reducer has confirmed it", () => {
     withPhone(() => {
-      fireEvent.click(screen.getByRole("button", { name: /Review next/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Open newest" }));
       fireEvent.click(screen.getByRole("button", { name: "Follow-up" }));
       const live = Array.from(document.querySelectorAll('p[aria-live="polite"]')).map((node) => node.textContent);
       expect(live).toContain("Follow-up required recorded.");

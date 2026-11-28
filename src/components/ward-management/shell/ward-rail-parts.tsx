@@ -1,10 +1,7 @@
 "use client";
 
-// The new sidebar and header (Josh, 30-31 Oct 2026): the rail's capacity card, count titles and pins,
+// The new sidebar and header (Josh, 30-31 Oct 2026): the rail's capacity card and count titles,
 // kept beside `ward-rail.tsx` so it stays under the line cap. The phone Menu's top shares them.
-
-import { useSyncExternalStore } from "react";
-import { Pin, PinOff } from "lucide-react";
 
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
@@ -181,50 +178,4 @@ type NavCount = NonNullable<WardNavCounts[keyof WardNavCounts]>;
 
 export function countTitle(label: string, count: NavCount, note: string): string {
   return `${label}: ${count.value} ${count.noun}, ${note}`;
-}
-
-/* ── Pin to my menu ─────────────────────────────────────────────────────────────────────────── */
-
-/*
- * Pins last for this browser tab only and are never stored: remembering them per person needs Josh's
- * privacy decision first. They live in this module, so they survive moving between pages and go
- * when the tab reloads or closes.
- */
-const pinListeners = new Set<() => void>();
-let pinned: readonly string[] = [];
-const NO_PINS: readonly string[] = [];
-
-function readPins(): readonly string[] {
-  return pinned;
-}
-
-function togglePin(id: string) {
-  pinned = pinned.includes(id) ? pinned.filter((pinnedId) => pinnedId !== id) : [...pinned, id];
-  for (const listener of pinListeners) listener();
-}
-
-function subscribePins(listener: () => void) {
-  pinListeners.add(listener);
-  return () => pinListeners.delete(listener);
-}
-
-export function usePinnedPages(): readonly string[] {
-  return useSyncExternalStore(subscribePins, readPins, () => NO_PINS);
-}
-
-export function PinButton({ id, label, pinned }: { id: string; label: string; pinned: boolean }) {
-  const Icon = pinned ? PinOff : Pin;
-  return (
-    <button
-      type="button"
-      className={styles.pinButton}
-      aria-pressed={pinned}
-      aria-label={pinned ? `Unpin ${label} from my menu` : `Pin ${label} to my menu`}
-      title={pinned ? "Unpin from my menu" : "Pin to my menu"}
-      data-testid="ward-rail-pin"
-      onClick={() => togglePin(id)}
-    >
-      <Icon aria-hidden="true" strokeWidth={1.75} />
-    </button>
-  );
 }

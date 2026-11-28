@@ -135,9 +135,9 @@ describe("bed meeting actions due on a record", () => {
     recordAction();
 
     const card = screen.getByTestId("meeting-actions-due");
-    expect(card).toHaveTextContent("Book transport");
+    expect(card).toHaveTextContent("Record transport booking");
     expect(card).toHaveTextContent(/Due \d{1,2}:\d{2} [ap]m/);
-    fireEvent.click(screen.getByRole("button", { name: "Mark done: Book transport" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mark done: Record transport booking" }));
 
     expect(screen.getByTestId("refusals")).toHaveTextContent("0");
     expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
@@ -194,12 +194,12 @@ describe("bed meeting actions due on a record", () => {
     fireEvent.click(screen.getByTestId("meeting-action-mark-done"));
     expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
     // D-192 (shared design parts item 4): the title loses its full stop; the kit adds " · Undo until HH:MM".
-    expect(await screen.findByText("Marked done: Book transport")).toBeInTheDocument();
+    expect(await screen.findByText("Marked done: Record transport booking")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Undo/u }));
     expect(screen.getByTestId("refusals")).toHaveTextContent("0");
-    expect(await screen.findByTestId("meeting-actions-due")).toHaveTextContent("Book transport");
-    expect(await screen.findByText("Undone. Book transport is open again.")).toBeInTheDocument();
+    expect(await screen.findByTestId("meeting-actions-due")).toHaveTextContent("Record transport booking");
+    expect(await screen.findByText("Undone: Record transport booking is open again")).toBeInTheDocument();
   });
 
   it("offers Undo on the toast after recording, and Undo takes the action back (Chase Undo, 3 Nov 2026)", async () => {
@@ -214,12 +214,12 @@ describe("bed meeting actions due on a record", () => {
     );
     fireEvent.click(screen.getByTestId("record-with-undo"));
     expect(screen.getByTestId("refusals")).toHaveTextContent("0");
-    expect(await screen.findByTestId("meeting-actions-due")).toHaveTextContent("Book transport");
+    expect(await screen.findByTestId("meeting-actions-due")).toHaveTextContent("Record transport booking");
     expect(await screen.findByText("Chased")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Undo/u }));
     expect(screen.getByTestId("refusals")).toHaveTextContent("0");
-    expect(await screen.findByText("Undone. Book transport is taken back.")).toBeInTheDocument();
+    expect(await screen.findByText("Undone: Record transport booking is taken back")).toBeInTheDocument();
     expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
   });
 

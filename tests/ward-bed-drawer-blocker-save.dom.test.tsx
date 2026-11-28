@@ -292,3 +292,32 @@ describe("Place someone here shows only for a desk that may place a stay (live w
     expect(queryBedStep(/^Place someone here$/, drawerEl)).toBeNull();
   });
 });
+
+// Audit four #98: the phone bed record is the kit PanelDrawer, as on tablet and desktop. Head: the
+// name and close, then the bed pill and the status chip on line two. Foot: the same steps band as
+// the desktop drawer. The body draws no head, foot, scrim or dialog of its own.
+describe("phone bed record on the kit drawer", () => {
+  it("draws the kit head and foot, and the body keeps the four facts only", () => {
+    asPhone();
+    const onUpdateBlocker = vi.fn(() => Promise.resolve<WardCommandOutcome>({ commandId: "c-0", status: "accepted" }));
+    render(drawer(bed("Awaiting clean"), onUpdateBlocker));
+    const dialogs = screen.getAllByRole("dialog");
+    expect(dialogs).toHaveLength(1);
+    const sheet = screen.getByTestId("bed-telemetry-drawer");
+    expect(sheet).toBe(dialogs[0]);
+    expect(sheet).toHaveAccessibleName("Synthetic Person B");
+    const head = sheet.querySelector("[data-drawer-head]") as HTMLElement;
+    const foot = sheet.querySelector("[data-drawer-foot]") as HTMLElement;
+    const scroll = sheet.querySelector("[data-drawer-scroll]") as HTMLElement;
+    const pill = within(head).getByText("Bed 03");
+    expect(pill.closest("p")).not.toBeNull();
+    expect(within(head).getByTestId("bed-record-phone-chip")).toBeInTheDocument();
+    expect(within(head).getAllByRole("button", { name: "Close bed drawer" })).toHaveLength(1);
+    expect(within(foot).getByTestId("bed-record-actions")).toBeInTheDocument();
+    expect(within(scroll).queryByTestId("bed-record-actions")).toBeNull();
+    expect(within(scroll).queryByRole("link", { name: /Patient page/u })).toBeNull();
+    expect(within(scroll).queryByRole("heading", { name: /Bed 03/u })).toBeNull();
+    expect(within(scroll).getByText("Stay")).toBeInTheDocument();
+    expect(within(scroll).getByText("Observation")).toBeInTheDocument();
+  });
+});

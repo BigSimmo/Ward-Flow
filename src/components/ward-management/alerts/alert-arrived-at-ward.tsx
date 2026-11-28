@@ -124,7 +124,7 @@ function ArrivedAtWardControl({
                   });
                   return;
                 }
-                toastApi.push({ tone: "info", title: "Undone. Back as it was." });
+                toastApi.push({ tone: "info", title: "Undone: Back as it was" });
               },
               () => toastApi.push({ tone: "warning", title: SAVE_NOT_CONFIRMED }),
             );
@@ -141,18 +141,18 @@ function ArrivedAtWardControl({
   if (!asking) {
     return (
       <Button variant="sec" disabledReason={disabledReason} reasonDisplay="tooltip" onClick={() => setAsking(true)}>
-        Arrived at ward
+        Record arrival
       </Button>
     );
   }
   return (
-    <div role="group" aria-label="Confirm arrival">
-      <p>{`Mark ${displayName} as arrived at ${ward}? The pulled bed becomes occupied.`}</p>
+    <div role="group" aria-label="Record arrival at the ward?">
+      <p>{`Record arrival at the ward? ${displayName} at ${ward}; check the wristband first. The pulled bed becomes occupied.`}</p>
       <Button variant="sec" onClick={() => setAsking(false)}>
-        Cancel
+        Not yet
       </Button>
       <Button variant="pri" disabledReason={disabledReason} reasonDisplay="tooltip" onClick={confirm}>
-        Mark arrived
+        Record arrival
       </Button>
     </div>
   );

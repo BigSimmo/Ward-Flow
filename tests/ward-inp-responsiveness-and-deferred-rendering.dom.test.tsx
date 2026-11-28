@@ -69,7 +69,7 @@ describe("INP responsiveness, deferred rendering, and font fallback contract", (
     expect(tasksSheet).toBeTruthy();
   });
 
-  it("updates CoordinatorScreen queue row selection and ShortlistPanel subject when clicking a queue row", () => {
+  it("updates CoordinatorScreen row selection and ShortlistPanel subject when clicking an alert row", () => {
     render(
       <WardFlowProvider>
         <OverlayRoot />
@@ -77,21 +77,15 @@ describe("INP responsiveness, deferred rendering, and font fallback contract", (
       </WardFlowProvider>,
     );
 
-    // Home flow (Q340, 3 Nov 2026): the queue rows live in the Flow list, beside Needs you.
-    fireEvent.click(screen.getByRole("radio", { name: /^Flow/u }));
-    const grid = screen.getByTestId("ward-coordinator-region-grid");
-    const queueButtons = Array.from(grid.querySelectorAll<HTMLElement>('[data-testid^="ward-queue-row-"]'));
-    expect(queueButtons.length).toBeGreaterThan(1);
+    // Simplification 26 Nov 2026 (area 2 item 1): the Flow list is gone; a movement is chosen from its
+    // alert row on Needs you, and Placement then names that movement.
+    const row = screen.getAllByRole("button", { name: /^Find a bed for/u })[0]!;
+    fireEvent.click(row);
 
-    const secondRow = queueButtons[1]!;
-    const targetMovementId = secondRow.getAttribute("data-testid")?.replace("ward-queue-row-", "");
-    expect(targetMovementId).toBeTruthy();
-
-    fireEvent.click(secondRow);
-
-    expect(secondRow.getAttribute("aria-pressed")).toBe("true");
     const placementAside = document.querySelector<HTMLElement>('aside[aria-label="Placement"]');
-    expect(placementAside?.getAttribute("data-subject-movement")).toBe(targetMovementId);
+    const subject = placementAside?.getAttribute("data-subject-movement");
+    expect(subject).toBeTruthy();
+    expect(document.querySelector(`[data-testid="ward-shortlist-${subject}"]`)).not.toBeNull();
   });
 
   it("filters PatientSearchPage census rows when typing UM1000 and memoizes CensusTableRow", () => {

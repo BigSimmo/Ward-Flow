@@ -147,7 +147,8 @@ describe("ED detail consumes released executive figures", () => {
       "not shown still in ED · fewer than 5 in transit",
     );
     expect(screen.getByTestId("ward-statistics-ed-wait-not-listed")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-statistics-ed-next-not-listed")).toBeInTheDocument();
+    // Audit two #100: Next to cross is no longer drawn on a desktop, so there is no list to withhold.
+    expect(screen.queryByTestId("ward-statistics-ed-next-not-listed")).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-statistics-ed-everyone-not-listed")).toBeInTheDocument();
     expect(screen.getByTestId("ward-stat-ed-declined-not-suitable-unavailable")).toHaveTextContent("unknown");
     expect(screen.getByTestId("ward-statistics-ed-declines")).toHaveTextContent("Declined, otherunknown");

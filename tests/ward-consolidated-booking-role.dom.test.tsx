@@ -113,7 +113,7 @@ describe("planned booking command role", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Undo" }));
     await screen.findByTestId("ward-planned-PA-01");
     fireEvent.click(within(screen.getByTestId("ward-planned-PA-SEED-03")).getByRole("button", { name: "Arrived" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm arrival" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record arrival" }));
     await waitFor(() => expect(screen.queryByTestId("ward-planned-PA-SEED-03")).toBeNull());
     for (const type of [
       "BOOK_PLANNED_ADMISSION",

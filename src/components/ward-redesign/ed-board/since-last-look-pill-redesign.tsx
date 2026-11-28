@@ -8,11 +8,8 @@ import { Button, Sheet } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
-import {
-  SinceLastLookSheetBody,
-  sinceLastLookCount,
-  useSinceLastLook,
-} from "@/components/ward-management/coordinator/since-last-look-panel";
+import { sinceLastLookCount, useSinceLastLook } from "@/components/ward-management/coordinator/since-last-look-panel";
+import { SinceLastLookSheetBody } from "@/components/ward-management/coordinator/since-last-look-sheet-body";
 import type { ChangesSinceLastLook } from "@/components/ward-management/coordinator/since-last-look";
 import styles from "@/components/ward-management/since-last-look-pill.module.css";
 import redesign from "./ed-board-redesign.module.css";

@@ -57,7 +57,9 @@ describe("the bed board says what the reducer actually did", () => {
     fireEvent.change(screen.getByTestId("ward-board-confirm-destination"), {
       target: { value: "discharged-to-the-community" },
     });
-    fireEvent.click(screen.getByTestId("ward-board-confirm-proceed"));
+    fireEvent.click(
+      within(screen.getByTestId("ward-board-confirm-dialog")).getByRole("button", { name: "Record discharge" }),
+    );
 
     const toast = screen.getByTestId("ward-board-toast");
     const after = probeRef.current!.rejections;

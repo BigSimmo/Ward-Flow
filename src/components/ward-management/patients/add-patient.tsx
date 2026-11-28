@@ -1,17 +1,6 @@
 "use client";
 
-import {
-  FilePlusCorner,
-  History,
-  ListPlus,
-  Lock,
-  RotateCcw,
-  ShieldCheck,
-  UserPlus,
-  UserRound,
-  UsersRound,
-  X,
-} from "lucide-react";
+import { FilePlusCorner, History, ListPlus, Lock, RotateCcw, UserPlus, UserRound, UsersRound, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
@@ -35,7 +24,6 @@ import {
   orderedDuplicateMatches,
   GENDERS,
   type Gender,
-  patientAddedOnDayOf,
 } from "@/components/ward-management/ward-patients";
 import {
   Avatar,
@@ -54,7 +42,6 @@ import {
   LiveChip,
   PhoneHero,
   Segmented,
-  Sheet,
   StatusGlyph,
   TextInput,
   useIsPhone,
@@ -283,7 +270,6 @@ export function AddPatientForm() {
       setSlowSave(false);
     };
   }, [isSubmitting]);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const toast = useOptionalToast();
   /**
    * Audit 24-7 (CT-08): the "Form cleared" toast lives in the layout and outlives this form, but its
@@ -432,7 +418,6 @@ export function AddPatientForm() {
     setAcceptedSubmission(null);
     submitIntentRef.current = "profile";
     setSubmitIntent("profile");
-    setShowResetConfirm(false);
   }
 
   function clearForm() {
@@ -461,8 +446,16 @@ export function AddPatientForm() {
   const nearMatches = candidates.nearSpelling;
   const foundSomething = matches.length > 0;
 
-  const recentRecords = useMemo(() => patients.slice(-RECENT_RECORDS_SHOWN).reverse(), [patients]);
-  const addedToday = patients.filter((patient) => patientAddedOnDayOf(patient, now)).length;
+  // Q32 (audit two): the list shows only records saved from this page, as "Just added".
+  const [justAddedIds, setJustAddedIds] = useState<string[]>([]);
+  const recentRecords = useMemo(
+    () =>
+      patients
+        .filter((patient) => justAddedIds.includes(patient.id))
+        .slice(-RECENT_RECORDS_SHOWN)
+        .reverse(),
+    [patients, justAddedIds],
+  );
 
   /** The new record from an accepted save, once a snapshot brings it. */
   const findAdded = (prior: NonNullable<typeof priorSubmissionRef.current>) => {
@@ -482,6 +475,7 @@ export function AddPatientForm() {
     const added = findAdded(prior);
     // A shared command can settle before its snapshot arrives. Only its own accepted identity counts.
     if (!added) return;
+    setJustAddedIds((ids) => (ids.includes(added.id) ? ids : [...ids, added.id]));
     priorSubmissionRef.current = null;
     lateSubmissionRef.current = null;
     if (late ? isDirty : JSON.stringify(formSnapshot()) !== JSON.stringify(prior.form)) {
@@ -501,7 +495,7 @@ export function AddPatientForm() {
             title: `${added.familyName}, ${added.givenName} added, ${added.umrn}`,
             // P143 (Josh, 8:57 PM): refer path only; in-app move, as a reload drops a demo-mode record.
             ...(prior.intent === "refer"
-              ? { nextStep: { label: "Open patient", onNextStep: () => router.push(patientHref(added.id)) } }
+              ? { nextStep: { label: "Patient page", onNextStep: () => router.push(patientHref(added.id)) } }
               : {
                   // a new record is on no board until something brings them in; say so and
                   // offer the next step there and then.
@@ -726,21 +720,6 @@ export function AddPatientForm() {
   const setExtra = (key: keyof PatientExtras) => (value: string) =>
     setExtras((current) => ({ ...current, [key]: value }));
 
-  const resetSummary = [
-    {
-      key: "identity",
-      on: identityChanged,
-      label: "Required details",
-      meta: "Names, birth date, UMRN, sex, gender, suburb",
-    },
-    {
-      key: "more",
-      on: moreChanged,
-      label: "Optional details",
-      meta: "Contact, next of kin, Medicare, GP, culture, planning",
-    },
-  ];
-
   const identifierWarning = realIdentifierWarning([
     draft.umrn,
     extras.medicareNumber,
@@ -866,20 +845,22 @@ export function AddPatientForm() {
             level={1}
             eyebrow="Patients"
             // F-08 (phone review, Oct 2026): the standard Demo pill, so a typed record reads as invented.
-            chip={<LiveChip state="live" onHero />}
-            title="Add patient"
-            sub="Four details to add. The rest is optional."
-            actions={
-              <Link
-                className={buttonClass({ variant: "onHero", size: "sm" })}
-                href="/bedchart/search"
-                aria-label="Cancel and go back to patient search"
-                data-testid="ward-add-patient-cancel"
-              >
-                <Icon icon={X} size={14} />
-                Cancel
-              </Link>
+            // States B review: Cancel sits beside it on the title row, not alone on a row of its own.
+            chip={
+              <span className={styles.heroActions}>
+                <LiveChip state="live" onHero />
+                <Link
+                  className={buttonClass({ variant: "onHero", size: "sm" })}
+                  href="/bedchart/search"
+                  aria-label="Cancel and go back to patient search"
+                  data-testid="ward-add-patient-cancel"
+                >
+                  <Icon icon={X} size={14} />
+                  Cancel
+                </Link>
+              </span>
             }
+            title="Add patient"
             data-testid="ward-add-patient-phone-hero"
             // Redesign: the Identity card's head says "0 of 4 required" just below, so the hero shows
             // no figure of its own and the form starts higher.
@@ -891,12 +872,6 @@ export function AddPatientForm() {
             className={styles.apHero}
             eyebrow="Patients · new record"
             title="Add patient"
-            titleMeta={
-              <span className={styles.draftPill} data-testid="ward-add-patient-draft-pill">
-                <StatusGlyph tone="neutral" size={9} />
-                Draft
-              </span>
-            }
             aside={
               <span className={styles.heroActions}>
                 {/* RF3 (Josh, 3 Nov 2026): a plain way out. Unsaved typing gets the styled leave
@@ -912,21 +887,10 @@ export function AddPatientForm() {
                 </Link>
               </span>
             }
-            bar={
-              <div className={styles.heroBar}>
-                <p className={styles.heroLine}>
-                  <Icon icon={ShieldCheck} size={14} />
-                  Check for an existing record before adding.
-                </p>
-                {/* Redesign: the chips repeated the page. The required count is the Identity card's,
-                    the record count and any possible duplicates are the duplicate check's, and the
-                    added-today count moves to Recently added, so the band keeps the one line. */}
-              </div>
-            }
           />
         )}
 
-        <div className={styles.layout}>
+        <div className={recentRecords.length > 0 ? styles.layout : `${styles.layout} ${styles.layoutSolo}`}>
           {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
           <form
             className={styles.form}
@@ -1194,10 +1158,7 @@ export function AddPatientForm() {
                   icon={RotateCcw}
                   data-testid="ward-add-patient-reset"
                   disabled={isSubmitting}
-                  onClick={() => {
-                    if (isDirty) setShowResetConfirm(true);
-                    else performReset();
-                  }}
+                  onClick={performReset}
                 >
                   Reset
                 </Button>
@@ -1245,76 +1206,32 @@ export function AddPatientForm() {
             </Card>
           </form>
 
-          <aside className={styles.side} aria-label="Recently added records">
-            <Card className={styles.phHide}>
-              <CardHead
-                icon={History}
-                title="Recently added"
-                // Redesign: the list shows its own rows, so the head names the one new figure, a count
-                // with its noun, in place of a bare "7" pill beside "recent".
-                action={
-                  <span className={styles.muted} data-testid="ward-add-patient-added-today">
-                    {addedToday} added today
-                  </span>
-                }
-              />
-              <CardBody flush>
-                <ul className={styles.recentList}>
-                  {recentRecords.map((p) => (
-                    <li key={p.id}>
-                      <Link className={styles.recentRow} href={patientHref(p.id)}>
-                        <span className={styles.recentName}>
-                          <b>
-                            {p.familyName}, {p.givenName}
-                          </b>
-                          {p.suburb ? <span className={styles.muted}> {p.suburb}</span> : null}
-                        </span>
-                        <span className={styles.mono}>{p.umrn}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </CardBody>
-            </Card>
-          </aside>
+          {recentRecords.length > 0 ? (
+            <aside className={styles.side} aria-label="Just added records">
+              <Card className={styles.phHide}>
+                <CardHead icon={History} title="Just added" />
+                <CardBody flush>
+                  <ul className={styles.recentList}>
+                    {recentRecords.map((p) => (
+                      <li key={p.id}>
+                        <Link className={styles.recentRow} href={patientHref(p.id)}>
+                          <span className={styles.recentName}>
+                            <b>
+                              {p.familyName}, {p.givenName}
+                            </b>
+                            {p.suburb ? <span className={styles.muted}> {p.suburb}</span> : null}
+                          </span>
+                          <span className={styles.mono}>{p.umrn}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </CardBody>
+              </Card>
+            </aside>
+          ) : null}
         </div>
 
-        <Sheet
-          open={showResetConfirm}
-          onClose={() => setShowResetConfirm(false)}
-          title="Reset patient form?"
-          description={draft.umrn.trim() ? `Add patient · ${draft.umrn.trim()}` : "Add patient"}
-          portal={false}
-          testId="ward-add-patient-reset-dialog"
-          footer={
-            <div className={styles.sheetFoot}>
-              <Button data-testid="ward-add-patient-reset-cancel" onClick={() => setShowResetConfirm(false)}>
-                Cancel
-              </Button>
-              <Button variant="danger" data-testid="ward-add-patient-reset-confirm" onClick={performReset}>
-                Reset form
-              </Button>
-            </div>
-          }
-        >
-          <div className={styles.resetBody}>
-            <p className={styles.resetLead}>You have entered patient details. Resetting clears every unsaved field.</p>
-            <h3 className={styles.resetHead}>What gets cleared</h3>
-            <ul className={styles.resetList}>
-              {resetSummary.map((row) => (
-                <li key={row.key} className={styles.resetRow}>
-                  <StatusGlyph tone={row.on ? "warning" : "closed"} size={9} />
-                  <span className={styles.resetLabel}>{row.label}</span>
-                  <span className={styles.muted}>{row.on ? row.meta : "Nothing entered"}</span>
-                </li>
-              ))}
-            </ul>
-            <p className={styles.resetNote}>
-              <StatusGlyph tone="info" size={9} />
-              No record is deleted.
-            </p>
-          </div>
-        </Sheet>
         {/* Untested-537 INV-DISPLAY-014: the one page with no synthetic-data footer. */}
         <WardPrototypeFooter testId="ward-add-patient-governance" />
       </main>

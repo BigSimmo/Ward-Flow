@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Pause, Play } from "lucide-react";
 import { cx } from "./cx";
+import primitiveStyles from "./primitives.module.css";
 import { clk, dur, FUTURE_START_TEXT } from "./format";
 import { SrOnly } from "./primitives";
 import { StatusGlyph } from "./status-glyph";
 import { useIsPhone } from "./use-is-phone";
 import { useMinuteNow } from "./use-minute-now";
 import styles from "./live.module.css";
-import primitiveStyles from "./primitives.module.css";
 
 type LiveState = "live" | "paused" | "syncing" | "stale" | "offline";
 
@@ -293,10 +293,12 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
   // its place until then; it has no text, so nothing extra is read or matched.
   const hydrated = useHydrated();
   const clockPending = isPhone && age !== null && !hydrated && clock === undefined && shownAge == null;
-  // M8: on tablet and desktop a plain Live chip would only repeat the top bar, so no pill shows.
-  // The same status line stays mounted in every state, so a later Stale or Offline updates its
-  // text and is announced, rather than arriving in a new region a screen reader can miss (#1375).
-  const hidden = !isPhone && state === "live" && !onTogglePause;
+  // M8: on tablet and desktop a plain Live chip off the hero would only repeat the top bar, so no
+  // pill shows. Audit three #50 (Josh, 28 Nov 2026): on a page hero it always shows, at every size,
+  // in the same spot, so the Demo pill no longer comes and goes between pages. The same status line
+  // stays mounted in every state, so a later Stale or Offline updates its text and is announced,
+  // rather than arriving in a new region a screen reader can miss (#1375).
+  const hidden = !isPhone && state === "live" && !onTogglePause && !onHero;
   // The pill's own words for the toggle's name: the state, and the phone's clock or age when text.
   const spokenAge =
     state === "live" && (typeof shownAge === "string" || typeof shownAge === "number") ? shownAge : null;

@@ -142,7 +142,7 @@ export function PatientJourneyTimeline({
       </ol>
       {long ? (
         <ShowMoreRow onClick={() => setExpanded((value) => !value)} expanded={expanded}>
-          {expanded ? "Show fewer" : `Show ${events.length - FIRST_ROWS} more`}
+          {expanded ? "Show fewer" : `Show all ${events.length}`}
         </ShowMoreRow>
       ) : null}
     </Card>

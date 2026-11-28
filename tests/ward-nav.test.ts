@@ -545,16 +545,14 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
       "are built inside a map (communityTeamHref in community-screen.tsx), which this scan counts as " +
       "nought concrete instances by design, so the figure above cannot move however complete the index " +
       "is. The set it really links is pinned by rendering it, in tests/ward-community-index.dom.test.tsx, " +
-      "against COMMUNITY_TEAM_PAGES. community-screen.tsx's own 'Other community teams' switcher also " +
-      "builds team hrefs, but only from a team page you already reached.",
+      "against COMMUNITY_TEAM_PAGES.",
   ],
   [
     "/bedchart/board/[unitId]",
-    "1 of 22 instances reachable without state — ward-nav.ts's one seeded example (rph-adult-secure). " +
-      "The board's Change ward disclosure maps every unit in the live provider through wardBoardHref, so " +
-      "once that one concrete board is open the remaining boards are linked from it. This source scan sees " +
-      "the canonical builder's definition but cannot count the instances produced through an indirect helper " +
-      "call, so the mechanical without-state figure remains one rather than claiming those links are concrete.",
+    "0 of 22 instances reachable without state — since the r10 build (26 Nov 2026) /bedchart/board/[unitId] is a " +
+      "redirect backstop for old links, and the rail's Example bed board entry is gone. Every in-app bed-board " +
+      "link goes through wardBoardHref, which now builds the ward route's Grid view, so no source href names " +
+      "this route at all. The redirect itself is covered by its own test.",
   ],
   [
     "/bedchart/ward/[unitId]/answer",
@@ -722,8 +720,10 @@ describe("BedChart dynamic routes — what links them, and what they leave orpha
 
     // Positive pins: the scan reads file CONTENT, and tells a concrete href from a built one.
     const board = dynamicRouteScans.get("/bedchart/board/[unitId]");
-    expect(board?.concreteSites).toEqual(["src/components/ward-management/ward-nav.ts"]);
-    expect([...(board?.concreteInstances ?? [])]).toEqual(["rph-adult-secure"]);
+    // 26 Nov 2026 (r10, one bed record): the rail's "Example bed board" entry is gone and the route is a
+    // redirect backstop to the ward's Grid view, so no concrete board href is left anywhere.
+    expect(board?.concreteSites).toEqual([]);
+    expect([...(board?.concreteInstances ?? [])]).toEqual([]);
     // TWO source-visible builders. The ward screen writes the template directly for its per-unit
     // "See every bed on this ward" link. The shared facade now owns the canonical literal-path and
     // encoding builder used by the board's Change ward disclosure. This textual scan sees the
@@ -736,15 +736,8 @@ describe("BedChart dynamic routes — what links them, and what they leave orpha
     //
     // It went red because the world improved — the board stopped being reachable only through one
     // seeded rail example. That is the failure mode a ratchet is supposed to have.
-    expect(board?.builtSites).toEqual([
-      "src/components/ward-management/movements/movement-drawer.tsx",
-      "src/components/ward-management/movements/movements-stage-row.tsx",
-      "src/components/ward-management/shell/ward-facade.ts",
-      // WS1 (Josh, 3 Nov 2026): All wards' ward side panel links each ward's bed board by template.
-      "src/components/ward-management/wards/ward-index-drawer.tsx",
-      // The phone sheet on All wards links each ward's bed board by template.
-      "src/components/ward-management/wards/ward-index.tsx",
-    ]);
+    // r10: wardBoardHref now builds the ward route, so nothing builds a board path any more.
+    expect(board?.builtSites).toEqual([]);
     const ward = dynamicRouteScans.get("/bedchart/ward/[unitId]");
     // Three builders now, and the list stays exact rather than becoming a `toContain`: the ward
     // index (Phase 8) builds one href per unit over the whole network, the role switcher builds
@@ -806,14 +799,19 @@ describe("BedChart dynamic routes — what links them, and what they leave orpha
       "src/components/ward-management/capacity/capacity-ward-drawer.tsx",
       "src/components/ward-management/discharges/discharge-board.tsx",
       "src/components/ward-management/hub/hub-derivations.ts",
+      // r10 (26 Nov 2026): the bed board is the ward route's Grid view, so every `wardBoardHref` caller
+      // below now builds the ward route; the ward-index card was split out of ward-index.tsx.
+      "src/components/ward-management/movements/movement-drawer.tsx",
+      "src/components/ward-management/movements/movements-stage-row.tsx",
       "src/components/ward-management/patients/patient-now-screen.tsx",
       // Accepted referrals open the ward's operational board tab to hold a bed.
       "src/components/ward-management/referrals/referral-board.tsx",
       // Census links select a numbered ward bed through a query.
       "src/components/ward-management/search/patient-census-view.tsx",
       "src/components/ward-management/shell/ward-facade.ts",
-      // WS1 (Josh, 3 Nov 2026): All wards' ward side panel has its own Open ward link.
-      "src/components/ward-management/wards/ward-index-drawer.tsx",
+      "src/components/ward-management/ward/ward-home-tab.tsx",
+      "src/components/ward-management/ward/ward-notification-center.tsx",
+      "src/components/ward-management/wards/ward-index-card.tsx",
       "src/components/ward-management/wards/ward-index.tsx",
     ]);
 
@@ -835,7 +833,15 @@ describe("BedChart dynamic routes — what links them, and what they leave orpha
    * covers, and is the state the board's route shipped in.
    */
   it("every dynamic BedChart route is referenced by at least one link in src/ (referenced — NOT proven reachable)", () => {
+    // r10 (26 Nov 2026): these two stay on disk only as backstops for old links and bookmarks. The board
+    // redirects to the ward's Grid view; the ward answer view was folded into the ward page. Nothing
+    // links them on purpose. A new route joins this list only by a recorded decision.
+    const BACKSTOP_ROUTES: ReadonlySet<string> = new Set([
+      "/bedchart/board/[unitId]",
+      "/bedchart/ward/[unitId]/answer",
+    ]);
     const unreferenced = dynamicRoutes.filter((route) => {
+      if (BACKSTOP_ROUTES.has(route)) return false;
       const scan = dynamicRouteScans.get(route);
       return (scan?.concreteSites.length ?? 0) === 0 && (scan?.builtSites.length ?? 0) === 0;
     });
@@ -1101,13 +1107,11 @@ describe("BedChart navigation — single source (ward-nav.ts)", () => {
    * accident — which is the whole point of "and nothing else". A route arriving here should cost
    * somebody a decision, not a number.
    */
-  it("marks exactly the three arbitrary hardcoded instances exampleOnly (D10), and nothing else", () => {
+  it("marks exactly the two arbitrary hardcoded instances exampleOnly (D10), and nothing else", () => {
     const exampleOnlyHrefs = WARD_NAV.filter((item) => item.exampleOnly)
       .map((item) => item.href)
       .sort();
-    expect(exampleOnlyHrefs).toEqual(
-      ["/bedchart/board/rph-adult-secure", "/bedchart/ed/peel-ed", "/bedchart/ward/rph-adult-secure"].sort(),
-    );
+    expect(exampleOnlyHrefs).toEqual(["/bedchart/ed/peel-ed", "/bedchart/ward/rph-adult-secure"].sort());
   });
 
   /**

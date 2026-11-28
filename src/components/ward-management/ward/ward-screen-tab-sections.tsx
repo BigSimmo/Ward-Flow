@@ -11,7 +11,13 @@ import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import type { Rejection } from "@/components/ward-management/ward-model";
 import { buttonClass } from "@/components/wf";
 import styles from "./ward.module.css";
-import { WardArrivalsCorridor, WardBedsMatrix, WardDecisionsCockpit, WardDischargesMatrix } from "./ward-screen-lazy";
+import {
+  WardArrivalsCorridor,
+  WardBedsMatrix,
+  WardBoardPart,
+  WardDecisionsCockpit,
+  WardDischargesMatrix,
+} from "./ward-screen-lazy";
 import type { Dispatch, ReactElement, RefObject, SetStateAction } from "react";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import type { PatientResolutionSubject, ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
@@ -127,6 +133,13 @@ export function WardScreenTabSections({
   // inside WardScreen, which the compiler skips. Memoising it changed nothing visible but added
   // several KB to the phone download (script-budget.json).
   "use no memo";
+  // A person named in the board's lists opens their bed in the Ward drawer.
+  const openStay = (admissionId: string) => {
+    const bed = bedsList.find((item) => item.admissionId === admissionId);
+    if (!bed) return false;
+    setSelectedBed(Number(bed.bedNumber));
+    return true;
+  };
   return (
     <>
       <section
@@ -153,8 +166,21 @@ export function WardScreenTabSections({
             byLabel: formatInstantWithDay(shiftEndInstant(now), now),
           }}
         />
+        {/* Fold the Bed board into Ward (design plan 26 Nov 2026): the board's long-stay prompts join
+            Decisions under the decisions due; a person opens the bed drawer. */}
+        {activeTab === "return" ? (
+          <div className={styles.decisionBoardPart} data-testid="ward-decisions-stranded">
+            <WardBoardPart unitId={unit.id} embedded={{ part: "stranded", onOpenStay: openStay }} />
+          </div>
+        ) : null}
         {/* WH9: the coordinator's other jobs follow the decisions due, which come first by urgency. */}
         {decisionJobs}
+        {/* The board's Before handover list is Decisions' last group. */}
+        {activeTab === "return" ? (
+          <div className={styles.decisionBoardPart} data-testid="ward-decisions-before-handover">
+            <WardBoardPart unitId={unit.id} embedded={{ part: "handover", onOpenStay: openStay }} />
+          </div>
+        ) : null}
         {/* U3: the page's prototype footer below carries this safety line; it is not repeated here. */}
       </section>
 
@@ -187,7 +213,8 @@ export function WardScreenTabSections({
               setActiveTab("board");
             }}
           >
-            Open Bed board
+            {/* Simplification 26 Nov 2026 (REPAIR 3): it opens placement, not the Bed board page. */}
+            Place accepted referrals
           </button>
         </div>
         <WardArrivalsCorridor
@@ -240,7 +267,8 @@ export function WardScreenTabSections({
               setActiveTab("board");
             }}
           >
-            Open Bed board
+            {/* Simplification 26 Nov 2026 (REPAIR 3): it opens placement, not the Bed board page. */}
+            Place accepted referrals
           </button>
         </div>
         <WardDischargesMatrix
@@ -284,7 +312,8 @@ export function WardScreenTabSections({
               setActiveTab("board");
             }}
           >
-            Open Bed board
+            {/* Simplification 26 Nov 2026 (REPAIR 3): it opens placement, not the Bed board page. */}
+            Place accepted referrals
           </button>
         </div>
         <WardBedsMatrix

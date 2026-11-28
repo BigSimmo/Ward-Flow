@@ -10,20 +10,35 @@
 
 import { useState } from "react";
 import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
-import { ClipboardCopy, TriangleAlert } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ClipboardCopy, TriangleAlert, UserRound } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { patientHref } from "@/components/ward-management/shell/ward-facade";
+import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { referralIntakeExpected } from "@/components/ward-management/ward-referral-seed-time";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { REFERRAL_SOURCE_WORDS, askingForShort, waitWords } from "./referral-board-parts";
 import { isbarText, type IsbarRecorded } from "./referral-board-sheets";
 import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
-import { Button, Sheet, StatusGlyph, TabPanel, Tabs, TierTile, cx } from "@/components/wf";
+import {
+  Button,
+  DrawerFootRow,
+  PanelDrawer,
+  StatusGlyph,
+  StatusPill,
+  TierTile,
+  buttonClass,
+  cx,
+  type WfTone,
+} from "@/components/wf";
 
 import { ReferralDocuments } from "./referral-documents";
 import { needTags } from "./referral-panel-tabs";
@@ -31,7 +46,6 @@ import { referralSentToVisible } from "./referral-sheet-access";
 import type { ReferralSheetTab } from "./referral-sheet-bus";
 import { ReferralSentTo } from "./referral-sheet-sent-to";
 import s from "./referral-tabs.module.css";
-import t from "./referral-sheet-tabs.module.css";
 import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
 const TAB_PREFIX = "ward-referral-sheet";
@@ -42,12 +56,17 @@ function patientStory(referral: Referral): string {
   return body.join(" ").replace(/\s+/g, " ").trim();
 }
 
+/** The tier's tone on the head tag: Tier 1 acts now, Tier 2 needs a look, the rest are quiet. */
+function tierTone(tier: number): WfTone {
+  return tier === 1 ? "danger" : tier === 2 ? "warning" : "neutral";
+}
+
 function CopyButton({ text }: { text: string }) {
   const [result, setResult] = useState<"copied" | "failed" | null>(null);
   return (
     <Button
       variant="pri"
-      size="sm"
+      className={s.sheetMain}
       icon={ClipboardCopy}
       onClick={() => {
         // The result is said aloud as well as shown (design audit, Josh 1 Nov 2026); a refused copy
@@ -64,7 +83,7 @@ function CopyButton({ text }: { text: string }) {
         );
       }}
     >
-      {result === "copied" ? "Copied" : result === "failed" ? "Could not copy" : "Copy summary"}
+      {result === "copied" ? "Copied" : result === "failed" ? "Could not copy" : "Copy for handover"}
     </Button>
   );
 }
@@ -79,6 +98,7 @@ export function ReferralSummarySheet({
   now,
   recorded = {},
   initialTab = "summary",
+  patientId,
 }: {
   open: boolean;
   onClose: () => void;
@@ -90,10 +110,14 @@ export function ReferralSummarySheet({
   recorded?: IsbarRecorded;
   /** RQ9: the tab the sheet opens on. "sent" falls back to Summary for a desk that may not see it. */
   initialTab?: ReferralSheetTab;
+  /** Audit four #98: the person's own record, when the referral links to one, for the foot's Patient page. */
+  patientId?: string;
 }) {
   const { dayZero, units } = useWardFlowSelect("dayZero", "units");
   const zone = useClockZoneLabel();
   const access = useEffectiveWardAccess();
+  const canOpen = useCanOpenHref();
+  const pathname = usePathname();
   const sentVisible = referralSentToVisible(access, referral, units);
   const [chosen, setChosen] = useState<ReferralSheetTab>(initialTab);
   // A tab the desk may not see is never shown, even if asked for.
@@ -133,115 +157,153 @@ export function ReferralSummarySheet({
     ["R", "Recommendation", tags.length > 0 ? tags.join(", ") : "No bed needs recorded."],
   ];
 
+  // Audit four #98: the one drawer pattern. Head: "Referral" over the name, then the tier tag, the
+  // UMRN and who. Foot: Copy for handover filled, then the quiet Patient page and Open in Referrals
+  // where this desk may open them. No pager: the sheet opens from anywhere, with no list.
+  const personHref = patientId ? patientHref(patientId) : undefined;
+  const showPatient = personHref !== undefined && canOpen(personHref);
+  const boardHref = referralBoardHref(referral.id);
+  // On the Referrals board itself the sheet opens over that referral, so the link would go nowhere new.
+  const showBoard = canOpen(boardHref) && !pathname?.startsWith("/bedchart/referrals");
   return (
-    <Sheet
+    <PanelDrawer
       open={open}
       onClose={() => {
         setChosen(initialTab);
         onClose();
       }}
-      title="Referral"
-      description="From the referral record."
-      headerBottom={
-        <div className={t.tabsBar}>
-          <Tabs label="Referral sections" idPrefix={TAB_PREFIX} value={tab} onChange={setChosen} items={tabItems} />
-        </div>
-      }
-      footer={
-        <div className={s.sheetFoot}>
-          <span className={s.spacer} />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setChosen(initialTab);
-              onClose();
-            }}
-          >
-            Close
-          </Button>
+      eyebrow="Referral"
+      title={name}
+      tag={<StatusPill tone={tierTone(referral.urgency)}>Tier {referral.urgency}</StatusPill>}
+      tagBelow
+      subtitle={[
+        <span key="umrn" className={s.mono}>
+          {umrn}
+        </span>,
+        demographics,
+      ]}
+      tabs={tabItems}
+      tab={tab}
+      onTabChange={setChosen}
+      tabsLabel="Referral sections"
+      tabsIdPrefix={TAB_PREFIX}
+      bodyClassName={s.sumBody}
+      testId="ward-referral-summary-sheet"
+      foot={
+        <>
           <CopyButton text={text} />
-        </div>
+          {showPatient || showBoard ? (
+            <DrawerFootRow className={s.sheetRow}>
+              {showPatient ? (
+                <Link className={buttonClass({ variant: "sec" })} href={personHref}>
+                  <UserRound size={14} aria-hidden="true" />
+                  Patient page
+                </Link>
+              ) : null}
+              {showBoard ? (
+                <Link className={buttonClass({ variant: "sec" })} href={boardHref}>
+                  Open in Referrals
+                </Link>
+              ) : null}
+            </DrawerFootRow>
+          ) : null}
+        </>
       }
     >
       <div className={s.sum}>
-        <header className={s.sumHead}>
+        {/* The wait strip: one hero band, the tier tile then how long they have waited and when it
+            is due. The name and UMRN are in the head. */}
+        <section className={s.sumHead} aria-label="Wait" data-testid="ward-referral-sheet-wait">
           <TierTile tier={referral.urgency} />
-          <div className={s.sumWho}>
-            <b>{name}</b>
-            <span>
-              <span className={s.mono}>{umrn}</span> · {demographics}
-            </span>
-          </div>
           <span className={cx(s.sumWait, overdue && s.sumWaitOver)}>
-            {overdue ? <TriangleAlert size={13} aria-hidden="true" /> : null}
-            <b className={s.mono}>{waited}</b>
-            <span>{due}</span>
+            <span className={s.sumWaitLabel}>Waiting</span>
+            <b className={s.mono}>
+              {overdue ? <TriangleAlert size={13} aria-hidden="true" /> : null}
+              {waited}
+            </b>
+            {due ? <span>{due}</span> : null}
           </span>
-        </header>
+        </section>
 
         {tab === "full" ? (
-          <TabPanel idPrefix={TAB_PREFIX} id="full">
-            <div className={s.full} data-testid="ward-referral-full-referral">
-              <section>
-                <h4>Reason for referral</h4>
-                <p>{reason || "Not recorded."}</p>
-              </section>
-              <section>
-                <h4>Patient story</h4>
-                <p>{story || "Not recorded."}</p>
-              </section>
-              <dl className={s.factGrid}>
-                <div>
-                  <dt>Referred from</dt>
-                  <dd>
-                    {site}
-                    <span>{REFERRAL_SOURCE_WORDS[referral.source]}</span>
-                  </dd>
-                </div>
-                <div>
-                  <dt>Sent</dt>
-                  <dd>{formatInstantWithDay(referral.raisedAt, now)}</dd>
-                </div>
-                <div>
-                  <dt>Referrer</dt>
-                  <dd>
-                    {intake?.referrer.name ?? "Not recorded"}
-                    {intake ? (
-                      <span>
-                        {intake.referrer.role} · {intake.referrer.phone}
-                      </span>
-                    ) : null}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Medical clearance</dt>
-                  <dd>
-                    {intake
-                      ? intake.medicalClearance.cleared
-                        ? "Cleared"
-                        : `Pending, expected ${referralIntakeExpected(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero, now, zone)}`
-                      : "Not recorded"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Triage and RAMP</dt>
-                  <dd>{intake ? (intake.triageAndRampCompleted ? "Done" : "Not completed") : "Not recorded"}</dd>
-                </div>
-                <div>
-                  <dt>Legal status on the letter</dt>
-                  <dd>{letterLegal || "Not recorded"}</dd>
-                </div>
-              </dl>
-              <section>
-                <h4>Documents</h4>
-                <ReferralDocuments charts={intake?.charts ?? []} toFollow={intake?.chartsToFollow} personName={name} />
-              </section>
-            </div>
-          </TabPanel>
+          <div className={s.full} data-testid="ward-referral-full-referral">
+            <section>
+              <h4>Reason for referral</h4>
+              <p>{reason || "Not recorded."}</p>
+            </section>
+            <section>
+              <h4>Patient story</h4>
+              <p>{story || "Not recorded."}</p>
+            </section>
+            <dl className={s.factGrid}>
+              <div>
+                <dt>Referred from</dt>
+                <dd>
+                  {site}
+                  <span>{REFERRAL_SOURCE_WORDS[referral.source]}</span>
+                </dd>
+              </div>
+              <div>
+                <dt>Sent</dt>
+                <dd>{formatInstantWithDay(referral.raisedAt, now)}</dd>
+              </div>
+              <div>
+                <dt>Referrer</dt>
+                <dd>
+                  {intake?.referrer.name ?? "Not recorded"}
+                  {intake ? (
+                    <span>
+                      {intake.referrer.role} · {intake.referrer.phone}
+                    </span>
+                  ) : null}
+                </dd>
+              </div>
+              <div>
+                <dt>Medical clearance</dt>
+                <dd>
+                  {intake
+                    ? intake.medicalClearance.cleared
+                      ? "Cleared"
+                      : `Pending, expected ${referralIntakeExpected(intake.medicalClearance.expectedAt, intake.medicalClearance, dayZero, now, zone)}`
+                    : "Not recorded"}
+                </dd>
+              </div>
+              <div>
+                <dt>Triage and RAMP</dt>
+                <dd>{intake ? (intake.triageAndRampCompleted ? "Done" : "Not completed") : "Not recorded"}</dd>
+              </div>
+              <div>
+                <dt>Legal status on the letter</dt>
+                <dd>{letterLegal || "Not recorded"}</dd>
+              </div>
+            </dl>
+            {/* Simplification 26 Nov 2026 (Referrals sheet trim): ISBAR and the documents each have one
+                  home, here on Full referral. Summary keeps the key facts and risk flags; Copy for handover
+                  still copies this ISBAR text. */}
+            <section>
+              <h4>ISBAR</h4>
+              <ol className={s.isbar} aria-label="ISBAR">
+                {isbar.map(([letter, label, words]) => (
+                  <li key={letter}>
+                    <span className={s.isbarLetter} aria-hidden="true">
+                      {letter}
+                    </span>
+                    <div>
+                      <b>{label}</b>
+                      <p>{words}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+            <section>
+              <h4>Documents</h4>
+              <ReferralDocuments charts={intake?.charts ?? []} toFollow={intake?.chartsToFollow} personName={name} />
+            </section>
+          </div>
         ) : null}
         {tab === "summary" ? (
-          <TabPanel idPrefix={TAB_PREFIX} id="summary" className={s.sum}>
+          <div className={s.sum}>
             <dl className={s.factGrid}>
               <div>
                 <dt>From</dt>
@@ -293,33 +355,10 @@ export function ReferralSummarySheet({
                 ))}
               </ul>
             ) : null}
-
-            <ol className={s.isbar} aria-label="ISBAR">
-              {isbar.map(([letter, label, words]) => (
-                <li key={letter}>
-                  <span className={s.isbarLetter} aria-hidden="true">
-                    {letter}
-                  </span>
-                  <div>
-                    <b>{label}</b>
-                    <p>{words}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-
-            <section className={s.sumDocs}>
-              <h4>Documents</h4>
-              <ReferralDocuments charts={intake?.charts ?? []} toFollow={intake?.chartsToFollow} personName={name} />
-            </section>
-          </TabPanel>
+          </div>
         ) : null}
-        {tab === "sent" ? (
-          <TabPanel idPrefix={TAB_PREFIX} id="sent">
-            <ReferralSentTo referral={referral} units={units} now={now} />
-          </TabPanel>
-        ) : null}
+        {tab === "sent" ? <ReferralSentTo referral={referral} units={units} now={now} /> : null}
       </div>
-    </Sheet>
+    </PanelDrawer>
   );
 }

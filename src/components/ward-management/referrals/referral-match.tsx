@@ -749,7 +749,7 @@ export function ReferralMatchView({
             data-testid="ward-referral-match-accept-community_team"
             onClick={handleCommunityAccept}
           >
-            Accept referral
+            Accept
           </Button>
         </div>
         <div className={styles.declineControls} data-testid="ward-referral-match-decline-controls-community_team">
@@ -811,7 +811,7 @@ export function ReferralMatchView({
               onClick={() => setEdAcceptConfirmOpen(true)}
             >
               <Check size={15} strokeWidth={1.75} aria-hidden="true" />
-              <span>Accept presentation</span>
+              <span>Accept</span>
             </Button>
           ) : (
             <div className={styles.confirmActionRow}>
@@ -1323,7 +1323,7 @@ export function ReferralMatchView({
                     setPhoneDeclining(false);
                   }}
                 >
-                  Back
+                  Cancel
                 </button>
                 <Button
                   variant="sec"

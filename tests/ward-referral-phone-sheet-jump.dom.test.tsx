@@ -43,7 +43,7 @@ function seededPatientId() {
 }
 
 describe("phone referral step sheet", () => {
-  it("offers Jump to Clearance inside the open sheet, and not the step already open", () => {
+  it("jumps to Clearance from the step rows, with no separate Jump buttons", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardReferralDrawer
@@ -54,10 +54,12 @@ describe("phone referral step sheet", () => {
         />
       </WardFlowProvider>,
     );
-    fireEvent.click(within(screen.getByRole("group", { name: "Referral sections" })).getAllByRole("button")[0]!);
-    const jump = screen.getByTestId("ward-referral-sheet-jump-clearance");
-    fireEvent.click(jump);
+    // Audit four 62: the "Jump to" buttons are gone. The step rows are the jumps, and the foot line
+    // says only that the form was pre-filled from the record.
+    expect(screen.getByTestId("ward-referral-fast-track")).toHaveTextContent("pre-filled from the record");
     expect(screen.queryByTestId("ward-referral-sheet-jump-clearance")).not.toBeInTheDocument();
-    expect(screen.getByTestId("ward-referral-sheet-jump-placement")).toBeInTheDocument();
+    const steps = within(screen.getByRole("group", { name: "Referral sections" }));
+    fireEvent.click(steps.getByRole("button", { name: /^Clearance/ }));
+    expect(screen.getByText(/^\d+ · Clearance$/)).toBeInTheDocument();
   });
 });

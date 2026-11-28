@@ -1,7 +1,15 @@
 "use client";
 
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
-import { ChevronLeft, ChevronRight, ChevronRight as RowChevron, ShieldCheck, UserRound, Info } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronRight as RowChevron,
+  History,
+  ShieldCheck,
+  UserRound,
+  Info,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -21,7 +29,7 @@ import {
   wardFacingGateDetail,
 } from "@/components/ward-management/ward-eligibility";
 import { BED_STATE_LABELS, bedStates, networkNamedHolds } from "@/components/ward-management/ward-bed-states";
-import { awaitingWardAnswer, isWaitlistReason } from "@/components/ward-management/ward-waitlist";
+import { awaitingWardAnswer } from "@/components/ward-management/ward-waitlist";
 import { formatWardOccupancy, wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -62,13 +70,14 @@ import {
   useIsPhone,
   PhoneSheet,
   ShowMoreRow,
+  EmptyState,
 } from "@/components/wf";
 import { MissingValue } from "@/components/wf/missing-value";
-import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { agoMinutes } from "@/components/ward-management/ward-ago-text";
 import styles from "./ward-answer-view.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import footerStyles from "@/components/ward-management/shell/ward-prototype-footer.module.css";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import { DeclineFailureNote, useAnswerToast, useAwaitingFocus, useDeclineFailure } from "./ward-answer-feedback";
 import {
@@ -84,13 +93,14 @@ import { isConstantObservation, observationSummary } from "@/components/ward-man
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { identityAbsenceNote } from "./ward-screen-derivations";
 import { WardAnswerCensus } from "./ward-answer-census";
+import { wardRecentAnswers } from "./ward-recent-answers";
 
 const ANSWER_ALERT_LINE = CLINICAL_VALUES.bedAlertLine.value; // the hero ring's signed alert line
 
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   PULL_PATIENT: "Pull the bed",
-  PATIENT_ARRIVED: "Confirm arrival",
+  PATIENT_ARRIVED: "Record arrival",
 };
 
 // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
@@ -105,6 +115,12 @@ export interface WardAnswerViewProps {
   unitId: string;
   /** The request to open on, when a link names one; otherwise the longest wait. */
   initialMovementId?: string;
+  /**
+   * Simplification 26 Nov 2026 (area 3, item 2): drawn inside the Ward page's Referrals tab. No hero,
+   * no Confirm your beds form, no census and no Recent answers (the Ward hero, its Confirm numbers
+   * dialog and the tab's "This ward's answers" rail carry those); Previous and Next sit in the head.
+   */
+  embedded?: boolean;
 }
 
 /** A decline reason in the one list's wording (D-78); a value off the list shows as written. */
@@ -121,7 +137,7 @@ function declineReasonLabel(reason: DeclineReason): string {
  * counts. Confirm your beds keeps its stepper and Confirm; Recent answers and "writes to this ward
  * only" stay as they are.
  */
-export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProps) {
+export function WardAnswerView({ unitId, initialMovementId, embedded = false }: WardAnswerViewProps) {
   const [, startTransition] = useTransition();
   const {
     movements,
@@ -281,47 +297,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   });
   // Hooks run before the early return below; the accept sheet only opens on a ward's incoming answer.
   useWardPageScrollLock(acceptModalOpen);
-  const recentAnswers = useMemo(
-    () =>
-      !unit
-        ? []
-        : movements
-            .flatMap((movement) => {
-              const wardAnswers: Array<{
-                key: string;
-                movementId: string;
-                outcome: "Accepted in principle" | "Declined" | "Waitlisted";
-                at?: Instant;
-                reason?: DeclineReason;
-              }> = [];
-
-              if (movement.acceptedUnitId === unit.id) {
-                wardAnswers.push({
-                  key: `${movement.id}-accepted`,
-                  movementId: movement.id,
-                  outcome: "Accepted in principle",
-                  at: movement.acceptedAt,
-                });
-              }
-
-              movement.declines
-                .filter((decline) => decline.unitId === unit.id)
-                .forEach((decline, index) => {
-                  wardAnswers.push({
-                    key: `${movement.id}-declined-${index}`,
-                    movementId: movement.id,
-                    // A9-05: "No suitable bed" puts the referral on this ward's wait list.
-                    outcome: isWaitlistReason(decline.reason) ? "Waitlisted" : "Declined",
-                    at: decline.at,
-                    reason: decline.reason,
-                  });
-                });
-
-              return wardAnswers;
-            })
-            .sort((left, right) => (right.at ?? Number.NEGATIVE_INFINITY) - (left.at ?? Number.NEGATIVE_INFINITY)),
-    [movements, unit],
-  );
+  const recentAnswers = useMemo(() => (!unit ? [] : wardRecentAnswers(movements, unit.id)), [movements, unit]);
 
   if (!unit) {
     return (
@@ -358,7 +334,9 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const answeredHere = answerSelection.id === answeredHereId && lastActionRejection?.movementId !== answeredHereId;
   const linked = answerSelection.name ? undefined : movements.find((m) => m.id === (initialMovementId ?? null));
   const leftName = answerSelection.name ?? (linked && resolvePatientIdentity(linked).formalName);
-  const selectionLeft = heldIndex < 0 && leftName !== undefined && !answeredHere && incoming.length > 0;
+  // Simplification 26 Nov 2026 (REPAIR 1): a named or held request that is no longer waiting says so
+  // and never swaps for another, even when its name is unknown or nothing else is waiting.
+  const selectionLeft = heldIndex < 0 && answerSelection.id !== undefined && !answeredHere;
   const activeMovement = selectionLeft ? undefined : incoming[activeAnswerIndex];
   const pick = (index: number, movement = incoming[index]) => {
     if (movement?.id !== answerSelection.id) {
@@ -463,7 +441,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
         ...(withExtendedHold ? { extendedHold: true as const } : {}),
       },
       {
-        success: `Accepted ${who ? `${who} ` : ""}in principle.`,
+        success: who ? `Accepted in principle for ${who}` : "Accepted in principle",
         // D-125 (audit M2): a refusal names the person too.
         who,
         undo: (at) => ({
@@ -473,7 +451,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
           movementId,
           actingUnitId: unitIdHere,
         }),
-        undone: "Acceptance undone. The referral is back with this ward.",
+        undone: "Undone: Acceptance · The referral is back with this ward",
       },
     );
     setAcceptModalFor(undefined);
@@ -635,158 +613,181 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     (m) => isOpen(m) && isConstantObservation(m.observation) && m.acceptedUnitId === unit.id,
   ).length;
 
-  return (
-    <div className={styles.answerScreen} data-testid="ward-unit-screen">
-      <div className={styles.answerTop}>
-        <Hero
-          level={1}
-          eyebrow={
-            isPhone
-              ? `Ward answer · ${unit.name}`
-              : `Ward answer · ${siteByCode(unit.siteCode)?.name ?? unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`
-          }
-          // One title on every device (device audit, 11 Oct 2026; the build guide's "Nothing to answer").
-          title={
-            incoming.length === 0
-              ? "Nothing to answer"
-              : `${incoming.length} ${incoming.length === 1 ? "request" : "requests"} to answer`
-          }
-          titleMeta={
-            isPhone
-              ? activeMovement
-                ? `Tier ${activeMovement.urgency} · waiting ${elapsedLabel(activeMovement, now).replace(/ waiting$/, "")} · from an ED`
-                : // Round 2: the Ready figure below carries the bed count, so the line keeps only the last answer.
-                  recentAnswers[0]?.at !== undefined
-                  ? `Last answer at ${formatInstantWithDay(recentAnswers[0].at, now)}`
-                  : undefined
-              : undefined
-          }
-          stats={
-            isPhone ? (
-              <>
-                <HeroStat value={states.ready} label="Ready" tone="success" />
-                <HeroStat value={formatWardOccupancy(occupancy)} label="In use" />
-                {phoneGates ? (
-                  <HeroStat
-                    value={`${phoneGates.pass}/${phoneGates.total}`}
-                    label="Gates pass"
-                    tone={phoneGates.pass === phoneGates.total ? "success" : "warning"}
-                  />
-                ) : (
-                  <HeroStat value={recentAnswers.length} label="Answers" />
-                )}
-              </>
-            ) : undefined
-          }
-          lead={
-            isPhone ? undefined : (
-              <OccupancyRing
-                percent={occupancy.percent}
-                alertAt={ANSWER_ALERT_LINE}
-                scope={unit.name}
-                // Ruling 4 (D-191): the figure reads "In use", as Home and Capacity; at or over the alert
-                // line the amber dot stays, never the words "at risk".
-                status={
-                  occupancy.percent !== null && Math.round(occupancy.percent) >= ANSWER_ALERT_LINE
-                    ? { tone: "warning", word: `In use, at or over ${ANSWER_ALERT_LINE}%` }
-                    : { tone: "success", word: `In use, under ${ANSWER_ALERT_LINE}%` }
-                }
-              />
-            )
-          }
-          aside={
-            incoming.length > 1 ? (
-              <>
-                {isPhone ? <LiveChip state="live" onHero /> : null}
-                {/* Previous and Next show only when there is more than one request to step through. */}
-                <span className={styles.heroNav} role="group" aria-label="Bed request position">
-                  <button
-                    type="button"
-                    className={buttonClass({ variant: "onHero", size: "sm" })}
-                    aria-disabled={activeAnswerIndex === 0 ? "true" : undefined}
-                    aria-describedby={activeAnswerIndex === 0 ? "ward-answer-prev-reason" : undefined}
-                    title={activeAnswerIndex === 0 ? "Already on the first request." : undefined}
-                    onClick={(event) => {
-                      if (activeAnswerIndex === 0) {
-                        ignoreUnavailableActivation(event);
-                        return;
-                      }
-                      selectAnswer(activeAnswerIndex - 1);
-                    }}
-                  >
-                    <ChevronLeft strokeWidth={1.75} size={14} aria-hidden="true" />
-                    Previous
-                  </button>
-                  {activeAnswerIndex === 0 ? (
-                    <span id="ward-answer-prev-reason" className="sr-only">
-                      Already on the first request.
-                    </span>
-                  ) : null}
-                  <span className={styles.heroNavPos}>
-                    Request <b>{activeAnswerIndex + 1}</b> of <b>{incoming.length}</b>
-                  </span>
-                  <button
-                    type="button"
-                    className={buttonClass({ variant: "onHero", size: "sm" })}
-                    aria-disabled={activeAnswerIndex >= incoming.length - 1 ? "true" : undefined}
-                    aria-describedby={activeAnswerIndex >= incoming.length - 1 ? "ward-answer-next-reason" : undefined}
-                    title={activeAnswerIndex >= incoming.length - 1 ? "Already on the last request." : undefined}
-                    onClick={(event) => {
-                      if (activeAnswerIndex >= incoming.length - 1) {
-                        ignoreUnavailableActivation(event);
-                        return;
-                      }
-                      selectAnswer(activeAnswerIndex + 1);
-                    }}
-                  >
-                    Next
-                    <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" />
-                  </button>
-                  {activeAnswerIndex >= incoming.length - 1 ? (
-                    <span id="ward-answer-next-reason" className="sr-only">
-                      Already on the last request.
-                    </span>
-                  ) : null}
-                </span>
-              </>
-            ) : isPhone ? (
-              <LiveChip state="live" onHero />
-            ) : null
-          }
-          bar={
-            isPhone ? undefined : (
-              <div className={styles.heroChips} role="group" aria-label={`${unit.name} beds`}>
-                {/* Facts, not filters: the same ruled four as the Census below, plus being made ready. */}
-                <HeroStat inline value={states.occupied} label={BED_STATE_LABELS.occupied} />
-                <HeroStat inline value={states.ready} label={BED_STATE_LABELS.ready} tone="success" />
-                {/* U3: no "0 being made ready" chip; it shows only when a bed is being made ready. */}
-                {pendingPreparation > 0 ? (
-                  <HeroStat inline value={pendingPreparation} label={BED_STATE_LABELS.beingMadeReady} />
-                ) : null}
-                <HeroStat inline value={states.pulled} label={BED_STATE_LABELS.pulled} />
-                <HeroStat inline value={states.closed} label={BED_STATE_LABELS.closed} />
-              </div>
-            )
-          }
-          foot={
-            isPhone ? undefined : (
-              <span className={styles.heroFoot}>
-                <span className={styles.heroFootMeta}>
-                  {unit.name}
-                  {oldestWaiting ? (
-                    <>
-                      {" "}
-                      · oldest <b>{elapsedLabel(oldestWaiting, now)}</b>
-                    </>
-                  ) : null}
-                </span>
-              </span>
-            )
-          }
-        />
-      </div>
+  /** Previous and Next show only when there is more than one request to step through. */
+  // Audit two #60 (P61): `compact` is the pager in the referral panel's head, two ghost icon buttons
+  // either side of "2 of 5", for the Referrals tab where the embedded title went.
+  function answerNav(variant: "onHero" | "sec" | "ghost", compact = false) {
+    return (
+      <span
+        className={compact ? `${styles.heroNav} ${styles.panelNav}` : styles.heroNav}
+        role="group"
+        aria-label="Bed request position"
+      >
+        <button
+          type="button"
+          className={buttonClass({ variant, size: "sm", iconOnly: compact })}
+          aria-disabled={activeAnswerIndex === 0 ? "true" : undefined}
+          aria-describedby={activeAnswerIndex === 0 ? "ward-answer-prev-reason" : undefined}
+          title={activeAnswerIndex === 0 ? "Already on the first request." : undefined}
+          onClick={(event) => {
+            if (activeAnswerIndex === 0) {
+              ignoreUnavailableActivation(event);
+              return;
+            }
+            selectAnswer(activeAnswerIndex - 1);
+          }}
+        >
+          <ChevronLeft strokeWidth={1.75} size={14} aria-hidden="true" />
+          {compact ? <span className="sr-only">Previous request</span> : "Previous"}
+        </button>
+        {activeAnswerIndex === 0 ? (
+          <span id="ward-answer-prev-reason" className="sr-only">
+            Already on the first request.
+          </span>
+        ) : null}
+        <span className={styles.heroNavPos}>
+          {compact ? null : "Request "}
+          <b>{activeAnswerIndex + 1}</b> of <b>{incoming.length}</b>
+        </span>
+        <button
+          type="button"
+          className={buttonClass({ variant, size: "sm", iconOnly: compact })}
+          aria-disabled={activeAnswerIndex >= incoming.length - 1 ? "true" : undefined}
+          aria-describedby={activeAnswerIndex >= incoming.length - 1 ? "ward-answer-next-reason" : undefined}
+          title={activeAnswerIndex >= incoming.length - 1 ? "Already on the last request." : undefined}
+          onClick={(event) => {
+            if (activeAnswerIndex >= incoming.length - 1) {
+              ignoreUnavailableActivation(event);
+              return;
+            }
+            selectAnswer(activeAnswerIndex + 1);
+          }}
+        >
+          {compact ? <span className="sr-only">Next request</span> : "Next"}
+          <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" />
+        </button>
+        {activeAnswerIndex >= incoming.length - 1 ? (
+          <span id="ward-answer-next-reason" className="sr-only">
+            Already on the last request.
+          </span>
+        ) : null}
+      </span>
+    );
+  }
 
-      <main id="main-content" className={styles.workspace}>
+  const Workspace = embedded ? "div" : "main";
+
+  return (
+    <div
+      className={styles.answerScreen}
+      data-testid={embedded ? "ward-referrals-answer" : "ward-unit-screen"}
+      data-embedded={embedded ? "true" : undefined}
+    >
+      {/* Audit two #60 (P61): in the Referrals tab the tab names the panel, so the embedded title
+          went; the pager sits in the referral panel's head. */}
+      {embedded ? null : (
+        <div className={styles.answerTop}>
+          <Hero
+            level={1}
+            eyebrow={
+              isPhone
+                ? `Ward answer · ${unit.name}`
+                : `Ward answer · ${siteByCode(unit.siteCode)?.name ?? unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`
+            }
+            // One title on every device (device audit, 11 Oct 2026; the build guide's "Nothing to answer").
+            title={
+              incoming.length === 0
+                ? "Nothing to answer"
+                : `${incoming.length} ${incoming.length === 1 ? "request" : "requests"} to answer`
+            }
+            titleMeta={
+              isPhone
+                ? activeMovement
+                  ? `Tier ${activeMovement.urgency} · waiting ${elapsedLabel(activeMovement, now).replace(/ waiting$/, "")} · from an ED`
+                  : // Round 2: the Ready figure below carries the bed count, so the line keeps only the last answer.
+                    recentAnswers[0]?.at !== undefined
+                    ? `Last answer at ${formatInstantWithDay(recentAnswers[0].at, now)}`
+                    : undefined
+                : undefined
+            }
+            stats={
+              isPhone ? (
+                <>
+                  <HeroStat value={states.ready} label="Ready" tone="success" />
+                  <HeroStat value={formatWardOccupancy(occupancy)} label="In use" />
+                  {phoneGates ? (
+                    <HeroStat
+                      value={`${phoneGates.pass}/${phoneGates.total}`}
+                      label="Gates pass"
+                      tone={phoneGates.pass === phoneGates.total ? "success" : "warning"}
+                    />
+                  ) : (
+                    <HeroStat value={recentAnswers.length} label="Answers" />
+                  )}
+                </>
+              ) : undefined
+            }
+            lead={
+              isPhone ? undefined : (
+                <OccupancyRing
+                  percent={occupancy.percent}
+                  alertAt={ANSWER_ALERT_LINE}
+                  scope={unit.name}
+                  // Ruling 4 (D-191): the figure reads "In use", as Home and Capacity; at or over the alert
+                  // line the amber dot stays, never the words "at risk".
+                  status={
+                    occupancy.percent !== null && Math.round(occupancy.percent) >= ANSWER_ALERT_LINE
+                      ? { tone: "warning", word: `In use, at or over ${ANSWER_ALERT_LINE}%` }
+                      : { tone: "success", word: `In use, under ${ANSWER_ALERT_LINE}%` }
+                  }
+                />
+              )
+            }
+            aside={
+              incoming.length > 1 ? (
+                <>
+                  {isPhone ? <LiveChip state="live" onHero /> : null}
+                  {answerNav("onHero")}
+                </>
+              ) : isPhone ? (
+                <LiveChip state="live" onHero />
+              ) : null
+            }
+            bar={
+              isPhone ? undefined : (
+                <div className={styles.heroChips} role="group" aria-label={`${unit.name} beds`}>
+                  {/* Facts, not filters: the same ruled four as the Census below, plus being made ready. */}
+                  <HeroStat inline value={states.occupied} label={BED_STATE_LABELS.occupied} />
+                  <HeroStat inline value={states.ready} label={BED_STATE_LABELS.ready} tone="success" />
+                  {/* U3: no "0 being made ready" chip; it shows only when a bed is being made ready. */}
+                  {pendingPreparation > 0 ? (
+                    <HeroStat inline value={pendingPreparation} label={BED_STATE_LABELS.beingMadeReady} />
+                  ) : null}
+                  <HeroStat inline value={states.pulled} label={BED_STATE_LABELS.pulled} />
+                  <HeroStat inline value={states.closed} label={BED_STATE_LABELS.closed} />
+                </div>
+              )
+            }
+            foot={
+              isPhone ? undefined : (
+                <span className={styles.heroFoot}>
+                  <span className={styles.heroFootMeta}>
+                    {unit.name}
+                    {oldestWaiting ? (
+                      <>
+                        {" "}
+                        · oldest <b>{elapsedLabel(oldestWaiting, now)}</b>
+                      </>
+                    ) : null}
+                  </span>
+                </span>
+              )
+            }
+          />
+        </div>
+      )}
+
+      <Workspace id={embedded ? undefined : "main-content"} className={styles.workspace}>
         {/* Two-Column Layout Grid */}
         <div className={styles.answerGrid}>
           {/* Left Column: SBAR Clinical Referral Panel */}
@@ -801,6 +802,9 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                   : styles.panel
             }
             data-empty={incoming.length === 0}
+            // Audit four 106: with nothing to answer and no note, the panel (and its "No requests waiting"
+            // band, which repeats the title) is not drawn; the grid stays one column for the Census.
+            style={incoming.length === 0 && !selectionLeft && !declineLeftNote ? { display: "none" } : undefined}
           >
             {activeMovement || isPhone || incoming.length === 0 ? null : (
               <div className={styles.panelHeader}>
@@ -813,24 +817,24 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
 
             {/* Round 2: the title already says "Nothing to answer", so the notice is one line on every
                 device and says only what happens next. */}
-            {incoming.length === 0 ? (
+            {incoming.length === 0 && !selectionLeft ? (
               <div className={styles.allAnswered} data-testid="ward-answer-all-answered">
-                <p className={styles.allAnsweredLine}>
-                  <StatusGlyph tone="success" size={10} />
-                  <span>No requests waiting.</span>
-                </p>
                 {declineLeftNote ? <p role="status">{declineLeftNote}</p> : null}
               </div>
             ) : selectionLeft ? (
               <div className={styles.sbarCard} data-testid="ward-answer-selection-left">
-                <p role="status">{leftName}&rsquo;s request was answered or withdrawn elsewhere.</p>
-                <button
-                  type="button"
-                  className={buttonClass({ variant: "sec", size: "sm" })}
-                  onClick={() => selectAnswer(activeAnswerIndex)}
-                >
-                  Show request {activeAnswerIndex + 1} of {incoming.length}
-                </button>
+                <p role="status">
+                  {leftName ? `${leftName}’s request` : "This request"} was answered, withdrawn or has gone.
+                </p>
+                {incoming.length > 0 ? (
+                  <button
+                    type="button"
+                    className={buttonClass({ variant: "sec", size: "sm" })}
+                    onClick={() => selectAnswer(Math.min(activeAnswerIndex, incoming.length - 1))}
+                  >
+                    Show request {Math.min(activeAnswerIndex, incoming.length - 1) + 1} of {incoming.length}
+                  </button>
+                ) : null}
               </div>
             ) : activeMovement ? (
               (() => {
@@ -847,7 +851,6 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 const failedGateCount = eligibilityVerdict.gates.filter((gate) => !gate.pass).length;
                 // Information-only gates (acuity, specialling) are listed but never counted as passing.
                 const checkedGateCount = checkedGates(eligibilityVerdict.gates).length;
-                const infoGateCount = eligibilityVerdict.gates.length - checkedGateCount;
                 const declineOpen = declineOpenFor === activeMovement.id;
                 // The route's role decides as before (a bed manager is not shown these, Josh 14 Nov);
                 // permit() adds this ward's place.
@@ -888,9 +891,8 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                           : clearance.cleared
                             ? `Medically cleared at ${formatInstantWithDay(clearance.at, now)}`
                             : "Recorded as not cleared"}
-                        . Observation level: {observationSummary(activeMovement.observation)}. This ward&rsquo;s gates:{" "}
-                        {checkedGateCount - failedGateCount} of {checkedGateCount} checks met
-                        {infoGateCount > 0 ? `; ${infoGateCount} for information only` : ""}.
+                        . Observation level: {observationSummary(activeMovement.observation)}.
+                        {/* Audit two #60 (P60): the gates card beside this counts the gates. */}
                       </div>
                     </div>
                   </>
@@ -912,7 +914,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                           </span>
                           <h2 className={styles.panelTitle}>Incoming referral</h2>
                         </div>
-                        <span className={styles.panelSub}>Emergency department origin</span>
+                        {embedded && incoming.length > 1 ? answerNav("ghost", true) : null}
                       </div>
                       <div className={styles.sbarCard}>
                         {/* Patient Dossier Header */}
@@ -956,9 +958,9 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                                 {resolvePatientIdentity(activeMovement).umrn}
                               </div>
                               <div className={styles.patientMetaLine}>
-                                Cohort: {activeMovement.cohort} &bull; Security:{" "}
-                                {activeMovement.security === "Secure" ? "Locked" : "Open"} &bull; Sex:{" "}
-                                {activeMovement.sex} &bull; {elapsedLabel(activeMovement, now)}
+                                {/* Audit two #60 (P59): the wait only; the facts below carry cohort,
+                                    bed and sex. */}
+                                {elapsedLabel(activeMovement, now)}
                               </div>
                             </div>
                             <div className={styles.patientDossierBadges}>
@@ -1056,8 +1058,8 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             onClick={() => setShowAllFacts((open) => !open)}
                           >
                             {showAllFacts
-                              ? "Show fewer facts"
-                              : `Show all ${activeMovement.gender === activeMovement.sex ? 8 : 9} facts`}
+                              ? "Show fewer"
+                              : `Show all ${activeMovement.gender === activeMovement.sex ? 8 : 9}`}
                           </ShowMoreRow>
                         ) : null}
                         {isPhone ? (
@@ -1256,7 +1258,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             title="Decline this request"
                             description="Choose a reason. The referrer sees it."
                             height="tall"
-                            secondary={{ label: "Back", onAction: () => toggleDecline(activeMovement.id) }}
+                            secondary={{ label: "Cancel", onAction: () => toggleDecline(activeMovement.id) }}
                             primary={{
                               label: declinePending ? "Confirming decline…" : `Decline for ${answerSelection.name}`, // 24-7 CT-19
                               disabledReason: declinePending ? "Waiting for confirmation" : undefined,
@@ -1513,162 +1515,166 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
           </section>
 
           {/* Right Column: Bed Map Census & Operations */}
-          <div className={styles.lowerRow}>
-            {/* Confirm Your Beds (Capacity Form) */}
-            {phoneFold(
-              "capacity",
-              "Confirm your beds",
-              `Confirmed free ${unit.allocatable.value} · ${agoMinutes(now - unit.allocatable.confirmedAt)} since confirmed`,
-              unit.allocatable.value,
-              <section className={styles.panel} data-answer-panel="capacity" aria-label="Confirm your beds">
-                <div className={styles.panelHeader}>
-                  <h2 className={styles.panelTitle}>Confirm your beds</h2>
-                </div>
-                <div className={styles.capacityPanelBody}>
-                  <dl className={styles.capacityFacts} aria-label={`Current bed facts for ${unit.name}`}>
-                    {/* Round 2: Confirmed free leads (the form below sets it); Ready is the hero's word for
+          {embedded ? null : (
+            <div className={styles.lowerRow}>
+              {/* Confirm Your Beds (Capacity Form) */}
+              {phoneFold(
+                "capacity",
+                "Confirm your beds",
+                `Confirmed free ${unit.allocatable.value} · ${agoMinutes(now - unit.allocatable.confirmedAt)} since confirmed`,
+                unit.allocatable.value,
+                <section className={styles.panel} data-answer-panel="capacity" aria-label="Confirm your beds">
+                  <div className={styles.panelHeader}>
+                    <h2 className={styles.panelTitle}>Confirm your beds</h2>
+                  </div>
+                  <div className={styles.capacityPanelBody}>
+                    <dl className={styles.capacityFacts} aria-label={`Current bed facts for ${unit.name}`}>
+                      {/* Round 2: Confirmed free leads (the form below sets it); Ready is the hero's word for
                         the bed board figure; the discharge figures use the app's labels, as they
                         count tomorrow too. */}
-                    <div>
-                      <dt>Confirmed free</dt>
-                      <dd>{unit.allocatable.value}</dd>
-                    </div>
-                    <div>
-                      <dt>Ready now</dt>
-                      <dd>{states.ready}</dd>
-                    </div>
-                    <div>
-                      <dt>Empty, any state</dt>
-                      <dd>{unit.empty.value}</dd>
-                    </div>
-                    <div>
-                      <dt>{CAPACITY_FIGURE_LABELS.confirmedToday}</dt>
-                      <dd>{breakdown.confirmedToday}</dd>
-                    </div>
-                    <div>
-                      <dt>{CAPACITY_FIGURE_LABELS.expectedToday}</dt>
-                      <dd>{breakdown.expectedToday}</dd>
-                    </div>
-                  </dl>
-                  {pendingPreparation > 0 ? (
-                    <p className={styles.bedsPendingPreparation} data-testid="ward-answer-beds-pending">
-                      <strong>
-                        {states.ready} ready, {pendingPreparation} being made ready at {unit.name}.
-                      </strong>{" "}
-                      A bed being made ready is not counted as ready until it is marked Ready.
-                    </p>
-                  ) : null}
-                  <form className={styles.capacityForm} onSubmit={submitCapacity} data-testid="ward-capacity-form">
-                    <span className={styles.capacityLabel} id="ward-capacity-label">
-                      Free beds now, for {unit.name}
-                    </span>
-                    <div className={styles.capacityRow}>
-                      {/* v10: one control only, a stepper; no slider and no free number box. */}
-                      <Stepper
-                        value={Number(capacityValue) || 0}
-                        min={0}
-                        max={unit.beds}
-                        noun="free beds"
-                        valueTestId="ward-capacity-input"
-                        onChange={(next) =>
-                          setCapacityDraft({ unitId, revision: capacityRevision, value: String(next) })
-                        }
-                      />
-                      <button
-                        type="submit"
-                        data-testid="ward-capacity-submit"
-                        // R-BEDS-16: the panel's one filled button, named for what it does. UX review
-                        // 20 Nov 2026 (broken item 5): the kit's primary button, not bare filled text.
-                        className={`${buttonClass({ variant: "pri", size: "md" })} ${styles.capacitySubmit}`}
-                      >
-                        Confirm {Number(capacityValue) || 0} free
-                      </button>
-                    </div>
-                    <p className={styles.capacityConfirmed} data-testid="ward-capacity-checked">
-                      Checked {formatInstant(unit.allocatable.confirmedAt)} ·{" "}
-                      {Math.max(0, Math.floor(now - unit.allocatable.confirmedAt))} min ago. Changes {unit.name} only.
-                    </p>
-                    {capacitySave?.unitId === unitId ? (
-                      <p className={styles.capacityConfirmed} role="status" data-testid="ward-capacity-save-status">
-                        {capacitySave.state === "saving"
-                          ? "Saving…"
-                          : capacitySave.state === "saved"
-                            ? `Saved ${formatInstantWithDay(capacitySave.at ?? now, now)}`
-                            : "Not saved · "}
-                        {capacitySave.state === "failed" ? (
-                          <button type="submit" className={styles.btn}>
-                            Retry
-                          </button>
-                        ) : null}
+                      <div>
+                        <dt>Confirmed free</dt>
+                        <dd>{unit.allocatable.value}</dd>
+                      </div>
+                      <div>
+                        <dt>Ready now</dt>
+                        <dd>{states.ready}</dd>
+                      </div>
+                      {/* Audit three #56 (28 Nov 2026): plain names on this page; the five rows stay. The
+                        two discharge rows still count tomorrow (Audit 6), so they say so. */}
+                      <div>
+                        <dt>Empty, ready or not</dt>
+                        <dd>{unit.empty.value}</dd>
+                      </div>
+                      <div>
+                        <dt>Confirmed to leave by tomorrow</dt>
+                        <dd>{breakdown.confirmedToday}</dd>
+                      </div>
+                      <div>
+                        <dt>Expected to leave by tomorrow</dt>
+                        <dd>{breakdown.expectedToday}</dd>
+                      </div>
+                    </dl>
+                    {pendingPreparation > 0 ? (
+                      <p className={styles.bedsPendingPreparation} data-testid="ward-answer-beds-pending">
+                        <strong>
+                          {states.ready} ready, {pendingPreparation} being made ready at {unit.name}.
+                        </strong>{" "}
+                        A bed being made ready is not counted as ready until it is marked Ready.
                       </p>
                     ) : null}
-                  </form>
-                </div>
-              </section>,
-            )}
+                    <form className={styles.capacityForm} onSubmit={submitCapacity} data-testid="ward-capacity-form">
+                      <span className={styles.capacityLabel} id="ward-capacity-label">
+                        Free beds now, for {unit.name}
+                      </span>
+                      <div className={styles.capacityRow}>
+                        {/* v10: one control only, a stepper; no slider and no free number box. */}
+                        <Stepper
+                          value={Number(capacityValue) || 0}
+                          min={0}
+                          max={unit.beds}
+                          noun="free beds"
+                          valueTestId="ward-capacity-input"
+                          onChange={(next) =>
+                            setCapacityDraft({ unitId, revision: capacityRevision, value: String(next) })
+                          }
+                        />
+                        <button
+                          type="submit"
+                          data-testid="ward-capacity-submit"
+                          // R-BEDS-16: the panel's one filled button, named for what it does. UX review
+                          // 20 Nov 2026 (broken item 5): the kit's primary button, not bare filled text.
+                          className={`${buttonClass({ variant: "pri", size: "md" })} ${styles.capacitySubmit}`}
+                        >
+                          Confirm {Number(capacityValue) || 0} free
+                        </button>
+                      </div>
+                      <p className={styles.capacityConfirmed} data-testid="ward-capacity-checked">
+                        Checked {formatInstant(unit.allocatable.confirmedAt)} ·{" "}
+                        {Math.max(0, Math.floor(now - unit.allocatable.confirmedAt))} min ago. Changes {unit.name} only.
+                      </p>
+                      {capacitySave?.unitId === unitId ? (
+                        <p className={styles.capacityConfirmed} role="status" data-testid="ward-capacity-save-status">
+                          {capacitySave.state === "saving"
+                            ? "Saving…"
+                            : capacitySave.state === "saved"
+                              ? `Saved ${formatInstantWithDay(capacitySave.at ?? now, now)}`
+                              : "Not saved · "}
+                          {capacitySave.state === "failed" ? (
+                            <button type="submit" className={styles.btn}>
+                              Retry
+                            </button>
+                          ) : null}
+                        </p>
+                      ) : null}
+                    </form>
+                  </div>
+                </section>,
+              )}
 
-            {/* Unit Bed Map Census */}
-            {phoneFold(
-              "census",
-              "Census",
-              `${states.occupied} occupied · ${states.ready} ready · ${states.pulled} pulled · ${states.closed} closed`,
-              unit.beds,
-              <WardAnswerCensus
-                unit={unit}
-                states={states}
-                requestOpen={Boolean(activeMovement)}
-                activeSpeciallingCount={activeSpeciallingCount}
-                onReadySquare={(e) => {
-                  if (!activeMovement) return;
-                  openerRef.current = e.currentTarget;
-                  selectAnswer(activeAnswerIndex);
-                  setHoldChoice(undefined);
-                  setAcceptModalFor(activeMovement.id);
-                }}
-              />,
-            )}
+              {/* Unit Bed Map Census */}
+              {phoneFold(
+                "census",
+                "Census",
+                `${states.occupied} occupied · ${states.ready} ready · ${states.pulled} pulled · ${states.closed} closed`,
+                unit.beds,
+                <WardAnswerCensus
+                  unit={unit}
+                  states={states}
+                  requestOpen={Boolean(activeMovement)}
+                  activeSpeciallingCount={activeSpeciallingCount}
+                  onReadySquare={(e) => {
+                    if (!activeMovement) return;
+                    openerRef.current = e.currentTarget;
+                    selectAnswer(activeAnswerIndex);
+                    setHoldChoice(undefined);
+                    setAcceptModalFor(activeMovement.id);
+                  }}
+                />,
+              )}
 
-            {/* Recent Answers (History Ledger) */}
-            {phoneFold(
-              "history",
-              "Recent answers",
-              recentAnswers[0]
-                ? `${recentAnswers[0].outcome}${recentAnswers[0].at !== undefined ? ` at ${formatInstantWithDay(recentAnswers[0].at, now)}` : ""}`
-                : "None recorded yet",
-              recentAnswers.length,
-              <section className={styles.panel} data-answer-panel="history" aria-label="Recent answers">
-                <div className={styles.panelHeader}>
-                  <h2 className={styles.panelTitle}>Recent answers</h2>
-                </div>
-                <div className={styles.historyPanelBody}>
-                  {recentAnswers.length === 0 ? (
-                    <p>No answers yet.</p>
-                  ) : (
-                    <ul className={styles.historyList} data-testid="ward-answer-history">
-                      {recentAnswers.map((answer) => (
-                        <li key={answer.key} data-testid={`ward-answer-history-${answer.key}`}>
-                          {/* D-39 through the provider's identity projection, so a referral-linked journey keeps its UMRN. */}
-                          {/* R-BEDS-17: the person's name leads, time right-aligned, then the UMRN check and outcome. */}
-                          <strong>{resolvePatientIdentity({ movementId: answer.movementId }).formalName}</strong>
-                          {answer.at === undefined ? (
-                            <MissingValue reason="not_recorded" className={styles.historyTime} />
-                          ) : (
-                            <time className={styles.historyTime}>{formatInstantWithDay(answer.at, now)}</time>
-                          )}
-                          <span>
-                            {resolvePatientIdentity({ movementId: answer.movementId }).umrn} · {answer.outcome}
-                            {answer.reason ? ` · ${declineReasonLabel(answer.reason)}` : ""}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </section>,
-            )}
-          </div>
+              {/* Recent Answers (History Ledger) */}
+              {phoneFold(
+                "history",
+                "Recent answers",
+                recentAnswers[0]
+                  ? `${recentAnswers[0].outcome}${recentAnswers[0].at !== undefined ? ` at ${formatInstantWithDay(recentAnswers[0].at, now)}` : ""}`
+                  : "None recorded yet",
+                recentAnswers.length,
+                <section className={styles.panel} data-answer-panel="history" aria-label="Recent answers">
+                  <div className={styles.panelHeader}>
+                    <h2 className={styles.panelTitle}>Recent answers</h2>
+                  </div>
+                  <div className={styles.historyPanelBody}>
+                    {recentAnswers.length === 0 ? (
+                      <EmptyState title="No answers yet." icon={History} className={styles.historyEmpty} />
+                    ) : (
+                      <ul className={styles.historyList} data-testid="ward-answer-history">
+                        {recentAnswers.map((answer) => (
+                          <li key={answer.key} data-testid={`ward-answer-history-${answer.key}`}>
+                            {/* D-39 through the provider's identity projection, so a referral-linked journey keeps its UMRN. */}
+                            {/* R-BEDS-17: the person's name leads, time right-aligned, then the UMRN check and outcome. */}
+                            <strong>{resolvePatientIdentity({ movementId: answer.movementId }).formalName}</strong>
+                            {answer.at === undefined ? (
+                              <MissingValue reason="not_recorded" className={styles.historyTime} />
+                            ) : (
+                              <time className={styles.historyTime}>{formatInstantWithDay(answer.at, now)}</time>
+                            )}
+                            <span>
+                              {resolvePatientIdentity({ movementId: answer.movementId }).umrn} · {answer.outcome}
+                              {answer.reason ? ` · ${declineReasonLabel(answer.reason)}` : ""}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </section>,
+              )}
+            </div>
+          )}
         </div>
-      </main>
+      </Workspace>
 
       {/* Accept in principle dialog, bound to the journey it was opened for (CS-08). WP-09 (Audit 1,
           Josh 20 Oct): the census cells are counts, not numbered beds, so no bed number is sent and
@@ -1723,10 +1729,14 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
           </div>
         ) : null}
       </div>
-      <WardPrototypeFooter
-        testId="ward-unit-governance"
-        note={`Scoped to ${unit.name} · Bed decisions remain human-confirmed · Not approved for clinical use`}
-      />
+      {embedded ? null : (
+        <WardPrototypeFooter
+          testId="ward-unit-governance"
+          // Audit four #90: inside the page margins, the standard card footer.
+          className={footerStyles.inset}
+          note={`Scoped to ${unit.name} · Bed decisions remain human-confirmed · Not approved for clinical use`}
+        />
+      )}
     </div>
   );
 }

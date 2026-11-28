@@ -105,10 +105,9 @@ describe("referral slide-out, option B", () => {
     const rail = screen.getByTestId("ward-referral-summary-rail");
     expect(within(rail).getByRole("heading", { name: "Before you send" })).toBeInTheDocument();
     expect(within(rail).getByText("Refer to")).toBeInTheDocument();
-    // L1 (review 12 Oct 2026): one count. UX audit 21 Oct 2026: the footer carries it, and its items
-    // left are the steps' needed items.
-    const [, left] = /(\d+) of (\d+) items still needed/u.exec(document.body.textContent ?? "") ?? [];
-    expect(left).toBeDefined();
+    // L1 (review 12 Oct 2026): one count. Audit three #40: while items are needed the steps say how
+    // many and the footer names only who it goes to, so there is no second "of" count to compare.
+    expect(document.body.textContent ?? "").not.toMatch(/\d+ of \d+ items still needed/u);
     // Each step's "N needed", read once from the steps group (the step buttons share one parent).
     const stepNeeds = [
       ...(screen.getByRole("group", { name: "Referral sections" }).textContent ?? "").matchAll(/(\d+) needed/gu),
@@ -119,7 +118,6 @@ describe("referral slide-out, option B", () => {
     // Form rule (design audit FORM-REF, 5 Nov 2026, replacing A2-9): the contact details warn and are
     // not counted, so the steps' needs are the whole count.
     expect(rail).not.toHaveTextContent("to fill at Send");
-    expect(Number(left)).toBe(stepNeeds);
   });
 
   it("closes straight away when nothing was entered", () => {
@@ -282,16 +280,17 @@ describe("one ready count (audit A2-9)", () => {
     // WS-07 (H-0972): opened plainly, the referrer's profile still fills the contact in. Before,
     // only an entry point did, and an ED clinician typed five fields at the first Send.
     renderDrawer({ initialCategory: "ward" });
-    // UX audit 21 Oct 2026: the footer carries the one count; the rail no longer repeats it.
-    const match = /(\d+) of (\d+) items still needed/u.exec(document.body.textContent ?? "");
-    expect(match).not.toBeNull();
-    const [left, total] = [Number(match![1]), Number(match![2])];
+    // Audit three #40: the steps carry the count ("N needed"); the rail no longer repeats it.
+    const left = [
+      ...(screen.getByRole("group", { name: "Referral sections" }).textContent ?? "").matchAll(/(\d+) needed/gu),
+    ]
+      .map((match) => Number(match[1]))
+      .reduce((sum, n) => sum + n, 0);
     const rail = screen.getByTestId("ward-referral-summary-rail");
     expect(rail).not.toHaveTextContent(/\d+ of \d+ ready/u);
     expect(rail).toHaveTextContent(SETTINGS_DEMO_PROFILE.name);
     expect(rail).not.toHaveTextContent("to fill at Send");
     expect(left).toBeGreaterThanOrEqual(1);
-    expect(total).toBeGreaterThanOrEqual(left);
   });
 
   it("marks the clearance checklist optional, because its six items are not in the count", () => {
@@ -425,10 +424,10 @@ describe("needs cards and the clearance checklist", () => {
 });
 
 describe("owner pins carried over from the retired full-page form", () => {
-  it("names Send referral in words", () => {
+  it("names Review and send in words", () => {
     renderDrawer();
     fireEvent.click(steps().getByRole("button", { name: "Wards" }));
-    expect(screen.getByRole("button", { name: "Send referral" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Review and send" })).toBeInTheDocument();
   });
 
   // New referral redesign (approved 31 Oct 2026): the catchment card's one status line says the

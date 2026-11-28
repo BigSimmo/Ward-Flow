@@ -33,8 +33,11 @@ export function useRefocusAfterRowLeaves({
       targets[Math.min(index, targets.length - 1)]!.focus();
       return;
     }
-    const region = fallback?.current;
-    if (!region) return;
+    let region = fallback?.current ?? null;
+    // A region the page hides once it is empty cannot take focus; its nearest shown parent does, so
+    // focus never falls to the page.
+    while (region && region.style.display === "none") region = region.parentElement;
+    if (!region || region === document.body) return;
     // A heading or region takes focus only for this hand-over, so it never joins the tab order.
     if (!region.hasAttribute("tabindex")) {
       region.setAttribute("tabindex", "-1");

@@ -67,7 +67,7 @@ function UploadFormsPending() {
   if (!onClose) return null;
   return (
     <Dialog open onClose={onClose} title="Record document details">
-      <p role="status">Loading document details…</p>
+      <StateLine kind="loading" title="Loading document details" />
     </Dialog>
   );
 }
@@ -145,11 +145,11 @@ import {
   perthClock24,
   perthIsoDay,
 } from "@/components/ward-management/ward-clock";
-import type { TransportBookingAnswers } from "@/components/ward-management/ward-transport-checks";
 import {
   BLANK_TRANSPORT_BOOKING,
-  type TransportBookingSubmission,
-} from "@/components/ward-management/transport/transport-booking-form";
+  type TransportBookingAnswers,
+} from "@/components/ward-management/ward-transport-checks";
+import type { TransportBookingSubmission } from "@/components/ward-management/transport/transport-booking-form";
 import {
   currentLegalDueAt,
   formProgression,
@@ -178,7 +178,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
 import { useCanOpenHref, useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { Dialog, PhoneSheet, cx, folderTabClasses, requestConfirm, useIsPhone } from "@/components/wf";
+import { Dialog, PhoneSheet, StateLine, cx, folderTabClasses, requestConfirm, useIsPhone } from "@/components/wf";
 import type { ClearanceDraft } from "./patient-clearance-dialog";
 import { isOnOrder } from "../ward-stay-legal";
 import { TIER_NOT_RECORDED } from "../ward-priority";
@@ -203,15 +203,7 @@ interface PatientNowScreenProps {
   documentTitle?: string;
 }
 
-/**
- * The Legal status figure: the status's first word ("Voluntary"), but "Not recorded" stays whole
- * rather than shrinking to "Not" or "Legal".
- */
-export function legalStatusFigure(status: string | undefined): string {
-  const words = status?.trim();
-  if (!words || /^(?:legal status )?not recorded$/i.test(words)) return "Not recorded";
-  return words.split(" ")[0] ?? "Not recorded";
-}
+export { legalStatusFigure } from "./patient-now-screen-helpers";
 
 export function PatientNowScreen({
   patientId,
@@ -714,6 +706,7 @@ export function PatientNowScreen({
       { type: "END_LEAVE_BED", role: routeRole, now, leaveBedId: leaveBed.id, actingUnitId: leaveBed.unitId },
       {
         success: "Returned from leave",
+        who: displayName,
         undo: (at) => ({
           type: "UNDO_BED_STEP",
           role: routeRole,
@@ -721,7 +714,7 @@ export function PatientNowScreen({
           leaveBedId: leaveBed.id,
           ...(routeRole === "ward" ? { actingUnitId: leaveBed.unitId } : {}),
         }),
-        undone: "Undone. Back on leave.",
+        undone: "Undone: Back on leave",
       },
     );
   }
@@ -736,7 +729,7 @@ export function PatientNowScreen({
     void requestConfirm({
       title: "Mark absent without leave?",
       message: "This starts the missing person steps. You can undo it straight after.",
-      confirmLabel: "Confirm",
+      confirmLabel: "Mark absent",
       cancelLabel: "Cancel",
       confirmTone: "default",
     }).then((confirmed) => {
@@ -751,6 +744,7 @@ export function PatientNowScreen({
         },
         {
           success: "Marked absent without leave",
+          who: displayName,
           undo: (at) => ({
             type: "UNDO_ABSENT_WITHOUT_LEAVE",
             role: routeRole,
@@ -758,7 +752,7 @@ export function PatientNowScreen({
             admissionId: stay.id,
             ...(routeRole === "ward" ? { actingUnitId: stay.unitId } : {}),
           }),
-          undone: fromLeave ? "Undone. Back on leave." : "Undone. Back on the ward.",
+          undone: fromLeave ? "Undone: Back on leave" : "Undone: Back on the ward",
         },
       );
     });
@@ -959,6 +953,7 @@ export function PatientNowScreen({
         },
         {
           success: "Recorded: transport needed",
+          who: displayName,
           // A ward recorded it as the sending ward, so its Undo names that ward too, or the
           // engine's "only the ward that made this decision" check refuses it.
           undo: (at) => ({
@@ -968,7 +963,7 @@ export function PatientNowScreen({
             movementId,
             ...(transportActingUnitId ? { actingUnitId: transportActingUnitId } : {}),
           }),
-          undone: "Undone. Back as it was.",
+          undone: "Undone: Back as it was",
         },
       );
     },
@@ -1009,6 +1004,7 @@ export function PatientNowScreen({
         { type: "RECORD_COMMUNITY_TREATMENT_ORDER", role: routeRole, now, patientId },
         {
           success: "Community treatment order recorded",
+          who: displayName,
           undo: (at) => ({ type: "UNDO_PATIENT_RECORD", role: routeRole, now: at, patientId }),
         },
       );
@@ -1020,6 +1016,7 @@ export function PatientNowScreen({
         { type: "END_COMMUNITY_TREATMENT_ORDER", role: routeRole, now, patientId },
         {
           success: "Community treatment order ended",
+          who: displayName,
           undo: (at) => ({ type: "UNDO_PATIENT_RECORD", role: routeRole, now: at, patientId }),
         },
       );
@@ -1034,9 +1031,10 @@ export function PatientNowScreen({
       runStep(
         { type: "HANDOVER_READY", role: routeRole, now, movementId: liveMovement.id },
         {
-          success: "Handover ready. The transport officer can now accept the job.",
+          success: `Handover ready for ${displayName}`,
+          who: displayName,
           undo: (at) => ({ type: "UNDO_ED_STEP", role: routeRole, now: at, movementId: liveMovement.id }),
-          undone: "Undone. Back as it was.",
+          undone: "Undone: Back as it was",
         },
       );
     },
@@ -1418,7 +1416,12 @@ export function PatientNowScreen({
           glance={glance}
           stateTag={stateTag}
           careSteps={careSteps}
-          onOpenHistory={() => openTab("history")}
+          // A stay's Recent changes card below carries Full history, so the strip keeps one link, not two.
+          onOpenHistory={
+            resolved?.liveAdmission && (mode === "ward" || mode === "leave" || mode === "awol" || mode === "ed")
+              ? undefined
+              : () => openTab("history")
+          }
           onOpenForms={() => openTab("documents")}
           tabValue={activeTab}
         />

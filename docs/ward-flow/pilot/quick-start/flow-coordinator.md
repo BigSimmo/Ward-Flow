@@ -22,7 +22,7 @@ New here? Open **Help** and choose **Take the tour**.
 
 ## Most common tasks
 
-1. **Decide a referral.** Press **Decide**, read it, then **Accept referral** or **Decline
+1. **Decide a referral.** Press **Decide**, read it, then **Accept** or **Decline
    referral**. A decline needs a reason from the list.
 2. **Ask more wards.** Use **Ask more wards** and tick wards. The app never ranks or suggests a
    ward.

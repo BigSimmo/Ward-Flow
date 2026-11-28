@@ -6,13 +6,11 @@ import "@testing-library/jest-dom/vitest";
 import { ToastProvider } from "@/components/wf";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { fitKind } from "@/components/ward-management/coordinator/home-fit";
-import { offeredToLabel } from "@/components/ward-management/coordinator/priority-queue";
 import { isOpen, referralBlockedReason, shortlistCandidates } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { genderReviewNeeded } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { showWholeHomeQueue } from "./helpers/ward-home-queue";
 
 afterEach(cleanup);
 
@@ -25,13 +23,18 @@ afterEach(cleanup);
  * the referral sheet, so the offer is recorded through the engine (`REFER_TO_UNITS`, the event the
  * old Offer sent) and the suite checks what Home shows of it.
  */
+// Simplification 26 Nov 2026 (area 2 item 1): Home's Flow list is gone, so a movement is chosen from an
+// alert row ("Find a bed for <name>"). These seeded movements carry that alert.
+const HOME_FIND_A_BED_IDS = ["WF-308", "WF-009"];
+
 function plainOffer() {
   const state = seedWardFlowState();
   for (const movement of state.movements) {
     if (!isOpen(movement) || movement.acceptedUnitId || movement.referredUnitIds.length > 0) continue;
+    if (!HOME_FIND_A_BED_IDS.includes(movement.id)) continue;
     if (referralBlockedReason(movement) !== undefined || genderReviewNeeded(movement.gender, movement.sex)) continue;
     const fit = shortlistCandidates(movement, state.units, NOW_ANCHOR).find(
-      (candidate) => fitKind(candidate) === "bed",
+      (candidate) => fitKind(candidate) === "bed" || fitKind(candidate) === "review",
     );
     if (fit) return { movementId: movement.id, unitId: fit.unit.id, unitName: fit.unit.name };
   }
@@ -58,10 +61,12 @@ function offerFromHome() {
       </ToastProvider>
     </WardFlowProvider>,
   );
-  // Home flow (Q340/Q345, 3 Nov 2026): the rows live under Flow, each stage capped at 5 behind
-  // "Show all N"; this suite reads rows further down, so it opens every stage first.
-  showWholeHomeQueue();
-  fireEvent.click(screen.getByTestId(`ward-queue-row-${offer.movementId}`));
+  // Choose the movement from its alert row: the one whose click opens that movement's shortlist.
+  for (const button of screen.getAllByRole("button", { name: /^Find a bed for/u })) {
+    fireEvent.click(button);
+    if (document.querySelector(`[data-testid="ward-shortlist-${offer.movementId}"]`)) break;
+  }
+  expect(screen.getByTestId(`ward-shortlist-${offer.movementId}`)).toBeInTheDocument();
   act(() => {
     engine.dispatch!({
       type: "REFER_TO_UNITS",
@@ -75,13 +80,6 @@ function offerFromHome() {
 }
 
 describe("an offer made from Home", () => {
-  it("shows on the queue row with the ward and how long it has waited", () => {
-    const { movementId, unitId } = offerFromHome();
-    const mark = screen.getByTestId(`ward-queue-offered-${movementId}`);
-    expect(mark).toHaveTextContent(offeredToLabel([unitId], seedWardFlowState().units));
-    expect(mark).toHaveTextContent(/waiting \d/u);
-  });
-
   it("can be accepted for the ward by the coordinator, not only withdrawn", () => {
     const { unitId } = offerFromHome();
     const shortlist = screen.getByLabelText("Placement");

@@ -185,4 +185,48 @@ describe("kit PanelDrawer", () => {
     expect(within(dialog).queryByRole("tablist")).not.toBeInTheDocument();
     expect(dialog.querySelector("[data-drawer-foot]")).toBeNull();
   });
+
+  // Audit four #98: `tagBelow` starts the subtitle line with the tag without a pager, and a lone
+  // fact after the tag gets the list's leading dot ("[tag] · fact"). Off, the tag stays beside the
+  // title, so no other head moves.
+  it("puts the tag first on the subtitle line with tagBelow, and dots a lone fact after it", () => {
+    const { rerender } = render(
+      <>
+        <OverlayRoot />
+        <PanelDrawer
+          open
+          onClose={() => {}}
+          title="CITIZEN, Alex"
+          tag={<span data-testid="drawer-tag">T2</span>}
+          subtitle="UMRN 0000000"
+          tagBelow
+        >
+          <p>Body</p>
+        </PanelDrawer>
+      </>,
+    );
+    const subtitleOf = () => screen.getByTestId("drawer-tag").parentElement as HTMLElement;
+    expect(subtitleOf().tagName).toBe("P");
+    expect(subtitleOf().children[0]).toBe(screen.getByTestId("drawer-tag"));
+    const lone = subtitleOf().children[1] as HTMLElement;
+    expect(lone).toHaveTextContent("UMRN 0000000");
+    expect(lone.className).toMatch(/metaItem/u);
+    rerender(
+      <>
+        <OverlayRoot />
+        <PanelDrawer
+          open
+          onClose={() => {}}
+          title="CITIZEN, Alex"
+          tag={<span data-testid="drawer-tag">T2</span>}
+          subtitle="UMRN 0000000"
+        >
+          <p>Body</p>
+        </PanelDrawer>
+      </>,
+    );
+    const head = screen.getByRole("dialog").querySelector("[data-drawer-head]") as HTMLElement;
+    expect(screen.getByTestId("drawer-tag").parentElement).toBe(head);
+    expect(within(head).getByText("UMRN 0000000").className).not.toMatch(/metaItem/u);
+  });
 });

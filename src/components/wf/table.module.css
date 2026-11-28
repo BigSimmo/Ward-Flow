@@ -113,6 +113,17 @@
   }
 }
 
+/* Small tier tile (audit two #77): for table cells and inline marks. 18px high, the 13px text's
+   line, sitting on the line's middle; the same shape and T1 edge as the full tile. Two classes, so
+   the phone size above never resizes it. */
+.sq.sqSmall {
+  height: 18px;
+  min-width: 22px;
+  padding: 0 3px;
+  vertical-align: middle;
+  letter-spacing: 0;
+}
+
 /* Native table styling, for pages that use <table>. */
 .table {
   width: 100%;

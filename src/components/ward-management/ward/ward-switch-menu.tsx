@@ -300,7 +300,7 @@ function WardSwitchPanel({
               <ul className={styles.list}>{shownElsewhere.map((candidate) => row(candidate))}</ul>
               {elsewhere.length > FIRST_ROWS ? (
                 <ShowMoreRow expanded={showAll} onClick={() => setShowAll((was) => !was)}>
-                  {showAll ? "Show fewer" : `Show ${elsewhere.length - FIRST_ROWS} more`}
+                  {showAll ? "Show fewer" : `Show all ${elsewhere.length}`}
                 </ShowMoreRow>
               ) : null}
             </section>

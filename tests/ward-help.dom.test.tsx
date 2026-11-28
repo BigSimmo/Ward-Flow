@@ -169,7 +169,8 @@ describe("help sheet", () => {
     // Short forms are under Codes.
     fireEvent.click(screen.getByRole("button", { name: /Codes/ }));
     const short = screen.getByRole("region", { name: "Services and short forms" });
-    const more = within(short).queryByRole("button", { name: /^Show \d+ more/ });
+    // r10: the kit's ShowMoreRow says "Show all N".
+    const more = within(short).queryByRole("button", { name: /^Show (?:all )?\d+(?: more)?/ });
     if (more) fireEvent.click(more);
     expect(within(short).getByText("ECT")).toBeTruthy();
   });

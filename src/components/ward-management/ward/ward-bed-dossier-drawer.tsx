@@ -3,8 +3,9 @@
 import type { WardCommandDispatch } from "../ward-shared-client";
 
 import React, { useEffect, useRef, useState, type ReactNode } from "react";
+import { leftWardAllowedFor, transportPendingFor } from "@/components/ward-management/ward-left-ward";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, History as HistoryIcon, MapPin } from "lucide-react";
+import { History as HistoryIcon, MapPin, UserRound } from "lucide-react";
 import styles from "./ward-bed-dossier-drawer.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
@@ -22,8 +23,8 @@ import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-valu
 import { deriveAfternoonDischarges } from "@/components/ward-management/ward-derivations";
 import { stalePreparingReleases } from "@/components/ward-management/ward-bed-availability";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
-import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { BlockerEditor, useBlockerSave } from "./ward-bed-blocker-editor";
+import { WardBedBoardTool, type WardBedBoardTools } from "./ward-bed-board-tools";
 import { BedClosureControls, closedBedWords, type BedClosureActions } from "./ward-bed-closure-controls";
 import { wardClosureReasonLabel } from "../ward-bed-closure-reason";
 import {
@@ -54,14 +55,17 @@ import {
   Dialog,
   Icon,
   PanelDrawer,
+  Segmented,
   StatusGlyph,
   StatusPill,
+  Umrn,
   buttonClass,
   cx,
   durMinutes,
   useIsPhone,
   type WfTone,
 } from "@/components/wf";
+import { MissingValue } from "@/components/wf/missing-value";
 import {
   observationLevelName,
   observationRatio,
@@ -81,7 +85,7 @@ import {
   stayStatus,
   type BedAction,
 } from "./ward-bed-dossier-bits";
-import { PhoneBedSheet } from "./ward-bed-dossier-phone";
+import { PhoneBedChip, PhoneBedSheet } from "./ward-bed-dossier-phone";
 import { WardDrawerDischargeDate } from "./ward-drawer-discharge-date";
 import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
@@ -114,7 +118,13 @@ interface WardBedDossierDrawerProps {
   onClose: () => void;
   drawerLeavingDestination: LeavingDestination | "";
   setDrawerLeavingDestination: (dest: LeavingDestination) => void;
-  onRecordLeft: (admissionId: string, who: string, destination: LeavingDestination | "") => void;
+  onRecordLeft: (
+    admissionId: string,
+    who: string,
+    destination: LeavingDestination | "",
+    /** One bed record (batch 3, A): left the ward, still waiting for transport (the board's item 18). */
+    awaitingTransport?: boolean,
+  ) => void;
   /** Records or clears the stay's discharge blocker. Absent where this desk may not: the blocker
    *  controls are then not offered, rather than a Save that does nothing. */
   onUpdateBlocker?: (admissionId: string, blocker: string | null) => ReturnType<WardCommandDispatch>;
@@ -130,7 +140,10 @@ interface WardBedDossierDrawerProps {
   onPrevBed?: () => void;
   /** Steps to the bed after this one. The arrow shows only when the parent passes it. */
   onNextBed?: () => void;
+  /** Audit four #31: where this bed sits in the ward's list, for the head pager's "3 of 12". */
+  bedPosition?: { index: number; total: number };
   bedDrawerRef: React.RefObject<HTMLElement | null>;
+  /** Was the phone sheet's own key handler; audit four #98 left the phone on the kit drawer, so it is unread. */
   onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
   /** Bed board (v10 pass 3): picks this stay up on the board, to place in another bed. */
   onMove?: () => void;
@@ -153,6 +166,8 @@ interface WardBedDossierDrawerProps {
   onSetCriteria?: (admissionId: string, update: DischargeCriteriaUpdate) => ReturnType<WardCommandDispatch>;
   /** Feature 37: ticks one discharge checklist item (`RECORD_DISCHARGE_CHECK`). Absent when the role cannot. */
   onRecordDischargeCheck?: (admissionId: string, item: DischargeCheckItem, state: DischargeCheckState) => void;
+  /** Simplification 26 Nov 2026 (area 3, item 3): the Bed board's clinically ready and ward diagnosis tools. */
+  boardTools?: WardBedBoardTools;
 }
 
 // WH1 (Josh, 3 Nov 2026): two tabs, Now and Leaving. The stay's recorded events moved from a third
@@ -212,15 +227,15 @@ export function WardBedDossierDrawer({
   onMarkBack,
   onPrevBed,
   onNextBed,
+  bedPosition,
   bedDrawerRef,
-  onKeyDown,
   onRaiseReferral,
-  fullReferralHref,
   roleLockNote,
   onSetBarrier,
   criteriaEligibility,
   onSetCriteria,
   onRecordDischargeCheck,
+  boardTools,
 }: WardBedDossierDrawerProps) {
   const {
     admissions,
@@ -230,6 +245,9 @@ export function WardBedDossierDrawer({
     eventLog = [],
   } = useWardFlowSelect("admissions", "bedReleases", "resolvePatientIdentity", "movements", "eventLog");
   const now = useWardFlowClock();
+  // One bed record (batch 3, A): the Bed board's "Has their transport come?", asked under Going to
+  // while this stay's transport is still pending and they are going somewhere on site to wait.
+  const [transportAnswer, setTransportAnswer] = useState<{ id: string; waiting: boolean } | null>(null);
   // Demo-Actions-AC1-3: a desk that can never record a departure (the site bed manager) is not
   // offered "Record that they have left" (DESIGN-SYSTEM.md, Actions; F-54).
   const roleGate = useRoleGate();
@@ -239,6 +257,8 @@ export function WardBedDossierDrawer({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [barrierOpen, setBarrierOpen] = useState(false);
   const [allDestinations, setAllDestinations] = useState(false);
+  // Audit three #32: "Record that they have left" with no destination asks where in its own confirm.
+  const [pickInConfirm, setPickInConfirm] = useState(false);
   const historyRef = useRef<HTMLElement | null>(null);
   const [quickBlockerOpen, setQuickBlockerOpen] = useState(false);
   const [selectedBlocker, setSelectedBlocker] = useState<BedReleaseBlocker | "">(recordedBlocker(bedItem?.blockReason));
@@ -285,10 +305,8 @@ export function WardBedDossierDrawer({
     setQuickBlockerOpen(false);
   }
 
-  // Drawer review (6 Nov 2026): on tablet and desktop the record is the kit PanelDrawer, whose Sheet
-  // owns the focus trap, Escape, the outside click and the return of focus. Only the phone's own
-  // sheet still joins the shared modal contract here.
-  useWardModalFocus(isPhone && !personGone, bedDrawerRef, onClose);
+  // Drawer review (6 Nov 2026), audit four #98: at every width the record is the kit PanelDrawer,
+  // whose Sheet owns the focus trap, Escape, the outside click and the return of focus.
   useEffect(() => {
     if (personGone) goneCloseRef.current?.focus();
   }, [personGone]);
@@ -658,32 +676,81 @@ export function WardBedDossierDrawer({
 
   // The ward board's departure check (`board/ward-board.tsx`): name · UMRN · bed, and here the destination.
   const leavingLabel = LEAVING_DESTINATIONS.find((destination) => destination.id === drawerLeavingDestination)?.label;
+  const asksTransport =
+    admission !== undefined &&
+    transportPendingFor(admission, bedReleases) &&
+    (drawerLeavingDestination === "" || leftWardAllowedFor(drawerLeavingDestination));
+  const awaitingTransport =
+    asksTransport && transportAnswer && transportAnswer.id === admission?.id ? transportAnswer.waiting : undefined;
+  const transportQuestion = asksTransport ? (
+    <div className={styles.transportRow} data-testid="ward-drawer-transport-wait">
+      <span className={styles.meta}>Has their transport come?</span>
+      <Segmented<"" | "waiting" | "collected">
+        label="Has their transport come?"
+        items={[
+          { id: "waiting", label: "Still waiting" },
+          { id: "collected", label: "Gone with transport" },
+        ]}
+        value={awaitingTransport === undefined ? "" : awaitingTransport ? "waiting" : "collected"}
+        onChange={(choice) => admission && setTransportAnswer({ id: admission.id, waiting: choice === "waiting" })}
+      />
+    </div>
+  ) : null;
+  // Audit four item 17: "Going to" is said only once a destination is chosen, never "Not recorded".
+  const goingTo = leavingLabel ? ` Going to ${leavingLabel}.` : "";
   const confirmDialog = (
     <Dialog
       open={confirmStep !== null && isOccupied && bedItem?.admissionId !== undefined}
       onClose={() => setConfirmStep(null)}
       size="sm"
-      title={confirmStep === "ed" ? "Confirm emergency department transfer" : "Confirm discharge"}
+      title={confirmStep === "ed" ? "Confirm emergency department transfer" : "Record discharge"}
       description={
         confirmStep === "ed"
           ? `Record that ${occupantAlias} has gone to an emergency department? The bed stays held while they are away.`
-          : `Record that ${occupantAlias} has left the ward? Going to ${leavingLabel ?? "Not recorded"}.`
+          : awaitingTransport
+            ? `Record that ${occupantAlias} has left the ward and is waiting for transport? The bed is ready now.${goingTo}`
+            : `Record that ${occupantAlias} has left the ward?${goingTo}`
       }
       secondary={[{ label: "Cancel", onAction: () => setConfirmStep(null) }]}
       primary={{
         label: confirmStep === "ed" ? "Record ED transfer" : "Record discharge",
+        // Audit three #32 (D-192 item 5): until where they are going is answered here, the button
+        // keeps its reason; nothing is recorded before it is pressed.
+        disabledReason:
+          confirmStep !== "leave"
+            ? undefined
+            : !drawerLeavingDestination
+              ? "Choose where they are going"
+              : asksTransport && awaitingTransport === undefined
+                ? "Say whether their transport has come"
+                : leavePaper
+                  ? "Record the paper authority first, under Leaving."
+                  : undefined,
         onAction: () => {
           const step = confirmStep;
           setConfirmStep(null);
           if (step === "ed") onMarkAtEd?.(selectedBed);
           else if (bedItem?.admissionId) {
             setDepartedHere(personKey ?? null);
-            onRecordLeft(bedItem.admissionId, occupantAlias, drawerLeavingDestination);
+            onRecordLeft(bedItem.admissionId, occupantAlias, drawerLeavingDestination, awaitingTransport === true);
           }
         },
       }}
       data-testid="ward-drawer-confirm"
     >
+      {confirmStep === "leave" && pickInConfirm ? (
+        <div data-testid="ward-drawer-confirm-destination">
+          <p className={styles.meta}>Where are they going? Nothing is recorded until you press Record discharge.</p>
+          <ChoiceChips
+            label="Where are they going?"
+            items={LEAVING_CHOICES}
+            value={drawerLeavingDestination}
+            onChange={setDrawerLeavingDestination}
+            testId="drawer-confirm-leaving-dest"
+          />
+          {transportQuestion}
+        </div>
+      ) : null}
       {confirmStep === "leave" && outstandingChecks.length > 0 ? (
         <p className={styles.meta} role="note" data-testid="ward-drawer-confirm-checklist">
           Still outstanding: {outstandingChecks.join(", ")}. You can still record the discharge.
@@ -732,17 +799,24 @@ export function WardBedDossierDrawer({
       ? [
           {
             id: "leave" as const,
-            label: "Record that they have left",
+            label: "Record discharge",
             // A9-14: nothing is recorded as where they went until a person chooses it.
-            disabledReason: !drawerLeavingDestination
-              ? "Choose where they are going first, under Leaving."
-              : leavePaper
-                ? "Record the paper authority first, under Leaving."
-                : undefined,
-            describedBy: criteriaDepartureNote
-              ? "drawer-leaving-summary drawer-leaving-criteria"
-              : "drawer-leaving-summary",
-            onAction: () => setConfirmStep("leave"),
+            // Audit three #32: with no destination (or transport answer) the button asks for it in
+            // its confirm instead of sending the person to Leaving. The paper authority still waits.
+            disabledReason:
+              drawerLeavingDestination && leavePaper ? "Record the paper authority first, under Leaving." : undefined,
+            // Audit four #98: on a phone the step also names the "Going to" line at the end of the body.
+            describedBy:
+              [
+                isPhone ? "drawer-leaving-summary-phone" : null,
+                criteriaDepartureNote ? "drawer-leaving-criteria" : null,
+              ]
+                .filter(Boolean)
+                .join(" ") || undefined,
+            onAction: () => {
+              setPickInConfirm(!drawerLeavingDestination || (asksTransport && awaitingTransport === undefined));
+              setConfirmStep("leave");
+            },
           },
         ]
       : []),
@@ -765,6 +839,7 @@ export function WardBedDossierDrawer({
           {
             id: "ed" as const,
             label: isAwayAtEd ? "Mark them back" : "Mark at an ED",
+            out: isAwayAtEd,
             onAction: () => {
               if (isAwayAtEd) onMarkBack?.(selectedBed);
               else if (onMarkAtEd) setConfirmStep("ed");
@@ -785,93 +860,260 @@ export function WardBedDossierDrawer({
           },
         ]
       : []),
-    ...(isOccupied && fullReferralHref
-      ? [
-          {
-            id: "full-referral" as const,
-            label: "Open full referral form…",
-            href: fullReferralHref,
-            testId: "ward-dossier-full-referral-link",
-          },
-        ]
-      : []),
+    // Audit four item 36: one entry for a ward referral. Raise ward referral already opens the full
+    // form with this person filled in, so the second "Open full referral form" entry went.
   ];
   const mainId = mainActionId(bedItem, isOccupied);
 
+  // Audit two B5: the facts and the two board tools are built once, so the phone sheet and the
+  // desktop drawer show the same rows in the same order.
+  // Audit two #30: the level is the hero's Observation fact; its change control sits under it, and
+  // "This shift" shows only for what differs from a settled shift.
+  const observationControl =
+    bedItem?.observation && bedItem.admissionId ? (
+      <WardObservationControl
+        key={bedItem.admissionId}
+        observation={bedItem.observation}
+        now={now}
+        showCurrent={false}
+        editingToken={observationToken}
+        draftKey={`observation:${bedItem.admissionId}`}
+        onSave={
+          onSetObservation ? (next, expected) => onSetObservation(bedItem.admissionId!, next, expected) : undefined
+        }
+      />
+    ) : null;
+  const shiftRows =
+    isAwayAtEd || bedItem?.status === "incoming" || bedItem?.highAcuity ? (
+      <>
+        {/* WH1 appraisal: only what differs from a settled shift. On the ward and no high acuity
+            request are the usual case, so they are not said. */}
+        {isAwayAtEd || bedItem?.status === "incoming" ? (
+          <Row label="Where">
+            {/* WT-31: an incoming patient is not on the ward yet, so one location state. */}
+            {isAwayAtEd
+              ? `Away at an ED ${bedItem?.awayAtEdHours}h, bed held`
+              : typeof bedItem?.deliveredAt === "number"
+                ? "Arrived at ward, confirm arrival"
+                : "Arriving"}
+          </Row>
+        ) : null}
+        {bedItem?.highAcuity ? <Row label="High acuity">Requested</Row> : null}
+      </>
+    ) : null;
+  const whyRows = (
+    <>
+      {/* WH1: the legal status and its form in full, exactly as recorded, when the hero shortens it.
+          When it was admitted is under the hero's stay day. */}
+      {bedItem?.legalStatusLabel && shortLegal(bedItem.legalStatusLabel) !== bedItem.legalStatusLabel ? (
+        <Row label="Legal status">{bedItem.legalStatusLabel}</Row>
+      ) : null}
+      <Row label="Tentative diagnosis">{bedItem?.tentativeDiagnosis ?? <MissingValue reason="not_recorded" />}</Row>
+    </>
+  );
+  const diagnosisTool =
+    boardTools && isOccupied && bedItem?.admissionId ? (
+      <WardBedBoardTool which="diagnosis" unit={unit} admissionId={bedItem.admissionId} tools={boardTools} />
+    ) : null;
+  const readyTool =
+    boardTools && isOccupied && bedItem?.admissionId ? (
+      <WardBedBoardTool which="ready" unit={unit} admissionId={bedItem.admissionId} tools={boardTools} />
+    ) : null;
+  const personRows = (
+    <>
+      {bedItem?.preferredName && bedItem.preferredName !== occupantAlias ? (
+        <Row label="Known as">{bedItem.preferredName}</Row>
+      ) : null}
+      {bedItem?.umrn ? (
+        <Row label="Record">
+          <Umrn value={bedItem.umrn} className={styles.mono} />
+        </Row>
+      ) : null}
+      {/* Redesign: only when it differs from the sex the head already shows. */}
+      {bedItem?.gender && bedItem.gender !== bedItem.sex ? <Row label="Bed placement">{bedItem.gender}</Row> : null}
+      {bedItem?.suburb || bedItem?.homeRegion ? (
+        <Row label={bedItem.suburb ? "Suburb" : "Region"}>
+          {[bedItem.suburb, bedItem.homeRegion].filter(Boolean).join(", ")}
+        </Row>
+      ) : null}
+      {bedItem?.generalPractitioner ? <Row label="GP">{bedItem.generalPractitioner}</Row> : null}
+      {bedItem?.catchmentCommunityTeam ? <Row label="Community team">{bedItem.catchmentCommunityTeam}</Row> : null}
+    </>
+  );
+  const hasPersonRows = Boolean(
+    (bedItem?.preferredName && bedItem.preferredName !== occupantAlias) ||
+    bedItem?.umrn ||
+    (bedItem?.gender && bedItem.gender !== bedItem.sex) ||
+    bedItem?.suburb ||
+    bedItem?.homeRegion ||
+    bedItem?.generalPractitioner ||
+    bedItem?.catchmentCommunityTeam,
+  );
+
+  const foot = (
+    <>
+      {isReady ? (
+        // Audit two #7: one filled step on the right (Ready while the bed is made ready, else Place
+        // someone here); Review current referrals is a quiet link on the left.
+        <div className={styles.bandActions}>
+          <div className={styles.bandSplit}>
+            <Link className={buttonClass({ variant: "ghost", className: styles.bandLink })} href="/bedchart/referrals">
+              Review current referrals
+            </Link>
+            {isPreparing && onMarkReady ? (
+              <Button variant="pri" className={styles.pill} onClick={onMarkReady}>
+                Ready
+              </Button>
+            ) : onOpenBoard && !isPreparing ? (
+              <Button variant="pri" className={styles.pill} onClick={onOpenBoard}>
+                Place someone here
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      ) : (
+        <>
+          {isOccupied && bedItem?.admissionId ? (
+            <>
+              {criteriaDepartureNote ? (
+                <p
+                  className={styles.footCriteria}
+                  id="drawer-leaving-criteria"
+                  data-testid="ward-drawer-leaving-criteria"
+                >
+                  {criteriaDepartureNote}
+                </p>
+              ) : null}
+            </>
+          ) : null}
+          {/* Audit four #31: Patient page leaves the body for the foot's second line, a quiet link.
+              WT-15: it does not close the drawer first; closing steps history back and cancelled the navigation. */}
+          <BedActions
+            band
+            actions={bedActions}
+            mainId={mainId}
+            link={
+              personHref ? (
+                // Gate r10 (2 FIX 8): the kit secondary button with the person glyph, as the referral
+                // drawer foot draws the same destination, one size with its neighbours.
+                <Link className={buttonClass({ variant: "sec", size: "md", className: styles.pill })} href={personHref}>
+                  <UserRound size={14} aria-hidden="true" />
+                  Patient page
+                </Link>
+              ) : undefined
+            }
+          />
+          {roleLockNote}
+        </>
+      )}
+      <BedClosureControls {...bedClosure} />
+    </>
+  );
+
+  // Drawer review (6 Nov 2026): the record opens in the kit PanelDrawer, as Transport, Discharges
+  // and the bed board do. Head: the person (or the bed's state), one quiet line, and the bed as the
+  // status tag. Foot: the light kit band, one filled step then equal quiet ones.
+  // Audit four #31: the bed pager is the kit pager in the head ("3 of 12"), not a row in the body.
+  const pager =
+    onPrevBed && onNextBed && bedPosition && bedPosition.total > 1
+      ? {
+          index: bedPosition.index,
+          total: bedPosition.total,
+          noun: "bed",
+          onStep: (delta: -1 | 1) => (delta < 0 ? onPrevBed() : onNextBed()),
+        }
+      : undefined;
+
+  // Audit four #98: the phone opens the same kit PanelDrawer as tablet and desktop, with the same
+  // head and foot; the kit Sheet owns focus, Escape and the return of focus at every width. The
+  // bed pill and the phone's status chip lead the head's second line.
   if (isPhone) {
     return (
       <>
-        <PhoneBedSheet
-          bedLabel={bedLabel}
-          bedItem={bedItem}
-          isReady={isReady}
-          closedEmpty={closedEmpty}
-          occupantAlias={occupantAlias}
-          isOccupied={isOccupied}
-          isAwayAtEd={isAwayAtEd}
-          tone={tone}
-          stayDay={stayDays === null ? null : stayDayNumber(admission, now)}
-          observation={observation}
-          expectedPlan={
+        <PanelDrawer
+          open
+          onClose={onClose}
+          title={isReady ? readyWord : closedEmpty ? "Closed bed" : occupantAlias}
+          titleId="drawer-bed-title"
+          subtitle={subline}
+          tag={
             <>
-              {expectedValue}
-              {dateEditor}
+              <StatusPill tone={tone ?? undefined}>{bedLabel}</StatusPill>
+              {isReady ? null : <PhoneBedChip tone={tone} />}
             </>
           }
-          timeline={timeline}
-          now={now}
-          personHref={personHref}
-          selectedBed={selectedBed}
-          quickBlockerOpen={quickBlockerOpen}
-          setQuickBlockerOpen={setBlockerOpen}
-          selectedBlocker={selectedBlocker}
-          setSelectedBlocker={setSelectedBlocker}
-          blockerSelectRef={blockerSelectRef}
-          drawerLeavingDestination={drawerLeavingDestination}
-          setDrawerLeavingDestination={setDrawerLeavingDestination}
-          onClose={onClose}
-          onRecordLeft={() => setConfirmStep("leave")}
-          leavePaper={leavePaper}
-          blockerSave={blockerSave}
-          onSetObservation={onSetObservation}
-          observationToken={observationToken}
-          onMarkAtEd={onMarkAtEd ? () => setConfirmStep("ed") : undefined}
-          onMarkBack={onMarkBack}
-          onMove={onMove}
-          onOpenBoard={onOpenBoard}
-          onMarkReady={isPreparing ? onMarkReady : undefined}
-          onRaiseReferral={onRaiseReferral}
-          fullReferralHref={fullReferralHref}
-          roleLockNote={<BedClosureControls {...bedClosure}>{roleLockNote}</BedClosureControls>}
-          bedDrawerRef={bedDrawerRef}
-          onKeyDown={onKeyDown}
-          planRows={holdUpRow}
-          planNote={
-            prepNote || barrierEditor ? (
+          tagBelow
+          closeLabel="Close bed drawer"
+          pager={pager}
+          testId="bed-telemetry-drawer"
+          className={styles.kitDrawer}
+          bodyClassName={styles.phoneBody}
+          foot={foot}
+        >
+          <PhoneBedSheet
+            bedItem={bedItem}
+            isReady={isReady}
+            closedEmpty={closedEmpty}
+            isOccupied={isOccupied}
+            stayDay={stayDays === null ? null : stayDayNumber(admission, now)}
+            expectedPlan={
               <>
-                {prepNote}
-                {barrierEditor}
+                {expectedValue}
+                {dateEditor}
               </>
-            ) : null
-          }
-          planCriteria={
-            criteriaCard || checklistCard ? (
-              <>
-                {criteriaCard}
-                {checklistCard}
-              </>
-            ) : null
-          }
-          sentJourney={sentJourneyControls}
-          leavingCriteriaNote={criteriaDepartureNote}
-          readyNote={readyNote}
-          safetyNote={under18Notice}
-          actions={bedActions}
-          mainId={mainId}
-          notLeftPlan={expectedPlan}
-          goingOut={goingOut}
-          observationShort={observationShort}
-        />
+            }
+            timeline={timeline}
+            now={now}
+            quickBlockerOpen={quickBlockerOpen}
+            selectedBlocker={selectedBlocker}
+            setSelectedBlocker={setSelectedBlocker}
+            blockerSelectRef={blockerSelectRef}
+            drawerLeavingDestination={drawerLeavingDestination}
+            setDrawerLeavingDestination={setDrawerLeavingDestination}
+            leavePaper={
+              transportQuestion || leavePaper ? (
+                <>
+                  {transportQuestion}
+                  {leavePaper}
+                </>
+              ) : null
+            }
+            blockerSave={blockerSave}
+            onSetObservation={onSetObservation}
+            observationToken={observationToken}
+            planRows={holdUpRow}
+            planNote={
+              prepNote || barrierEditor ? (
+                <>
+                  {prepNote}
+                  {barrierEditor}
+                </>
+              ) : null
+            }
+            planCriteria={
+              criteriaCard || checklistCard ? (
+                <>
+                  {criteriaCard}
+                  {checklistCard}
+                </>
+              ) : null
+            }
+            sentJourney={sentJourneyControls}
+            readyNote={readyNote}
+            safetyNote={under18Notice}
+            notLeftPlan={expectedPlan}
+            goingOut={goingOut}
+            observationShort={observationShort}
+            observationControl={observationControl}
+            shiftRows={shiftRows}
+            whyRows={whyRows}
+            diagnosisTool={diagnosisTool}
+            personRows={hasPersonRows ? personRows : null}
+            confirmation={confirmation}
+            dateMoves={dateMoves}
+            readyTool={readyTool}
+          />
+        </PanelDrawer>
         {confirmDialog}
       </>
     );
@@ -929,9 +1171,10 @@ export function WardBedDossierDrawer({
         </div>
         <div>
           <dt>Observation</dt>
-          <dd>{observationShort}</dd>
+          <dd title={observation !== observationShort ? observation : undefined}>{observationShort}</dd>
         </div>
       </dl>
+      {observationControl}
     </section>
   );
   const historyToggle = (
@@ -975,104 +1218,6 @@ export function WardBedDossierDrawer({
     </section>
   );
 
-  const foot = (
-    <>
-      {isReady ? (
-        <div className={styles.bandActions}>
-          {isPreparing && onMarkReady ? (
-            <Button variant="pri" className={cx(styles.pill, styles.bandMain)} onClick={onMarkReady}>
-              Ready
-            </Button>
-          ) : null}
-          <div className={styles.bandRow}>
-            <Link
-              className={buttonClass({
-                variant: isPreparing && onMarkReady ? "sec" : "pri",
-                className: cx(styles.pill, !(isPreparing && onMarkReady) && styles.bandMain),
-              })}
-              href="/bedchart/referrals"
-            >
-              Review current referrals
-            </Link>
-            {onOpenBoard && !isPreparing ? (
-              <Button variant="sec" className={styles.pill} onClick={onOpenBoard}>
-                Place someone here
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      ) : (
-        <>
-          {isOccupied && bedItem?.admissionId ? (
-            <>
-              {/* The destination is chosen on Leaving, so the footer always says which one
-                  "Record that they have left" will record. */}
-              <p className={styles.footDestination} id="drawer-leaving-summary">
-                Going to <strong>{leavingLabel ?? "Not chosen yet"}</strong>
-                {tab !== "leave" ? (
-                  <button
-                    type="button"
-                    className={styles.footChange}
-                    onClick={() => {
-                      setTab("leave");
-                    }}
-                  >
-                    Change
-                  </button>
-                ) : null}
-              </p>
-              {criteriaDepartureNote ? (
-                <p
-                  className={styles.footCriteria}
-                  id="drawer-leaving-criteria"
-                  data-testid="ward-drawer-leaving-criteria"
-                >
-                  {criteriaDepartureNote}
-                </p>
-              ) : null}
-            </>
-          ) : null}
-          <BedActions band actions={bedActions} mainId={mainId} />
-          {roleLockNote}
-        </>
-      )}
-      <BedClosureControls {...bedClosure} />
-    </>
-  );
-
-  // Drawer review (6 Nov 2026): the record opens in the kit PanelDrawer, as Transport, Discharges
-  // and the bed board do. Head: the person (or the bed's state), one quiet line, and the bed as the
-  // status tag. Foot: the light kit band, one filled step then equal quiet ones.
-  const nav =
-    personHref || onPrevBed || onNextBed ? (
-      <div className={styles.kitNav}>
-        {/* WT-15: these links do not close the drawer first; closing steps history back and cancelled the navigation. */}
-        {personHref ? (
-          <Link className={styles.headPatient} href={personHref}>
-            Patient page
-            <Icon icon={ChevronRight} size={14} />
-          </Link>
-        ) : (
-          <span />
-        )}
-        <span className={styles.kitNavBeds}>
-          {onPrevBed ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              iconOnly
-              icon={ChevronLeft}
-              aria-label="Previous bed"
-              onClick={onPrevBed}
-            />
-          ) : null}
-          {onNextBed ? (
-            <Button variant="ghost" size="sm" iconOnly icon={ChevronRight} aria-label="Next bed" onClick={onNextBed} />
-          ) : null}
-        </span>
-      </div>
-    ) : null;
-
   return (
     <>
       <PanelDrawer
@@ -1083,12 +1228,12 @@ export function WardBedDossierDrawer({
         subtitle={subline}
         tag={<StatusPill tone={tone ?? undefined}>{bedLabel}</StatusPill>}
         closeLabel="Close bed drawer"
+        pager={pager}
         testId="bed-telemetry-drawer"
         className={styles.kitDrawer}
         bodyClassName={styles.kitBody}
         foot={foot}
       >
-        {nav}
         {isReady || closedEmpty ? (
           <>
             <section className={styles.hero} aria-label="This bed" data-testid="bed-record-hero">
@@ -1105,25 +1250,23 @@ export function WardBedDossierDrawer({
                   {closedEmpty ? "Not offered" : isPreparing ? "Not offered yet" : "Offered"}
                 </span>
               </div>
-              <dl className={styles.heroFacts}>
-                {closedEmpty ? (
-                  <div data-testid="ward-drawer-closed-reason">
-                    <dt>Reason</dt>
-                    <dd>{closedEmpty.reason}</dd>
-                  </div>
-                ) : (
-                  <>
+              {/* Audit two B4: a ready bed says who it is pulled for only when someone is, from the
+                  same field the phone reads; no fixed "Nobody" or "None recorded" cells. */}
+              {closedEmpty || bedItem?.heldFor ? (
+                <dl className={styles.heroFacts}>
+                  {closedEmpty ? (
+                    <div data-testid="ward-drawer-closed-reason">
+                      <dt>Reason</dt>
+                      <dd>{closedEmpty.reason}</dd>
+                    </div>
+                  ) : (
                     <div>
                       <dt>Pulled for</dt>
-                      <dd>Nobody</dd>
+                      <dd>{bedItem?.heldFor}</dd>
                     </div>
-                    <div>
-                      <dt>Candidate</dt>
-                      <dd>None recorded</dd>
-                    </div>
-                  </>
-                )}
-              </dl>
+                  )}
+                </dl>
+              ) : null}
               {readyNote}
             </section>
             {/* Live audit item 13: an empty bed's History holds its closures, so it shows when there are any. */}
@@ -1170,74 +1313,20 @@ export function WardBedDossierDrawer({
             {panel(
               "now",
               <>
-                <Section title="This shift">
-                  <dl className={styles.kv}>
-                    {/* WH1 appraisal: only what differs from a settled shift. On the ward and no
-                        high acuity request are the usual case, so they are not said. */}
-                    {isAwayAtEd || bedItem?.status === "incoming" ? (
-                      <Row label="Where">
-                        {/* WT-31: an incoming patient is not on the ward yet, so one location state. */}
-                        {isAwayAtEd
-                          ? `Away at an ED ${bedItem.awayAtEdHours}h, bed held`
-                          : typeof bedItem?.deliveredAt === "number"
-                            ? "Arrived at ward, confirm arrival"
-                            : "Arriving"}
-                      </Row>
-                    ) : null}
-                    <Row label="Observation level">{observation}</Row>
-                    {bedItem?.highAcuity ? <Row label="High acuity">Requested</Row> : null}
-                  </dl>
-                  {bedItem?.observation && bedItem.admissionId ? (
-                    <WardObservationControl
-                      key={bedItem.admissionId}
-                      observation={bedItem.observation}
-                      now={now}
-                      showCurrent={false}
-                      editingToken={observationToken}
-                      draftKey={`observation:${bedItem.admissionId}`}
-                      onSave={
-                        onSetObservation
-                          ? (next, expected) => onSetObservation(bedItem.admissionId!, next, expected)
-                          : undefined
-                      }
-                    />
-                  ) : null}
-                </Section>
+                {shiftRows ? (
+                  <Section title="This shift">
+                    <dl className={styles.kv}>{shiftRows}</dl>
+                  </Section>
+                ) : null}
                 <Section title="Why they are here">
-                  <dl className={styles.kv}>
-                    {/* WH1: the legal status and its form in full, exactly as recorded, when the hero
-                        shortens it. When it was admitted is under the hero's stay day. */}
-                    {bedItem?.legalStatusLabel && shortLegal(bedItem.legalStatusLabel) !== bedItem.legalStatusLabel ? (
-                      <Row label="Legal status">{bedItem.legalStatusLabel}</Row>
-                    ) : null}
-                    <Row label="Tentative diagnosis">{bedItem?.tentativeDiagnosis ?? "None recorded"}</Row>
-                  </dl>
+                  <dl className={styles.kv}>{whyRows}</dl>
+                  {diagnosisTool}
                 </Section>
-                <Section title="This person">
-                  <dl className={styles.kv}>
-                    {bedItem?.preferredName && bedItem.preferredName !== occupantAlias ? (
-                      <Row label="Known as">{bedItem.preferredName}</Row>
-                    ) : null}
-                    {bedItem?.umrn ? (
-                      <Row label="Record">
-                        <span className={styles.mono}>{bedItem.umrn}</span>
-                      </Row>
-                    ) : null}
-                    {/* Redesign: only when it differs from the sex the head already shows. */}
-                    {bedItem?.gender && bedItem.gender !== bedItem.sex ? (
-                      <Row label="Bed placement">{bedItem.gender}</Row>
-                    ) : null}
-                    {bedItem?.suburb || bedItem?.homeRegion ? (
-                      <Row label={bedItem.suburb ? "Suburb" : "Region"}>
-                        {[bedItem.suburb, bedItem.homeRegion].filter(Boolean).join(", ")}
-                      </Row>
-                    ) : null}
-                    {bedItem?.generalPractitioner ? <Row label="GP">{bedItem.generalPractitioner}</Row> : null}
-                    {bedItem?.catchmentCommunityTeam ? (
-                      <Row label="Community team">{bedItem.catchmentCommunityTeam}</Row>
-                    ) : null}
-                  </dl>
-                </Section>
+                {hasPersonRows ? (
+                  <Section title="This person">
+                    <dl className={styles.kv}>{personRows}</dl>
+                  </Section>
+                ) : null}
               </>,
             )}
             {panel(
@@ -1260,6 +1349,7 @@ export function WardBedDossierDrawer({
                   </dl>
                   {prepNote ? <div className={styles.cardInner}>{prepNote}</div> : null}
                   {barrierEditor ? <div className={styles.cardInner}>{barrierEditor}</div> : null}
+                  {readyTool}
                   <BlockerEditor
                     save={blockerSave}
                     blockReason={bedItem?.blockReason}
@@ -1294,7 +1384,7 @@ export function WardBedDossierDrawer({
                         aria-expanded={allDestinations}
                         onClick={() => setAllDestinations((all) => !all)}
                       >
-                        {allDestinations ? "Fewer places" : `All ${LEAVING_CHOICES.length} places`}
+                        {allDestinations ? "Show fewer" : `Show all ${LEAVING_CHOICES.length}`}
                       </Button>
                       {bedItem.catchmentCommunityTeam ? (
                         <p className={styles.meta}>
@@ -1305,6 +1395,7 @@ export function WardBedDossierDrawer({
                           </span>
                         </p>
                       ) : null}
+                      {transportQuestion}
                       {leavePaper}
                     </div>
                   </Section>

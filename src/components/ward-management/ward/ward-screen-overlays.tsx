@@ -37,7 +37,7 @@ type WardScreenBedDrawerProps = {
   setSelectedBed: Dispatch<SetStateAction<number | null>>;
   drawerLeavingDestination: LeavingDestination | "";
   setDrawerLeavingDestination: Dispatch<SetStateAction<LeavingDestination | "">>;
-  handleDrawerRecordLeft: (admissionId: string, who: string) => void;
+  handleDrawerRecordLeft: (admissionId: string, who: string, awaitingTransport?: boolean) => void;
   pathname: string;
   routeRole: WardChromeRole;
   pendingBedReleases: BedRelease[];
@@ -174,10 +174,10 @@ export function WardScreenBedDrawer({
           ...(bedClosureRole === "ward" ? { actingUnitId: unitId } : {}),
         }),
         undone: again
-          ? `Undone. ${bedLabel(bedNumber)} has no reason recorded.`
+          ? `Undone: ${bedLabel(bedNumber)} has no reason recorded`
           : closed
-            ? `Undone. ${bedLabel(bedNumber)} is open again.`
-            : `Undone. ${bedLabel(bedNumber)} is closed again.`,
+            ? `Undone: ${bedLabel(bedNumber)} is open again`
+            : `Undone: ${bedLabel(bedNumber)} is closed again`,
       },
     );
   };
@@ -197,6 +197,13 @@ export function WardScreenBedDrawer({
             bedItem={selectedBedItem}
             unit={unit}
             onClose={closeBedDrawer}
+            bedPosition={{
+              index: Math.max(
+                0,
+                bedsList.findIndex((bed) => bed.bedNumber === selectedBed),
+              ),
+              total: bedsList.length,
+            }}
             onPrevBed={() => {
               const index = bedsList.findIndex((bed) => bed.bedNumber === selectedBed);
               setSelectedBed(Number(bedsList[(index - 1 + bedsList.length) % bedsList.length].bedNumber));
@@ -207,8 +214,8 @@ export function WardScreenBedDrawer({
             }}
             drawerLeavingDestination={drawerLeavingDestination}
             setDrawerLeavingDestination={setDrawerLeavingDestination}
-            onRecordLeft={(admissionId, who) => {
-              handleDrawerRecordLeft(admissionId, who);
+            onRecordLeft={(admissionId, who, _destination, awaitingTransport) => {
+              handleDrawerRecordLeft(admissionId, who, awaitingTransport);
             }}
             onUpdateBlocker={
               // The bed manager and coordinator record blockers from this drawer too (Josh, 26 Oct
@@ -358,6 +365,7 @@ export function WardScreenBedDrawer({
             onRaiseReferral={raiseReferralGate.allowed ? () => handleRaiseWardReferral(selectedBedItem) : undefined}
             fullReferralHref={fullWardReferralHref(selectedBedItem?.patientInfo?.patient?.id)}
             roleLockNote={wardRoleLockNote}
+            boardTools={{ raise: raiseAsRouteRole, record: recordFeedback }}
             onSetBarrier={
               barrierGate.allowed
                 ? (admissionId, barrier) => {

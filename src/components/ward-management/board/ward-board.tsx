@@ -1,12 +1,11 @@
 "use client";
 
-import { X } from "lucide-react";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { useIsPhone, useModalFocus } from "@/components/wf";
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { Dialog, useIsPhone, useModalFocus } from "@/components/wf";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 import {
   admissionsForUnit,
@@ -71,6 +70,8 @@ import hero from "./ward-board-hero.module.css";
 import panels from "./ward-board-panels.module.css";
 import { WardBoardFlowColumn } from "./ward-board-flow-column";
 import { WardBoardGridColumn } from "./ward-board-grid-column";
+import { openBedReleases } from "@/components/ward-management/ward-bed-availability";
+import { wardDischargesDueToday } from "@/components/ward-management/ward/ward-home-tab-model";
 import { LeavingDestinationField, TransportWaitField, WardBoardDetailPanel } from "./ward-board-detail-panel";
 import { WardBoardWorkBand } from "./ward-board-work-band";
 import {
@@ -140,10 +141,30 @@ export function boardCardLine(
 export function WardBoard({
   unitId,
   requireConfirmation = process.env.NODE_ENV !== "test",
+  embedded,
 }: {
   unitId: string;
   requireConfirmation?: boolean;
+  /**
+   * Simplification 26 Nov 2026 (fold the Bed board into Ward, Josh's approved version, item 13): the
+   * dense name-and-days grid, legend included, drawn as the Ward page's Grid view of Every bed. Only
+   * the grid, the bed's record and the confirmations are drawn; the Ward page carries the rest. The
+   * grid's Show, Order and Narrow controls go to `controlsSlot` (the Every bed card head). A tile for
+   * a person opens the Ward bed drawer when `onOpenStay` knows their bed (it returns true).
+   */
+  embedded?: {
+    /** `grid` (default): the dense grid. `stranded`: the Worth a look prompts. `handover`: Before handover. */
+    part?: "grid" | "stranded" | "handover";
+    controlsSlot?: HTMLElement | null;
+    onOpenStay?: (admissionId: string) => boolean;
+    /**
+     * One bed record (batch 3, A): any Grid tile, occupied or not, opens the Ward drawer through
+     * `?bed=`. Given the tile's kind and its place among tiles of that kind; true when it opened.
+     */
+    onOpenTile?: (tile: { key: string; kind: Tile["kind"]; preparing: boolean; ordinal: number }) => boolean;
+  };
 }) {
+  const part = embedded ? (embedded.part ?? "grid") : null;
   // Live state, on the same terms as every other screen. Named `liveUnits` only because `unit`
   // below is the one this board is about; `now` and `admissions` keep their names so every
   // derivation beneath reads unchanged.
@@ -199,8 +220,6 @@ export function WardBoard({
   const dialogTriggerRef = useRef<HTMLElement | null>(null);
   const blockerDialogRef = useRef<HTMLDivElement | null>(null);
   const blockerCloseBtnRef = useRef<HTMLButtonElement | null>(null);
-  const confirmDialogRef = useRef<HTMLDivElement | null>(null);
-  const confirmCloseBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const closeConfirmDialog = useCallback(() => {
     setPendingConfirm(null);
@@ -213,15 +232,6 @@ export function WardBoard({
   // Both dialogs follow the shared modal contract: the page behind is inert and held still, focus
   // starts on the close button, Tab wraps inside, Escape closes only the dialog (handled first, so
   // the board's own Escape for the slide-out never also fires), and focus returns to the trigger.
-  useModalFocus({
-    open: pendingConfirm !== null,
-    onClose: closeConfirmDialog,
-    panelRef: confirmDialogRef,
-    initialFocusRef: confirmCloseBtnRef,
-    returnFocusRef: dialogTriggerRef,
-    focusOnOpen: "immediate",
-    keyPhase: "capture",
-  });
   useModalFocus({
     open: blockerDialogItem !== null,
     onClose: closeBlockerDialog,
@@ -362,7 +372,7 @@ export function WardBoard({
       success,
       who,
       undo: (at) => ({ type: "UNDO_DEPARTURE", role: "ward", now: at, admissionId, actingUnitId: unit.id }),
-      undone: "Discharge undone. This patient is back on the ward.",
+      undone: "Undone: Discharge · This patient is back on the ward",
     });
   };
   const confirmBoardArrival = (movementId: string, who: string, reason?: TransportExceptionReason) => {
@@ -619,6 +629,9 @@ export function WardBoard({
       ? null
       : (occupantByKey.get(selectedTile.key) ?? null);
 
+  const leavingToday = new Set(
+    wardDischargesDueToday(openBedReleases(readyReleases, unit.id), now).map((release) => release.admissionId),
+  );
   const tileMatchesFilter = (tile: Tile, filter: BoardFilter): boolean => {
     const occupant = occupantByKey.get(tile.key);
     switch (filter) {
@@ -633,8 +646,10 @@ export function WardBoard({
       case "ready":
         // D-179 item 8: a bed still being made ready is not Ready.
         return tile.kind === "empty" && !tile.preparing;
-      case "quiet":
-        return tile.kind === "occupied" && occupant !== undefined && occupant.expectedDays === null;
+      case "leaving":
+        // The Picture's "Due out today": the discharges planned for today (`wardDischargesDueToday`),
+        // never a past date or a confirmed discharge on a later day (R-FIGS-12).
+        return tile.kind === "occupied" && occupant !== undefined && leavingToday.has(occupant.admissionId);
       case "all":
       default:
         return true;
@@ -647,7 +662,7 @@ export function WardBoard({
 
   let lookCount = 0;
   let readyCount = 0;
-  let quietCount = 0;
+  let leavingCount = 0;
   let blockedTileCount = 0;
   let emptyTileCount = 0;
   const filteredTiles: Tile[] = [];
@@ -658,11 +673,11 @@ export function WardBoard({
 
     const isLook = tileMatchesFilter(tile, "look");
     const isReady = tileMatchesFilter(tile, "ready");
-    const isQuiet = tileMatchesFilter(tile, "quiet");
+    const isLeaving = tileMatchesFilter(tile, "leaving");
 
     if (isLook) lookCount++;
     if (isReady) readyCount++;
-    if (isQuiet) quietCount++;
+    if (isLeaving) leavingCount++;
 
     if (tileMatchesFilter(tile, bedFilter)) {
       filteredTiles.push(tile);
@@ -673,7 +688,7 @@ export function WardBoard({
     all: tiles.length,
     look: lookCount,
     ready: readyCount,
-    quiet: quietCount,
+    leaving: leavingCount,
   };
 
   const tileIndexMap = new Map<Tile, number>();
@@ -886,7 +901,8 @@ export function WardBoard({
         subject: cardNameByKey.get(occupant.key),
         label: "Away at an ED",
         tone: "warn",
-        when: `${occupant.awayAtEdHours}h ago`,
+        // Fable re-review: "1h away" and "1h ago" said the same thing side by side; the chip keeps it.
+        when: "",
         chip: `${occupant.awayAtEdHours}h away`,
         // The row already says "Away at an ED", so the line keeps only what it adds, uncut.
         text: "Their bed is still held for them.",
@@ -1096,6 +1112,9 @@ export function WardBoard({
       return;
     }
     if (word === "Record hold-up") {
+      // One bed record (batch 3, A): on the Ward page the drawer's inline hold-up editor is the only
+      // editor, so the hold-up opens the person's bed there; the board's own dialog is not drawn.
+      if (embedded && item.selectableKey && pickStay(item.selectableKey)) return;
       dialogTriggerRef.current =
         typeof document !== "undefined" ? (document.activeElement as HTMLElement | null) : null;
       setSelectedBlocker(BED_RELEASE_BLOCKERS[0]);
@@ -1120,8 +1139,28 @@ export function WardBoard({
     }
   };
 
+  const pickStay = (admissionId: string) => embedded?.onOpenStay?.(admissionId) === true;
+  const pickTile: typeof setSelectedKey = (next) => {
+    if (typeof next === "string" && embedded) {
+      if (pickStay(next)) return;
+      const tile = tiles.find((candidate) => candidate.key === next);
+      if (tile && embedded.onOpenTile) {
+        const preparing = tile.kind === "empty" && tile.preparing === true;
+        const same = tiles.filter(
+          (candidate) =>
+            candidate.kind === tile.kind &&
+            (candidate.kind !== "empty" || (candidate.preparing === true) === preparing),
+        );
+        if (embedded.onOpenTile({ key: tile.key, kind: tile.kind, preparing, ordinal: same.indexOf(tile) })) return;
+      }
+      // On the Ward page the board's own record is not drawn (one bed record), so nothing else opens.
+      return;
+    }
+    setSelectedKey(next);
+  };
   const gridColumn = (
     <WardBoardGridColumn
+      embedded={embedded ? { controlsSlot: embedded.controlsSlot ?? null } : undefined}
       isPhone={isPhone}
       bedFilter={bedFilter}
       bedOrder={bedOrder}
@@ -1136,7 +1175,7 @@ export function WardBoard({
       orderedTiles={orderedTiles}
       selectedKey={selectedKey}
       setBedOrder={setBedOrder}
-      setSelectedKey={setSelectedKey}
+      setSelectedKey={pickTile}
       tileIndexMap={tileIndexMap}
       tileMatchesFilter={tileMatchesFilter}
       tiles={tiles}
@@ -1182,36 +1221,43 @@ export function WardBoard({
   );
 
   return (
-    <div className={styles.screen} data-testid="ward-board" data-ward-design="third-edition">
-      <main id="main-content" className={styles.main}>
-        <h1 className={styles.screenName}>Bed board</h1>
+    <div
+      className={embedded ? `${styles.screen} ${styles.embedded}` : styles.screen}
+      data-testid="ward-board"
+      data-ward-design="third-edition"
+      data-embedded={embedded ? "true" : undefined}
+    >
+      <BoardMain embedded={embedded !== undefined}>
+        {embedded ? null : <h1 className={styles.screenName}>Bed board</h1>}
 
-        <WardBoardHero
-          available={available}
-          constraint={constraint}
-          incoming={incoming.length}
-          outgoing={outgoing.length}
-          pendingPreparation={states.beingMadeReady}
-          pulledIn={pulledIn.length}
-          service={service}
-          site={site}
-          stamp={stamp}
-          states={states}
-          unit={unit}
-          now={now}
-          online={online}
-          figures={figures}
-          worthALook={worthALook}
-          onShowWorthALook={showWorthALook}
-          tools={
-            <WardBoardTools
-              sheetOpen={sheetOpen}
-              onToggleSheet={() => setSheetOpen((open) => !open)}
-              units={liveUnits}
-              currentUnitId={unit.id}
-            />
-          }
-        />
+        {embedded ? null : (
+          <WardBoardHero
+            available={available}
+            constraint={constraint}
+            incoming={incoming.length}
+            outgoing={outgoing.length}
+            pendingPreparation={states.beingMadeReady}
+            pulledIn={pulledIn.length}
+            service={service}
+            site={site}
+            stamp={stamp}
+            states={states}
+            unit={unit}
+            now={now}
+            online={online}
+            figures={figures}
+            worthALook={worthALook}
+            onShowWorthALook={showWorthALook}
+            tools={
+              <WardBoardTools
+                sheetOpen={sheetOpen}
+                onToggleSheet={() => setSheetOpen((open) => !open)}
+                units={liveUnits}
+                currentUnitId={unit.id}
+              />
+            }
+          />
+        )}
 
         {/*
          * THE WARD BAND — ten current figures for this one ward. Six retain the home page's exact
@@ -1233,7 +1279,7 @@ export function WardBoard({
          * weight alone is a mark a greyscale sheet loses.
          */}
         {/* Change 10 (D-77): on a phone every bed comes first, above the day figures. */}
-        {isPhone && (
+        {isPhone && !embedded && (
           // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- catches Escape or arrow keys bubbling up from a focused tile
           <div className={styles.phoneBeds} onKeyDown={onZoneKeyDown}>
             {gridColumn}
@@ -1242,15 +1288,15 @@ export function WardBoard({
 
         {/* Stranded-patient prompts (smart feature 12): long stays with no expected date, and people
             ready to leave but waiting on something outside the ward. Scoped to this ward. */}
-        <div className={hero.oneNotice}>
+        <div className={hero.oneNotice} hidden={part === "grid" || part === "handover" ? true : undefined}>
           <StrandedPrompts
             admissions={admissionsForUnit(admissions, unit.id)}
             now={now}
             nameFor={listNameFor}
-            onOpen={setSelectedKey}
+            onOpen={pickTile}
             bedReleases={liveBedReleases}
           />
-          <WardForecastShare unit={unit} now={now} nameFor={nameFor} onOpen={setSelectedKey} />
+          <WardForecastShare unit={unit} now={now} nameFor={nameFor} onOpen={pickTile} />
         </div>
 
         {/*
@@ -1292,21 +1338,29 @@ export function WardBoard({
          * without the overlay a phone sheet would impose.
          */}
         {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
-        <div className={`${styles.zones} ${panels.zones}`} onKeyDown={onZoneKeyDown}>
-          <WardBoardFlowColumn
-            flowTab={flowTab}
-            incoming={incoming}
-            movement={movement}
-            now={now}
-            onFlowTabKeyDown={onFlowTabKeyDown}
-            outgoing={outgoing}
-            outgoingBasis={outgoingBasis}
-            setFlowTab={setFlowTab}
-            setOutgoingBasis={setOutgoingBasis}
-            targets={targets}
-          />
+        <div className={embedded ? styles.embeddedZones : `${styles.zones} ${panels.zones}`} onKeyDown={onZoneKeyDown}>
+          {embedded ? null : (
+            <WardBoardFlowColumn
+              flowTab={flowTab}
+              incoming={incoming}
+              movement={movement}
+              now={now}
+              onFlowTabKeyDown={onFlowTabKeyDown}
+              outgoing={outgoing}
+              outgoingBasis={outgoingBasis}
+              setFlowTab={setFlowTab}
+              setOutgoingBasis={setOutgoingBasis}
+              targets={targets}
+            />
+          )}
 
-          {!isPhone && gridColumn}
+          {/* Final look (26 Nov 2026): the Ward page's Grid on a phone draws as the old phone Bed board,
+              two cards to a row, Show more after the cards. */}
+          {part === "grid" && isPhone ? (
+            <div className={styles.phoneBeds}>{gridColumn}</div>
+          ) : (
+            (part === "grid" || (!embedded && !isPhone)) && gridColumn
+          )}
 
           {/*
            * THE BED'S RECORD: drawer review, 6 Nov 2026 (Josh: a right drawer for every detail
@@ -1315,167 +1369,138 @@ export function WardBoard({
            * gives up a column to it. The drawer owns focus, Escape and the return of focus; the
            * zones' Escape handler skips events from it because it is portalled out of the zones.
            */}
-          {detailPanel}
-          <WardBoardWorkBand
-            blockerCloseBtnRef={blockerCloseBtnRef}
-            blockerDialogItem={blockerDialogItem}
-            blockerDialogRef={blockerDialogRef}
-            closeBlockerDialog={closeBlockerDialog}
-            dispatchAndReport={dispatchAndReport}
-            handleShiftAction={handleShiftAction}
-            liveBedReleases={liveBedReleases}
-            nameFor={nameFor}
-            raise={raise}
-            selectedBlocker={selectedBlocker}
-            setSelectedBlocker={setSelectedBlocker}
-            setSelectedKey={setSelectedKey}
-            setShiftExpanded={setShiftExpanded}
-            setToastMessage={setToastMessage}
-            shiftDigest={shiftDigest}
-            shiftExpanded={shiftExpanded}
-            shiftTiles={shiftTiles}
-            unit={unit}
-          />
-          <WardBoardTransportWait
-            entries={transportWait}
-            nameFor={listNameFor}
-            now={now}
-            onCollected={(entry, who) =>
-              runDeparture(
-                () => raise("MARK_TRANSPORT_COLLECTED", { admissionId: entry.admissionId, actingUnitId: unit.id }),
-                collectedStep(entry.admissionId, unit.id, who),
-              )
-            }
-          />
+          {embedded ? null : detailPanel}
+          {part === "grid" || part === "stranded" ? null : (
+            <WardBoardWorkBand
+              blockerCloseBtnRef={blockerCloseBtnRef}
+              blockerDialogItem={blockerDialogItem}
+              blockerDialogRef={blockerDialogRef}
+              closeBlockerDialog={closeBlockerDialog}
+              dispatchAndReport={dispatchAndReport}
+              handleShiftAction={handleShiftAction}
+              liveBedReleases={liveBedReleases}
+              nameFor={nameFor}
+              raise={raise}
+              selectedBlocker={selectedBlocker}
+              setSelectedBlocker={setSelectedBlocker}
+              setSelectedKey={pickTile}
+              setShiftExpanded={setShiftExpanded}
+              setToastMessage={setToastMessage}
+              shiftDigest={shiftDigest}
+              shiftExpanded={shiftExpanded}
+              shiftTiles={shiftTiles}
+              unit={unit}
+            />
+          )}
+          {embedded ? null : (
+            <WardBoardTransportWait
+              entries={transportWait}
+              nameFor={listNameFor}
+              now={now}
+              onCollected={(entry, who) =>
+                runDeparture(
+                  () => raise("MARK_TRANSPORT_COLLECTED", { admissionId: entry.admissionId, actingUnitId: unit.id }),
+                  collectedStep(entry.admissionId, unit.id, who),
+                )
+              }
+            />
+          )}
         </div>
 
-        <WardBoardPrintSections
-          incoming={incoming}
-          movement={movement}
-          now={now}
-          occupants={occupants}
-          outgoing={outgoing}
-          outgoingBasis={outgoingBasis}
-          selectedKey={selectedKey}
-          setSheetOpen={setSheetOpen}
-          sheetOpen={sheetOpen}
-          targets={targets}
-          tiles={tiles}
-          unit={unit}
-        />
+        {embedded ? null : (
+          <WardBoardPrintSections
+            incoming={incoming}
+            movement={movement}
+            now={now}
+            occupants={occupants}
+            outgoing={outgoing}
+            outgoingBasis={outgoingBasis}
+            selectedKey={selectedKey}
+            setSheetOpen={setSheetOpen}
+            sheetOpen={sheetOpen}
+            targets={targets}
+            tiles={tiles}
+            unit={unit}
+          />
+        )}
 
+        {/* Audit two #38 (N1): the leave and ED confirm on the kit Dialog. The confirm stays, with its
+            identity check, the place they went and the transport question. */}
         {pendingConfirm ? (
-          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and the shared modal focus helper closes it on Escape
-          <div
-            ref={confirmDialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="confirm-dialog-title"
-            aria-describedby="confirm-dialog-description"
-            id="ward-board-confirm-dialog"
-            tabIndex={-1}
-            onClick={(e) => {
-              if (e.target === e.currentTarget) closeConfirmDialog();
+          <Dialog
+            open
+            onClose={closeConfirmDialog}
+            title={ask.words.title}
+            size="sm"
+            role="alertdialog"
+            returnFocusRef={dialogTriggerRef}
+            closeLabel="Close dialog"
+            secondary={[{ label: "Cancel", onAction: closeConfirmDialog }]}
+            primary={{
+              label: ask.words.action,
+              onAction: handleConfirmAction,
+              testId: "ward-board-confirm-proceed",
+              disabledReason:
+                pendingConfirm.kind === "leaving" && destinationFor(confirmAdmissionId) === ""
+                  ? "Choose where they went first."
+                  : ask.unanswered
+                    ? "Say whether their transport has come first."
+                    : undefined,
             }}
-            className={styles.modalBackdrop}
+            data-testid="ward-board-confirm-dialog"
           >
-            <div className={styles.confirmDialogPanel}>
-              <div className={styles.modalHeader}>
-                <h3 id="confirm-dialog-title" className={styles.confirmDialogTitle}>
-                  {ask.words.title}
-                </h3>
-                <button
-                  ref={confirmCloseBtnRef}
-                  type="button"
-                  onClick={closeConfirmDialog}
-                  aria-label="Close dialog"
-                  data-testid="ward-board-confirm-close"
-                  className={styles.confirmCloseBtn}
-                  // `--r0` is declared nowhere, so this stays inline: in a stylesheet it would trip the
-                  // token-reference guard (tests/ward-css-token-references-resolve.test.ts).
-                  style={{ borderRadius: "var(--r0, 0.25rem)" }}
-                >
-                  <X aria-hidden="true" size={16} strokeWidth={1.75} />
-                </button>
-              </div>
-
-              <p id="confirm-dialog-description" className={styles.confirmDialogText}>
-                {ask.awaiting ? (
-                  <TransportWaitConfirmText who={pendingConfirm.who} destination={confirmDestination} />
-                ) : pendingConfirm.kind === "leaving" ? (
-                  <>
-                    Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has left the ward? This
-                    will record their discharge and make this bed available for new admissions.
-                    {confirmDestination ? (
-                      <span data-testid="ward-board-confirm-destination-text">
-                        {" "}
-                        Where they went: {confirmDestination}.
-                      </span>
-                    ) : null}
-                  </>
-                ) : (
-                  <>
-                    Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has gone to an emergency
-                    department? The bed will remain held for them while they are away.
-                  </>
-                )}
-                {/* DA-08: both confirmations check a second identifier, not the name alone. */}
-                {confirmIdentity ? (
-                  <span className={styles.confirmIdentity} data-testid="ward-board-confirm-identity">
-                    Check: {confirmIdentity}
-                  </span>
-                ) : null}
-              </p>
-
-              {pendingConfirm.kind === "leaving" ? (
-                <LeavingDestinationField
-                  id="ward-board-confirm-destination"
-                  value={destinationFor(confirmAdmissionId)}
-                  onChange={(destination) =>
-                    confirmAdmissionId && setLeavingChoice({ admissionId: confirmAdmissionId, destination })
-                  }
-                />
+            <p className={styles.confirmDialogText}>
+              {ask.awaiting ? (
+                <TransportWaitConfirmText who={pendingConfirm.who} destination={confirmDestination} />
+              ) : pendingConfirm.kind === "leaving" ? (
+                <>
+                  Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has left the ward? This
+                  will record their discharge and make this bed available for new admissions.
+                  {confirmDestination ? (
+                    <span data-testid="ward-board-confirm-destination-text">
+                      {" "}
+                      Where they went: {confirmDestination}.
+                    </span>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  Are you sure you want to record that <strong>{pendingConfirm.who}</strong> has gone to an emergency
+                  department? The bed will remain held for them while they are away.
+                </>
+              )}
+              {/* DA-08: both confirmations check a second identifier, not the name alone. */}
+              {confirmIdentity ? (
+                <span className={styles.confirmIdentity} data-testid="ward-board-confirm-identity">
+                  Check: {confirmIdentity}
+                </span>
               ) : null}
+            </p>
 
-              {ask.offers ? (
-                <TransportWaitField
-                  id="ward-board-confirm-transport"
-                  value={ask.awaiting}
-                  onChange={(awaitingTransport) => setPendingConfirm({ ...pendingConfirm, awaitingTransport })}
-                />
-              ) : null}
+            {pendingConfirm.kind === "leaving" ? (
+              <LeavingDestinationField
+                id="ward-board-confirm-destination"
+                value={destinationFor(confirmAdmissionId)}
+                onChange={(destination) =>
+                  confirmAdmissionId && setLeavingChoice({ admissionId: confirmAdmissionId, destination })
+                }
+              />
+            ) : null}
 
-              <div className={styles.modalActions}>
-                <button
-                  type="button"
-                  onClick={closeConfirmDialog}
-                  data-testid="ward-board-confirm-cancel"
-                  className={styles.detailSecondaryBtn}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmAction}
-                  data-testid="ward-board-confirm-proceed"
-                  className={styles.detailPrimaryBtn}
-                  // Native `disabled`: transient inertness until where they went is chosen (CS3-07).
-                  disabled={
-                    (pendingConfirm.kind === "leaving" && destinationFor(confirmAdmissionId) === "") || ask.unanswered
-                  }
-                  data-tone={pendingConfirm.kind === "leaving" ? "warn" : undefined}
-                >
-                  {ask.words.action}
-                </button>
-              </div>
-            </div>
-          </div>
+            {ask.offers ? (
+              <TransportWaitField
+                id="ward-board-confirm-transport"
+                value={ask.awaiting}
+                onChange={(awaitingTransport) => setPendingConfirm({ ...pendingConfirm, awaitingTransport })}
+              />
+            ) : null}
+          </Dialog>
         ) : null}
-      </main>
+      </BoardMain>
       <TransportExceptionDialog
         open={arriveCheck !== null}
         who={arriveCheck?.who ?? "this patient"}
-        action="Confirm arrival"
+        action="Record arrival"
         gaps={(() => {
           const movement = arriveCheck && movements.find((candidate) => candidate.id === arriveCheck.movementId);
           return movement ? arrivalGaps(movement) : [];
@@ -1488,7 +1513,18 @@ export function WardBoard({
         }}
         testId="ward-board-arrive-check"
       />
-      <WardPrototypeFooter />
+      {embedded ? null : <WardPrototypeFooter />}
     </div>
+  );
+}
+
+/** The page's main landmark; embedded in the Ward page, a plain block (that page has its own main). */
+function BoardMain({ embedded, children }: { embedded: boolean; children: ReactNode }) {
+  return embedded ? (
+    <div className={styles.embeddedMain}>{children}</div>
+  ) : (
+    <main id="main-content" className={styles.main}>
+      {children}
+    </main>
   );
 }

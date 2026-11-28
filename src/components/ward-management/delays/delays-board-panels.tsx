@@ -6,10 +6,10 @@
 //
 // Waiting redesign (round 8, approved 31 Oct 2026): Summary and Wards tabs, pinned links, and the
 // recorded form time as typed, with no countdown (D-93).
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Ban, CircleCheck, Flag, MoonStar, ChevronRight, Stethoscope, TriangleAlert } from "lucide-react";
-import { DrawerFootRow, PanelDrawer, ShowMoreRow, buttonClass } from "@/components/wf";
+import { DrawerFootRow, PanelDrawer, ShowMoreRow, buttonClass, type DrawerPagerProps } from "@/components/wf";
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
@@ -36,6 +36,9 @@ import {
   type BoardRow,
 } from "./delays-board-model";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { seesNetworkBedFigures } from "@/components/ward-management/ward-role-access";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { edHref, movementHref, unitHref } from "@/components/ward-management/shell/ward-facade";
@@ -63,12 +66,15 @@ export function PersonPanel({
   onClose,
   onEscalate,
   initialTab,
+  pager,
 }: {
   row: BoardRow;
   units: Unit[];
   now: Instant;
   onClose: () => void;
   onEscalate: (movement: Movement) => void;
+  /** Audit four #31: the kit pager in the head, through the list in view. */
+  pager?: DrawerPagerProps;
   /** Note 8, issue 4: the tab a person opens on when another part of the page asks (default Summary). */
   initialTab?: "summary" | "wards";
 }) {
@@ -104,10 +110,6 @@ export function PersonPanel({
   const cleared = isCleared(movement, referrals);
   const lines = wardLines(row, units);
   const candidates = useMemo(() => candidateWards(movement, units, now), [movement, units, now]);
-  const [unavailableOpen, setUnavailableOpen] = useState(false);
-  // Round 7 (Josh, 31 Oct 2026): the candidate list shows its first five, then Show more, in place
-  // of a small box that scrolled inside the panel.
-  const [allCandidates, setAllCandidates] = useState(false);
   // Round 8 (Josh, 31 Oct 2026): "a lot of information". The panel opens on Summary; the ward
   // lists sit behind a Wards tab. A new person always opens on Summary.
   const [tabState, setTabState] = useState<{ id: string; tab: "summary" | "wards" }>({
@@ -183,6 +185,7 @@ export function PersonPanel({
           <TierTile tier={movement.urgency} label={urgencyTierLabel(movement.urgency)} />
         </span>
       }
+      pager={pager}
       closeLabel="Close why this person is waiting"
       tabs={[
         { id: "summary" as const, label: "Summary" },
@@ -198,14 +201,11 @@ export function PersonPanel({
           {primary ? <div className={polish.pPrimary}>{primary}</div> : null}
           {escalation === undefined && !wardDesk ? escalationGate.note : null}
           <DrawerFootRow className={polish.pFootRow}>
-            <MovementRecordLink movement={movement} />
-            {/* Role views: the coordinator screen is the coordinator's tool. Note 8: its actions open here first. */}
+            <MovementRecordLink movement={movement} onOpen={onClose} />
+            {/* Role views: the coordinator screen is the coordinator's tool. Audit four item 110: its
+                actions sit under More (Find a bed, Open on Home); the Wards tab is already in view. */}
             {wardDesk || !canOpen("/bedchart") ? null : (
-              <CoordinatorFootMenu
-                movement={movement}
-                onShowWards={() => setPanelTab("wards")}
-                onOpenHome={() => setFocusMovementId(movement.id)}
-              />
+              <CoordinatorFootMenu movement={movement} onOpenHome={() => setFocusMovementId(movement.id)} />
             )}
             {movement.originEdId && canOpen(edHref(movement.originEdId)) ? (
               <EdBoardFootPeek movement={movement} now={now} />
@@ -412,71 +412,12 @@ export function PersonPanel({
               )}
             </div>
 
-            {/* Candidate wards: the coordinator shortlist's own verdicts for the wards not yet asked.
-            Eligible and overridable wards are both actionable, so neither is collapsed or cut to a
-            count (see shortlistCandidates); the list scrolls instead. Wards no reason can buy sit
-            behind a disclosure that states how many, each with the gate that blocks it. */}
             {wardDesk ? null : (
-              <div className={`${styles.sec} ${polish.pSec}`} data-testid={`delays-candidates-${movement.id}`}>
+              <div className={`${styles.sec} ${polish.pSec}`}>
                 <h4 className={styles.h4r}>
                   Candidate wards <span className={styles.k}>{candidates.offerable.length}</span>
                 </h4>
-                {candidates.offerable.length === 0 ? (
-                  <p className={styles.mute}>No other ward could take this person now.</p>
-                ) : (
-                  <ul className={`${styles.wards} ${polish.pWards}`} aria-label="Wards that could take this person">
-                    {(allCandidates ? candidates.offerable : candidates.offerable.slice(0, CANDIDATE_LIMIT)).map(
-                      (candidate) => (
-                        <li key={candidate.unitId}>
-                          <span className={styles.lg}>
-                            <Glyph tone={candidate.tone} />
-                            <span className={styles.ell}>{candidate.name}</span>
-                          </span>
-                          <small>
-                            {candidate.text}
-                            {candidate.waitlist ? ". In catchment, waiting list for a locked bed" : ""}
-                          </small>
-                        </li>
-                      ),
-                    )}
-                  </ul>
-                )}
-                {candidates.offerable.length > CANDIDATE_LIMIT ? (
-                  <ShowMoreRow onClick={() => setAllCandidates((current) => !current)} expanded={allCandidates}>
-                    {allCandidates ? "Show fewer" : `Show ${candidates.offerable.length - CANDIDATE_LIMIT} more`}
-                  </ShowMoreRow>
-                ) : null}
-                {candidates.unavailable.length > 0 ? (
-                  <>
-                    <button
-                      type="button"
-                      className={styles.lnk}
-                      aria-expanded={unavailableOpen}
-                      onClick={() => {
-                        setUnavailableOpen((open) => !open);
-                      }}
-                      data-testid={`delays-candidates-unavailable-${movement.id}`}
-                    >
-                      {`${candidates.unavailable.length} ${candidates.unavailable.length === 1 ? "ward cannot" : "wards cannot"} take this person`}
-                    </button>
-                    {unavailableOpen ? (
-                      <ul
-                        className={`${styles.wards} ${polish.pWards}`}
-                        aria-label="Wards that cannot take this person"
-                      >
-                        {candidates.unavailable.map((ward) => (
-                          <li key={ward.unitId}>
-                            <span className={styles.lg}>
-                              <Glyph tone="closed" />
-                              <span className={styles.ell}>{ward.name}</span>
-                            </span>
-                            <small>{`Unavailable: ${ward.reason}`}</small>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </>
-                ) : null}
+                <WaitingCandidates movement={movement} units={units} now={now} />
               </div>
             )}
 
@@ -505,6 +446,198 @@ export function PersonPanel({
         )}
       </div>
     </PanelDrawer>
+  );
+}
+
+/**
+ * Candidate wards: the coordinator shortlist's own verdicts for the wards not yet asked. Eligible
+ * and overridable wards are both actionable, so neither is collapsed or cut to a count (see
+ * shortlistCandidates). Round 7 (Josh, 31 Oct 2026): the first five, then Show more. Wards no
+ * reason can buy sit behind a disclosure that states how many, each with the gate that blocks it.
+ * Shared by the phone person sheet's Wards tab and, in the simplification mock-up, the Movement
+ * drawer that Waiting now opens (with the coordinator menu's onward links folded in, `links`).
+ */
+export function WaitingCandidates({
+  movement,
+  units,
+  now,
+  links = false,
+  reveal = false,
+  pullExpired = false,
+}: {
+  /** The row's cause is an expired pull: offer the ward that holds the bed. */
+  pullExpired?: boolean;
+  movement: Movement;
+  units: Unit[];
+  now: Instant;
+  /** The Movement drawer: also the pull, override or Home link and Find a bed, from the old foot menu. */
+  links?: boolean;
+  /** Bring this list into view when it opens (the daily check asks for the wards). */
+  reveal?: boolean;
+}) {
+  const { setFocusMovementId } = useWardFlowSelect("setFocusMovementId");
+  const canOpen = useCanOpenHref();
+  const findsBeds = seesNetworkBedFigures(useEffectiveWardAccess().role);
+  const candidates = useMemo(() => candidateWards(movement, units, now), [movement, units, now]);
+  const [unavailableOpen, setUnavailableOpen] = useState(false);
+  const [allCandidates, setAllCandidates] = useState(false);
+  const revealRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (reveal) revealRef.current?.scrollIntoView({ block: "nearest" });
+  }, [reveal]);
+  const pullHolder = units.find((unit) => unit.id === movement.acceptedUnitId);
+  return (
+    <div ref={revealRef} className={polish.pCandidates} data-testid={`delays-candidates-${movement.id}`}>
+      {candidates.offerable.length === 0 ? (
+        <p className={styles.mute}>No other ward could take this person now.</p>
+      ) : (
+        <ul className={`${styles.wards} ${polish.pWards}`} aria-label="Wards that could take this person">
+          {(allCandidates ? candidates.offerable : candidates.offerable.slice(0, CANDIDATE_LIMIT)).map((candidate) => (
+            <li key={candidate.unitId}>
+              <span className={styles.lg}>
+                <Glyph tone={candidate.tone} />
+                <span className={styles.ell}>{candidate.name}</span>
+              </span>
+              <small>
+                {candidate.text}
+                {candidate.waitlist ? ". In catchment, waiting list for a locked bed" : ""}
+              </small>
+            </li>
+          ))}
+        </ul>
+      )}
+      {candidates.offerable.length > CANDIDATE_LIMIT ? (
+        <ShowMoreRow onClick={() => setAllCandidates((current) => !current)} expanded={allCandidates}>
+          {allCandidates ? "Show fewer" : `Show all ${candidates.offerable.length}`}
+        </ShowMoreRow>
+      ) : null}
+      {candidates.unavailable.length > 0 ? (
+        <>
+          <button
+            type="button"
+            className={styles.lnk}
+            aria-expanded={unavailableOpen}
+            onClick={() => {
+              setUnavailableOpen((open) => !open);
+            }}
+            data-testid={`delays-candidates-unavailable-${movement.id}`}
+          >
+            {`${candidates.unavailable.length} ${candidates.unavailable.length === 1 ? "ward cannot" : "wards cannot"} take this person`}
+          </button>
+          {unavailableOpen ? (
+            <ul className={`${styles.wards} ${polish.pWards}`} aria-label="Wards that cannot take this person">
+              {candidates.unavailable.map((ward) => (
+                <li key={ward.unitId}>
+                  <span className={styles.lg}>
+                    <Glyph tone="closed" />
+                    <span className={styles.ell}>{ward.name}</span>
+                  </span>
+                  <small>{`Unavailable: ${ward.reason}`}</small>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </>
+      ) : null}
+      {links ? (
+        <div className={polish.pOnward}>
+          {pullExpired && pullHolder ? (
+            <Link
+              className={styles.inlineAction}
+              href={unitHref(pullHolder.id)}
+              data-testid={`delays-release-pull-${movement.id}`}
+            >
+              Open {pullHolder.name} to release the bed or set a new pull time limit
+            </Link>
+          ) : null}
+          {findsBeds ? (
+            <button
+              type="button"
+              className={styles.inlineAction}
+              onClick={(event) => requestToolsTool("bed-finder", event.currentTarget)}
+            >
+              Find a bed in Tools
+            </button>
+          ) : null}
+          {canOpen("/bedchart") ? (
+            <Link
+              className={styles.inlineAction}
+              href="/bedchart"
+              data-testid={`delays-override-${movement.id}`}
+              onClick={() => {
+                setFocusMovementId(movement.id);
+              }}
+            >
+              {movement.declines.length > 0
+                ? "Override a refusal on the coordinator screen"
+                : "Open on coordinator Home"}
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Simplification mock-up (26 Nov 2026): why the person waits, for the head of the Movement drawer
+ * that Waiting now opens. The cause and whose move it is, the last update, the reminders, fit to
+ * travel and the row's timeline. The drawer itself already says the wait, the legal form, the stage,
+ * the barrier and the escalation, so they are not said twice.
+ */
+export function WaitingDrawerLead({ row, units, now }: { row: BoardRow; units: Unit[]; now: Instant }) {
+  const { referrals } = useWardFlowSelect("referrals");
+  const desk = useWaitingDeskWords(units);
+  const { movement, cause } = row;
+  const silenceReminder = answerSilenceReminder(movement, referrals, now);
+  const cleared = isCleared(movement, referrals);
+  return (
+    <div className={`${styles.sideB} ${polish.pBody} ${polish.pLead}`} data-testid={`delays-detail-${movement.id}`}>
+      <div className={`${styles.inset} ${styles.causeInset} ${polish.pCause}`}>
+        <div className={styles.grow}>
+          <b className={redesign.wrapTitle}>{desk.causeTitle(cause)}</b>
+          <span className={polish.ownerTag} data-owner={desk.tagOwner(row.owner)}>
+            {desk.moveWord(row.owner)}
+          </span>
+          <span className={styles.mute}>
+            <Glyph tone={row.silent ? "warning" : undefined} />
+            {row.activity === undefined
+              ? "Nothing recorded since arrival"
+              : `Last update ${ago(row.quiet)}, ${row.activity.what}`}
+          </span>
+        </div>
+      </div>
+      {cause === "bed_pull_expired" ? (
+        <p className={styles.reminder} data-testid={`delays-reserved-time-${movement.id}`}>
+          <Glyph tone="warning" /> Pull expired, bed still pulled. Release the bed or set a new pull time limit.
+        </p>
+      ) : null}
+      {silenceReminder !== undefined ? (
+        <p className={styles.reminder} data-testid={`delays-silence-reminder-${movement.id}`}>
+          <Glyph tone="warning" /> {silenceReminder}
+        </p>
+      ) : null}
+      <p
+        className={`${styles.note} ${polish.pNote} ${cleared === false ? styles.noteWarn : ""}`}
+        data-testid={`delays-clearance-${movement.id}`}
+      >
+        <Stethoscope size={14} aria-hidden="true" className={polish.pNoteIcon} />
+        <span>
+          <strong>
+            {cleared === undefined ? "Not assessed" : cleared ? "Medically cleared" : "Not medically cleared"}
+          </strong>{" "}
+          {cleared === undefined
+            ? "Nobody has recorded whether this person is fit to travel."
+            : cleared
+              ? "Cleared to travel."
+              : "A bed becoming free does not release this person."}
+        </span>
+      </p>
+      <section className={polish.pTimeline} aria-label="Timeline">
+        <h4 className={styles.h4r}>Timeline</h4>
+        <RowTimeline row={row} units={units} now={now} />
+      </section>
+    </div>
   );
 }
 
@@ -572,7 +705,10 @@ export function Registers({
   onPick,
   part = "all",
   titled = true,
+  initialTab,
 }: {
+  /** Simplification mock-up: the laptop's Follow-up sheet opens on Escalated, as Attention is pinned in the list. */
+  initialTab?: "escalated" | "attention" | "resolved";
   /** v10 phone: the registers and the longest quiet list each open in their own sheet. */
   part?: "all" | "registers" | "quiet";
   /** Design brief (Josh, 3 Nov 2026): a sheet that already names "Today's follow-up" drops the inner title. */
@@ -595,7 +731,7 @@ export function Registers({
   // Diagnosed issues W3 (Josh, 3 Nov 2026): "Today's follow-up" opens on whatever needs acting on
   // first: the urgent list when it has anyone, else today's escalations.
   const [tab, setTab] = useState<"escalated" | "attention" | "resolved">(
-    attention.length > 0 ? "attention" : "escalated",
+    initialTab ?? (attention.length > 0 ? "attention" : "escalated"),
   );
   const onBoard = (id: string) => rows.some((row) => row.movement.id === id);
   // Round 4 (Josh, 31 Oct 2026): four register tabs, each an icon, its count and its name in one

@@ -18,7 +18,6 @@ import type { EdScreenContext } from "./ed-screen-context";
 import { movementMedicalClearance } from "./ed-screen-model";
 import type { renderEdRowControls } from "./ed-screen-row-facts";
 import styles from "./ed.module.css";
-import { psychReviewStatusWords } from "./ed-psych-review";
 import { EdRecordGender } from "./ed-record-gender";
 
 /**
@@ -81,7 +80,7 @@ export function renderEdPersonSheet(
       // A12-04 (Josh, 13 Nov 2026): "Open patient" opens the patient page, as on All EDs. The
       // department's time record keeps its own button, "Where their time went", below.
       secondary={{
-        label: "Open patient",
+        label: "Patient page",
         onAction: () => {
           closeSheet();
           openPatientPage?.(patientInfo.patient?.id ?? movement.id);
@@ -104,15 +103,9 @@ export function renderEdPersonSheet(
         dayZero={dayZero}
         testId={`ward-ed-sheet-safety-tags-${movement.id}`}
       />
+      {/* Audit three #33 (28 Nov 2026): the wait is shown once, on the time bar below, and the stage
+          in its steps; the cells keep Tier and Form, an even pair. */}
       <dl className={styles.phoneSheetFacts}>
-        <div>
-          <dt>In ED</dt>
-          <dd className={styles.phoneSheetMono}>{splitDuration(minutesInDepartment)}</dd>
-        </div>
-        <div>
-          <dt>Stage</dt>
-          <dd>{edStageLabel(movement.stage)}</dd>
-        </div>
         <div>
           <dt>Tier</dt>
           <dd>
@@ -180,7 +173,9 @@ export function renderEdPersonSheet(
         aria-label="Time in the department"
         data-testid="ward-ed-person-journey"
       >
-        <h3 className={styles.phoneSheetHeading}>Time in the department</h3>
+        <h3 className={styles.phoneSheetHeading}>
+          Time in the department · <span className={styles.phoneSheetMono}>{splitDuration(minutesInDepartment)}</span>
+        </h3>
         <JourneyStrip
           stages={edJourneyStages(
             movement,
@@ -190,6 +185,7 @@ export function renderEdPersonSheet(
           )}
           formatDuration={splitDuration}
           label="Time in the department"
+          note={false}
         />
         {/* A12-04: the department's time record (crew times, observation level, arrival plan),
             which "Open patient" opened before it went to the patient page. */}
@@ -212,12 +208,6 @@ export function renderEdPersonSheet(
             {movement.cohort} · {movement.sex}
           </dd>
         </div>
-        {referral.steps ? null : (
-          <div>
-            <dt>Destination</dt>
-            <dd>{destinationLabel}</dd>
-          </div>
-        )}
         <div>
           <dt>Gender</dt>
           <dd data-testid={`ward-ed-sheet-gender-${movement.id}`}>
@@ -233,20 +223,6 @@ export function renderEdPersonSheet(
                 testId="ward-ed-sheet-record-gender"
               />
             ) : null}
-          </dd>
-        </div>
-        <div>
-          <dt>Psychiatric review</dt>
-          <dd>{psychReviewStatusWords(movement)}</dd>
-        </div>
-        <div>
-          <dt>Medically cleared</dt>
-          <dd>
-            {movementMedicalClearance(movement, referrals) === undefined
-              ? "Not recorded"
-              : movementMedicalClearance(movement, referrals)?.cleared
-                ? "Yes"
-                : "No"}
           </dd>
         </div>
       </dl>

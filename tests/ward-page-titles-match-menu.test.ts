@@ -6,7 +6,7 @@ import { WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 /**
  * Design audit DA-28 (overall review, 20 Oct 2026): the browser tab must name a page the way the
- * menu does. "Search hub" sat under the menu's "Places" and "Forms" under "Legal forms".
+ * menu does. "Search hub" sat under the menu's "Places" (now "Find") and "Forms" under "Legal forms".
  *
  * Each menu entry's page title must contain the menu label (ignoring case and a plural "s"), so
  * "Shift handover" under "Handover" passes and "Search hub" under "Places" does not. Home's tab is
@@ -29,8 +29,9 @@ describe("page titles match the menu (DA-28)", () => {
     expect(title.toLowerCase(), `the tab for the menu's "${label}"`).toContain(label.toLowerCase().replace(/s$/u, ""));
   });
 
-  it("names Places and Legal forms exactly as the menu does", () => {
-    expect(staticTitle("/bedchart/hub")).toBe("Places — BedChart");
+  it("names Find and Legal forms exactly as the menu does", () => {
+    // Simplification mock-up (26 Nov 2026): the Places menu entry is Find, and so is its tab.
+    expect(staticTitle("/bedchart/hub")).toBe("Find — BedChart");
     expect(staticTitle("/bedchart/legal-forms")).toBe("Legal forms — BedChart");
   });
 });

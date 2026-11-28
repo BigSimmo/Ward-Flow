@@ -74,7 +74,7 @@ describe("bed meeting actions in Needs you", () => {
       id: meetingActionInboxId(subject, "book_transport"),
       tone: "warning",
       kind: "fact",
-      title: "Bed meeting action: Book transport",
+      title: "Bed meeting action: Record transport booking",
       owner: "Bed coordinator",
       movementId: movement.id,
       href: BED_MEETING_AGENDA_HREF,

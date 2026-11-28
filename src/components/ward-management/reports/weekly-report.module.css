@@ -140,3 +140,10 @@
     display: block;
   }
 }
+
+/* Design review (27 Nov 2026): the week chip (and See this week so far, when shown) on the title line. */
+.titleTools {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}

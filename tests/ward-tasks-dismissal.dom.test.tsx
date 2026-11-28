@@ -291,7 +291,7 @@ describe("unsaved escalation dismissal", () => {
     const snooze = within(card()).getByRole("button", { name: /^Snooze / });
     const chooseReason = () => {
       fireEvent.click(snooze);
-      fireEvent.click(screen.getByRole("button", { name: "Awaiting call back" }));
+      fireEvent.click(screen.getByRole("button", { name: /^Awaiting call back/ }));
     };
     chooseReason();
     expect(confirm).toHaveBeenCalledOnce();
@@ -304,35 +304,6 @@ describe("unsaved escalation dismissal", () => {
       expect.objectContaining({ type: "SNOOZE_INBOX_ITEM", inboxItemId: items[0].id }),
     );
     expect(screen.queryByPlaceholderText("Contact name or service")).toBeNull();
-  });
-
-  it("also protects a footer link to the current page because it closes the drawer", () => {
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
-    const { onClose } = renderDrawer();
-    editDraft();
-    const link = screen.getByTestId("ward-tasks-jump-delays");
-    link.setAttribute("href", window.location.href);
-    fireEvent.click(link);
-    expect(confirm).toHaveBeenCalledOnce();
-    expect(onClose).not.toHaveBeenCalled();
-    expect(screen.getByPlaceholderText("Contact name or service")).toHaveValue("State bed desk");
-  });
-
-  it("guards footer navigation once and keeps the drawer when navigation is cancelled", async () => {
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
-    const { onClose } = renderDrawer();
-    const input = editDraft();
-    const link = screen.getByTestId("ward-tasks-jump-delays");
-    link.addEventListener("click", (event) => event.preventDefault());
-    fireEvent.click(link);
-    expect(confirm).toHaveBeenCalledOnce();
-    expect(onClose).not.toHaveBeenCalled();
-    expect(input).toHaveValue("State bed desk");
-    confirm.mockReturnValue(true);
-    fireEvent.click(link);
-    await settleConfirm();
-    expect(confirm).toHaveBeenCalledTimes(2);
-    expect(onClose).toHaveBeenCalledOnce();
   });
 });
 

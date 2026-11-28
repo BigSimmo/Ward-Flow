@@ -186,7 +186,7 @@ export function ToolFeed({ onNavigate }: { onNavigate: () => void }) {
               admissionId: suggestion.admissionId,
               actingUnitId: suggestion.unitId,
             },
-      undone: `Undone: ${who} is back as before.`,
+      undone: `Undone: ${who} is back as before`,
       refusalShownInline: true,
     };
     const notConfirmed = () => {

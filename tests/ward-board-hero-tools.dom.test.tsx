@@ -74,7 +74,7 @@ describe("Stays and discharges hero tools", () => {
 
   it("lists only boards the desk may open, never one ending at Not part of your role (INV-CM)", () => {
     desk.access = { role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } };
-    desk.canOpen = (href) => !href.endsWith("/synthetic-ward-b");
+    desk.canOpen = (href) => !href.includes("/synthetic-ward-b");
     renderTools();
     fireEvent.click(screen.getByRole("button", { name: "Change ward, 2 wards" }));
     const panel = screen.getByRole("dialog", { name: "Switch ward" });

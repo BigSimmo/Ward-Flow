@@ -49,15 +49,15 @@ afterEach(() => {
 });
 
 describe("Add patient toast, Open patient link (audit P143)", () => {
-  it("offers Open patient after Add and start referral", async () => {
+  it("offers Patient page after Add and start referral", async () => {
     renderForm();
     fireEvent.click(screen.getByRole("button", { name: /Add and start referral/ }));
     await waitFor(() => expect(router.push).toHaveBeenCalledTimes(1));
     expect(router.push.mock.calls[0][0]).toMatch(/new=1/);
     expect(await screen.findByTestId("toast")).toHaveTextContent("Newcomer, Testable added, UM999999");
     // #1020 review: an in-app move, never a page load, so the record just added in demo mode is kept.
-    expect(screen.queryByRole("link", { name: "Open patient" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Open patient" }));
+    expect(screen.queryByRole("link", { name: "Patient page" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Patient page" }));
     expect(router.push).toHaveBeenCalledTimes(2);
     const href = router.push.mock.calls[1][0] as string;
     expect(href).toMatch(/^\/bedchart\/people\/[0-9a-z]+$/);
@@ -69,6 +69,6 @@ describe("Add patient toast, Open patient link (audit P143)", () => {
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
     await waitFor(() => expect(router.push).toHaveBeenCalledTimes(1));
     expect(await screen.findByTestId("toast")).toHaveTextContent("Newcomer, Testable added, UM999999");
-    expect(screen.queryByRole("button", { name: "Open patient" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Patient page" })).toBeNull();
   });
 });

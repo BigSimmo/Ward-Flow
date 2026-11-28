@@ -230,6 +230,19 @@
   border-radius: var(--wf-r-ctl);
 }
 
+/* States review 10b (27 Nov 2026): Share fills the bar beside "...", as Download CSV did in r7,
+   at the kit's sec height. */
+html .barShare {
+  flex: 1 1 auto;
+  align-items: center;
+  min-width: 0;
+}
+
+html .barShare > button {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
 .choose {
   display: flex;
   flex-direction: column;

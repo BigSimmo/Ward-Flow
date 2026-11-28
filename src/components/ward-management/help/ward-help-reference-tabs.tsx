@@ -127,11 +127,9 @@ export function HelpQuestions({ screen }: { screen: (ScreenHelp & { id: string }
           <QuestionList items={group.questions} open={open} onOpen={setOpen} />
         </section>
       ))}
-      {others.length > shown.length ? (
+      {others.length > foldLimit(others.length, FIRST_SCREENS) ? (
         <div className={`${s.card} ${s.moreCard}`}>
-          <ShowMoreRow onClick={() => setAll(true)}>
-            Questions on {others.length - shown.length} more screens
-          </ShowMoreRow>
+          <ShowMoreRow onClick={() => setAll((open) => !open)} expanded={all} total={others.length} />
         </div>
       ) : null}
       <p className={s.note}>
@@ -181,8 +179,8 @@ function TermGroup({ title, terms, code }: { title: string; terms: readonly Glos
       <SectionHead n={terms.length}>{title}</SectionHead>
       <div className={s.card}>
         <Terms terms={shown} code={code} />
-        {terms.length > shown.length ? (
-          <ShowMoreRow onClick={() => setAll(true)}>Show {terms.length - shown.length} more</ShowMoreRow>
+        {terms.length > foldLimit(terms.length, FIRST_TERMS) ? (
+          <ShowMoreRow onClick={() => setAll((open) => !open)} expanded={all} total={terms.length} />
         ) : null}
       </div>
     </section>

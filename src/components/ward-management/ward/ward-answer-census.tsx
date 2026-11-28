@@ -90,6 +90,15 @@ export function WardAnswerCensus({
                       : "occupied"
             ]
           }`;
+          // Controls document 13 (26 Nov 2026): with no request open a square is a plain figure,
+          // with no pointer or focus; it becomes a button only while a request is open.
+          if (!requestOpen) {
+            return (
+              <span key={bedNum} className={cellClass} role="img" aria-label={`Census square ${i + 1}: ${statusLabel}`}>
+                <span>{statusLabel}</span>
+              </span>
+            );
+          }
           return (
             <button
               type="button"
@@ -100,7 +109,7 @@ export function WardAnswerCensus({
                   ignoreUnavailableActivation(e);
                   return;
                 }
-                if (requestOpen) onReadySquare(e);
+                onReadySquare(e);
               }}
               // Review 5 Nov 2026: counts in ruled order, not beds, so no bed number.
               aria-label={`Census square ${i + 1}: ${statusLabel}`}

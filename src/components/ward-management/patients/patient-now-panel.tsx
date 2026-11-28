@@ -198,7 +198,8 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
         patient={livePatient}
       />
     ) : null;
-  const copyLabel = copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary";
+  // Audit two #78: one verb for the one handler in both modes.
+  const copyLabel = copied ? "Copied" : "Copy for handover";
   const referralMain =
     !readOnlyRecord && isPhone && (mode === "idle" || mode === "cto") && canOpenHref(newReferralHref);
   // Community clinician: with no ward change to record, the phone bar held only the copy icon in an

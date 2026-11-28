@@ -198,7 +198,7 @@ export function useEdExaminationSave({
           {
             success: "Examination recorded",
             undo: (at) => ({ type: "UNDO_ED_STEP", role: "ed", now: at, movementId }),
-            undone: "Undone. Back as it was.",
+            undone: "Undone: Back as it was",
           },
           { completion: undoCompletion },
         );

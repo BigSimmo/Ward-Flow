@@ -96,7 +96,9 @@ it.each([false, true])(
     expect(definition).toHaveTextContent("current total bed count and counted time");
     expect(definition).toHaveTextContent("time pulled for arrival is excluded");
     expect(definition).toHaveTextContent("Historical bed capacity and pull times are not reconstructed");
-    expect(screen.getByText(/^In use now/)).toBeInTheDocument();
+    // Audit two (#98): the desktop hero says "N of M in use now" under the figure; the phone's tile
+    // says "In use now N of M".
+    expect(screen.getByText(phone ? /^In use now/ : /^\d+ of \d+ in use now$/)).toBeInTheDocument();
     expect(screen.queryByText("Average occupancy", { exact: true })).not.toBeInTheDocument();
   },
 );

@@ -535,3 +535,98 @@ input.planInput {
     min-height: 2.75rem;
   }
 }
+
+/* Audit four #33 (one menu pattern): the row's actions list takes the kit Menu's panel, rows, group
+   headings and separators (wf/overlay.module.css), so it reads as every other menu. It keeps what only
+   it needs: the one filled next step, the folded "Not available yet" with each greyed action's reason,
+   Next and one fix, and the confirm dialogs its items open. The panel stays solid, not glass, because
+   its edge shadows (CRIT-03) are painted on its own background. */
+.popover[role="menu"] {
+  border-color: var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  padding: var(--wf-s-1);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  box-shadow: var(--wf-e2);
+}
+.popover[role="menu"] .actionsHeading {
+  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-3);
+}
+.popover[role="menu"] .actionsHeading > b {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  letter-spacing: normal;
+}
+.popover[role="menu"] .actionsHeading > span {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.actionItems .menuGroup,
+.actionItems .fold {
+  padding: 0;
+  border-top: 0;
+}
+/* The kit separator between groups: a hairline with one step of air either side. */
+.actionItems .menuGroup + .menuGroup,
+.actionItems .menuGroup + .fold {
+  margin-top: var(--wf-s-1);
+  padding-top: var(--wf-s-1);
+  border-top: 1px solid var(--wf-line);
+}
+.actionItems .menuGroupLabel {
+  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-1);
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+}
+.actionItems button:not([data-unavailable-fix]) {
+  gap: var(--wf-s-2);
+  min-height: var(--wf-h-md) !important;
+  padding: 0 var(--wf-s-2) !important;
+  border-radius: var(--wf-r-sm) !important;
+  color: var(--wf-ink-1) !important;
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font) !important;
+}
+.actionItems button:not([data-unavailable-fix]):is(:hover, :focus) {
+  background: var(--wf-hover) !important;
+}
+.actionItems button:not([data-unavailable-fix]):focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+.actionItems button[aria-disabled="true"]:not([data-unavailable-fix]) {
+  color: var(--wf-ink-off) !important;
+}
+.actionItems .blockedItem {
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-hover);
+}
+.actionItems .blockedItem > button[aria-disabled="true"] {
+  color: var(--wf-ink-2) !important;
+  font-weight: 600 !important;
+}
+.actionItems .blockedItem [data-unavailable-note] {
+  padding: 0 var(--wf-s-2) var(--wf-s-2);
+}
+.actionItems button[data-next-step]:not([aria-disabled="true"]) {
+  margin: 2px 0;
+  color: var(--wf-on-accent) !important;
+  font-weight: 600 !important;
+}
+.actionItems button[data-next-step]:not([aria-disabled="true"]):is(:hover, :focus) {
+  background: linear-gradient(180deg, var(--wf-pri-1-hover), var(--wf-pri-2-hover)) !important;
+}
+.actionItems button.foldToggle {
+  color: var(--wf-ink-2) !important;
+  font-weight: 600 !important;
+}
+.popover[role="menu"] .reason {
+  margin: var(--wf-s-1) calc(-1 * var(--wf-s-1)) calc(-1 * var(--wf-s-1));
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top-color: var(--wf-line);
+  border-radius: 0 0 var(--wf-r-lg) var(--wf-r-lg);
+  background: var(--wf-hover);
+  color: var(--wf-ink-3);
+}

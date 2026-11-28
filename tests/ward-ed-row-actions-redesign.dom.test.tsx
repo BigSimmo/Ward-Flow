@@ -53,7 +53,7 @@ describe("the ED row's actions menu", () => {
       within(record)
         .getAllByRole("menuitem", { hidden: true })
         .map((item) => item.textContent),
-    ).toEqual(["View patient record", "Edit presentation", "Edit plan"]);
+    ).toEqual(["Open ED details"]); // the three record items are one item on the wide board
     // Group names say "and", not "&".
     expect(within(menu).getByRole("group", { name: "Review and disposition", hidden: true })).toBeInTheDocument();
     expect(within(menu).getByRole("group", { name: "Transfer and handover", hidden: true })).toBeInTheDocument();
@@ -71,7 +71,9 @@ describe("the ED row's actions menu", () => {
     );
     fireEvent.click(screen.getByTestId("ward-ed-unfold-WF-011"));
     const menu = screen.getByTestId("ward-ed-actions-menu-WF-011");
-    expect(within(menu).getByTestId("ward-ed-book-transport-toggle-WF-011")).toHaveTextContent("Log transport booking");
+    expect(within(menu).getByTestId("ward-ed-book-transport-toggle-WF-011")).toHaveTextContent(
+      "Record transport booking",
+    );
     expect(menu.textContent).not.toContain("&");
     expect(menu.textContent).not.toContain("Transport booked");
   });

@@ -175,7 +175,7 @@ describe("tasks drawer: ownership and snooze", () => {
     expect(within(snoozedRow).getByText(expected.formalName)).toBeInTheDocument();
     expect(within(snoozedRow).getByText(expected.umrn)).toBeInTheDocument();
     expect(snoozedRow.textContent).not.toMatch(/WF-\d/);
-    const open = within(snoozedRow).getByRole("button", { name: "Open patient" });
+    const open = within(snoozedRow).getByRole("button", { name: /, opens the patient$/ });
     expect(open).toBe(screen.getByTestId(`ward-task-snoozed-open-${red.id}`));
     fireEvent.click(open);
     expect(onSelectMovement).toHaveBeenCalledWith(red.movementId);
@@ -255,7 +255,7 @@ describe("tasks drawer: ownership and snooze", () => {
     expect(screen.queryByText("No outstanding work")).toBeNull();
     const snoozed = screen.getByTestId("ward-tasks-snoozed");
     expect(within(snoozed).getByRole("button", { name: /^Return .* now, / })).toBeInTheDocument();
-    fireEvent.click(within(snoozed).getByRole("button", { name: "Open patient" }));
+    fireEvent.click(within(snoozed).getByRole("button", { name: /, opens the patient$/ }));
     expect(onSelectMovement).toHaveBeenCalledWith(red.movementId);
   });
 

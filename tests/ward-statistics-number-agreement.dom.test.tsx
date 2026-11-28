@@ -207,7 +207,7 @@ function disagreements(text: string): string[] {
 /** The all-stays average sits in the Length of stay card's Data view (owner polish, 3 Nov 2026). */
 function openStayData() {
   const card = screen.queryByTestId("statistics-ward-stays-chart");
-  if (card) fireEvent.click(within(card).getByRole("radio", { name: "Data" }));
+  if (card) fireEvent.click(within(card).getByRole("radio", { name: "Table" }));
 }
 
 describe("every ward statistic reads correctly when its count is one", () => {

@@ -3,6 +3,11 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 // A plain <a> for next/link, as in every sibling handover dom suite.
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/bedchart/handover",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
     <a href={href} {...rest}>

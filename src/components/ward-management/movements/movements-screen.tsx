@@ -44,8 +44,10 @@ import {
   noRecordedServiceMovementCount,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
-import { ArrowRightLeft, ChartColumn, Map as MapIcon, Search, SearchCheck, Ambulance, X } from "lucide-react";
+import { ArrowDownWideNarrow, ArrowRightLeft, ChartColumn, Search, SearchCheck, Ambulance, X } from "lucide-react";
 import {
+  AppliedFilter,
+  Button,
   Card,
   CardHead,
   FolderTabs,
@@ -56,8 +58,10 @@ import {
   HeroQuickChips,
   HeroTop,
   LiveChip,
+  Menu,
   PhoneFilterFold,
   RadioGroup,
+  Segmented,
   ShowMoreRow,
   TextInput,
   buttonClass,
@@ -65,7 +69,6 @@ import {
   durMinutes,
   folderTabClasses,
   foldLimit,
-  phoneRows,
   useIsPhone,
 } from "@/components/wf";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
@@ -74,7 +77,7 @@ import pageTop from "../page-top-hero.module.css";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { MovementDrawer } from "./movement-drawer";
 import { MovementHorizonGantt } from "./movement-horizon-gantt-lazy";
-import { MovementsTimelineSwitch, useTrafficView } from "./movements-timeline-switch";
+import { MovementsTimelineSwitch, setTrafficView, useTrafficView } from "./movements-timeline-switch";
 import { rankCorridorPairs } from "./movement-corridor-pairs";
 import { isCoordinatorStep, movementNextStep } from "./movement-next-step";
 import { useSenderPresentation } from "../ward-sender-presentation";
@@ -83,11 +86,12 @@ import flow from "./movement-flow.module.css";
 import styles from "./movements.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { MovementsPhoneNav } from "./movements-phone-nav";
-import { MovementsListTools } from "./movements-list-tools";
+import { MovementsListMenu } from "./movements-list-tools";
 import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
 import { ShapeOfTheDay } from "./movements-shape-of-day";
 import { MovementPeopleSheet, corridorPeople, type MovementPeopleList } from "./movement-people-sheet";
 import { TransportFeed, TransportTiles } from "./movements-transport-now";
+import { stageGroupLabel } from "@/components/ward-management/ward-stage-copy";
 import { PhoneGroupHeading, StageRow } from "./movements-stage-row";
 import { CommunityNoJourneys, MovementCheckInDrawer, StagePipeline } from "./movements-lazy-parts";
 import {
@@ -122,6 +126,8 @@ type MovementsPlace = {
   phoneFullGroups: ReadonlySet<string>;
   showAll: boolean;
   highlight: string | null;
+  /** The stage the rail filters the worklist to (simplification mock-up, 26 Nov 2026). */
+  stageFilter: Movement["stage"] | null;
 };
 const worklistRow = (id: string) => rowWithAttribute("data-record-key", id, "li");
 
@@ -247,19 +253,29 @@ export function MovementsScreen() {
   // v6 worklist: a search over name, UMRN or ED, and a short list per group until Show all.
   const [search, setSearch] = useState("");
   const [showAll, setShowAll] = useState(returned?.showAll ?? false);
-  // Hero highlight: one of `heroHighlights` by id, or `stage:<stage>` from the stage track.
+  // Hero highlight: one of `heroHighlights` by id.
   const [highlight, setHighlight] = useState<string | null>(returned?.highlight ?? null);
+  // Simplification mock-up (26 Nov 2026): the stage rail filters the worklist to one stage. A filter
+  // hides rows, so the list head always names it with a remove, and the cell is marked as pressed.
+  const [stageFilter, setStageFilter] = useState<Movement["stage"] | null>(returned?.stageFilter ?? null);
+  const toggleStage = (stageId: Movement["stage"]) =>
+    startTransition(() => {
+      setStageFilter((current) => (current === stageId ? null : stageId));
+      setBoardTab("every");
+    });
   // M1 to M4 (Josh, 3 Nov 2026): a figure opens the patients behind it in a pop-up list.
   const [peopleList, setPeopleList] = useState<MovementPeopleList | null>(null);
-  const place: MovementsPlace = { order, shapeTab, sideView, phoneOpenGroups, phoneFullGroups, showAll, highlight };
+  const place: MovementsPlace = {
+    order,
+    shapeTab,
+    sideView,
+    phoneOpenGroups,
+    phoneFullGroups,
+    showAll,
+    highlight,
+    stageFilter,
+  };
   useReturnToPlace(MOVEMENTS_ROUTE, place, worklistRow);
-  // "Show in worklist" from the list pop-up marks those rows, as the figures used to.
-  function showHighlight(key: string) {
-    setHighlight(key);
-    setSearch("");
-    setBoardTab("every");
-  }
-
   const [reveal, setReveal] = useState<{ id: string; request: number } | null>(null);
   const consumedReveal = useRef(0);
   const consumeReveal = useCallback((request: number) => {
@@ -270,9 +286,10 @@ export function MovementsScreen() {
 
   function revealMovement(id: string, byStage = false) {
     setBoardTab("every");
-    // A jump must land on a rendered row: clear a search that would hide it. A row past its
-    // group's short list is kept on screen by `pinnedRowIds` below.
+    // A jump must land on a rendered row: clear a search that would hide it, and a stage filter. A
+    // row past its group's short list is kept on screen by `pinnedRowIds` below.
     setSearch("");
+    setStageFilter(null);
     if (byStage) setOrder("stands");
     // A request number makes a second click on the same record scroll and focus again.
     setReveal((previous) => ({ id, request: (previous?.request ?? 0) + 1 }));
@@ -491,16 +508,15 @@ export function MovementsScreen() {
     return (movement: Movement) => movementBelongsToService(movement, chosenService, units);
   }, [service, units]);
 
-  // Phone: the first tab is "Open", so its rows and count are the open movements only; closed ones
-  // are on "Resolved today". Tablet and desktop list both and say so ("All", device
-  // audit 11 Oct 2026: "Every movement 77" read as a clash with the hero's 70 open).
+  // The first tab is "Open" at every width (audit two #3): its rows and count are the open movements
+  // only; closed ones are on "Resolved today".
   const worklistMovements = useMemo(() => {
     const scoped = isInServiceScope ? movements.filter(isInServiceScope) : movements;
-    return isPhone ? scoped.filter(isOpen) : scoped;
-  }, [movements, isInServiceScope, isPhone]);
+    return scoped.filter(isOpen);
+  }, [movements, isInServiceScope]);
   const worklistStages = useMemo(
-    () => (isInServiceScope || isPhone ? journeyStages(worklistMovements, now, thresholds) : stages),
-    [isInServiceScope, isPhone, worklistMovements, stages, now, thresholds],
+    () => journeyStages(worklistMovements, now, thresholds),
+    [worklistMovements, now, thresholds],
   );
   const worklistClosedToday = useMemo(
     // Movements redesign (1 Nov 2026): the most recently closed first, so the list reads as a log.
@@ -570,39 +586,52 @@ export function MovementsScreen() {
       title: option.id === "tier1" ? "Urgency tier 1" : option.label,
       caption:
         option.id === "tier1"
-          ? "The most urgent referrals still open. T1 is most urgent, T3 least."
+          ? "The most urgent referrals still open."
           : `Still in an ED, waiting ${option.label.toLowerCase()}.`,
       tone: option.tone,
       movements: openMovements.filter(option.test),
       highlightKey: option.id,
     });
   const highlightTest: ((movement: Movement) => boolean) | null =
-    highlight === null
-      ? null
-      : highlight.startsWith("stage:")
-        ? (movement) => isOpen(movement) && movement.stage === highlight.slice("stage:".length)
-        : (highlightOptions.find((option) => option.id === highlight)?.test ?? null);
+    highlight === null ? null : (highlightOptions.find((option) => option.id === highlight)?.test ?? null);
   const isMarked = (movement: Movement) =>
     matchesSearch !== null ? matchesSearch(movement) : highlightTest !== null && highlightTest(movement);
-  const shownStages = worklistStages;
-  const shownCauseGroups = worklistCauseGroups;
-  const shownTransportGroups = worklistTransportGroups;
-  const shownByWait = useMemo(
-    () => byLongestWait(worklistMovements, now, thresholds),
-    [worklistMovements, now, thresholds],
+  // The stage filter: the open movements at that stage, as the rail cell counts them. Grouping by
+  // stage would then be one group, so the list reads longest wait first; Transport still groups.
+  const inStage = (movement: Movement) => stageFilter === null || (isOpen(movement) && movement.stage === stageFilter);
+  const stageMovements = useMemo(
+    () =>
+      stageFilter === null
+        ? worklistMovements
+        : worklistMovements.filter((movement) => isOpen(movement) && movement.stage === stageFilter),
+    [worklistMovements, stageFilter],
   );
+  const listOrder: MovementsPlace["order"] = stageFilter !== null && order === "stands" ? "wait" : order;
+  // Arrived is not open, so the Open list has no Arrived group; those rows are on Resolved today.
+  const shownStages = worklistStages.filter((stage) => stage.id !== "arrived");
+  const shownCauseGroups =
+    stageFilter === null
+      ? worklistCauseGroups
+      : worklistCauseGroups
+          .map((group) => ({ ...group, movements: group.movements.filter(inStage) }))
+          .filter((group) => group.movements.length > 0);
+  const shownTransportGroups =
+    stageFilter === null
+      ? worklistTransportGroups
+      : worklistTransportGroups.map((group) => ({ ...group, rows: group.rows.filter(inStage) }));
+  const shownByWait = useMemo(() => byLongestWait(stageMovements, now, thresholds), [stageMovements, now, thresholds]);
+  const stageFilterLabel =
+    stageFilter === null
+      ? null
+      : (openStages.find((stage) => stage.id === stageFilter)?.label ?? STAGE_SHORT[stageFilter]);
   const shownClosedToday = worklistClosedToday;
-  const searchedTotal = matchesSearch ? worklistMovements.filter(matchesSearch).length : null;
+  const searchedTotal = matchesSearch ? stageMovements.filter(matchesSearch).length : null;
   const markedTotal =
     matchesSearch !== null || highlightTest !== null
-      ? (boardTab === "resolved" ? worklistClosedToday : worklistMovements).filter(isMarked).length
+      ? (boardTab === "resolved" ? worklistClosedToday : stageMovements).filter(isMarked).length
       : null;
   const highlightLabel =
-    highlight === null
-      ? null
-      : highlight.startsWith("stage:")
-        ? (STAGE_SHORT[highlight.slice("stage:".length) as Movement["stage"]] ?? null)
-        : (highlightOptions.find((option) => option.id === highlight)?.label ?? null);
+    highlight === null ? null : (highlightOptions.find((option) => option.id === highlight)?.label ?? null);
 
   // Each group shows its first rows until Show all. A row the reader jumped to, opened or marked
   // stays on screen even past that point, so a jump or a highlight always lands on a visible row.
@@ -615,11 +644,17 @@ export function MovementsScreen() {
   /* Device audit, 11 Oct 2026: on phone a group opens as its header and count; one tap shows its rows.
    * Q227 (2 Nov 2026): until the reader toggles one, the first group with people starts open. */
   const firstPhoneGroup = (
-    order === "transport"
+    listOrder === "transport"
       ? shownTransportGroups.map((g) => ({ id: g.id, n: g.rows.length }))
       : shownStages.map((g) => ({ id: g.id, n: g.movements.length }))
   ).find((g) => g.n > 0);
-  const openPhoneGroups: ReadonlySet<string> = phoneOpenGroups ?? new Set(firstPhoneGroup ? [firstPhoneGroup.id] : []);
+  // Audit four item 11: the Moving group also starts open when it holds anyone, so a phone
+  // coordinator reaches Check in on an arrival without first opening the group.
+  const movingStage =
+    listOrder === "transport" ? undefined : shownStages.find((g) => g.id === "moving" && g.movements.length > 0);
+  const openPhoneGroups: ReadonlySet<string> =
+    phoneOpenGroups ??
+    new Set([...(firstPhoneGroup ? [firstPhoneGroup.id] : []), ...(movingStage ? [movingStage.id] : [])]);
   const groupRows = (id: string, rows: Movement[]) =>
     isPhone
       ? openPhoneGroups.has(id)
@@ -647,54 +682,73 @@ export function MovementsScreen() {
   const hiddenRowCount =
     boardTab === "resolved"
       ? hiddenIn([shownClosedToday], LIST_CAP)
-      : order === "stands"
+      : listOrder === "stands"
         ? hiddenIn(
             shownStages.map((stage) => stage.movements),
             GROUP_CAP,
           )
-        : order === "transport"
+        : listOrder === "transport"
           ? hiddenIn(
               shownTransportGroups.map((group) => group.rows),
               GROUP_CAP,
             )
-          : order === "cause"
+          : listOrder === "cause"
             ? hiddenIn(
                 shownCauseGroups.map((group) => group.movements),
                 GROUP_CAP,
               )
             : hiddenIn([shownByWait], LIST_CAP);
-  const worklistListTotal = boardTab === "resolved" ? worklistClosedToday.length : worklistMovements.length;
+  // Audit four #31: the drawer's kit pager steps through the worklist in the order it shows, folded
+  // rows included. A step replaces the open movement in history, so Back still closes the drawer.
+  const pagerMovements: Movement[] =
+    boardTab === "resolved"
+      ? shownClosedToday
+      : listOrder === "stands"
+        ? shownStages.flatMap((stage) => stage.movements)
+        : listOrder === "transport"
+          ? shownTransportGroups.flatMap((group) => group.rows)
+          : listOrder === "cause"
+            ? shownCauseGroups.flatMap((group) => group.movements)
+            : shownByWait;
+  const pagerIndex = detailId === null ? -1 : pagerMovements.findIndex((movement) => movement.id === detailId);
+  const detailPager =
+    pagerIndex < 0 || pagerMovements.length < 2
+      ? undefined
+      : {
+          index: pagerIndex,
+          total: pagerMovements.length,
+          noun: "movement",
+          onStep: (delta: -1 | 1) => {
+            const next = pagerMovements[(pagerIndex + delta + pagerMovements.length) % pagerMovements.length];
+            if (!next) return;
+            setDetailId(next.id);
+            rememberReturnRow(MOVEMENTS_ROUTE, next.id);
+            if (typeof window !== "undefined" && window.history.state?.wardMovementDetail) {
+              window.history.replaceState({ ...window.history.state, wardMovementDetail: next.id }, "");
+            }
+          },
+        };
+  const worklistListTotal = boardTab === "resolved" ? worklistClosedToday.length : stageMovements.length;
   const worklistFootText = matchesSearch
     ? `${markedTotal ?? 0} of ${worklistListTotal} match, highlighted`
     : boardTab === "resolved"
       ? "Resolved today, most recent first"
-      : order === "stands"
+      : listOrder === "stands"
         ? "Grouped by stage, tier then wait"
-        : order === "transport"
+        : listOrder === "transport"
           ? "Grouped by transport, longest wait first"
-          : order === "cause"
+          : listOrder === "cause"
             ? "Grouped by cause, longest wait first"
             : "Longest wait first";
-  // The traffic bar's Table line names the tab the table below is showing, with that tab's own count
-  // and order (audit, 17 Nov 2026: it said "53 open, longest wait first" beside an "All 60" tab, and
-  // over Resolved today too). The All tab also lists closed movements, so it gives both figures.
+  // The worklist head's meta: what the list holds now. The All tab also lists closed movements, so it
+  // gives both figures (audit, 17 Nov 2026); a stage filter names its open movements only.
   const worklistOpenCount = worklistMovements.filter(isOpen).length;
-  const trafficTableSummary =
+  const worklistHeadMeta =
     boardTab === "resolved"
-      ? `Table: ${worklistClosedToday.length} resolved today, most recent first`
-      : `Table: ${
-          worklistOpenCount === worklistMovements.length
-            ? `${worklistOpenCount} open`
-            : `all ${worklistMovements.length}, ${worklistOpenCount} open`
-        }, ${
-          order === "stands"
-            ? "grouped by stage"
-            : order === "transport"
-              ? "grouped by transport"
-              : order === "cause"
-                ? "grouped by cause"
-                : "longest wait first"
-        }`;
+      ? `${worklistClosedToday.length} resolved today`
+      : stageFilter !== null
+        ? `${stageMovements.length} open at this stage`
+        : undefined;
   const renderRow = (movement: Movement) => (
     <StageRow
       key={movement.id}
@@ -760,24 +814,47 @@ export function MovementsScreen() {
   // Movements redesign (1 Nov 2026): the legs grouped by where they stand, on the road first, so
   // each row needs no status chip of its own. The route is short ("SCGH ED → BTY Adult Secure");
   // the provider is in the row's title and the record.
-  // The Arrange choice: a row in the toolbar on a wider screen, inside the Filter sheet on a phone.
+  // Simplification mock-up (26 Nov 2026): one compact Sort control on the list head (a kit menu) in
+  // place of the Arrange row. While a stage is chosen, Stage is not offered: the list is one stage.
+  const sortOptions = (
+    [
+      { id: "stands", label: "Stage", description: "By where it stands" },
+      { id: "transport", label: "Transport", description: "By transport leg, and what has none" },
+      { id: "wait", label: "Longest wait", description: "By how long it has waited" },
+    ] as const
+  ).filter((option) => stageFilter === null || option.id !== "stands");
+  const sortLabel = { stands: "Stage", transport: "Transport", wait: "Longest wait", cause: "Hold-up" }[listOrder];
+  const sortMenu = (
+    <Menu
+      label="Sort the list"
+      align="end"
+      items={sortOptions.map((option) => ({
+        id: option.id,
+        label: option.label,
+        meta: option.description,
+        checkable: "radio" as const,
+        checked: listOrder === option.id,
+        onSelect: () => startTransition(() => setOrder(option.id)),
+      }))}
+      trigger={(props) => (
+        <Button {...props} variant="sec" icon={ArrowDownWideNarrow} data-testid="ward-movements-sort">
+          {`Sort: ${sortLabel}`}
+        </Button>
+      )}
+    />
+  );
+  // Phone: the same choice inside the Filter sheet, as a radio row.
   const arrangeGroup = (
-    <RadioGroup className={styles.orderBar} aria-label="Order">
+    <RadioGroup className={styles.orderBar} aria-label="Sort">
       <span className={styles.orderLegend} aria-hidden="true">
-        Arrange
+        Sort
       </span>
-      {(
-        [
-          { id: "stands", label: "Stage", description: "By where it stands" },
-          { id: "transport", label: "Transport", description: "By transport leg, and what has none" },
-          { id: "wait", label: "Longest wait", description: "By how long it has waited" },
-        ] as const
-      ).map((option) => (
+      {sortOptions.map((option) => (
         <button
           key={option.id}
           type="button"
           role="radio"
-          aria-checked={order === option.id}
+          aria-checked={listOrder === option.id}
           title={option.description}
           className={styles.orderBtn}
           onClick={() => startTransition(() => setOrder(option.id))}
@@ -802,34 +879,6 @@ export function MovementsScreen() {
       onCheckIn={setCheckInId}
     />
   );
-  // Phone: the stage highlight chips under the band, one row that slides sideways with Home's soft
-  // fade (chips at 0 muted at the end). A tablet or laptop has the stage pipeline instead.
-  const phoneStageTrack = (
-    <div className={cx(flow.phStages, phoneRows.chipRow)} role="group" aria-label="Highlight a stage">
-      {openStages
-        .filter((stage) => stage.id !== "arrived")
-        .map((stage) => (
-          <button
-            key={stage.id}
-            type="button"
-            className={cx(flow.phStage, phoneRows.chip, stage.movements.length === 0 && phoneRows.zero)}
-            aria-haspopup="dialog"
-            onClick={() =>
-              setPeopleList({
-                title: stage.label,
-                caption: "Open movements at this stage.",
-                movements: stage.movements,
-                highlightKey: `stage:${stage.id}`,
-              })
-            }
-            title={stage.label}
-          >
-            {STAGE_SHORT[stage.id]}
-            <span className={flow.phStageCount}>{stage.movements.length}</span>
-          </button>
-        ))}
-    </div>
-  );
   // Stress test (3 Nov 2026): one Shape of the day, in the desk aside and in a phone sheet.
   const shapeOfDay = (
     <ShapeOfTheDay
@@ -852,6 +901,22 @@ export function MovementsScreen() {
       unacceptedTransport={unacceptedTransport}
       units={units}
       waitingMovements={waitingMovements}
+    />
+  );
+  // The one search field: a mark, never a filter ("filters highlight, never hide", 9 Oct 2026).
+  const searchInput = (
+    <TextInput
+      type="search"
+      icon={Search}
+      value={search}
+      onChange={(event) => {
+        setSearch(event.target.value);
+        setHighlight(null);
+      }}
+      onClear={() => setSearch("")}
+      placeholder="Name, UMRN or ED"
+      aria-label="Find movements by name, UMRN or ED"
+      boxClassName={flow.search}
     />
   );
   function openFromHero(id: string) {
@@ -928,7 +993,7 @@ export function MovementsScreen() {
                     {
                       id: "open",
                       value: openMovements.length,
-                      label: "open movements",
+                      label: "Open movements",
                       testId: "movements-day-metric",
                     },
                     ...highlightOptions
@@ -961,7 +1026,7 @@ export function MovementsScreen() {
                     testId="movements-queue"
                     title={`${myQueue.length} in your queue`}
                     // Live walk 16 Nov 2026: one line on why this differs from the open count.
-                    sub={`Waiting on you, of ${openMovements.length} open`}
+                    sub="Waiting on you"
                     action={{
                       label: "Next in my queue",
                       phoneLabel: "Next",
@@ -998,19 +1063,8 @@ export function MovementsScreen() {
                       icon: <SearchCheck {...CHIP_ICON} />,
                       onClick: () => requestToolsTool("bed-finder", focusedElement()),
                     },
-                    {
-                      id: "corridors",
-                      label: "Corridors",
-                      icon: <MapIcon {...CHIP_ICON} />,
-                      count: activeCorridorCount,
-                      countTone: "quiet",
-                      countLabel: ` active`,
-                      testId: "movements-corridors-chip",
-                      onClick: () =>
-                        isPhone
-                          ? startTransition(() => setPhoneSheet("corridors"))
-                          : document.getElementById("movements-traffic")?.scrollIntoView({ block: "start" }),
-                    },
+                    // Final look (26 Nov 2026): no Corridors chip at any size. A laptop has the traffic
+                    // panel under the hero; a phone opens corridors from the list's own nav row.
                   ]}
                 />
               }
@@ -1032,6 +1086,11 @@ export function MovementsScreen() {
                           id: stage.id,
                           label: STAGE_SHORT[stage.id],
                           value: stage.movements.length,
+                          // The visible words name the cell (axe label-content-name-mismatch): short stage
+                          // name, count and longest wait; aria-pressed says the filter is on.
+                          // Simplification mock-up: as on the laptop's stage rail, a cell filters the list.
+                          pressed: stageFilter === stage.id,
+                          onClick: () => toggleStage(stage.id),
                           sub: wait === undefined ? "none waiting" : durMinutes(wait),
                           subTone:
                             wait === undefined
@@ -1055,7 +1114,7 @@ export function MovementsScreen() {
             <div className={cx(styles.folderSwitch, folderTabClasses.switch)} role="tablist" aria-label="Movements">
               {(
                 [
-                  { id: "every", label: isPhone ? "Open" : "All", count: worklistMovements.length },
+                  { id: "every", label: "Open", count: worklistOpenCount },
                   { id: "resolved", label: "Resolved today", count: worklistClosedToday.length },
                 ] as const
               ).map((tab) => (
@@ -1096,29 +1155,20 @@ export function MovementsScreen() {
           {/* Redesign (31 Oct 2026): one stage pipeline under the hero on a tablet or laptop, each
               stage with its count and longest wait. Phone (v10): the stage chips sit on the canvas
               under the band, number first. */}
-          {isPhone ? (
-            phoneStageTrack
-          ) : (
+          {isPhone ? null : (
             <StagePipeline
               stages={openStages.filter((stage) => stage.id !== "arrived")}
               now={now}
               accessTarget={accessTarget}
-              highlight={highlight}
-              onToggle={(stageId) => {
-                const stage = openStages.find((entry) => entry.id === stageId);
-                if (stage)
-                  setPeopleList({
-                    title: stage.label,
-                    caption: "Open movements at this stage.",
-                    movements: stage.movements,
-                    highlightKey: `stage:${stageId}`,
-                  });
-              }}
+              selected={stageFilter}
+              onToggle={toggleStage}
             />
           )}
         </section>
 
-        {isPhone ? null : (
+        {/* Simplification mock-up (26 Nov 2026): the 48-hour graph shows here only when ticked in the
+            worklist's tools menu; otherwise no heading row sits between the stages and the list. */}
+        {isPhone || trafficView !== "graph" ? null : (
           <section
             id="movements-traffic"
             className={cx(styles.trafficPanel, styles.trafficFullNames)}
@@ -1127,7 +1177,6 @@ export function MovementsScreen() {
           >
             <MovementsTimelineSwitch
               summary={`${activeCorridorCount} active ${activeCorridorCount === 1 ? "corridor" : "corridors"}`}
-              tableSummary={trafficTableSummary}
             >
               <MovementHorizonGantt
                 lanes={horizonLanes}
@@ -1143,8 +1192,8 @@ export function MovementsScreen() {
           </section>
         )}
 
-        {/* D-265 (18 Nov 2026): with Table chosen, the worklist takes the timeline's place first. */}
-        <div className={cx(styles.columns, flow.layout, !isPhone && trafficView === "table" && styles.tableFirst)}>
+        {/* D-265 (18 Nov 2026): the worklist comes before Transport now on a tablet or laptop. */}
+        <div className={cx(styles.columns, flow.layout, !isPhone && styles.tableFirst)}>
           <aside className={styles.secondary} aria-label="Movement details">
             {/* Movements redesign (1 Nov 2026, Q102): no separate Tier 1 card. The hero's Tier 1
                 count highlights those rows in the worklist, so the side column has one job. */}
@@ -1218,66 +1267,112 @@ export function MovementsScreen() {
               data-ward-primitive="panel"
               className={cx(styles.wlCard, styles.wlWrapRows)}
             >
-              {/* Page tops (9 Nov 2026): the tabs moved up under the hero; the phone drops this head. */}
-              {isPhone ? null : <CardHead icon={ArrowRightLeft} title="Movement worklist" />}
-              <div className={flow.toolbar}>
-                {boardTab === "every" && !isPhone ? arrangeGroup : null}
-                {/* Phone audit (1 Nov 2026): Arrange folds into one Filter button, as on ED, so the first
-                    movement sits higher. Arranging only reorders; no row is hidden. */}
-                {boardTab === "every" && isPhone ? (
-                  <PhoneFilterFold
-                    count={order === "stands" ? 0 : 1}
-                    title="Arrange the list"
-                    description="Every movement stays on the list."
-                    data-testid="ward-movements-arrange-fold"
-                  >
-                    {arrangeGroup}
-                  </PhoneFilterFold>
-                ) : null}
-                <span className={flow.toolbarSpacer} />
-                {highlightLabel !== null && matchesSearch === null ? (
-                  <button
-                    type="button"
-                    className={flow.highlightNote}
-                    aria-pressed="true"
-                    onClick={() => setHighlight(null)}
-                    title="Clear the highlight. Highlights never hide a row."
-                  >
-                    {highlightLabel} · {markedTotal ?? 0} highlighted
-                    <span className="sr-only">, clear</span>
-                    <X size={14} aria-hidden="true" />
-                  </button>
-                ) : null}
-                <TextInput
-                  type="search"
-                  icon={Search}
-                  value={search}
-                  onChange={(event) => {
-                    setSearch(event.target.value);
-                    setHighlight(null);
-                  }}
-                  onClear={() => setSearch("")}
-                  placeholder="Name, UMRN or ED"
-                  aria-label="Find movements by name, UMRN or ED"
-                  boxClassName={flow.search}
+              {/* Simplification mock-up (26 Nov 2026): on a tablet or laptop one head carries the list's
+                  name and size, the stage it is filtered to, Sort, search and one tools menu (traffic
+                  graph, Print, Export). The phone drops this head and keeps its own toolbar. */}
+              {isPhone ? null : (
+                <CardHead
+                  icon={ArrowRightLeft}
+                  title="Movement worklist"
+                  meta={worklistHeadMeta}
+                  className={flow.wlHead}
+                  action={
+                    <>
+                      {stageFilterLabel !== null && boardTab === "every" ? (
+                        <AppliedFilter
+                          onRemove={() => startTransition(() => setStageFilter(null))}
+                          removeLabel={`Show every stage, not only ${stageFilterLabel}`}
+                        >
+                          {stageFilterLabel}
+                        </AppliedFilter>
+                      ) : null}
+                      {highlightLabel !== null && matchesSearch === null ? (
+                        <button
+                          type="button"
+                          className={flow.highlightNote}
+                          aria-pressed="true"
+                          onClick={() => setHighlight(null)}
+                          title="Clear the highlight. Highlights never hide a row."
+                        >
+                          {highlightLabel} · {markedTotal ?? 0} highlighted
+                          <span className="sr-only">, clear</span>
+                          <X size={14} aria-hidden="true" />
+                        </button>
+                      ) : null}
+                      {/* D-265: the Graph or Table switch stays one tap away on the list head, remembered
+                          on this device, opening on Table. */}
+                      <Segmented
+                        label="Show today’s traffic as"
+                        items={[
+                          { id: "graph", label: "Graph" },
+                          { id: "table", label: "Table" },
+                        ]}
+                        value={trafficView}
+                        onChange={setTrafficView}
+                      />
+                      {boardTab === "every" ? sortMenu : null}
+                      {searchInput}
+                      <MovementsListMenu
+                        {...{ patients, referrals, units, now, dayZero, resolved: boardTab === "resolved" }}
+                        movements={boardTab === "resolved" ? worklistClosedToday : stageMovements}
+                        disabled={(boardTab === "resolved" ? worklistClosedToday : stageMovements).length === 0}
+                        share
+                        named
+                      />
+                    </>
+                  }
                 />
-                <MovementsListTools
-                  {...{
-                    patients,
-                    referrals,
-                    units,
-                    now,
-                    dayZero,
-                    resolved: boardTab === "resolved",
-                    iconOnly: isPhone,
-                  }}
-                  movements={boardTab === "resolved" ? worklistClosedToday : worklistMovements}
-                  disabled={(boardTab === "resolved" ? worklistClosedToday : worklistMovements).length === 0}
-                />
-              </div>
+              )}
+              {isPhone ? (
+                <div className={flow.toolbar}>
+                  {/* Phone audit (1 Nov 2026): Sort folds into one Filter button, as on ED, so the first
+                      movement sits higher. Sorting only reorders; no row is hidden. */}
+                  {boardTab === "every" ? (
+                    <PhoneFilterFold
+                      count={listOrder === "stands" ? 0 : 1}
+                      title="Sort the list"
+                      description="Every movement stays on the list."
+                      data-testid="ward-movements-arrange-fold"
+                    >
+                      {arrangeGroup}
+                    </PhoneFilterFold>
+                  ) : null}
+                  <span className={flow.toolbarSpacer} />
+                  {stageFilterLabel !== null && boardTab === "every" ? (
+                    <AppliedFilter
+                      className={flow.highlightNote}
+                      onRemove={() => startTransition(() => setStageFilter(null))}
+                      removeLabel={`Show every stage, not only ${stageFilterLabel}`}
+                    >
+                      {stageFilterLabel}
+                    </AppliedFilter>
+                  ) : highlightLabel !== null && matchesSearch === null ? (
+                    <button
+                      type="button"
+                      className={flow.highlightNote}
+                      aria-pressed="true"
+                      onClick={() => setHighlight(null)}
+                      title="Clear the highlight. Highlights never hide a row."
+                    >
+                      {highlightLabel} · {markedTotal ?? 0} highlighted
+                      <span className="sr-only">, clear</span>
+                      <X size={14} aria-hidden="true" />
+                    </button>
+                  ) : null}
+                  {searchInput}
+                  <MovementsListMenu
+                    share
+                    {...{ patients, referrals, units, now, dayZero, resolved: boardTab === "resolved" }}
+                    movements={boardTab === "resolved" ? worklistClosedToday : stageMovements}
+                    disabled={(boardTab === "resolved" ? worklistClosedToday : stageMovements).length === 0}
+                  />
+                </div>
+              ) : null}
 
               {/* Column heads for the rows below. The rows are list items, so these are a visual
-                  guide only; each row names its own cells for assistive technology. */}
+                  guide only; each row names its own cells for assistive technology. Simplification
+                  mock-up: five columns. The tier badge sits beside the patient, and "What happens next"
+                  leads with the next step and carries the hold-up as its quiet line. */}
               <div className={cx(flow.grid, flow.columns)} aria-hidden="true">
                 <span>Tier</span>
                 <span>Patient</span>
@@ -1295,7 +1390,7 @@ export function MovementsScreen() {
                     {searchedTotal === 0 ? (
                       <p className={styles.absent}>No movement matches “{search.trim()}”. Every row is still shown.</p>
                     ) : null}
-                    {order === "cause"
+                    {listOrder === "cause"
                       ? shownCauseGroups.map((group) => (
                           <div key={group.key} className={styles.stageBlock}>
                             <div className={styles.causeGroupHeading} data-sev={group.sev}>
@@ -1308,14 +1403,14 @@ export function MovementsScreen() {
                           </div>
                         ))
                       : null}
-                    {order === "stands"
+                    {listOrder === "stands"
                       ? shownStages.map((stage) => {
                           if (stage.movements.length === 0) {
                             if (matchesSearch !== null || isPhone) return null;
                             return (
                               <div key={stage.id} className={styles.stageBlock}>
                                 <div className={styles.emptyStage}>
-                                  <h3 className={styles.emptyStageTitle}>{stage.label}</h3>
+                                  <h3 className={styles.emptyStageTitle}>{stageGroupLabel(stage.id)}</h3>
                                   <p className={styles.absent}>No movements at this stage{inServiceSuffix(service)}.</p>
                                 </div>
                               </div>
@@ -1327,7 +1422,7 @@ export function MovementsScreen() {
                               {isPhone ? (
                                 <PhoneGroupHeading
                                   id={stage.id}
-                                  title={stage.label}
+                                  title={stageGroupLabel(stage.id)}
                                   people={stage.movements.length}
                                   longestMinutes={now - Math.min(...stage.movements.map((m) => m.openedAt))}
                                   open={openPhoneGroups.has(stage.id)}
@@ -1335,7 +1430,7 @@ export function MovementsScreen() {
                                 />
                               ) : (
                                 <WardGroupHeading
-                                  title={stage.label}
+                                  title={stageGroupLabel(stage.id)}
                                   people={stage.movements.length}
                                   note={moreNote(stage.movements.length - rows.length)}
                                 />
@@ -1347,7 +1442,7 @@ export function MovementsScreen() {
                         })
                       : null}
 
-                    {order === "transport"
+                    {listOrder === "transport"
                       ? shownTransportGroups.map((group) => {
                           if (group.rows.length === 0) {
                             if (matchesSearch !== null || isPhone) return null;
@@ -1387,13 +1482,20 @@ export function MovementsScreen() {
                         })
                       : null}
 
-                    {order === "wait" && shownByWait.length > 0 ? (
+                    {listOrder === "wait" && shownByWait.length === 0 && stageFilterLabel !== null ? (
+                      <p className={styles.absent}>
+                        No open movement is at {stageFilterLabel} right now{inServiceSuffix(service)}.
+                      </p>
+                    ) : null}
+                    {listOrder === "wait" && shownByWait.length > 0 ? (
                       <div className={styles.stageBlock}>
                         {/* `byLongestWait` measures a closed movement to its CLOSURE, not to now — the
                           row beside it renders a frozen clock, and an order computed from a running
                           one would contradict the number the reader can see. */}
                         <WardGroupHeading
-                          title="Longest wait first"
+                          title={
+                            stageFilterLabel === null ? "Longest wait first" : `${stageFilterLabel}, longest wait first`
+                          }
                           people={shownByWait.length}
                           note={moreNote(shownByWait.length - capRows(shownByWait, LIST_CAP).length)}
                         />
@@ -1496,10 +1598,6 @@ export function MovementsScreen() {
             }
             openDetail(id);
           }}
-          onShowInWorklist={(key) => {
-            showHighlight(key);
-            document.getElementById("movement-worklist")?.scrollIntoView({ block: "start" });
-          }}
         />
         <MovementDrawer
           // P2 item 4 (2026-09-17 review): remounts on every patient change, so a reason chosen
@@ -1514,7 +1612,13 @@ export function MovementsScreen() {
           edAccessTargetMinutes={configuration.edAccessTargetMinutes}
           dispatch={dispatch}
           onClose={closeDetail}
+          pager={detailPager}
           onFocusMovement={setFocusMovementId}
+          // Audit four item 11: the phone sheet's Check in opens the same Check in drawer as the row.
+          onCheckIn={(id) => {
+            closeDetail();
+            setCheckInId(id);
+          }}
         />
         {checkInId ? (
           <MovementCheckInDrawer key={checkInId} movementId={checkInId} now={now} onClose={() => setCheckInId(null)} />

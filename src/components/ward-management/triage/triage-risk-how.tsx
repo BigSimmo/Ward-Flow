@@ -6,22 +6,25 @@
  * section; Shortcuts, What gets saved, the PSOLIS map (filterable) and the Evidence follow.
  * Prototype guidance on synthetic data, not policy.
  */
-import { FilePlus2 } from "lucide-react";
+import { Keyboard } from "lucide-react";
 import { useState } from "react";
 
-import { Button, DrawerFootRow, PanelDrawer, SearchField, tableClasses } from "@/components/wf";
+import { shortcutSectionsForDesk } from "@/components/ward-management/help/ward-help-content";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { Button, DrawerFootRow, PanelDrawer, SearchField, Sheet, tableClasses } from "@/components/wf";
 
-import { PSOLIS_FIELD_MAP, SECTIONS, type SectionId } from "./triage-risk-data";
+import { GUIDES, PSOLIS_FIELD_MAP, SECTIONS, type SectionId } from "./triage-risk-data";
+import { GuideList } from "./triage-risk-parts";
+import type { GuideId } from "./triage-guide-context";
 import styles from "./triage-risk-how.module.css";
 
-type HowTab = "steps" | "keys" | "saved" | "psolis" | "evidence";
+export type HowTab = "cover" | "steps" | "psolis" | "about";
 
 const TABS: { id: HowTab; label: string }[] = [
+  { id: "cover", label: "Cover" },
   { id: "steps", label: "Steps" },
-  { id: "keys", label: "Shortcuts" },
-  { id: "saved", label: "What gets saved" },
   { id: "psolis", label: "PSOLIS map" },
-  { id: "evidence", label: "Evidence" },
+  { id: "about", label: "About this form" },
 ];
 
 type Step = { section: SectionId | null; title: string; time: string; text: string; tip: string };
@@ -79,15 +82,6 @@ const STEPS: readonly Step[] = [
   },
 ];
 
-const KEYS: readonly (readonly [key: string, where: string, does: string])[] = [
-  ["S", "Anywhere on the form", "Opens the summary"],
-  ["Y / N", "A family violence question", "Answers it and moves to the next"],
-  [".all", "Assessment, or Formulation and plan", "Adds every missing heading"],
-  [".form", "Formulation and plan", "Adds the formulation headings"],
-  [".plan", "Formulation and plan", "Adds the safety plan headings"],
-  ["Esc", "A drawer or pop-out", "Closes it"],
-];
-
 const EVIDENCE: readonly (readonly [source: string, why: string])[] = [
   ["WA MP 0155/21", "Standard mental health documentation: the triage (SMHMR900) and RAMP (SMHMR905) content."],
   ["WA MP 0181/24", "Safety planning with the person, rather than a rating or score of their risk."],
@@ -136,45 +130,36 @@ function Steps({ onGoTo }: { onGoTo: (section: SectionId) => void }) {
   );
 }
 
-function Shortcuts() {
+/** Audit two (#82): the one shared shortcuts look, this page's keys first. */
+function ShortcutsLook({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const role = useEffectiveWardAccess().role;
+  const sections = shortcutSectionsForDesk(role, "Triage");
   return (
-    <div className={styles.pane}>
-      <div className={styles.tableWrap}>
-        <table className={tableClasses.table} aria-label="Keyboard shortcuts">
-          <thead>
-            <tr>
-              <th className={tableClasses.th} scope="col">
-                Key or phrase
-              </th>
-              <th className={tableClasses.th} scope="col">
-                Where
-              </th>
-              <th className={tableClasses.th} scope="col">
-                What it does
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {KEYS.map(([key, where, does]) => (
-              <tr key={key}>
-                <td>
-                  <kbd className={styles.kbd}>{key}</kbd>
-                </td>
-                <td>{where}</td>
-                <td>{does}</td>
-              </tr>
+    <Sheet open={open} onClose={onClose} title="Keyboard shortcuts" testId="triage-shortcuts-sheet">
+      {sections.map((section) => (
+        <section key={section.group} aria-label={section.group}>
+          <h3 className={styles.keysGroup}>{section.group}</h3>
+          <dl className={styles.keys}>
+            {section.rows.map(({ keys, short }) => (
+              <div key={keys}>
+                <dt>
+                  {keys.split(" ").map((part) => (
+                    <kbd key={part}>{part}</kbd>
+                  ))}
+                </dt>
+                <dd>{short}</dd>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
-      <p className={styles.quiet}>Phrases add only the headings that are missing, so typing one twice is safe.</p>
-    </div>
+          </dl>
+        </section>
+      ))}
+    </Sheet>
   );
 }
 
 function Saved() {
   return (
-    <div className={styles.pane}>
+    <>
       <div className={styles.callout}>
         {/* D-186 (Q14): every field signing saves (`TriageSignedRecord` in triage-record.ts). */}
         <b>Signing records codes only.</b> Urgency, outcome, legal status, review, the risk flags marked present,
@@ -190,7 +175,7 @@ function Saved() {
         and there is no low, medium or high rating. The formulation and plan carry the judgement, and urgency is always
         your choice.
       </div>
-    </div>
+    </>
   );
 }
 
@@ -239,9 +224,19 @@ function PsolisMap() {
   );
 }
 
-function Evidence() {
+function About() {
   return (
     <div className={styles.pane}>
+      <Saved />
+      <Evidence />
+    </div>
+  );
+}
+
+function Evidence() {
+  return (
+    <>
+      <p className={styles.footText}>Evidence this form follows.</p>
       <dl className={styles.evidence}>
         {EVIDENCE.map(([source, why]) => (
           <div key={source}>
@@ -253,53 +248,69 @@ function Evidence() {
       <p className={styles.quiet}>
         Prototype guidance on synthetic data, not policy. Not validated clinical decision support.
       </p>
-    </div>
+    </>
   );
 }
 
 export function HowToDrawer({
   open,
   onClose,
-  onStartNew,
   onGoTo,
+  tab,
+  onTab,
+  guide,
+  noteText,
+  onHeading,
 }: {
+  tab: HowTab;
+  onTab: (tab: HowTab) => void;
+  /** Which note What to cover adds to, and that note's words so far. */
+  guide: GuideId;
+  noteText: string;
+  /** Closes the drawer and adds the heading to the note. */
+  onHeading: (heading: string) => void;
   open: boolean;
   onClose: () => void;
-  /** Start a triage for someone else (7 Nov 2026: lives in How to; 9 Nov 2026: in the drawer's foot). */
-  onStartNew: () => void;
   /** Close the drawer and go to a section of the form. */
   onGoTo: (section: SectionId) => void;
 }) {
-  const [tab, setTab] = useState<HowTab>("steps");
+  const [keysOpen, setKeysOpen] = useState(false);
   return (
-    <PanelDrawer
-      open={open}
-      onClose={onClose}
-      title="How to complete a triage"
-      subtitle="Six sections, about 15 to 25 minutes. Triage (SMHMR900), then risk (SMHMR905)."
-      tabs={TABS}
-      tab={tab}
-      onTabChange={(next) => setTab(next as HowTab)}
-      tabsLabel="How to"
-      className={styles.drawer}
-      bodyClassName={styles.body}
-      testId="triage-how-sheet"
-      foot={
-        <>
-          <span className={styles.footText}>A triage for someone else?</span>
-          <DrawerFootRow>
-            <Button icon={FilePlus2} onClick={onStartNew} data-testid="triage-start-new">
-              Start a new triage
-            </Button>
-          </DrawerFootRow>
-        </>
-      }
-    >
-      {tab === "steps" ? <Steps onGoTo={onGoTo} /> : null}
-      {tab === "keys" ? <Shortcuts /> : null}
-      {tab === "saved" ? <Saved /> : null}
-      {tab === "psolis" ? <PsolisMap /> : null}
-      {tab === "evidence" ? <Evidence /> : null}
-    </PanelDrawer>
+    <>
+      <PanelDrawer
+        open={open}
+        onClose={onClose}
+        title="How to complete a triage"
+        subtitle="Six sections, about 15 to 25 minutes. Triage (SMHMR900), then risk (SMHMR905)."
+        tabs={TABS}
+        tab={tab}
+        onTabChange={(next) => onTab(next as HowTab)}
+        tabsLabel="How to"
+        className={styles.drawer}
+        bodyClassName={styles.body}
+        testId="triage-how-sheet"
+        foot={
+          <>
+            <span className={styles.footText}>Keys that work on this form.</span>
+            <DrawerFootRow>
+              <Button variant="ghost" icon={Keyboard} onClick={() => setKeysOpen(true)} data-testid="triage-shortcuts">
+                Keyboard shortcuts
+              </Button>
+            </DrawerFootRow>
+          </>
+        }
+      >
+        {tab === "cover" ? (
+          <>
+            <p className={styles.footText}>Tap a heading to add it to the note.</p>
+            <GuideList groups={GUIDES[guide]} text={noteText} onHeading={onHeading} columns={2} />
+          </>
+        ) : null}
+        {tab === "steps" ? <Steps onGoTo={onGoTo} /> : null}
+        {tab === "psolis" ? <PsolisMap /> : null}
+        {tab === "about" ? <About /> : null}
+      </PanelDrawer>
+      <ShortcutsLook open={keysOpen} onClose={() => setKeysOpen(false)} />
+    </>
   );
 }

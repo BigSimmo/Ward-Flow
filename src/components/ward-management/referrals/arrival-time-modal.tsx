@@ -2,7 +2,7 @@
 
 import { arrivalTimingIsLate } from "@/components/ward-management/ward-arrival-timing";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import { CircleAlert, Clock, ShieldCheck, X } from "lucide-react";
+import { CircleAlert, ShieldCheck } from "lucide-react";
 import {
   ARRIVAL_MODES,
   ARRIVAL_MODE_LABELS,
@@ -17,10 +17,9 @@ import { useDesk } from "@/components/ward-management/shell/use-desk";
 import { formatInstantWithDay, minuteOfDay, minuteOfDayFromClockText } from "@/components/ward-management/ward-clock";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
-import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { settledWardCommand } from "../ward-command-completion";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
-import { DisabledReason, requestConfirm, TimePresets } from "@/components/wf";
+import { DisabledReason, Dialog, requestConfirm, TimePresets } from "@/components/wf";
 import styles from "./arrival-time-modal.module.css";
 import { useDirtyStateGuard } from "../use-dirty-state-guard";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -164,15 +163,16 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role: sentRole }: 
     });
   };
 
-  const dialogRef = useRef<HTMLDivElement>(null);
   const late = isArrivalLate(movement, now);
-
-  useWardModalFocus(isOpen, dialogRef, dismiss);
 
   if (!isOpen) return null;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    submit();
+  }
+
+  function submit() {
     if (!saveGate.allowed || pending.current) return;
     if (arrivalMode === "") {
       setSaveError("Choose how they are travelling.");
@@ -227,180 +227,139 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role: sentRole }: 
   };
 
   return (
-    <div
-      role="presentation"
-      className={styles.overlay}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) dismiss();
+    <Dialog
+      open
+      onClose={dismiss}
+      title="Update arrival time & transport"
+      closable={!saving}
+      data-testid="arrival-time-dialog"
+      // The patient's identity is the dialog's description, so it is announced with the title.
+      description={identity}
+      secondary={[{ label: "Cancel", onAction: dismiss }]}
+      primary={{
+        label: saving ? "Saving…" : "Save arrival plan",
+        onAction: submit,
+        testId: "save-arrival-plan-button",
+        loading: saving,
+        disabledReason: saveGate.allowed ? undefined : saveGate.reason,
       }}
     >
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={`${baseId}-arrival-modal-title`}
-        aria-describedby={`${baseId}-arrival-patient`}
-        tabIndex={-1}
-        className={styles.dialog}
-      >
-        <div className={styles.head}>
-          <div className={styles.headTitle}>
-            <Clock size={20} className={styles.titleIcon} aria-hidden="true" />
-            <h2 id={`${baseId}-arrival-modal-title`} className={styles.title}>
-              Update arrival time & transport
-            </h2>
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <fieldset disabled={saving} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+          <legend className="sr-only">Arrival plan</legend>
+          <div className={styles.note}>
+            <ShieldCheck size={18} className={styles.noteIcon} aria-hidden="true" />
+            <span>Saving keeps the existing {pullHoldLabel} pull time limit.</span>
           </div>
-          <button
-            type="button"
-            onClick={dismiss}
-            disabled={saving}
-            aria-label="Close dialog"
-            className={styles.closeBtn}
-          >
-            <X size={20} aria-hidden="true" />
-          </button>
-        </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <p id={`${baseId}-arrival-patient`} className={styles.note}>
-            {identity}
-          </p>
-          <fieldset disabled={saving} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-            <legend className="sr-only">Arrival plan</legend>
-            <div className={styles.note}>
-              <ShieldCheck size={18} className={styles.noteIcon} aria-hidden="true" />
-              <span>Saving keeps the existing {pullHoldLabel} pull time limit.</span>
+          {late && movement.arrivalDetails ? (
+            <div className={styles.late} role="status" data-testid="arrival-plan-late-state">
+              <CircleAlert size={18} className={styles.lateIcon} aria-hidden="true" />
+              <span>
+                Arrival is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time (
+                {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} {zone}). They have not been
+                marked arrived.
+              </span>
             </div>
+          ) : null}
 
-            {late && movement.arrivalDetails ? (
-              <div className={styles.late} role="status" data-testid="arrival-plan-late-state">
-                <CircleAlert size={18} className={styles.lateIcon} aria-hidden="true" />
-                <span>
-                  Arrival is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time (
-                  {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} {zone}). They have not been
-                  marked arrived.
-                </span>
-              </div>
-            ) : null}
-
-            <div className={styles.field}>
-              <label htmlFor={`${baseId}-arrival-mode-select`} className={styles.label}>
-                How they are travelling
-              </label>
-              <select
-                id={`${baseId}-arrival-mode-select`}
-                disabled={saving}
-                value={arrivalMode}
-                onChange={(e) => setArrivalMode(e.target.value as ArrivalMode)}
-                aria-describedby={
-                  bookedMode && arrivalMode === bookedMode ? `${baseId}-arrival-mode-source` : undefined
-                }
-                className={styles.control}
-              >
-                <option value="" disabled>
-                  Choose how they are travelling
+          <div className={styles.field}>
+            <label htmlFor={`${baseId}-arrival-mode-select`} className={styles.label}>
+              How they are travelling
+            </label>
+            <select
+              id={`${baseId}-arrival-mode-select`}
+              disabled={saving}
+              value={arrivalMode}
+              onChange={(e) => setArrivalMode(e.target.value as ArrivalMode)}
+              aria-describedby={bookedMode && arrivalMode === bookedMode ? `${baseId}-arrival-mode-source` : undefined}
+              className={styles.control}
+            >
+              <option value="" disabled>
+                Choose how they are travelling
+              </option>
+              {ARRIVAL_MODES.map((mode: ArrivalMode) => (
+                <option key={mode} value={mode}>
+                  {ARRIVAL_MODE_LABELS[mode]}
                 </option>
-                {ARRIVAL_MODES.map((mode: ArrivalMode) => (
-                  <option key={mode} value={mode}>
-                    {ARRIVAL_MODE_LABELS[mode]}
-                  </option>
-                ))}
-              </select>
-              {bookedMode && arrivalMode === bookedMode ? (
-                <small id={`${baseId}-arrival-mode-source`}>From the transport booking</small>
-              ) : null}
-            </div>
+              ))}
+            </select>
+            {bookedMode && arrivalMode === bookedMode ? (
+              <small id={`${baseId}-arrival-mode-source`}>From the transport booking</small>
+            ) : null}
+          </div>
 
-            <div className={styles.field}>
-              <label htmlFor={`${baseId}-tracking-number-input`} className={styles.label}>
-                CAD or tracking number
-              </label>
-              <input
-                id={`${baseId}-tracking-number-input`}
-                disabled={saving}
-                type="text"
-                placeholder="e.g. CAD-2026-8912 or SJA-412"
-                aria-describedby={cadFromBooking ? `${baseId}-tracking-number-source` : undefined}
-                value={trackingNumber}
-                onChange={(e) => setTrackingNumber(e.target.value)}
-                className={styles.control}
-              />
-              {cadFromBooking ? (
-                <small id={`${baseId}-tracking-number-source`}>From the transport booking</small>
-              ) : null}
-            </div>
+          <div className={styles.field}>
+            <label htmlFor={`${baseId}-tracking-number-input`} className={styles.label}>
+              CAD or tracking number
+            </label>
+            <input
+              id={`${baseId}-tracking-number-input`}
+              disabled={saving}
+              type="text"
+              placeholder="e.g. CAD-2026-8912 or SJA-412"
+              aria-describedby={cadFromBooking ? `${baseId}-tracking-number-source` : undefined}
+              value={trackingNumber}
+              onChange={(e) => setTrackingNumber(e.target.value)}
+              className={styles.control}
+            />
+            {cadFromBooking ? <small id={`${baseId}-tracking-number-source`}>From the transport booking</small> : null}
+          </div>
 
-            <div className={styles.etaField}>
-              <div className={styles.label}>
-                Estimated time of arrival (ETA):{" "}
-                <strong>
-                  {etaMinutes === undefined ? "Not set" : `${formatInstantWithDay(etaMinutes, now)} ${zone}`}
-                </strong>
-                {etaFromBooking && !etaText.trim() ? " (from the transport booking)" : null}
-              </div>
+          <div className={styles.etaField}>
+            <div className={styles.label}>
+              Estimated time of arrival (ETA):{" "}
+              <strong>
+                {etaMinutes === undefined ? "Not set" : `${formatInstantWithDay(etaMinutes, now)} ${zone}`}
+              </strong>
+              {etaFromBooking && !etaText.trim() ? " (from the transport booking)" : null}
             </div>
+          </div>
 
-            <div className={styles.field}>
-              <label htmlFor={`${baseId}-eta-time-input`} className={styles.label}>
-                Type the ETA
-              </label>
-              <input
-                id={`${baseId}-eta-time-input`}
-                disabled={saving}
-                type="text"
-                inputMode="text"
-                autoComplete="off"
-                placeholder="HH:MM"
-                value={etaText}
-                aria-invalid={etaTypedBadly || undefined}
-                aria-describedby={etaTypedBadly ? `${baseId}-eta-time-problem` : undefined}
-                onChange={(e) => setEtaText(e.target.value)}
-                className={styles.control}
-              />
-              <TimePresets
-                label="Estimated time of arrival"
-                boardMinuteOfDay={minuteOfDay(now)}
-                onPick={pickEta}
-                className={styles.presets}
-              />
-              {etaTypedBadly ? (
-                <small id={`${baseId}-eta-time-problem`}>Type the time, like 2:40 pm or 14:40.</small>
-              ) : null}
-              <label htmlFor={`${baseId}-eta-day-select`} className={styles.label}>
-                Day of the typed ETA
-              </label>
-              <select
-                id={`${baseId}-eta-day-select`}
-                disabled={saving}
-                value={etaDay}
-                onChange={(e) => setEtaDay(e.target.value as "today" | "tomorrow")}
-                className={styles.control}
-              >
-                <option value="today">Today</option>
-                <option value="tomorrow">Tomorrow</option>
-              </select>
-            </div>
+          <div className={styles.field}>
+            <label htmlFor={`${baseId}-eta-time-input`} className={styles.label}>
+              Type the ETA
+            </label>
+            <input
+              id={`${baseId}-eta-time-input`}
+              disabled={saving}
+              type="text"
+              inputMode="text"
+              autoComplete="off"
+              placeholder="HH:MM"
+              value={etaText}
+              aria-invalid={etaTypedBadly || undefined}
+              aria-describedby={etaTypedBadly ? `${baseId}-eta-time-problem` : undefined}
+              onChange={(e) => setEtaText(e.target.value)}
+              className={styles.control}
+            />
+            <TimePresets
+              label="Estimated time of arrival"
+              boardMinuteOfDay={minuteOfDay(now)}
+              onPick={pickEta}
+              className={styles.presets}
+            />
+            {etaTypedBadly ? (
+              <small id={`${baseId}-eta-time-problem`}>Type the time, like 2:40 pm or 14:40.</small>
+            ) : null}
+            <label htmlFor={`${baseId}-eta-day-select`} className={styles.label}>
+              Day of the typed ETA
+            </label>
+            <select
+              id={`${baseId}-eta-day-select`}
+              disabled={saving}
+              value={etaDay}
+              onChange={(e) => setEtaDay(e.target.value as "today" | "tomorrow")}
+              className={styles.control}
+            >
+              <option value="today">Today</option>
+              <option value="tomorrow">Tomorrow</option>
+            </select>
+          </div>
 
-            {saveError ? <p role="alert">{saveError}</p> : null}
-            <div className={styles.actions}>
-              <button type="button" onClick={dismiss} disabled={saving} className={styles.cancelBtn}>
-                Cancel
-              </button>
-              <button
-                type="submit"
-                data-testid="save-arrival-plan-button"
-                className={styles.saveBtn}
-                {...saveGate.buttonProps}
-                disabled={saving || saveGate.buttonProps.disabled}
-                aria-busy={saving || undefined}
-              >
-                {saving ? "Saving…" : "Save arrival plan"}
-              </button>
-              {saveGate.note}
-            </div>
-          </fieldset>
-        </form>
-      </div>
-    </div>
+          {saveError ? <p role="alert">{saveError}</p> : null}
+        </fieldset>
+      </form>
+    </Dialog>
   );
 }

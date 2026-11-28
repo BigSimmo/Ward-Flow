@@ -38,27 +38,6 @@ const phoneTail = (clock: string) => (
     <span>{clock} ·</span> <span>invented records ·</span> <span>not for clinical use</span>
   </span>
 );
-const authorityPill = (clock: string) => (
-  <span className={styles.authorityPill} title={`BedChart prototype · ${clock.toLowerCase()} · synthetic only`}>
-    <svg
-      className={styles.authorityIcon}
-      viewBox="0 0 16 16"
-      width="12"
-      height="12"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M8 1.5l5.5 2.5v4c0 3.5-2.5 6-5.5 7-3-1-5.5-3.5-5.5-7V4L8 1.5z" />
-      <path d="M5.5 8l2 2 3.5-3.5" />
-    </svg>
-    <span>BedChart prototype · Synthetic data only</span>
-  </span>
-);
-
 export function WardPrototypeFooter({ testId, note, extra, style, className }: WardPrototypeFooterProps) {
   const clock = footerClockWords(useWardSharedSave() !== null);
   return (
@@ -73,13 +52,15 @@ export function WardPrototypeFooter({ testId, note, extra, style, className }: W
         {/* Phone (v10): the footer is one quiet line, the badge then this tail; the note below is
             kept for screen readers. Hidden above phone. */}
         {phoneTail(clock)}
+        {/* Audit three #49 (Josh, 28 Nov 2026): one visible synthetic-data statement (D-218), not a
+            chip and a pill; the clock it runs on balances it at the right end. */}
         <span className={styles.footerNote} data-ward-type-floor="banner">
-          {note ?? `${clock} · Not approved for clinical use`}
+          {note ?? "Synthetic data only · Not approved for clinical use"}
         </span>
       </div>
       <div className={styles.rightGroup}>
         {extra}
-        {authorityPill(clock)}
+        <span className={styles.footerClock}>{clock}</span>
       </div>
     </footer>
   );

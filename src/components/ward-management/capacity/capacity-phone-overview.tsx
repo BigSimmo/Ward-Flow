@@ -19,7 +19,7 @@ import styles from "./capacity-page.module.css";
 
 /**
  * The phone's Overview (wave 4, notes item 6, D-191): three cards. Held up · by tomorrow first, then
- * Wards to check · now (no ready bed, a stale count, or a closed bed past review) in the bed-squares
+ * Wards needing a look · now (no ready bed, a stale count, or a closed bed past review) in the bed-squares
  * phone form, then the Forecast. This shift, Closed beds, Intake windows and Nearest ready beds left
  * the phone Overview: a closed bed past review and tonight's intake hours are on each ward's note
  * line, and the Wards tab holds every ward.
@@ -67,7 +67,7 @@ export function PhoneOverview({
           id="phone-check"
           title={
             <span className={styles.countTitle}>
-              <b className={styles.countN}>{toCheck.length}</b> {toCheck.length === 1 ? "Ward" : "Wards"} to check
+              <b className={styles.countN}>{toCheck.length}</b> {toCheck.length === 1 ? "Ward" : "Wards"} needing a look
               <WindowWord word="now" />
             </span>
           }

@@ -170,18 +170,18 @@ describe("a desk that can never set the date or record leaving is not offered th
   it("the ward still sees both", () => {
     setDeskRole("ward");
     renderDrawer();
-    expect(screen.getAllByRole("button", { name: "Record that they have left" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Record discharge" }).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("tab", { name: "Leaving" }));
     expect(screen.getAllByTestId("ward-drawer-discharge-date-open").length).toBeGreaterThan(0);
     cleanup();
   });
 
-  it("shows the site bed manager neither Set discharge date nor Record that they have left", () => {
+  it("shows the site bed manager neither Set discharge date nor Record discharge", () => {
     setWardFeatureFlagOnDevice("role-access", true);
     setWardAccess({ role: "bed_manager", scope: { kind: "site", siteCode: unit.siteCode } });
     renderDrawer();
     fireEvent.click(screen.getByRole("tab", { name: "Leaving" }));
     expect(screen.queryByTestId("ward-drawer-discharge-date-open")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Record that they have left" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Record discharge" })).toBeNull();
   });
 });

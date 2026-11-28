@@ -31,16 +31,22 @@ const ALL = [...PRIVACY_SECTIONS.flatMap((s) => s.checks), ...PRIVACY_SIGN_OFFS]
 describe("Privacy and data (D-260)", () => {
   it("says the requirements are not enforced and not legal advice", () => {
     render(<PrivacyTrackerScreen />);
-    expect(screen.getByRole("heading", { level: 1, name: /Privacy and data/ })).toBeInTheDocument();
-    expect(screen.getByText(/Not enforced · Synthetic data only · Not legal advice/)).toBeInTheDocument();
-    expect(screen.getByTestId("privacy-note")).toHaveTextContent("This is not legal advice.");
+    // Audit four #51: the page's title is the answer, "N of M checks met", not the header's own words.
+    const metCount = ALL.filter((c) => c.status === "met").length;
+    expect(
+      screen.getByRole("heading", { level: 1, name: `${metCount} of ${ALL.length} checks met` }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Not enforced · Synthetic data · Not legal advice/)).toBeInTheDocument();
+    // Audit two B22: the disclaimer is said once, in the title meta (checked above); the separate note went.
+    expect(screen.queryByTestId("privacy-note")).not.toBeInTheDocument();
   });
 
   it("counts every check once, and the figures add up", () => {
     render(<PrivacyTrackerScreen />);
     const met = ALL.filter((c) => c.status === "met").length;
     const partly = ALL.filter((c) => c.status === "partly").length;
-    expect(screen.getByTestId("privacy-figure-total")).toHaveTextContent(String(ALL.length));
+    // The total is in the title (audit four #51); the figures give the breakdown, worst news first.
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(`${met} of ${ALL.length} checks met`);
     expect(screen.getByTestId("privacy-figure-met")).toHaveTextContent(String(met));
     expect(screen.getByTestId("privacy-figure-partly")).toHaveTextContent(String(partly));
     expect(screen.getByTestId("privacy-figure-notyet")).toHaveTextContent(String(ALL.length - met - partly));

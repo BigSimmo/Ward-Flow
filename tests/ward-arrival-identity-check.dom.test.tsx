@@ -31,9 +31,11 @@ describe("Confirm arrival checks who has arrived first (walk-through WT-11)", ()
     renderWard();
     fireEvent.click(screen.getByTestId("ward-confirm-arrival-WF-014"));
     const check = screen.getByTestId("ward-arrival-identity");
-    // R-MOVE-10 (Josh, 14 Nov 2026): titled for the ward; three identifiers in one name order, and
+    // Audit four #45: one question, "Record arrival at the ward?", with the ward named under it.
+    expect(check).toHaveTextContent(/Check the wristband matches before you record the arrival at \S/u);
+    // R-MOVE-10 (Josh, 14 Nov 2026): three identifiers in one name order, and
     // where the person came from.
-    expect(within(check).getByRole("heading", { name: /^Confirm arrival at \S/u })).toBeTruthy();
+    expect(within(check).getByRole("heading", { name: "Record arrival at the ward?" })).toBeTruthy();
     const facts = within(check).getByTestId("ward-arrival-identity-check");
     const value = (label: string) =>
       Array.from(facts.querySelectorAll("dt")).find((term) => term.textContent === label)?.nextElementSibling
@@ -45,14 +47,14 @@ describe("Confirm arrival checks who has arrived first (walk-through WT-11)", ()
     expect(facts.textContent).not.toMatch(/not recorded/iu);
     // Nothing is recorded until the check is confirmed.
     expect(screen.getByTestId("ward-confirm-arrival-WF-014")).toBeInTheDocument();
-    fireEvent.click(within(check).getByRole("button", { name: "Confirm arrival" }));
+    fireEvent.click(within(check).getByRole("button", { name: "Record arrival" }));
     expect(screen.queryByTestId("ward-confirm-arrival-WF-014")).not.toBeInTheDocument();
   });
 
   it("records nothing when the check is cancelled", () => {
     renderWard();
     fireEvent.click(screen.getByTestId("ward-confirm-arrival-WF-014"));
-    fireEvent.click(within(screen.getByTestId("ward-arrival-identity")).getByRole("button", { name: "Cancel" }));
+    fireEvent.click(within(screen.getByTestId("ward-arrival-identity")).getByRole("button", { name: "Not yet" }));
     expect(screen.queryByTestId("ward-arrival-identity")).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-confirm-arrival-WF-014")).toBeInTheDocument();
   });

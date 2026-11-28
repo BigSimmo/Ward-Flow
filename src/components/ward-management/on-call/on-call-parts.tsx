@@ -5,7 +5,17 @@ import type { ReactNode } from "react";
 import { ArrowRight, ChevronRight, Copy, Mail, Star, X } from "lucide-react";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
-import { Badge, Button, Icon, StatusGlyph, cx, durMinutes } from "@/components/wf";
+import {
+  Badge,
+  Button,
+  DrawerFootRow,
+  Icon,
+  PanelDrawer,
+  StatusGlyph,
+  cx,
+  durMinutes,
+  type DrawerPagerProps,
+} from "@/components/wf";
 import {
   SERVICE_META,
   availability,
@@ -22,7 +32,8 @@ import {
 
 import styles from "./on-call.module.css";
 // Closing-the-loop (package E): last checked, by whom, and "Mark checked now".
-import { CheckFoot } from "./on-call-check-foot";
+import { CheckFoot, useCheckRecorder, useMarkChecked } from "./on-call-check-foot";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 
 /** What a row or card can ask the screen to do. One set of handlers serves desktop and phone. */
 export type ContactActions = {
@@ -80,7 +91,7 @@ export function FavouriteButton({ entry, actions }: { entry: DirectoryEntry; act
       type="button"
       className={cx(styles.favouriteButton, on && styles.favouriteOn)}
       aria-pressed={on}
-      aria-label={`${on ? "Remove" : "Add"} ${entry.name}${entry.siteCode ? `, ${entry.siteCode}` : ""} ${on ? "from" : "to"} My list`}
+      aria-label={`${on ? "Remove" : "Add"} ${entry.name}${entry.siteCode ? `, ${entry.siteCode}` : ""} ${on ? "from" : "to"} Mine`}
       onClick={(event) => {
         event.stopPropagation();
         actions.onToggleFavourite(entry.id);
@@ -461,10 +472,13 @@ function NowBlock({
   entry,
   actions,
   showStar = false,
+  showActions = true,
 }: {
   entry: DirectoryEntry;
   actions: ContactActions;
   showStar?: boolean;
+  /** Audit four #98: the contact drawer draws the copy actions in its foot, so its body leaves them out. */
+  showActions?: boolean;
 }) {
   const number = numberAt(entry, actions.minute);
   const current = entry.lines.length ? lineAt(entry, actions.minute) : null;
@@ -488,39 +502,41 @@ function NowBlock({
         </div>
       ) : null}
       <StatusBlock entry={entry} actions={actions} />
-      <div className={styles.callRow}>
-        {number ? (
-          <Button
-            variant="pri"
-            icon={Copy}
-            className={styles.callButton}
-            onClick={() => actions.onCopy(number, "Number copied")}
-          >
-            Copy number
-          </Button>
-        ) : null}
-        {entry.email ? (
-          <Button
-            variant={number ? "sec" : "pri"}
-            icon={Mail}
-            className={number ? undefined : styles.callButton}
-            onClick={() => actions.onCopy(entry.email!, "Email copied")}
-          >
-            {number ? "Copy email" : "Copy referral email"}
-          </Button>
-        ) : null}
-        {showStar ? (
-          <Button
-            variant="sec"
-            icon={Star}
-            iconOnly
-            aria-label={`Star ${entry.name}`}
-            aria-pressed={starred}
-            className={cx(starred && styles.starOn)}
-            onClick={() => actions.onToggleFavourite(entry.id)}
-          />
-        ) : null}
-      </div>
+      {showActions ? (
+        <div className={styles.callRow}>
+          {number ? (
+            <Button
+              variant="pri"
+              icon={Copy}
+              className={styles.callButton}
+              onClick={() => actions.onCopy(number, "Number copied")}
+            >
+              Copy number
+            </Button>
+          ) : null}
+          {entry.email ? (
+            <Button
+              variant={number ? "sec" : "pri"}
+              icon={Mail}
+              className={number ? undefined : styles.callButton}
+              onClick={() => actions.onCopy(entry.email!, "Email copied")}
+            >
+              {number ? "Copy email" : "Copy referral email"}
+            </Button>
+          ) : null}
+          {showStar ? (
+            <Button
+              variant="sec"
+              icon={Star}
+              iconOnly
+              aria-label={`Star ${entry.name}`}
+              aria-pressed={starred}
+              className={cx(starred && styles.starOn)}
+              onClick={() => actions.onToggleFavourite(entry.id)}
+            />
+          ) : null}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -596,6 +612,165 @@ export function ContactCard({
         <SiteBlock entry={entry} actions={actions} />
       </div>
       <CheckFoot entry={entry} />
+    </>
+  );
+}
+
+/**
+ * The drawer's pager over the list it was opened from, wrapping at the ends. A contact opened from a
+ * search match that the list does not show sits at -1 ("N in list"); a step then starts at an end.
+ */
+export function contactPager(
+  rows: readonly DirectoryEntry[],
+  openId: string,
+  open: (id: string) => void,
+): DrawerPagerProps {
+  const index = rows.findIndex((row) => row.id === openId);
+  return {
+    index,
+    total: rows.length,
+    noun: "contact",
+    onStep: (delta) => {
+      if (!rows.length) return;
+      const from = index < 0 ? (delta > 0 ? -1 : rows.length) : index;
+      const next = rows[(from + delta + rows.length) % rows.length];
+      if (next) open(next.id);
+    },
+  };
+}
+
+/**
+ * Audit four #98: the contact as the one kit drawer, on a tablet (the slide-over) and a phone (the
+ * bottom sheet). Head: the name with pager and close, then the service and site tags and the place.
+ * Body: the notice, who answers now (the big number first), the note, the folds and the check line
+ * as quiet text. Foot: the one filled copy step, then Copy email, Star and Mark checked now. The
+ * desktop side card is not a drawer and keeps `ContactCard`.
+ */
+export function ContactDrawer({
+  entry,
+  actions,
+  notice,
+  pager,
+  onClose,
+  testId,
+}: {
+  entry: DirectoryEntry;
+  actions: ContactActions;
+  notice?: ReactNode;
+  pager: DrawerPagerProps;
+  onClose: () => void;
+  testId: string;
+}) {
+  const service = SERVICE_META[entry.service];
+  return (
+    <PanelDrawer
+      open
+      onClose={onClose}
+      title={entry.name}
+      tag={
+        <span className={styles.drawerTags}>
+          <ServiceTag service={entry.service} label={service.name} />
+          {entry.siteCode ? <span className={styles.code}>{entry.siteCode}</span> : null}
+        </span>
+      }
+      // Left out when the place only repeats the service's short name.
+      subtitle={entry.place === service.short ? undefined : [placeOf(entry)]}
+      pager={pager}
+      bodyClassName={styles.drawerBody}
+      foot={<ContactDrawerFoot entry={entry} actions={actions} />}
+      testId={testId}
+    >
+      {notice}
+      <NowBlock entry={entry} actions={actions} showActions={false} />
+      {entry.note ? <p className={styles.note}>{entry.note}</p> : null}
+      <div className={styles.folds}>
+        <LinesBlock entry={entry} actions={actions} />
+        <EmailBlock entry={entry} actions={actions} />
+        <LadderBlock entry={entry} actions={actions} />
+        <SiteBlock entry={entry} actions={actions} />
+      </div>
+      <CheckFoot entry={entry} showMark={false} />
+    </PanelDrawer>
+  );
+}
+
+function ContactDrawerFoot({ entry, actions }: { entry: DirectoryEntry; actions: ContactActions }) {
+  const { role, key } = useCheckRecorder(entry);
+  return role ? (
+    <ContactDrawerFootWithCheck key={key} entry={entry} actions={actions} role={role} />
+  ) : (
+    <ContactFootButtons entry={entry} actions={actions} />
+  );
+}
+
+function ContactDrawerFootWithCheck({
+  entry,
+  actions,
+  role,
+}: {
+  entry: DirectoryEntry;
+  actions: ContactActions;
+  role: WardFlowRole;
+}) {
+  const { button, status } = useMarkChecked(entry, role, "md");
+  return <ContactFootButtons entry={entry} actions={actions} mark={button} status={status} />;
+}
+
+/** Line one: the filled copy step at full width. Line two: the quiet buttons, one size. Copying never dials (D-72). */
+function ContactFootButtons({
+  entry,
+  actions,
+  mark,
+  status,
+}: {
+  entry: DirectoryEntry;
+  actions: ContactActions;
+  mark?: ReactNode;
+  status?: ReactNode;
+}) {
+  const number = numberAt(entry, actions.minute);
+  const starred = actions.favourites.includes(entry.id);
+  return (
+    <>
+      {status ? <p className={styles.drawerFootStatus}>{status}</p> : null}
+      {number ? (
+        <Button
+          variant="pri"
+          icon={Copy}
+          className={styles.drawerFootPri}
+          onClick={() => actions.onCopy(number, "Number copied")}
+        >
+          Copy number
+        </Button>
+      ) : entry.email ? (
+        <Button
+          variant="pri"
+          icon={Mail}
+          className={styles.drawerFootPri}
+          onClick={() => actions.onCopy(entry.email!, "Email copied")}
+        >
+          Copy referral email
+        </Button>
+      ) : null}
+      <DrawerFootRow className={styles.drawerFootRow}>
+        {number && entry.email ? (
+          <Button variant="sec" icon={Mail} onClick={() => actions.onCopy(entry.email!, "Email copied")}>
+            Copy email
+          </Button>
+        ) : null}
+        <Button
+          variant="sec"
+          icon={Star}
+          // The visible word first, then whose star it is (label in name).
+          aria-label={`${starred ? "Starred" : "Star"} ${entry.name}`}
+          aria-pressed={starred}
+          className={cx(starred && styles.starOn)}
+          onClick={() => actions.onToggleFavourite(entry.id)}
+        >
+          {starred ? "Starred" : "Star"}
+        </Button>
+        {mark}
+      </DrawerFootRow>
     </>
   );
 }

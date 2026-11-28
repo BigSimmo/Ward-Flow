@@ -342,7 +342,7 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
                                     data-testid={`ward-community-book-transport-${admission.movementId}`}
                                     onClick={() => openTransportBook(admission.movementId!)}
                                   >
-                                    Log transport booking
+                                    Record booking
                                   </button>
                                 ) : null}
                                 {ownUncollectedBooking ? (

@@ -408,7 +408,7 @@ export function renderEdBoardRow(
   }
   return (
     <Fragment key={movement.id}>
-      {renderEdBoardPhoneRow(row, ctx, { personSheet, phoneBay })}
+      {renderEdBoardPhoneRow(row, ctx, { personSheet })}
       {handoverCheck}
     </Fragment>
   );

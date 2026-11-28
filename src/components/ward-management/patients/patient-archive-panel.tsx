@@ -7,6 +7,7 @@ import { Button, Card, CardBody, CardHead, useToast } from "@/components/wf";
 import { UNDO_WINDOW_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import { undoWindowUntil } from "@/components/ward-management/ward-undo-until";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { stepToastTitle, undoneToastTitle } from "@/components/ward-management/use-undoable-step";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import {
@@ -156,7 +157,7 @@ function ArchiveConfirm({
       tone: "success",
       // D-192 (shared design parts item 4): one clock time, "… record archived · Undo until 14:47".
       // The record leaves every list, so the toast is its one Undo (no row keeps one).
-      title: `${displayName}'s record archived`,
+      title: stepToastTitle("Record archived", displayName),
       undo: {
         until: undoWindowUntil(nowRef.current),
         // D-187 (F-49): kept for the whole window the words name.
@@ -182,7 +183,7 @@ function ArchiveConfirm({
             toast.push(
               undone && undone.status !== "accepted"
                 ? { tone: "warning", title: `Not recorded: ${undone.message ?? "The Undo was refused."}` }
-                : { tone: "info", title: `Undone. ${displayName}'s record is back.` },
+                : { tone: "info", title: undoneToastTitle("Record archived", displayName) },
             );
           const completion = raise("UNDO_PATIENT_RECORD", {
             patientId,

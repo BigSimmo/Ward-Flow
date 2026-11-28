@@ -39,9 +39,12 @@ describe("All wards: each ward's lock badge matches its bed counts", () => {
     expect(designationSummary(rphOlder)).toBe("All open");
     const tips = [...container.querySelectorAll("[class*=acuityBadge]")].map((el) => el.getAttribute("title"));
     for (const unit of units.filter((candidate) => !candidate.forensic)) {
+      // Audit two #121 (r10): a card shows the badge only for Locked and Mixed; an Open ward is unmarked.
+      if (wardCategory(unit) === "Open") continue;
       expect(badges, `${unit.id} badge`).toContain(wardCategory(unit));
       expect(tips, `${unit.id} badge tip`).toContain(designationSummary(unit));
     }
+    expect(wardCategory(fshSecure), "the secure ward must still be badged").not.toBe("Open");
     expect(tips).toContain(designationSummary(fshSecure));
   });
 });

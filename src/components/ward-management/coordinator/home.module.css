@@ -1049,6 +1049,16 @@
   border-bottom: 0;
 }
 
+/* States B review: a row with record links runs to several lines, so its marker sits beside the
+   title, not in the middle of the links. */
+.sinceSheetRow:has(ul) {
+  align-items: flex-start;
+}
+
+.sinceSheetRow:has(ul) > :first-child {
+  margin-top: var(--space-1);
+}
+
 .sinceSheetText {
   display: flex;
   flex: 1;

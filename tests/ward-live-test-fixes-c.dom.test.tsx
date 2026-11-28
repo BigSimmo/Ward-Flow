@@ -76,7 +76,7 @@ describe("WF-47 saved-at toast", () => {
 });
 
 describe("WF-18 draft saved points to the Drafts list", () => {
-  it("offers View drafts on the saved toast", async () => {
+  it("offers Open drafts on the saved toast", async () => {
     const { noticeDraftKept } = await import("@/components/ward-management/referrals/referral-draft-saved-notice");
     const push = vi.fn(() => "t");
     // 09:07 on the Perth clock (CL-2): the time reads in Perth whatever the device zone.
@@ -84,7 +84,7 @@ describe("WF-18 draft saved points to the Drafts list", () => {
     expect(push).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Draft saved at 9:07 am",
-        nextStep: { label: "View drafts", href: "/bedchart/settings#you" },
+        nextStep: { label: "Open drafts", href: "/bedchart/settings#you" },
       }),
     );
   });

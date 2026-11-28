@@ -1,3 +1,6 @@
+/* Audit two B21: every table cell rule here starts with `html`, one element more than the kit's
+   `.table td` and `.table th`, so the page's own cell rules win in the production build as in dev,
+   whatever order the two style sheets load in. Order among this file's own rules is unchanged. */
 /* Preview only (statistics redesign mock-up, 1 Nov 2026). Kit tokens only: no coloured side edges,
    40px controls, 12px text minimum. */
 .body {
@@ -303,8 +306,8 @@
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
 }
-.table th,
-.table td {
+html .table th,
+html .table td {
   max-width: none !important;
   overflow: visible !important;
   text-overflow: clip !important;
@@ -314,7 +317,7 @@
   text-align: left;
   vertical-align: middle;
 }
-.table thead th {
+html .table thead th {
   height: 36px;
   font-size: var(--wf-fs-12);
   font-weight: 600;
@@ -324,7 +327,7 @@
   text-transform: none;
   letter-spacing: 0;
 }
-.table tbody th {
+html .table tbody th {
   font-weight: 500;
   font-size: var(--wf-fs-13);
   color: var(--wf-ink-1);
@@ -333,12 +336,12 @@
   letter-spacing: 0;
   border-bottom: 1px solid var(--wf-line);
 }
-.table th:first-child,
-.table td:first-child {
+html .table th:first-child,
+html .table td:first-child {
   padding-left: 16px;
 }
-.table th:last-child,
-.table td:last-child {
+html .table th:last-child,
+html .table td:last-child {
   padding-right: 16px;
 }
 .table tbody tr:last-child > * {
@@ -363,8 +366,8 @@
 /* Q245: Open ED movements (and, since 20 Nov 2026, the wards table beside it) keeps all its
  * columns inside a half-width card at 1280: tighter inner gaps and a narrower name, which wraps.
  * The card's 16px edges stay. */
-.tableFit th,
-.tableFit td {
+html .tableFit th,
+html .tableFit td {
   padding-inline: 8px;
 }
 .tableFit .name {
@@ -373,19 +376,39 @@
 /* UX review 20 Nov 2026 (broken item 2): at 1440 the kit's 80px cell floor pushed Median out of
  * the card and waits wrapped as "1 d 5 / h". Short count columns take their own width, waits stay
  * on one line and the long "Open movements" heading may wrap instead. */
-.tableFit th,
-.tableFit td {
+html .tableFit th,
+html .tableFit td {
   min-width: 0;
 }
-.tableFit td {
+html .tableFit td {
   white-space: nowrap;
 }
-.tableFit thead th,
-.tableFit thead th button {
+html .tableFit thead th,
+html .tableFit thead th button {
   white-space: normal;
 }
-.tableFit thead th button {
+html .tableFit thead th button {
   text-align: inherit;
+}
+/* Design review (27 Nov 2026, B21): the Browse wards table keeps its r7 columns and rows. In r7 the
+ * kit's cell rules set these cells (no block padding, 12px sides, the 5rem column floor); the `html`
+ * prefixes above would otherwise make the rows taller and the Ward column wider. The phone keeps
+ * its own padding below. */
+@media (min-width: 561px) {
+  html .tableFit[id="wardPressureTable"] th,
+  html .tableFit[id="wardPressureTable"] td {
+    padding-block: 0;
+    padding-inline: var(--wf-s-3);
+    min-width: var(--wf-col-min, 5rem);
+  }
+  html .tableFit[id="wardPressureTable"] th:first-child,
+  html .tableFit[id="wardPressureTable"] td:first-child {
+    padding-left: var(--wf-s-4);
+  }
+  html .tableFit[id="wardPressureTable"] th:last-child,
+  html .tableFit[id="wardPressureTable"] td:last-child {
+    padding-right: var(--wf-s-4);
+  }
 }
 .gv {
   display: inline-flex;
@@ -403,12 +426,12 @@
   background: var(--wf-surface-2);
   border-top: 1px solid var(--wf-line-2);
 }
-.group > th {
+html .group > th {
   height: 36px !important;
   background: var(--wf-surface-2);
   font-weight: 600 !important;
 }
-.group > th > span {
+html .group > th > span {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -436,7 +459,7 @@
   padding: 8px 12px;
   font-variant-numeric: tabular-nums;
 }
-.heat th {
+html .heat th {
   font-size: var(--wf-fs-12);
   font-weight: 600;
   color: var(--wf-ink-3);
@@ -444,21 +467,21 @@
   white-space: nowrap;
   padding: 4px;
 }
-.heat th > span {
+html .heat th > span {
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
-.heat tbody th {
+html .heat tbody th {
   text-align: left;
   color: var(--wf-ink-1);
   font-weight: 500;
   font-size: var(--wf-fs-13);
 }
-.heat tbody th > span {
+html .heat tbody th > span {
   gap: 8px;
 }
-.heat td {
+html .heat td {
   padding: 0;
 }
 .cell {
@@ -705,7 +728,9 @@
 }
 .steps li {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(80px, 34%) 64px;
+  /* Gate r10 FIX 6: one fixed time column for every row, so all the bar tracks share one start
+     and one end line ("45 min" no longer pushes its bar right). */
+  grid-template-columns: minmax(0, 1fr) minmax(80px, 34%) 10ch;
   align-items: center;
   gap: 12px;
   min-height: 40px;
@@ -714,6 +739,8 @@
   border-top: 1px solid var(--wf-line);
 }
 .steps li > b {
+  /* Audit four #27: a step time ("1 h 10 min") keeps to one line. */
+  white-space: nowrap;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -826,6 +853,10 @@
   .strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  /* Audit four #65: an odd last tile (the fifth service card) spans the row, so no hole sits beside it. */
+  .strip > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
 }
 
 /* WF-41 (5 Nov 2026): live review saw the ED pressure table clip at ~610px of card width while
@@ -852,6 +883,9 @@
   .strip {
     grid-template-columns: minmax(0, 1fr);
   }
+  .strip > :last-child:nth-child(odd) {
+    grid-column: auto;
+  }
   .tile {
     padding: 12px !important;
   }
@@ -870,12 +904,12 @@
     padding-left: 12px;
     padding-right: 12px;
   }
-  .table th,
-  .table td {
+  html .table th,
+  html .table td {
     padding: 8px;
   }
-  .table th:first-child,
-  .table td:first-child {
+  html .table th:first-child,
+  html .table td:first-child {
     padding-left: 12px;
   }
   .dots {
@@ -885,7 +919,7 @@
     padding: 12px 12px 4px;
   }
   .steps li {
-    grid-template-columns: minmax(0, 1fr) 64px;
+    grid-template-columns: minmax(0, 1fr) max-content;
   }
   .steps .stepBar {
     grid-column: 1 / -1;
@@ -925,7 +959,7 @@ button.link {
   align-items: center;
   gap: 6px;
 }
-.total > th {
+html .total > th {
   text-transform: none;
   letter-spacing: 0;
 }
@@ -933,11 +967,11 @@ button.link {
 /* Review 5 Nov 2026: on a phone the ED waits table ran past the card. The ED name and its opened time
  * wrap, so the four columns fit without a sideways scroll. */
 @media (max-width: 46.4375rem) {
-  .edWaitsTable td:nth-child(2),
-  .edWaitsTable td:nth-child(2) * {
+  html .edWaitsTable td:nth-child(2),
+  html .edWaitsTable td:nth-child(2) * {
     white-space: normal;
   }
-  .edWaitsTable td:nth-child(2) .name {
+  html .edWaitsTable td:nth-child(2) .name {
     min-width: 0;
   }
 }
@@ -954,4 +988,26 @@ button.link {
     position: absolute;
     inset: -12px 0;
   }
+}
+
+/* Audit two (#99): pilot measures 2 and 4, counted outside BedChart, as one full-width line under the
+   two figure tiles, ruled like a tile row. */
+.outsideLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  margin: 0;
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  line-height: 20px;
+  color: var(--wf-ink-2);
+}
+
+.outsideItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-1);
 }

@@ -139,11 +139,11 @@ describe("one intent sends one command (M9, #1576)", () => {
       .find((item) => item.getAttribute("data-bed-kind") === "occupied")!;
     fireEvent.click(within(tile).getByRole("button"));
     fireEvent.click(screen.getByTestId("ward-board-record-leaving-submit"));
-    const confirm = document.getElementById("ward-board-confirm-dialog")!;
+    const confirm = screen.getByTestId("ward-board-confirm-dialog");
     fireEvent.change(within(confirm).getByTestId("ward-board-confirm-destination"), {
       target: { value: LEAVING_DESTINATIONS[0]!.id },
     });
-    const proceed = within(confirm).getByTestId("ward-board-confirm-proceed");
+    const proceed = within(confirm).getByRole("button", { name: "Record discharge" });
 
     await expectOneCommandThroughRetry(server, () => doubleTap(proceed));
     expect(server.sent[0]!.event.type).toBe("RECORD_PATIENT_DISCHARGE");

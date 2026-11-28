@@ -85,6 +85,12 @@ function bedMapCard(unitId: string): HTMLButtonElement {
   return card;
 }
 
+/** The raise form sits in My list (r10), so a case that reads the board's rows switches back to it. */
+function showBoard() {
+  const board = screen.queryByRole("radio", { name: /^Board/u });
+  if (board && board.getAttribute("aria-checked") !== "true") fireEvent.click(board);
+}
+
 function renderEd() {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -169,6 +175,7 @@ function raiseReferralWithForm(code: string) {
   fillRequiredReferralFields();
   chooseEdChoice("ward-ed-referral-legal-form", code);
   fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
+  showBoard();
 }
 
 /**
@@ -315,6 +322,7 @@ describe("emergency department intake picker", () => {
     // specifically being left alone, not about the clinical-safety fix covered further down.
     fillRequiredReferralFields();
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
+    showBoard();
     expect(screen.getByTestId("probe")).toHaveTextContent(`${FIRST_RAISED_ID}|no-form|no-formedAt`);
   });
 
@@ -638,6 +646,7 @@ describe("emergency department referral form refuses an unanswered submission", 
     renderEd();
     openRaiseIntoMovementForm();
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
+    showBoard();
 
     // The outcome, not the button's own attribute: no new movement was created, and this
     // department shows no card for the id a successful submission would have produced.
@@ -670,6 +679,7 @@ describe("emergency department referral form refuses an unanswered submission", 
     fillRequiredReferralFieldsExcept(leftUnanswered);
 
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
+    showBoard();
 
     expect(screen.getByTestId("probe")).not.toHaveTextContent(FIRST_RAISED_ID);
     expect(screen.queryByTestId(`ward-ed-patient-${FIRST_RAISED_ID}`)).not.toBeInTheDocument();
@@ -688,6 +698,7 @@ describe("emergency department referral form refuses an unanswered submission", 
     chooseEdChoice("ward-ed-referral-gender", "not_recorded");
 
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
+    showBoard();
 
     expect(screen.getByTestId("probe")).toHaveTextContent(FIRST_RAISED_ID);
   });
@@ -722,6 +733,7 @@ describe("emergency department referral form refuses an unanswered submission", 
     chooseEdChoice("ward-ed-referral-legal-form", "3D");
 
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
+    showBoard();
 
     // Every answered field reached the reducer unchanged — none substituted, none dropped, and
     // no field's value bled into a different field.
@@ -1340,6 +1352,7 @@ describe("P3-2 (Ward Lead audit, 2026-09-17): 'Under a form' counts a legal form
     // "under a form", which it is not: nobody has recorded one.
     chooseEdChoice("ward-ed-referral-legal-status", "Referred for psychiatric examination");
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
+    showBoard();
 
     const [id, formCode] = screen.getByTestId("probe").textContent!.split("|");
     expect(id).not.toBe("none");
@@ -1364,6 +1377,7 @@ describe("P3-1 (Ward Lead audit, 2026-09-17): 'Not reviewed' and 'No bed yet' ex
     openRaiseIntoMovementForm();
     fillRequiredReferralFields();
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
+    showBoard();
     const id = screen.getByTestId("probe").textContent!.split("|")[0]!;
     expect(id).not.toBe("none");
 
@@ -1407,7 +1421,12 @@ describe("D-24 (owner ruling, 26 Sept 2026): the long-wait flag is a default, ne
 
     // Needs you opens as a slide-over where the full board table leaves no room beside it
     // (device audit 11 Oct 2026, owner pick A2).
-    fireEvent.click(screen.getByTestId("wf-portrait-rail-trigger"));
+    // The slide-over trigger shows only at tablet portrait; a wider screen draws Needs you inline.
+    const trigger = screen.queryByTestId("wf-portrait-rail-trigger");
+    if (trigger) fireEvent.click(trigger);
+    // The Needs you rows are the first section of My list (batch 1 item 14, 26 Nov 2026).
+    else if (screen.queryByRole("radio", { name: /^My list/u }))
+      fireEvent.click(screen.getByRole("radio", { name: /^My list/u }));
     const title = screen.getByText("Waiting over 24 hours");
     const row = title.closest("li");
     expect(row).not.toBeNull();

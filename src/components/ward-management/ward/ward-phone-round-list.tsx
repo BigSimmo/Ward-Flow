@@ -145,7 +145,7 @@ export function WardPhoneRoundList<Row extends PhoneRoundRow>({
       </ul>
       {ordered.length > ROUND_FIRST ? (
         <ShowMoreRow onClick={() => setShowAll((all) => !all)} expanded={showAll}>
-          {showAll ? "Show fewer beds" : `Show ${hidden} more ${hidden === 1 ? "bed" : "beds"}`}
+          {showAll ? "Show fewer" : `Show all ${ordered.length}`}
         </ShowMoreRow>
       ) : null}
     </>

@@ -65,7 +65,7 @@ const CLIPS = /^(hidden|clip|auto|scroll)$/;
 /**
  * The part of the screen a panel inside `element` can actually be seen in: the window, cut down by
  * every ancestor that clips (the page scroller stops at the rail, WS3, 4 Nov 2026) and by a scroller's
- * own scroll-padding-top, which is where its pinned top bar sits, so a panel never opens under it.
+ * own scroll-padding (top: its pinned top bar; bottom: the phone dock), so a panel never opens under them.
  */
 function visibleArea(element: HTMLElement) {
   // When the window itself scrolls (no rail, tablet widths), the root's scroll padding is the
@@ -84,7 +84,9 @@ function visibleArea(element: HTMLElement) {
     }
     if (clipsY) {
       area.top = Math.max(area.top, rect.top + (parseFloat(css.scrollPaddingTop) || 0));
-      area.bottom = Math.min(area.bottom, rect.bottom);
+      // States B review: and its scroll-padding-bottom, where the phone dock sits, so a long menu
+      // (Privacy's Jump to) stops above the dock and scrolls instead of running behind it.
+      area.bottom = Math.min(area.bottom, rect.bottom - (parseFloat(css.scrollPaddingBottom) || 0));
     }
   }
   return area;

@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, Building2, ChevronRight, Clock, Download, Ellipsis, Layers, Search, Siren } from "lucide-react";
+import { Activity, Building2, ChevronRight, Clock, Download, Ellipsis, Layers, Siren } from "lucide-react";
 
 import {
   GroupHead,
@@ -13,7 +13,6 @@ import {
   HeroTop,
   IconTile,
   LiveChip,
-  Menu,
   PhoneListRow,
   PhoneSheet,
   Segmented,
@@ -24,6 +23,7 @@ import {
   ShowMoreRow,
   SrOnly,
 } from "@/components/wf";
+import { EarlyMenu } from "@/components/ward-management/menu-early";
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { formatInstant } from "@/components/ward-management/ward-clock";
@@ -37,6 +37,7 @@ import { downloadStatisticsFigures } from "./statistics-hero";
 import type { StatisticsExport } from "./statistics-csv";
 import type { NetworkServiceRow } from "./statistics-network-cards";
 import { setStatisticsSamples, useStatisticsSamples } from "./statistics-samples";
+import { useShareMenuHosted, useShareOutput } from "./statistics-share";
 import { PhoneDotKey } from "./statistics-phone-parts";
 import { STATISTICS_SERVICES_HREF } from "./statistics-sections";
 import styles from "./statistics-phone.module.css";
@@ -224,7 +225,6 @@ function StatisticsSummaryPhoneView({
   eyebrow = "Statistics · Network now",
   totalBeds,
   services,
-  onOpenUnit,
   exportFigures,
 }: {
   ready: number;
@@ -249,7 +249,7 @@ function StatisticsSummaryPhoneView({
   dayZero: Date;
   /** Each health service's beds, for the page-top band. Left out, the band is not drawn. */
   services?: readonly NetworkServiceRow[];
-  /** Opens the one unit finder. Left out (bed manager), the chip is not offered. */
+  /** No longer read: Open a unit went in audit two (#118). Kept so older callers still type-check. */
   onOpenUnit?: () => void;
   /** Kept for callers; the menu (D-265) shows its own open state. */
   unitFinderOpen?: boolean;
@@ -302,6 +302,13 @@ function StatisticsSummaryPhoneView({
   );
   const listLength = group === "hospital" ? hospitals.length : wards.length;
   const samples = useStatisticsSamples();
+  // Audit two (#97, #118): Export and Example history are items of the tabs row's Share menu, and
+  // Open a unit went (Browse and the four lists under More find a unit). The "…" menu (D-265)
+  // stays only for a desk with no tabs row, where the Share menu is not drawn.
+  const shareHosted = useShareMenuHosted();
+  useShareOutput(exportFigures ? { id: "hero-figures", kind: "csv", label: "Export figures", order: 0 } : null, () => {
+    if (exportFigures) downloadStatisticsFigures(exportFigures, now, dayZero, zone);
+  });
   const closedBeds = services?.reduce((sum, entry) => sum + entry.closed, 0) ?? 0;
 
   const wardRow = (ward: PhoneWard) => (
@@ -469,62 +476,66 @@ function StatisticsSummaryPhoneView({
 
         {/* v10: the switch stays pinned under the bar while its list scrolls, and lets go after it. */}
         <div className={styles.segGroup}>
-          {/* D-265 (Josh, 18 Nov 2026, option A): the hero's three tool chips moved into one "…" menu
-              beside the list switch, so more of the list shows on the first screen. */}
-          <div className={styles.segRow}>
-            {siteDesk ? null : (
-              <Segmented<"hospital" | "ward">
-                className={cx(styles.seg, styles.segPinned)}
-                size="md"
-                label="List beds by"
-                value={group}
-                onChange={setGroup}
-                // No counts, so the switch does not look like the Wards chip above it.
-                items={[
-                  { id: "hospital", label: "By hospital" },
-                  { id: "ward", label: "By ward" },
-                ]}
-              />
-            )}
-            <Menu
-              label="Statistics tools"
-              align="end"
-              className={styles.toolsMenu}
-              items={[
-                ...(onOpenUnit ? [{ id: "unit", label: "Open a unit", icon: Search, onSelect: onOpenUnit }] : []),
-                ...(exportFigures
-                  ? [
-                      {
-                        id: "export",
-                        label: "Export",
-                        icon: Download,
-                        onSelect: () => downloadStatisticsFigures(exportFigures, now, dayZero, zone),
-                      },
-                    ]
-                  : []),
-                {
-                  id: "history",
-                  label: "Example history",
-                  icon: Clock,
-                  checked: samples,
-                  closeOnSelect: true,
-                  onSelect: () => setStatisticsSamples(!samples),
-                },
-              ]}
-              trigger={(props) => (
-                <button
-                  {...props}
-                  type="button"
-                  className={styles.toolsTrigger}
-                  // Names only the choices this desk is offered (an Executive desk has no unit or Export).
-                  aria-label={`Statistics tools: ${[onOpenUnit ? "Open a unit" : null, exportFigures ? "Export" : null, "Example history"].filter(Boolean).join(", ")}`}
-                  data-testid="ward-statistics-tools-menu"
-                >
-                  <Ellipsis size={20} strokeWidth={1.75} aria-hidden="true" />
-                </button>
+          {/* D-265 (Josh, 18 Nov 2026, option A): the hero's tool chips moved into one "…" menu beside
+              the list switch, so more of the list shows on the first screen. Since audit two its items
+              sit in the tabs row's Share menu, so the "…" shows only where that menu is not drawn. */}
+          {siteDesk && shareHosted ? null : (
+            <div className={styles.segRow}>
+              {siteDesk ? null : (
+                <Segmented<"hospital" | "ward">
+                  className={cx(styles.seg, styles.segPinned)}
+                  size="md"
+                  label="List beds by"
+                  value={group}
+                  onChange={setGroup}
+                  // No counts, so the switch does not look like the Wards chip above it.
+                  items={[
+                    { id: "hospital", label: "By hospital" },
+                    { id: "ward", label: "By ward" },
+                  ]}
+                />
               )}
-            />
-          </div>
+              {shareHosted ? null : (
+                <EarlyMenu
+                  label="Statistics tools"
+                  align="end"
+                  className={styles.toolsMenu}
+                  items={[
+                    ...(exportFigures
+                      ? [
+                          {
+                            id: "export",
+                            label: "Export",
+                            icon: Download,
+                            onSelect: () => downloadStatisticsFigures(exportFigures, now, dayZero, zone),
+                          },
+                        ]
+                      : []),
+                    {
+                      id: "history",
+                      label: "Example history",
+                      icon: Clock,
+                      checked: samples,
+                      closeOnSelect: true,
+                      onSelect: () => setStatisticsSamples(!samples),
+                    },
+                  ]}
+                  trigger={(props) => (
+                    <button
+                      {...props}
+                      type="button"
+                      className={styles.toolsTrigger}
+                      // Names only the choices this desk is offered (an Executive desk has no Export).
+                      aria-label={`Statistics tools: ${[exportFigures ? "Export" : null, "Example history"].filter(Boolean).join(", ")}`}
+                      data-testid="ward-statistics-tools-menu"
+                    >
+                      <Ellipsis size={20} strokeWidth={1.75} aria-hidden="true" />
+                    </button>
+                  )}
+                />
+              )}
+            </div>
+          )}
 
           <ul className={styles.list} aria-label={group === "hospital" ? "Hospitals by beds ready" : "Wards A to Z"}>
             {group === "hospital"

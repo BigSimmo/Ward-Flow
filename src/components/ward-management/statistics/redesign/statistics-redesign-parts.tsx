@@ -6,6 +6,8 @@
  * StatusGlyph, the table class) and the Capacity page's tile strip and card foot. Nothing here
  * calculates: every figure is handed in by the page that owns it.
  */
+import { browseMeta, useBrowseLead } from "../statistics-browse-slot";
+import browseStyles from "../statistics-browse.module.css";
 import { type ComponentPropsWithoutRef, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
@@ -81,6 +83,18 @@ export function StatCardR({
   className?: string;
   children: ReactNode;
 }) {
+  // Network's Browse card: the segment's first card carries the Browse head, its own control below.
+  const browse = useBrowseLead();
+  if (browse) {
+    return (
+      <Card className={cx(s.card, className)} aria-labelledby={id} data-ward-primitive="panel" {...rest}>
+        <CardHead id={id} title="Browse" meta={browseMeta(title, meta)} action={browse} />
+        {aside ? <div className={browseStyles.tools}>{aside}</div> : null}
+        {children}
+        {foot}
+      </Card>
+    );
+  }
   return (
     <Card className={cx(s.card, className)} aria-labelledby={id} data-ward-primitive="panel" {...rest}>
       <CardHead id={id} title={title} meta={meta} action={aside} />

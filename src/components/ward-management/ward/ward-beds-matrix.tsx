@@ -694,8 +694,8 @@ export function WardBedsMatrix({
             <span className="sr-only">{pendingPreparation} still being made ready</span>
           </div>
 
-          <div className={styles.segment} role="group" aria-label="Sort beds order">
-            <span className={styles.segmentLabel}>Order</span>
+          <div className={styles.segment} role="group" aria-label="Sort beds">
+            <span className={styles.segmentLabel}>Sort</span>
             {(
               [
                 ["stay", "Longest stay"],

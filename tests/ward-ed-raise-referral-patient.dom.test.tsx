@@ -248,6 +248,8 @@ describe("ED Ask for a bed follows the referral it was opened for", () => {
     fireEvent.click(screen.getByTestId("fixture-arrived"));
     const [firstId, secondId] = screen.getByTestId("fixture-referral-ids").textContent!.split(" ");
 
+    // The inbox rows sit on My list (r10).
+    fireEvent.click(screen.getByRole("radio", { name: /^My list/u }));
     fireEvent.click(screen.getByTestId(`ward-ed-inbox-raise-${firstId}`));
     expect(screen.getByTestId("ward-ed-referral-patient")).toHaveValue(referralPatientLabel(first));
     expect(screen.getByTestId("ward-ed-referral-patient-linked")).toHaveTextContent(first.umrn);

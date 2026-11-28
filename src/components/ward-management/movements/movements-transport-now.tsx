@@ -54,7 +54,7 @@ function nextStepWord(state: MovementLegState): string | undefined {
   // refuses collection before en route and arrival before collection.
   if (state === "Accepted") return "Mark en route";
   if (state === "En route") return "Mark collected";
-  if (state === "Collected") return "Confirm arrival";
+  if (state === "Collected") return "Record arrival";
   return undefined;
 }
 

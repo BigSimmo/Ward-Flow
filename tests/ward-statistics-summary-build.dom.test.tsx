@@ -16,9 +16,7 @@ import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/w
 import { StatisticsNav } from "@/components/ward-management/statistics/statistics-nav";
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { wardFinderEntry } from "@/components/ward-management/statistics/statistics-screen-parts";
-import { STATISTICS_UNIT_CHOOSER_ID } from "@/components/ward-management/statistics/statistics-sections";
 import { StatisticsUnitFinder } from "@/components/ward-management/statistics/statistics-unit-finder";
-import { STATISTICS_UNIT_FINDER_HREF } from "@/components/ward-management/statistics/statistics-view-switch";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR, allEmergencyDepartments, allUnits, siteByCode } from "@/components/ward-management/ward-sites";
 
@@ -43,25 +41,31 @@ afterEach(() => {
 });
 
 describe("the one unit finder (D-91)", () => {
-  it("stays shut until Open a unit, then links every ward and every emergency department", () => {
+  it("lists every ward and every emergency department in the Browse card (Open a unit folded into it, 26 Nov 2026)", () => {
     summary();
     expect(screen.queryByTestId("ward-statistics-unit-finder")).toBeNull();
-    const tool = screen.getByTestId("ward-statistics-tool-open-unit");
-    expect(tool).toHaveAttribute("aria-expanded", "false");
-    fireEvent.click(tool);
-    expect(tool).toHaveAttribute("aria-expanded", "true");
-
-    const finder = screen.getByTestId("ward-statistics-unit-finder");
-    expect(finder.closest(`#${STATISTICS_UNIT_CHOOSER_ID}`)).not.toBeNull();
-    const hrefs = () =>
-      within(finder)
-        .getAllByRole("link")
-        .map((link) => link.getAttribute("href"))
-        .filter((href) => href !== null && /\/statistics\/(ward|ed)\//.test(href));
-    // Whole sets, so a ward missing or listed twice fails, where a per-unit check would pass.
-    expect(hrefs().toSorted()).toEqual(
+    expect(screen.queryByTestId("ward-statistics-tool-open-unit")).toBeNull();
+    const finder = screen.getByTestId("ward-statistics-browse");
+    expect(finder).toHaveAttribute("id", "browse");
+    const hrefs = () => {
+      for (const more of within(finder).queryAllByRole("button", { name: /^Show all/ })) fireEvent.click(more);
+      return [
+        ...new Set(
+          within(finder)
+            .getAllByRole("link")
+            .map((link) => link.getAttribute("href"))
+            .filter((href) => href !== null && /\/statistics\/(ward|ed)\//.test(href)),
+        ),
+      ];
+    };
+    // The Wards segment names every ward in its table; the pressure table's rows are not links now.
+    for (const more of within(finder).queryAllByRole("button", { name: /^Show all/ })) fireEvent.click(more);
+    const rowNames = within(finder)
+      .getAllByRole("rowheader")
+      .map((cell) => cell.querySelector("span > span")?.firstChild?.textContent?.trim() ?? "");
+    expect(rowNames.toSorted()).toEqual(
       allUnits()
-        .map((unit) => wardStatisticsHref(unit.id))
+        .map((unit) => unit.name)
         .toSorted(),
     );
     fireEvent.click(within(finder).getByRole("radio", { name: /^EDs/ }));
@@ -72,11 +76,10 @@ describe("the one unit finder (D-91)", () => {
     );
   });
 
-  it("opens on arrival at its anchor", () => {
-    expect(STATISTICS_UNIT_FINDER_HREF).toBe(`/bedchart/statistics#${STATISTICS_UNIT_CHOOSER_ID}`);
-    window.history.replaceState(null, "", `/bedchart/statistics#${STATISTICS_UNIT_CHOOSER_ID}`);
+  it("opens on arrival at the Browse anchor", () => {
+    window.history.replaceState(null, "", "/bedchart/statistics#browse");
     summary();
-    expect(screen.getByTestId("ward-statistics-unit-finder")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-statistics-browse")).toBeInTheDocument();
   });
 
   it("still lists a ward whose site code resolves to nothing, and says so", () => {

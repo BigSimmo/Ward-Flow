@@ -209,24 +209,32 @@ button.strip:disabled {
   margin-top: -4px;
   white-space: normal;
 }
-.keyRow {
-  align-items: center;
-  gap: var(--wf-s-1) var(--wf-s-4);
-  padding: 6px var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line);
-  background: var(--wf-surface-2);
+/* Simplification mock-up (26 Nov 2026): the filters still on with no other home, one slim row under
+   the list head, only while one is on. */
+.appliedRow {
+  padding-block: var(--wf-s-2);
 }
-.keyRow > p {
-  padding: 0;
+/* The list head's one ⓘ: the waiting total, then the tier key and the wait bar's key, one per line. */
+.tipLead {
+  display: block;
 }
-/* Phone: one line, the tier ends then the typed-time caveat, wrapping only if it must. */
-.keyRowPhone {
-  justify-content: flex-start;
-  column-gap: var(--wf-s-3);
-  row-gap: 2px;
+.tipKeys {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin-top: var(--wf-s-2);
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
 }
-.wlegend {
-  margin-left: 0;
+.tipKeyLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--wf-s-3);
+  margin: 0;
+  white-space: normal;
+}
+.tipKeyLine b {
+  font-family: var(--wf-mono);
+  font-weight: 600;
 }
 
 /* ---------- "By blocker": quieter group headers with a coloured edge ---------- */
@@ -1150,6 +1158,37 @@ button.strip:disabled {
   font-weight: 500;
   overflow-wrap: anywhere;
 }
+/* Perfection (26 Nov mock-up): on a laptop the tile has room for the longest word, so a surname is
+   never split mid-word ("Zelmswort / h,"); narrower tiles keep breaking anywhere. */
+@media (min-width: 1200px) {
+  .ownFirstName {
+    min-width: min-content;
+    overflow-wrap: break-word;
+  }
+}
+/* Perfection (26 Nov mock-up): a tablet's narrow tile put one letter per line ("Ze / l / m ...").
+   Below a laptop the longest wait sits beside "Longest" and the name takes the line under them. */
+@media (max-width: 1199px) {
+  .ownFirst {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "label time"
+      "name name";
+    row-gap: 2px;
+  }
+  .ownFirstLabel {
+    grid-area: label;
+  }
+  .ownFirst .ownLongest {
+    grid-area: time;
+    justify-self: end;
+  }
+  .ownFirstName {
+    grid-area: name;
+    overflow-wrap: break-word;
+  }
+}
 .ownFirstLabel {
   flex: none;
   color: var(--wf-ink-3);
@@ -1312,43 +1351,174 @@ button.strip:disabled {
   color: var(--wf-accent-ink);
 }
 
-/* Page tops (Josh, 9 Nov 2026): on a laptop the views sit after the order tabs as quiet words with
-   their counts, the chosen one on a soft track, as the second tab level does elsewhere. */
-.topFilters > div {
-  flex-wrap: nowrap;
-  gap: 2px;
-  padding: 0;
-  background: transparent;
+/* ---------- Simplification mock-up (26 Nov 2026): Waiting's parts inside the Movement drawer ---------- */
+/* Why the person waits sits under the drawer's status band, on the drawer's own 16px side gutter. */
+.pLead.pLead {
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
 }
-
-.topFilters > div > button {
-  height: 32px;
-  padding: 0 11px;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
-  color: var(--wf-ink-3);
-  font: 500 var(--wf-fs-14) / 18px var(--wf-font);
-  white-space: nowrap;
-}
-
-.topFilters > div > button:hover {
-  color: var(--wf-ink-1);
-  background: var(--wf-track);
-}
-
-.topFilters > div > button[aria-pressed="true"] {
-  color: var(--wf-ink-1);
-  font-weight: 600;
-  background: var(--wf-track);
-  box-shadow: inset 0 0 0 1px var(--wf-line);
-}
-
-.topFilters > div > button > span:last-child {
+.pCandidates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
   min-width: 0;
-  height: auto;
+}
+.pCandidates .pWards.pWards > li {
+  padding-left: 0;
+}
+/* The old foot menu's onward routes, as quiet text links under the candidate wards. */
+.pOnward {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-1);
+}
+.pOnward > button {
   padding: 0;
-  background: transparent;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pOnward > :is(a, button):hover {
+  text-decoration: underline;
+}
+
+/* The keys under the whose-move tiles: one quiet line, never a second control row. */
+.keyStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-6);
+  margin: 0;
+  /* Left edge on the cards' padding, so the key starts where the tiles' text does. */
+  padding: 0 var(--wf-s-4);
   color: var(--wf-ink-3);
-  font: 500 var(--wf-fs-12) / 16px var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+.keyStripGroup {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--wf-s-3);
+}
+.keyStripHead {
+  color: var(--wf-ink-3);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.keyStrip b {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+
+/* A hairline divides the tier group from the wait-bar group, so the two never run together. */
+.keyStripGroup + .keyStripGroup {
+  padding-left: var(--wf-s-6);
+  border-left: 1px solid var(--wf-line);
+}
+
+/* D-275: the plan-review flag under a person's name, one 12px line in the warning tone's ink. */
+.reviewFlag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding-bottom: 2px;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 16px var(--wf-font);
+  /* Gate r10 (1b upgrade 6): a long flag wraps inside the Person column, never clipped at its edge. */
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+/* Final look (26 Nov 2026). The in-transit wait on the tablet's portrait list: "since referral" and
+   "in ED" each on their own line, so the figure leaves the name column its width. */
+.figLine {
+  display: block;
+  text-align: right;
+}
+
+/* Desktop and tablet: the in-transit wait reads as one line ("since referral · 8 h 00 min in ED"). */
+.waitTwo > span {
+  display: inline;
+}
+
+/* Phone only: the form line's own full-width cell under the row (see delays-board.tsx). */
+.phFormCell {
+  display: none;
+}
+
+@media (max-width: 46.4375rem) {
+  /* Final look (26 Nov 2026): no tab row and no list head on a phone now, so the first card sits
+     at the kit's normal offset under the lip, as Movements, Leave and Referrals do. */
+  .tableHead.tableHead {
+    display: none;
+  }
+
+  /* "Needs attention": its note takes its own line under the title, so the chevron and title keep
+     their room (chevron 14 + gap 10 + glyph 9 + gap 10 = 43px in). */
+  .ginStack.ginStack {
+    flex-wrap: wrap;
+    row-gap: 0;
+    height: auto;
+    min-height: 44px;
+    padding-block: 8px;
+  }
+  .ginStack.ginStack > :last-child {
+    flex: 1 1 100%;
+    margin-left: 43px;
+    text-align: left;
+    white-space: normal;
+  }
+
+  /* The in-transit wait: "since referral" and "8 h 00 min in ED" each a whole line. */
+  .waitTwo > span {
+    display: block;
+  }
+  .waitTwo > .waitSep {
+    display: none;
+  }
+
+  /* The typed form time: one full-width line under the name and the times, the icon 4px from it. */
+  .phFormCell {
+    display: block;
+    grid-column: 2 / -1;
+    min-width: 0;
+    font-size: var(--wf-fs-12);
+    line-height: var(--wf-lh-12);
+  }
+  /* Audit two B15 (T18): 8px between the warning triangle and the form words, so they never touch. */
+  .phFormCell svg {
+    margin-right: var(--wf-s-2);
+    vertical-align: -1px;
+  }
+  .phFormCell b {
+    color: var(--wf-ink-1);
+    font-weight: 600;
+  }
+}
+
+/* The plan-review flag in its own phone row: the flag's own 6px gap spaces its glyph. */
+@media (max-width: 46.4375rem) {
+  .phFormCell .reviewFlag svg {
+    margin-right: 0;
+  }
+}
+
+/* Audit four item 14: Ask wards on a row with no ward asked, under the blocker (desktop and 820;
+   not on the phone row), so the row keeps its columns and rhythm. */
+.rowAsk {
+  display: inline-flex;
+  margin-top: var(--wf-s-1);
+}
+/* Gate r10 (1b F3): never in the phone row grid, so the row keeps its r9 height and time column. */
+@media (max-width: 46.4375rem) {
+  .rowAsk {
+    display: none;
+  }
 }

@@ -128,7 +128,7 @@ describe("D-187 (F-49): an Undo lasts the 5 minutes its message promises", () =>
     });
     // D-192: the board clock reads 12:00 am here, so the window ends at 12:05 am.
     expect(screen.getByTestId("toast")).toHaveTextContent(
-      `Synthetic record's record archived · Undo until 12:0${UNDO_WINDOW_MINUTES} am`,
+      `Record archived for Synthetic record · Undo until 12:0${UNDO_WINDOW_MINUTES} am`,
     );
     await act(async () => {
       vi.advanceTimersByTime(WINDOW_MS - 1000);

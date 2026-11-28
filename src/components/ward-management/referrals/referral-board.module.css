@@ -69,6 +69,18 @@
   color: var(--wf-hero-danger);
 }
 
+/* The bed meeting quick link (26 Nov 2026): a link, not a highlight, so its icon is not red. */
+.pillLink {
+  padding-inline-start: var(--wf-s-3);
+  text-decoration: none;
+}
+.pillLink:has(> span:first-child) {
+  padding-inline-start: var(--wf-s-1);
+}
+.pill.pillLink svg {
+  color: currentColor;
+}
+
 .pill:hover {
   background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
   color: var(--wf-hero-ink);
@@ -550,6 +562,15 @@ button.runwayCardRow:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.historyMedian {
+  margin: 0 0 var(--wf-s-2);
+  text-align: right;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
 }
 
 .history {
@@ -861,6 +882,12 @@ button.runwayCardRow:focus-visible {
   font-size: var(--wf-fs-12);
   text-decoration: line-through;
   text-decoration-color: color-mix(in srgb, var(--wf-ink-3) 60%, transparent);
+}
+
+/* Audit three review: "All asked wards declined" is a true statement, not a cancelled one, so it
+   keeps its x and muted colour without the strike. */
+html .armNo[data-all-declined="true"] {
+  text-decoration: none;
 }
 
 .needs {
@@ -1495,9 +1522,21 @@ button.runwayCardRow:focus-visible {
   margin-top: var(--wf-s-2);
 }
 
+.keysGroup {
+  margin: var(--wf-s-4) 0 var(--wf-s-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+section:first-child > .keysGroup {
+  margin-top: 0;
+}
+
+/* States B review: each group is its own list, so the key column has one fixed width (room for
+   "1 2 3" and "Shift+T") and every group's descriptions share one left edge. */
 .keys {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: 6rem minmax(0, 1fr);
   gap: var(--wf-s-2) var(--wf-s-4);
   margin: 0;
 }
@@ -1869,6 +1908,13 @@ button.runwayCardRow:focus-visible {
 
   .cardRoute {
     font-size: var(--wf-fs-12);
+  }
+
+  /* Gate r10 (2 upgrade 6): a long ask ("Ward bed and ED review") wraps to a second line rather than
+     being cut. */
+  html .cardMain > .cardRoute {
+    white-space: normal;
+    text-wrap: pretty;
   }
 
   .cardRoute b {

@@ -46,6 +46,10 @@ export type EdRow = {
 
 export const CLOCK_TONE = { past: "danger", severe: "warning", in: "neutral" } as const;
 
+export function rowClock(row: EdRow): WaitClock {
+  return row.pastTarget > 0 ? "past" : row.severe > 0 ? "severe" : "in";
+}
+
 /**
  * Hero highlight chips (v10, five at most). Pressing one keeps the people it names solid in every
  * view and dims the rest by colour. It never hides an ED.

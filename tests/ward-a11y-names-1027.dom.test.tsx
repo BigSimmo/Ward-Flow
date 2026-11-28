@@ -11,7 +11,6 @@ vi.mock("next/link", () => ({
 }));
 
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
-import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -39,23 +38,5 @@ describe("discharge KPI buttons name what they show (P082)", () => {
       const squash = (text: string) => text.replace(/\s+/g, "");
       expect(squash(accessibleName(button)).startsWith(squash(visibleText(button))), accessibleName(button)).toBe(true);
     }
-  });
-});
-
-/** P138: Preview buttons in the search results say whose record they preview. */
-describe("search Preview buttons are told apart (P138)", () => {
-  it("gives every movement Preview button its own name that starts with Preview", () => {
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <PatientSearchPage />
-      </WardFlowProvider>,
-    );
-    const buttons = within(screen.getByTestId("ward-patient-search-results")).getAllByTestId(
-      /^ward-patient-search-(movement|person|referral)-preview-/,
-    );
-    expect(buttons.length).toBeGreaterThan(1);
-    const names = buttons.map(accessibleName);
-    for (const name of names) expect(name).toMatch(/^Preview \S/);
-    expect(new Set(names).size).toBe(names.length);
   });
 });

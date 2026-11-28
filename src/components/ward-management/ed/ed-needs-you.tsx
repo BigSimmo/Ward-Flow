@@ -20,6 +20,7 @@ export type EdNeedsItem = {
   person: string;
   when: string;
   actionLabel?: string;
+  actionAriaLabel?: string;
   onAction?: () => void;
   onOpen?: () => void;
 };
@@ -53,29 +54,36 @@ export function EdNeedsYou({
       {items.length === 0 ? (
         <p className={styles.none}>Nothing needs action in this department.</p>
       ) : (
-        <ul className={styles.list}>
-          {items.map((item) => (
-            <li key={item.key} className={cx(styles.row, item.actNow && styles.actNow)}>
-              <button type="button" className={styles.open} onClick={item.onOpen}>
-                <StatusGlyph tone={item.actNow ? "danger" : "warning"} size={9} />
-                <span className={styles.text}>
-                  <b className={styles.kind}>{item.kind}</b>
-                  <span className={styles.personLine}>
-                    <span className={styles.person}>{item.person}</span>
-                    <span className={styles.when}>{item.when}</span>
-                  </span>
-                </span>
-              </button>
-              {item.actionLabel && item.onAction ? (
-                <button type="button" className={styles.action} onClick={item.onAction}>
-                  {item.actionLabel}
-                </button>
-              ) : null}
-            </li>
-          ))}
-        </ul>
+        <EdNeedsYouRows items={items} />
       )}
     </section>
+  );
+}
+
+/** The Needs you rows alone: the rail above and My list's first section (26 Nov 2026) share them. */
+export function EdNeedsYouRows({ items }: { items: EdNeedsItem[] }) {
+  return (
+    <ul className={styles.list}>
+      {items.map((item) => (
+        <li key={item.key} className={cx(styles.row, item.actNow && styles.actNow)}>
+          <button type="button" className={styles.open} onClick={item.onOpen}>
+            <StatusGlyph tone={item.actNow ? "danger" : "warning"} size={9} />
+            <span className={styles.text}>
+              <b className={styles.kind}>{item.kind}</b>
+              <span className={styles.personLine}>
+                <span className={styles.person}>{item.person}</span>
+                <span className={styles.when}>{item.when}</span>
+              </span>
+            </span>
+          </button>
+          {item.actionLabel && item.onAction ? (
+            <button type="button" className={styles.action} aria-label={item.actionAriaLabel} onClick={item.onAction}>
+              {item.actionLabel}
+            </button>
+          ) : null}
+        </li>
+      ))}
+    </ul>
   );
 }
 

@@ -75,17 +75,16 @@ describe("ED board redesign", () => {
     expect(screen.getAllByTestId("ward-ed-add-patient")[0]).toHaveAttribute("href", "/bedchart/people/new");
   });
 
-  it("shows the Lists as one open card with three lists (handover build, 1 Nov 2026)", () => {
+  it("shows My list as one open card of sections, not a tabbed Lists card (batch 1 item 14, 26 Nov 2026)", () => {
     renderEd();
     expect(screen.queryByTestId("ward-ed-lists-fold")).toBeNull();
-    const lists = screen.getByRole("region", { name: /^Lists/u });
-    const tabs = within(lists)
-      .getAllByRole("radio")
-      .map((tab) => tab.textContent ?? "");
-    expect(tabs).toHaveLength(3);
-    expect(tabs[0]).toMatch(/^Awaiting review/u);
-    expect(tabs[1]).toMatch(/^Expected/u);
-    expect(tabs[2]).toMatch(/^Forms/u);
+    fireEvent.click(screen.getByRole("radio", { name: /^My list/u }));
+    const list = screen.getByRole("region", { name: "My list" });
+    expect(within(list).queryAllByRole("radio")).toHaveLength(0);
+    const titles = within(list)
+      .getAllByRole("heading")
+      .map((heading) => heading.textContent ?? "");
+    expect(titles.length).toBeGreaterThan(0);
   });
 
   it("puts the links to other pages on one footer line, each description its tooltip", () => {
@@ -124,16 +123,17 @@ describe("ED board redesign", () => {
     expect(table).toHaveAccessibleName(/A to Z by surname/u);
   });
 
-  it("closes the tier key with Escape or a press outside it (D-276)", () => {
+  it("closes the tier key with Escape or a press outside it (D-276; the kit's InfoTip since audit two #77)", () => {
     renderEd();
-    const summary = screen.getByLabelText("What the bars mean");
-    const key = summary.closest("details")!;
-    key.open = true;
+    const button = screen.getByRole("button", { name: "About the urgency bars" });
+    fireEvent.click(button);
+    expect(button).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByTestId("ward-tier-bars-key")).toBeInTheDocument();
     fireEvent.keyDown(document, { key: "Escape" });
-    expect(key.open).toBe(false);
-    expect(summary).toHaveFocus();
-    key.open = true;
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    expect(button).toHaveFocus();
+    fireEvent.click(button);
     fireEvent.pointerDown(document.body);
-    expect(key.open).toBe(false);
+    expect(button).toHaveAttribute("aria-expanded", "false");
   });
 });

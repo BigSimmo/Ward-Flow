@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { BedSingle, ChevronLeft, ChevronRight, House, Route } from "lucide-react";
+import { BedSingle, ChevronLeft, ChevronRight, House, Map as MapIcon, Route } from "lucide-react";
 
 import {
   Button,
+  DrawerPager,
+  EmptyState,
   Icon,
   FolderTabs,
   Sheet,
@@ -58,7 +60,7 @@ export type PhonePerson = {
   who: { who: string; what: string };
 };
 
-type PhoneTab = "needs" | "all" | "beds";
+type PhoneTab = "now" | "history";
 
 // Design audit 4 (B21): no plan yet is a gap (the ring), not declined or closed (the cross).
 const STATUS_TONE: Record<ReturnStatus, WfTone> = {
@@ -189,6 +191,7 @@ export function OutOfAreaPhone({
   hero,
   people,
   emptyLine,
+  notBanded,
   query,
   onQuery,
   anyHighlight,
@@ -204,12 +207,16 @@ export function OutOfAreaPhone({
   renderPlan,
   shift,
   beds,
+  history,
+  historyCount,
 }: {
   /** The page top (the shared hero), drawn above the folder tabs. */
   hero: ReactNode;
   people: PhonePerson[];
   /** D-193: read out in Everyone when it lists nobody, the same words as the desktop list. */
   emptyLine: string;
+  /** D-174 / D-193: how many have no travel time recorded, said even when nobody is away. */
+  notBanded: number;
   query: string;
   onQuery: (value: string) => void;
   anyHighlight: boolean;
@@ -225,8 +232,13 @@ export function OutOfAreaPhone({
   renderPlan: (entry: OutOfAreaEntry) => ReactNode;
   shift: ReactNode;
   beds: ReactNode;
+  /** The returns recorded this session, as the desktop's History tab lists them. */
+  history: ReactNode;
+  historyCount: number;
 }) {
-  const [tab, setTab] = useState<PhoneTab>("needs");
+  const [tab, setTab] = useState<PhoneTab>("now");
+  // Audit four #104: Everyone opens inside Away now, from its "more" row; no tab of its own.
+  const [showEveryone, setShowEveryone] = useState(false);
   const [mode, setMode] = useState<"peek" | "plan">("peek");
   const byId = new Map(people.map((person) => [person.entry.admission.id, person]));
   const planVaries = new Set(people.map((person) => person.status)).size > 1;
@@ -251,15 +263,19 @@ export function OutOfAreaPhone({
       return person ? [person] : [];
     })
     .concat(ready, soon);
-  const stepList = tab === "needs" && selected && needsList.includes(selected) ? needsList : people;
+  const stepList = tab === "now" && selected && needsList.includes(selected) ? needsList : people;
   const index = selected ? stepList.indexOf(selected) : -1;
 
   const open = (id: string) => {
     setMode("peek");
     onSelect(id);
   };
-  const stepTo = (delta: number) => {
-    const next = stepList[index + delta];
+  // Audit four #31: the kit pager steps through the list in view and wraps at the ends, as every
+  // other list drawer does.
+  const stepTo = (delta: -1 | 1) => {
+    if (stepList.length < 2) return;
+    const from = index < 0 ? (delta === 1 ? -1 : 0) : index;
+    const next = stepList[(from + delta + stepList.length) % stepList.length];
     if (next) onSelect(next.entry.admission.id);
   };
   const close = () => {
@@ -267,29 +283,13 @@ export function OutOfAreaPhone({
     onClose();
   };
 
-  const stepButtons = (
-    <span className={styles.sheetNav}>
-      <Button
-        variant="ghost"
-        iconOnly
-        icon={ChevronLeft}
-        aria-label="Previous person"
-        disabled={index <= 0}
-        onClick={() => stepTo(-1)}
-      />
-      <span className={styles.mono}>
-        {index + 1} of {stepList.length}
+  // The phone sheet keeps its 44px tap size around the kit pager's buttons.
+  const stepButtons =
+    stepList.length < 2 ? undefined : (
+      <span className={styles.sheetNav}>
+        <DrawerPager index={index} total={stepList.length} noun="person" onStep={stepTo} />
       </span>
-      <Button
-        variant="ghost"
-        iconOnly
-        icon={ChevronRight}
-        aria-label="Next person"
-        disabled={index < 0 || index >= stepList.length - 1}
-        onClick={() => stepTo(1)}
-      />
-    </span>
-  );
+    );
 
   return (
     <div className={styles.phone}>
@@ -308,15 +308,14 @@ export function OutOfAreaPhone({
           value={tab}
           onChange={setTab}
           items={[
-            { id: "needs", label: "My list", count: ready.length + leaving.length },
-            { id: "all", label: "Everyone", count: people.length },
-            { id: "beds", label: "Beds" },
+            { id: "now", label: "Away now", count: people.length },
+            { id: "history", label: "History", count: historyCount || undefined },
           ]}
         />
       </FolderTabs>
 
-      {tab === "needs" ? (
-        <div className={styles.phonePanel} role="region" id="ward-out-of-area-phone-panel-needs" aria-label="My list">
+      {tab === "now" ? (
+        <div className={styles.phonePanel} role="region" id="ward-out-of-area-phone-panel-now" aria-label="Away now">
           {leaving.length ? (
             <section className={styles.phoneSection} aria-label="Leaving today">
               <h2 className={styles.phoneSectionTitle}>
@@ -349,29 +348,47 @@ export function OutOfAreaPhone({
               </ul>
             </section>
           ) : null}
-          <section className={styles.phoneSection} aria-label="Ready to go home">
-            {/* Page tops (9 Nov 2026): the rows carry the amber dot; the heading does not repeat it. */}
-            <h2 className={styles.phoneSectionTitle}>
-              Ready to go home <span className={styles.count}>{ready.length}</span>
-            </h2>
-            {ready.length ? (
-              <ul className={styles.phoneList}>
-                {ready.map((person, i) => (
-                  <PersonCard
-                    showPlan={planVaries}
-                    key={person.entry.admission.id}
-                    person={person}
-                    withReason
-                    first={i === 0}
-                    selected={person.entry.admission.id === selectedId}
-                    onOpen={() => open(person.entry.admission.id)}
-                  />
-                ))}
-              </ul>
-            ) : (
-              <p className={styles.emptyLine}>Nobody is past their discharge date</p>
-            )}
-          </section>
+          {/* Audit three review: nobody away reads as the desktop's one empty line, with no empty heading. */}
+          {people.length === 0 ? (
+            // Gate r10 FIX 8: the same glyph card as History and the desktop's Away now.
+            <div className={styles.noMatches} data-testid="ward-out-of-area-phone-needs-empty">
+              <EmptyState
+                icon={MapIcon}
+                title="Nobody is in a bed far from home"
+                meta={
+                  <span data-testid="ward-out-of-area-phone-empty">
+                    {notBanded > 0
+                      ? `${notBanded} ${notBanded === 1 ? "person has" : "people have"} no travel time recorded.`
+                      : "Every record has a travel time."}
+                  </span>
+                }
+              />
+            </div>
+          ) : (
+            <section className={styles.phoneSection} aria-label="Ready to go home">
+              {/* Page tops (9 Nov 2026): the rows carry the amber dot; the heading does not repeat it. */}
+              <h2 className={styles.phoneSectionTitle}>
+                Ready to go home <span className={styles.count}>{ready.length}</span>
+              </h2>
+              {ready.length ? (
+                <ul className={styles.phoneList}>
+                  {ready.map((person, i) => (
+                    <PersonCard
+                      showPlan={planVaries}
+                      key={person.entry.admission.id}
+                      person={person}
+                      withReason
+                      first={i === 0}
+                      selected={person.entry.admission.id === selectedId}
+                      onOpen={() => open(person.entry.admission.id)}
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <p className={styles.emptyLine}>Nobody is past their discharge date</p>
+              )}
+            </section>
+          )}
           {soon.length ? (
             <section className={styles.phoneSection} aria-label="Due in the next 2 days">
               <h2 className={styles.phoneSectionTitle}>
@@ -391,15 +408,26 @@ export function OutOfAreaPhone({
             </section>
           ) : null}
           {/* A plain link to the rest: the grey cross it used to carry means "No plan" in the hero. */}
-          <ShowMoreRow onClick={() => setTab("all")} controls="ward-out-of-area-phone-panel-all">
-            <span aria-hidden="true">{more} more in Everyone</span>
-            <SrOnly>{`${more} more away from home, show Everyone`}</SrOnly>
-          </ShowMoreRow>
+          {people.length > 0 && !showEveryone && !anyHighlight ? (
+            <ShowMoreRow onClick={() => setShowEveryone(true)} controls="ward-out-of-area-phone-panel-everyone">
+              <span aria-hidden="true">
+                {more > 0 ? `${more} more away from home` : "Show everyone away from home"}
+              </span>
+              <SrOnly>
+                {more > 0 ? `${more} more away from home, show everyone` : "Show everyone away from home"}
+              </SrOnly>
+            </ShowMoreRow>
+          ) : null}
         </div>
       ) : null}
 
-      <div hidden={tab !== "all"}>
-        <div className={styles.phonePanel} role="region" id="ward-out-of-area-phone-panel-all" aria-label="Everyone">
+      {tab === "now" && (showEveryone || anyHighlight) ? (
+        <div
+          className={styles.phonePanel}
+          role="region"
+          id="ward-out-of-area-phone-panel-everyone"
+          aria-label="Everyone"
+        >
           <SearchField
             placeholder="Name, UMRN or ward"
             label="Highlight people by name, UMRN or ward"
@@ -434,12 +462,18 @@ export function OutOfAreaPhone({
             ))}
           </ul>
         </div>
-      </div>
+      ) : null}
 
-      {tab === "beds" ? (
+      {tab === "now" ? (
         <div className={styles.phonePanel} role="region" id="ward-out-of-area-phone-panel-beds" aria-label="Beds">
           {shift}
           {beds}
+        </div>
+      ) : null}
+
+      {tab === "history" ? (
+        <div className={styles.phonePanel} role="region" id="ward-out-of-area-phone-panel-history" aria-label="History">
+          {history}
         </div>
       ) : null}
 
@@ -513,7 +547,7 @@ export function OutOfAreaPhone({
             <div className={styles.peekActs}>
               <Button variant="pri" icon={Route} onClick={() => setMode("plan")}>
                 {selected.record
-                  ? "View recorded return"
+                  ? "Open recorded return"
                   : selected.status === "started"
                     ? "Continue return plan"
                     : "Plan return"}

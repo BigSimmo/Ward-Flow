@@ -86,7 +86,8 @@ describe("Summary's executive aggregate view", () => {
       "referrals-for-bed",
       "network-cards",
       "pressure",
-      "emergency-departments",
+      // Simplification 26 Nov 2026: the separate ED card folded into the one Browse card's EDs segment.
+      "browse",
       "blocked-discharges-by-reason",
       "declines-by-reason",
       "pull-to-arrival",
@@ -108,9 +109,9 @@ describe("Summary's executive aggregate view", () => {
       expect(within(stages).getByTestId("ward-statistics-overview-stages-held")).toHaveTextContent(
         "not shown under the small number rule",
       );
-      expect(within(stages).queryByRole("radio", { name: "Data" })).not.toBeInTheDocument();
+      expect(within(stages).queryByRole("radio", { name: "Table" })).not.toBeInTheDocument();
     } else {
-      fireEvent.click(within(stages).getByRole("radio", { name: "Data" }));
+      fireEvent.click(within(stages).getByRole("radio", { name: "Table" }));
       expect(screen.getByTestId("ward-statistics-overview-stage-table")).toBeInTheDocument();
     }
     expect(screen.queryByRole("link", { name: "Open referrals" })).not.toBeInTheDocument();
@@ -217,10 +218,11 @@ describe("Summary's executive aggregate view", () => {
     );
     summary(data);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^Statistics: North Metro right now$/u);
-    // D-91: the one unit finder opens from "Open a unit" on the statistics tab row.
-    fireEvent.click(screen.getByTestId("ward-statistics-tool-open-unit"));
-    const finder = screen.getByTestId("ward-statistics-unit-finder");
+    // Simplification 26 Nov 2026: the unit finder and the separate ED card folded into the Browse card's EDs segment.
+    const finder = screen.getByTestId("ward-statistics-browse");
     fireEvent.click(within(finder).getByRole("radio", { name: /^EDs/ }));
+    // The segment opens on its first eight rows.
+    for (const more of within(finder).queryAllByRole("button", { name: /^Show all/ })) fireEvent.click(more);
     const links = within(finder)
       .getAllByRole("link")
       .filter((link) => link.getAttribute("href")!.includes("/statistics/ed/"));
@@ -229,9 +231,6 @@ describe("Summary's executive aggregate view", () => {
       expect(data.openableEmergencyDepartmentIds).toContain(
         decodeURIComponent(link.getAttribute("href")!.split("/").at(-1)!),
       );
-    expect(screen.getByTestId("ward-statistics-emergency-departments").querySelectorAll("tbody tr")).toHaveLength(
-      data.emergencyDepartments.length,
-    );
     expect(guard.operational).not.toHaveBeenCalled();
   });
 

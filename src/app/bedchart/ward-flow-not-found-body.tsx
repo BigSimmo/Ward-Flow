@@ -3,6 +3,8 @@
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { useCanOpenHref, useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
 import { patientSearchHref } from "@/components/ward-management/shell/ward-facade";
+import { useWardBarPageTitle } from "@/components/ward-management/shell/ward-bar-page-tools";
+import { usePathname } from "next/navigation";
 
 /**
  * The Ward Flow 404's words and ways on (PR #1474 review): Home is the desk's own home
@@ -12,6 +14,8 @@ import { patientSearchHref } from "@/components/ward-management/shell/ward-facad
 export function WardFlowNotFoundBody() {
   const home = useDeskHomeHref();
   const canOpen = useCanOpenHref();
+  // Audit four #82: the header names the page, not "BedChart".
+  useWardBarPageTitle(usePathname() ?? "", "Page not found");
   return (
     <WardNotFoundBody
       title="Page not found"

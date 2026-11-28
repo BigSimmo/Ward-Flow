@@ -15,6 +15,11 @@ import { describe, expect, it, vi } from "vitest";
  * `ward-capacity-network-fold-empty-service.dom.test.tsx` does, and spreads the seeded state rather
  * than hand-listing the context's fields.
  */
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  usePathname: () => "/bedchart/handover",
+  useSearchParams: () => new URLSearchParams(),
+}));
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
     <a href={href} {...rest}>
@@ -54,6 +59,10 @@ const movements = seeded.movements.map((movement) =>
 
 const mockContext = {
   ...seeded,
+  // The handover table's audit read (the panel shows "This section could not be shown" without it).
+  readAuditEvents: () => ({ status: "allowed" as const, value: [] }),
+  readGovernanceAuditEvents: () => ({ status: "allowed" as const, value: [] }),
+  readAuditReviews: () => ({ status: "allowed" as const, value: [] }),
   movements,
   now: NOW_ANCHOR,
   dayZero: new Date(0),

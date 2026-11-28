@@ -1648,12 +1648,25 @@
   letter-spacing: -0.01em;
 }
 
+/* Gate r10 look upgrade 6: the chevron rides the label line, so "in 4 h 18 min" keeps the cell's
+   full width and never runs under it. */
+.menuContextLink.menuContextLink {
+  padding-right: 0.75rem;
+}
+
+.menuContextLink .menuContextLabel {
+  padding-right: 1.25rem;
+}
+
 .menuContextLink .sheetChevron {
   position: absolute;
-  top: 50%;
+  top: 0.5rem;
   right: 0.625rem;
   display: block;
-  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  margin-top: 1px;
+  color: var(--wf-ink-3);
 }
 
 /* The phone sheet carries Bed alerts; the desktop rail shows its own card instead. */

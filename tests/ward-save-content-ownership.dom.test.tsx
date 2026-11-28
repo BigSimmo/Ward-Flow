@@ -159,7 +159,7 @@ it("keeps arrival save ownership through uncertainty and closes on matching conf
   const mode = screen.getByLabelText("How they are travelling") as HTMLSelectElement;
   fireEvent.change(mode, { target: { value: Array.from(mode.options).find((option) => option.value)!.value } });
   fireEvent.change(screen.getByLabelText("Type the ETA"), { target: { value: "11:30" } });
-  fireEvent.click(screen.getByTestId("save-arrival-plan-button"));
+  fireEvent.click(within(screen.getByTestId("arrival-time-dialog")).getByRole("button", { name: "Save arrival plan" }));
   await act(async () => {});
   expect(dispatch).toHaveBeenCalledTimes(1);
   expect(close).not.toHaveBeenCalled();

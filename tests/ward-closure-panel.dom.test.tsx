@@ -78,11 +78,11 @@ describe("ward closure panel", () => {
       "Reason: Staffing.",
     );
     fireEvent.click(screen.getByRole("button", { name: `Close ${UNIT.name}` }));
-    expect(await screen.findByText(`${UNIT.name} closed to admissions: Staffing.`)).toBeInTheDocument();
+    expect(await screen.findByText(`${UNIT.name} closed to admissions: Staffing`)).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("ward-closure-reopen"));
     fireEvent.click(screen.getByRole("button", { name: `Reopen ${UNIT.name}` }));
-    expect(await screen.findByText(`${UNIT.name} reopened to admissions.`)).toBeInTheDocument();
+    expect(await screen.findByText(`${UNIT.name} reopened to admissions`)).toBeInTheDocument();
   });
 
   it("asks before closing, and Cancel leaves the ward open (DR-07)", () => {

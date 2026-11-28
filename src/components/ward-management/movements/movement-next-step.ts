@@ -53,7 +53,7 @@ export function movementNextStep(movement: Movement): MovementNextStep | null {
       if (leg === undefined) {
         return transportNeedState(movement) === "not_needed"
           ? { label: "Arrival", owner: "Receiving ward", kind: "wait" }
-          : { label: "Book transport", owner: "ED or ward", kind: "wait" };
+          : { label: "Record transport booking", owner: "ED or ward", kind: "wait" };
       }
       if (leg === "Requested") return { label: "Transport accept", owner: movement.transport!.provider, kind: "wait" };
       if (leg === "Accepted") return { label: "Crew en route", owner: "Transport", kind: "wait" };
@@ -62,7 +62,7 @@ export function movementNextStep(movement: Movement): MovementNextStep | null {
       return { label: "Arrival", owner: "Receiving ward", kind: "wait" };
     }
     case "moving":
-      return { label: "Confirm arrival", owner: "Receiving ward", kind: "wait" };
+      return { label: "Record arrival", owner: "Receiving ward", kind: "wait" };
     case "arrived":
       return null;
   }

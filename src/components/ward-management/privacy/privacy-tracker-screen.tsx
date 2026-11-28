@@ -1,9 +1,22 @@
 "use client";
 
-import { BookOpen, ListChecks, LockKeyhole, Users } from "lucide-react";
+import { ChevronDown, ListChecks, ListTree, LockKeyhole, Users } from "lucide-react";
 import { useState } from "react";
 
-import { Badge, Card, CardHead, Hero, HeroAct, HeroFigures, HeroTop, HeroTrack, type WfTone } from "@/components/wf";
+import {
+  Badge,
+  Card,
+  CardHead,
+  Hero,
+  HeroAct,
+  HeroFigures,
+  HeroTop,
+  HeroTrack,
+  Icon,
+  Menu,
+  heroChipClassName,
+  type WfTone,
+} from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import {
@@ -70,7 +83,33 @@ export function PrivacyTrackerScreen() {
 
   return (
     <main id="main-content" className={styles.main} data-testid="ward-privacy" data-view={view}>
-      <Hero level={1} title="Privacy and data" titleMeta="Not enforced · Synthetic data only · Not legal advice">
+      <Hero
+        level={1}
+        // Audit four #51: the title is the answer, not the header's own words.
+        title={example ? `${TOTAL} of ${TOTAL} checks met` : `${MET} of ${TOTAL} checks met`}
+        titleMeta="Not enforced · Synthetic data · Not legal advice"
+        // Design review (27 Nov 2026): Jump to sits at the title row's right end, not on a row of its own.
+        className={styles.heroAsideEnd}
+        aside={
+          <Menu
+            label="Jump to a section"
+            items={PRIVACY_SECTIONS.map((section, index) => ({
+              id: section.id,
+              label: `${index + 1}. ${section.title}`,
+              onSelect: () => {
+                document.getElementById(`privacy-${section.id}`)?.scrollIntoView({ block: "start" });
+              },
+            }))}
+            trigger={(props) => (
+              <button {...props} type="button" className={heroChipClassName} data-testid="privacy-jump">
+                <Icon icon={ListTree} size={16} />
+                <span>Jump to</span>
+                <Icon icon={ChevronDown} size={14} />
+              </button>
+            )}
+          />
+        }
+      >
         <HeroTop
           quickBar={false}
           figures={
@@ -80,11 +119,12 @@ export function PrivacyTrackerScreen() {
               items={
                 example
                   ? [{ id: "ticked", value: TOTAL, label: `of ${TOTAL} met`, testId: "privacy-figure-ticked" }]
-                  : [
-                      { id: "met", value: MET, label: "met", testId: "privacy-figure-met" },
-                      { id: "partly", value: PARTLY, label: "partly", testId: "privacy-figure-partly" },
+                  : // Gate r10 look upgrade 2: the title already says how many are met, so the figures
+                    // give the breakdown worst news first; each fact still shows once.
+                    [
                       { id: "notyet", value: NOT_YET, label: "not yet", testId: "privacy-figure-notyet" },
-                      { id: "total", value: TOTAL, label: "checks", testId: "privacy-figure-total" },
+                      { id: "partly", value: PARTLY, label: "partly", testId: "privacy-figure-partly" },
+                      { id: "met", value: MET, label: "met", testId: "privacy-figure-met" },
                     ]
               }
             />
@@ -93,8 +133,9 @@ export function PrivacyTrackerScreen() {
             <HeroAct
               tone="warning"
               testId="privacy-hero-act"
-              title="A target, not a promise"
-              sub="Nothing here is enforced yet."
+              // The disclaimer is said once, in the title meta (audit two B22). The act keeps the one
+              // instruction not said elsewhere.
+              title="Check each item with the privacy officer and legal team"
             />
           }
         >
@@ -128,10 +169,9 @@ export function PrivacyTrackerScreen() {
               </p>
             ) : (
               <p className={styles.lead}>
-                BedChart meets {MET} of {TOTAL} checks today and has started {PARTLY} more. Not yet done: naming a
-                privacy officer, signing the privacy impact assessment, moving all hosting to Australia, requiring
-                multi-factor sign-in, an independent security test, database backups, and making the code repository
-                private.
+                Not yet done: naming a privacy officer, signing the privacy impact assessment, moving all hosting to
+                Australia, requiring multi-factor sign-in, an independent security test, database backups, and making
+                the code repository private.
               </p>
             )}
           </Card>
@@ -180,21 +220,7 @@ export function PrivacyTrackerScreen() {
           })}
         </div>
 
-        <aside className={styles.rail} aria-label="Roles, sign-off and sections">
-          <Card aria-labelledby="privacy-sections-title" data-testid="privacy-toc">
-            <CardHead iconPlain icon={BookOpen} id="privacy-sections-title" title="Sections" />
-            <ol className={styles.toc}>
-              {PRIVACY_SECTIONS.map((section, index) => (
-                <li key={section.id}>
-                  <a href={`#privacy-${section.id}`}>
-                    <span className={styles.tocNo}>{index + 1}</span>
-                    {section.title}
-                  </a>
-                </li>
-              ))}
-            </ol>
-          </Card>
-
+        <aside className={styles.rail} aria-label="Roles and sign-off">
           <Card aria-labelledby="privacy-roles-title" data-testid="privacy-roles">
             <CardHead iconPlain icon={Users} id="privacy-roles-title" title="Roles" />
             <ul className={styles.roles}>
@@ -210,15 +236,6 @@ export function PrivacyTrackerScreen() {
           <Card aria-labelledby="privacy-sign-title" data-testid="privacy-sign-off">
             <CardHead iconPlain icon={LockKeyhole} id="privacy-sign-title" title="Review and sign-off" />
             <Checks checks={PRIVACY_SIGN_OFFS} view={view} testId="privacy-checks-sign-off" />
-          </Card>
-
-          <Card aria-labelledby="privacy-note-title" data-testid="privacy-note">
-            <CardHead iconPlain icon={ListChecks} id="privacy-note-title" title="Please note" />
-            <ul className={styles.policy}>
-              <li>These are intended requirements. BedChart meets only the ones marked Met.</li>
-              <li>The prototype holds synthetic data only. Never enter real patient details.</li>
-              <li>This is not legal advice. Check each item with the privacy officer and legal team.</li>
-            </ul>
           </Card>
         </aside>
       </div>

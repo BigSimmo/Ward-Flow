@@ -56,8 +56,11 @@
 }
 
 /* Tools header polish (Josh, 6 Nov 2026: "make it more stylish and beautiful"). A solid action tile,
-   a larger title and the desk as a quiet pill. Tools only; other drawers keep their header. */
-.toolsHeader {
+   a larger title and the desk as a quiet pill. Tools only; other drawers keep their header.
+   States review 11c (27 Nov 2026): the header and title carry an html prefix so they outrank
+   ward-bar's same weight `.drawerHeader` and `.drawerTitle` in any production CSS order (r7's
+   20/700 title and header height). The phone's doubled title still wins over these. */
+html .toolsHeader {
   align-items: center;
   padding-top: 16px;
   padding-bottom: 12px;
@@ -79,7 +82,7 @@
   height: 20px;
 }
 
-.toolsTitle {
+html .toolsTitle {
   font-size: var(--wf-fs-20);
   line-height: 1.2;
   font-weight: 700;
@@ -105,7 +108,10 @@
 }
 
 @media (max-width: 46.4375rem) {
-  .toolsTitle {
+  /* Design review (27 Nov 2026, B21): doubled so the phone display title outranks ward-bar's
+     `.drawerTitle` (14px) whatever order the two style sheets load in, as in r7. */
+  .toolsTitle.toolsTitle {
+    font-weight: 700;
     font-size: var(--wf-fs-28);
     line-height: 1.15;
     letter-spacing: -0.02em;
@@ -160,6 +166,20 @@
    48px square on the drawer buttons' face at every width. Tripled so it outranks `.bar .centerGroup`. */
 .searchPair.searchPair.searchPair {
   gap: 4px;
+}
+
+/* Audit four #23 (r10): where the page has its own search (Find's People, Teams and Suburbs), the
+   header search steps aside; Help then sits directly after the scope chip, not floating mid-bar. */
+.searchPair.searchPair.searchPair[data-no-search] {
+  justify-content: flex-start;
+}
+
+/* The unseen-tour cue on the header "?": one small accent dot, the old rail "New" badge's job. */
+.helpNewDot.helpNewDot {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--wf-accent-strong);
 }
 
 .helpBeside.helpBeside {

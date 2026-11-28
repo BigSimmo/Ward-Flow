@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Network } from "lucide-react";
 
 import { BarList, Donut, Segmented, SrOnly, cx, tableClasses } from "@/components/wf";
-import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
+import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import {
   admissionStagePosition,
   type AdmissionStagePosition,
@@ -33,13 +33,11 @@ import {
   BedStack,
   Facts,
   Foot,
-  MoreLink,
   StatCardR,
   Strip,
   Tile,
   redesignStyles as redesign,
 } from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
-import { STATISTICS_SERVICES_HREF } from "./statistics-sections";
 import { occupancyShare } from "./statistics-occupancy";
 import { ServiceDot } from "./statistics-services-index";
 
@@ -197,7 +195,6 @@ export function ServiceOccupancyCard({
   services,
   serviceFilter = null,
   onServiceFilter,
-  preparingCount,
 }: {
   className?: string;
   services: NetworkServiceRow[];
@@ -206,7 +203,6 @@ export function ServiceOccupancyCard({
   /** Beds being made ready, said in the foot of the Network page's strip. */
   preparingCount?: number;
 }) {
-  const canOpen = useCanOpenHref();
   // The Network board's first card: Bed board, Journey and Map in its head (owner polish, 3 Nov 2026).
   const viewSwitch = useViewSwitchAction();
   const body = (entry: NetworkServiceRow) => (
@@ -249,8 +245,6 @@ export function ServiceOccupancyCard({
   if (!onServiceFilter) {
     // The redesign's strip (approved 1 Nov 2026, Q135): one tile per service, its share, the beds in
     // use, pulled, closed and ready as one stacked bar, and the figures under it.
-    const ready = services.reduce((sum, entry) => sum + entry.ready, 0);
-    const closed = services.reduce((sum, entry) => sum + entry.closed, 0);
     const beds = services.reduce((sum, entry) => sum + entry.beds, 0);
     return (
       <StatCardR
@@ -266,23 +260,7 @@ export function ServiceOccupancyCard({
             {viewSwitch}
           </>
         }
-        foot={
-          <Foot
-            link={
-              canOpen(STATISTICS_SERVICES_HREF) ? (
-                <MoreLink href={STATISTICS_SERVICES_HREF}>Open Services</MoreLink>
-              ) : undefined
-            }
-          >
-            <b>{ready}</b> ready · <b>{closed}</b> closed
-            {preparingCount === undefined ? null : (
-              <>
-                {" "}
-                · <b>{preparingCount}</b> being made ready
-              </>
-            )}
-          </Foot>
-        }
+        // Audit four #58: no foot; the hero and the service cards already say ready and closed.
       >
         <Strip label="Occupancy by health service" cols={services.length}>
           {services.map((entry) => {
@@ -449,8 +427,8 @@ function AdmissionStagesCardView({
             value={stagesView}
             onChange={setStagesView}
             items={[
-              { id: "chart", label: "Chart" },
-              { id: "data", label: "Data" },
+              { id: "chart", label: "Graph" },
+              { id: "data", label: "Table" },
             ]}
           />
         )

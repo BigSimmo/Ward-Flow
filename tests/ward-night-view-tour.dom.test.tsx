@@ -70,7 +70,8 @@ describe("Night view page", () => {
     renderNight();
     expect(figure("night-figure-beds")).toBe(String(counts.capacity?.value));
     expect(figure("night-figure-waiting")).toBe(String(counts.delays?.value));
-    expect(screen.getByTestId("night-intake-not-recorded").textContent).toMatch(/^Not recorded/);
+    // The "Tonight's intake windows: Not recorded" placeholder card left the page (r10); nothing claims windows.
+    expect(screen.queryByTestId("night-intake-not-recorded")).toBeNull();
   });
 
   it("has its own help and walk round, played only on its page", () => {

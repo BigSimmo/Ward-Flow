@@ -269,14 +269,22 @@ export function DischargeFilterCard({ s, bare = false }: { s: DischargeWorkspace
         </div>
         {population === "records" ? null : (
           <span className={releaseList.sortPick}>
-            <FilterPick
-              label="Sort"
-              icon
-              alwaysPlain
-              value={sortMode}
-              options={DUE_SORT_OPTIONS.map((option) => ({ id: option.id, label: option.label }))}
-              onChange={(id) => setSortMode(id as DueSortMode)}
-              testId="ward-discharges-sort"
+            {/* #29: the kit Menu and button, as Movements draws its Sort, level with the tool row (32). */}
+            <Menu
+              label="Sort the list"
+              align="end"
+              items={DUE_SORT_OPTIONS.map((option) => ({
+                id: option.id,
+                label: option.label,
+                checkable: "radio" as const,
+                checked: option.id === sortMode,
+                onSelect: () => setSortMode(option.id as DueSortMode),
+              }))}
+              trigger={(props) => (
+                <Button {...props} variant="sec" size="sm" icon={ArrowDownUp} data-testid="ward-discharges-sort">
+                  {`Sort: ${DUE_SORT_OPTIONS.find((option) => option.id === sortMode)?.label ?? ""}`}
+                </Button>
+              )}
             />
           </span>
         )}

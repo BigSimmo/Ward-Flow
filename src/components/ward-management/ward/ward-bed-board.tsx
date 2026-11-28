@@ -143,15 +143,58 @@ function CellWord({ bed, collidingPairs }: { bed: BedItem; collidingPairs?: Read
  * words always match the accessible name (axe 4.14 label-content-name-mismatch).
  */
 function CellName({ surname, given }: { surname: string; given: string }) {
+  const shrinkRef = useLongWordShrink(surname);
   return (
     <span className={styles.cellName}>
-      <span className={styles.cellWord}>{surname}</span>{" "}
+      <span ref={shrinkRef} className={styles.cellWord}>
+        {surname}
+      </span>{" "}
       <span className={styles.cellInitial}>
         <span className={styles.srComma}>, </span>
         {given}
       </span>
     </span>
   );
+}
+
+/**
+ * Audit three review: a surname whose longest word would not fit the tile at its own size drops one
+ * size step (data-shrink, CSS), so it does not break mid-word and still shows in full, no ellipsis.
+ * The word is measured at the base size against the tile's content width, again as the tile resizes.
+ */
+function useLongWordShrink(text: string) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    const cell = el?.closest(`.${CSS.escape(styles.cell)}`);
+    const ctx = typeof document === "undefined" ? null : document.createElement("canvas").getContext("2d");
+    if (!el || !cell || !ctx || typeof ResizeObserver === "undefined") return;
+    const longest = text.split(/\s+/).reduce((a, b) => (b.length > a.length ? b : a), "");
+    let basePx = 0;
+    const check = () => {
+      const font = getComputedStyle(el);
+      if (!el.dataset.shrink) basePx = parseFloat(font.fontSize);
+      if (!basePx) return;
+      const box = getComputedStyle(cell);
+      const room = cell.clientWidth - parseFloat(box.paddingLeft) - parseFloat(box.paddingRight);
+      ctx.font = `${font.fontWeight} ${basePx}px ${font.fontFamily}`;
+      if (ctx.measureText(longest).width > room) el.dataset.shrink = "true";
+      else delete el.dataset.shrink;
+    };
+    check();
+    // Final r10 F8: measure again once the web font lands (a fallback face is narrower).
+    let live = true;
+    void document.fonts?.ready.then(() => {
+      if (live) check();
+    });
+    const observer = new ResizeObserver(check);
+    observer.observe(cell);
+    return () => {
+      live = false;
+      observer.disconnect();
+    };
+  }, [text]);
+  return ref;
 }
 
 /** Audit 1, Josh 20 Oct (CS-16), D-83: a pulled bed names the surname and the given name, as an occupied bed does. */
@@ -482,6 +525,7 @@ export function WardBedBoard({
               <div
                 className={styles.cells}
                 style={{ "--cols": String(isPhone ? 3 : pods.length > 1 ? 4 : 6) } as CSSProperties}
+                data-six={!isPhone && pods.length <= 1 ? "true" : undefined}
               >
                 {pod.beds.map((bed) => {
                   const fits = boardBedFits(beds, bed, picked, isMixed);

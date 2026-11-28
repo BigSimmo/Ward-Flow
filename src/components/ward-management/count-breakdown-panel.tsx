@@ -15,6 +15,7 @@ import {
   type BreakdownRow,
   type BreakdownScope,
 } from "./count-breakdown-model";
+import type { BreakdownFact } from "./count-breakdown-rows";
 import styles from "./count-breakdown.module.css";
 
 type PanelProps = {
@@ -24,9 +25,11 @@ type PanelProps = {
   scope: BreakdownScope;
   countedAt: Instant;
   rows: () => readonly BreakdownRow[];
+  /** Fact lines above the list (audit two #91): parts of the figure, not rows of it. */
+  facts?: () => readonly BreakdownFact[];
 };
 
-export function CountBreakdownPanel({ value, noun, kind, scope, countedAt, rows }: PanelProps) {
+export function CountBreakdownPanel({ value, noun, kind, scope, countedAt, rows, facts }: PanelProps) {
   const view = useMemo(() => breakdownView({ value, kind, scope, rows: rows() }), [value, kind, scope, rows]);
   // The popover measured its short loading line when it opened; it refits on a window resize, so
   // ask it to refit now that the full list is in (a long list then gets its height cap and scroll).
@@ -36,6 +39,19 @@ export function CountBreakdownPanel({ value, noun, kind, scope, countedAt, rows 
   return (
     <div className={styles.body} data-testid="count-breakdown-panel">
       <p className={styles.sentence}>{breakdownSentence(value, noun, countedAt)}</p>
+      {/* Audit two #91: the split the screen used to carry ("45 Waiting · 8 In transit") reads here,
+          as fact lines between the sentence and the list. They are not list rows, so the list still
+          adds up to the figure on its own. */}
+      {facts ? (
+        <dl className={styles.facts} data-testid="count-breakdown-facts">
+          {facts().map((fact) => (
+            <div key={fact.id} className={styles.fact} data-testid={`count-breakdown-fact-${fact.id}`}>
+              <dt>{fact.label}</dt>
+              <dd>{fact.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
       {view.state === "list" ? (
         <ul className={styles.list} data-testid="count-breakdown-rows">
           {view.rows.map((row) => {

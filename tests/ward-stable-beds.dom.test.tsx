@@ -1,3 +1,4 @@
+import { getBedStep } from "./helpers/ward-bed-steps";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -188,12 +189,16 @@ describe("stable bed numbers (audit A1-1)", () => {
     const card = document.querySelector(`[data-admission-id="${RELEASE.admissionId}"]`);
     fireEvent.click(card as HTMLElement);
     // A9-14: nothing is chosen until the person chooses it, and the record waits for it.
-    expect(document.getElementById("drawer-leaving-summary")).toHaveTextContent(/Going to Not chosen yet/);
-    fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
-    expect(screen.queryByRole("dialog", { name: "Confirm discharge" })).toBeNull();
+    // r10: with no destination the step opens the dialog, which asks where and keeps Record disabled.
+    fireEvent.click(getBedStep(/Record discharge/i));
+    const asking = screen.getByRole("dialog", { name: "Record discharge" });
+    expect(within(asking).getByTestId("ward-drawer-confirm-destination")).toBeInTheDocument();
+    expect(within(asking).getByRole("button", { name: "Record discharge" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByTestId("named-state")).toHaveTextContent("occupied");
+    fireEvent.click(within(asking).getByRole("button", { name: "Cancel" }));
     chooseCommunityDestination();
-    fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
-    const confirm = screen.getByRole("dialog", { name: "Confirm discharge" });
+    fireEvent.click(getBedStep(/Record discharge/i));
+    const confirm = screen.getByRole("dialog", { name: "Record discharge" });
     expect(confirm).toHaveTextContent(/Going to Discharged to the community/);
     const patient = wardPatients.find(
       (candidate) => candidate.id === wardAdmissions.find((a) => a.id === RELEASE.admissionId)?.patientId,
@@ -202,7 +207,7 @@ describe("stable bed numbers (audit A1-1)", () => {
       new RegExp(`^Check: .+ · ${patient.umrn} · Bed \\d+$`),
     );
     fireEvent.click(within(confirm).getByRole("button", { name: "Cancel" }));
-    expect(screen.queryByRole("dialog", { name: "Confirm discharge" })).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Record discharge" })).toBeNull();
     expect(screen.getByTestId("named-state")).toHaveTextContent("occupied");
   });
 
@@ -212,9 +217,11 @@ describe("stable bed numbers (audit A1-1)", () => {
     const card = document.querySelector(`[data-admission-id="${RELEASE.admissionId}"]`);
     fireEvent.click(card as HTMLElement);
     chooseCommunityDestination();
-    // The destination is shown plainly before it is recorded.
-    expect(document.getElementById("drawer-leaving-summary")).toHaveTextContent(/Going to Discharged to the community/);
-    fireEvent.click(screen.getByRole("button", { name: /Record that they have left/i }));
+    fireEvent.click(getBedStep(/Record discharge/i));
+    // The destination is shown plainly in the dialog before it is recorded.
+    expect(screen.getByRole("dialog", { name: "Record discharge" })).toHaveTextContent(
+      /Going to Discharged to the community/,
+    );
     // Audit 1 (CS-07): the drawer asks once, naming the person, before it records.
     fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
     expect(screen.getByTestId("named-state")).toHaveTextContent("departed");

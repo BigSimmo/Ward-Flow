@@ -864,7 +864,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "hero",
           HERO,
           "Your jobs at a glance",
-          `${f.activeJobs === undefined ? "" : `${count(f.activeJobs, "job is", "jobs are")} still on the road. `}The chips count jobs to accept, late jobs and jobs that need forms. Copy handover copies the list for the next shift.`,
+          `${f.activeJobs === undefined ? "" : `${count(f.activeJobs, "job is", "jobs are")} still on the road. `}The chips count jobs to accept, late jobs and jobs that need forms. Copy for handover copies the list for the next shift.`,
         ),
         step(
           "Your daily work",

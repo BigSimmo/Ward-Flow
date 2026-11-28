@@ -74,7 +74,7 @@ function renderWard() {
 /** The all-stays average sits in the Length of stay card's Data view (owner polish, 3 Nov 2026). */
 function openStayData() {
   const card = screen.queryByTestId("statistics-ward-stays-chart");
-  if (card) fireEvent.click(within(card).getByRole("radio", { name: "Data" }));
+  if (card) fireEvent.click(within(card).getByRole("radio", { name: "Table" }));
 }
 
 describe("a ward statistics page never renders an unmeasurable average as a number", () => {

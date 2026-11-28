@@ -132,28 +132,6 @@
   border-radius: 1px;
   background: var(--wf-ink-2);
 }
-.clockFoot {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    "sent live"
-    "due live";
-  align-items: center;
-  gap: 0 var(--wf-s-2);
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-.clockFoot > :nth-child(1) {
-  grid-area: sent;
-}
-.clockFoot > :nth-child(3) {
-  grid-area: due;
-}
-.clockFoot > :nth-child(2) {
-  grid-area: live;
-  color: var(--wf-success-ink);
-  font-weight: 500;
-}
 .mono {
   font-family: var(--wf-mono);
   font-feature-settings: "tnum" 1;

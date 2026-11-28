@@ -593,7 +593,7 @@ export function communityCoveragePanel(view: CommunityScreenView) {
                 </dd>
               </div>
               <div className={styles.factsRow}>
-                <dt>Entries that read alike</dt>
+                <dt>Entries with similar names</dt>
                 <dd>{nearDuplicates.length}</dd>
               </div>
               <div className={styles.factsRow}>

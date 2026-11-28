@@ -668,18 +668,6 @@ button.taskLabel[aria-pressed="true"] {
   white-space: nowrap;
 }
 
-.focusHead {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-3) var(--wf-s-3) 0 var(--wf-s-4);
-}
-
-.focusHead > .cellStack {
-  flex: 1 1 auto;
-  pointer-events: auto;
-}
-
 .focusClock {
   display: flex;
   flex-direction: column;
@@ -814,15 +802,6 @@ button.taskLabel[aria-pressed="true"] {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.focusFoot {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
-  background: var(--wf-surface-2);
 }
 
 /* ---------- Sheets ---------- */
@@ -1138,18 +1117,6 @@ button.taskLabel[aria-pressed="true"] {
     font-size: 12px;
   }
 
-  .focusFoot {
-    flex-wrap: wrap;
-  }
-
-  .focusFoot > .footSpacer {
-    display: none;
-  }
-
-  .focusFoot > :last-child {
-    flex: 1 1 100%;
-  }
-
   .fieldPair {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1245,39 +1212,28 @@ button.taskLabel[aria-pressed="true"] {
   }
 }
 
-/* v10 phone form sheet: one header (the sheet's), and the panel sits flat in the sheet. Only the
- * phone sheet renders .phoneFocus. */
-.phoneFocus .focusHead {
-  display: none;
+/* Audit four #98: the form drawer is the kit PanelDrawer at every width. Its scroll holds the panel,
+ * which pads its own blocks 16px in and runs its hairlines edge to edge. Line one of the foot is the
+ * next step at full width; line two holds the quiet Patient page, Open move and Copy to notes. */
+.formDrawerBody {
+  display: flex;
+  flex-direction: column;
 }
 
-.phoneFocus .panel {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: none;
-  box-shadow: none;
+.drawerMain.drawerMain {
+  width: 100%;
+  justify-content: center;
 }
 
-/* ─── v10 phone fidelity (11 Oct 2026) ───
- * The view switch keeps its 8px canvas collar right under the bar throughout the scroll, so no row
- * shows through a gap. In the form sheet, Copy and the next step live in the sheet's own pinned foot, so
- * the panel's foot keeps only the quiet Open move link, flat on the sheet. Phone only. */
+.drawerRow > * {
+  flex: 1 1 0;
+  min-width: max-content;
+}
+
 @media (max-width: 46.4375rem) {
-  .phoneFocus .focusFoot {
-    justify-content: center;
-    padding: var(--wf-s-2) 0 0;
-    border-top: 0;
-    background: none;
-  }
-
-  .phoneFocus .focusFoot > button,
-  .phoneFocus .focusFoot > .footSpacer {
-    display: none;
-  }
-
-  .phoneFocus .focusFoot > :last-child {
-    flex: 0 1 auto;
+  .drawerMain.drawerMain,
+  .drawerRow > * {
+    min-height: 44px;
   }
 }
 

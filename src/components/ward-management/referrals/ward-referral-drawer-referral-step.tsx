@@ -1,7 +1,18 @@
 "use client";
 
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
-import { Activity, Ambulance, BedSingle, HeartHandshake, MapPin, Shield, Target } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import {
+  Activity,
+  Ambulance,
+  BedSingle,
+  ChevronDown,
+  HeartHandshake,
+  MapPin,
+  Shield,
+  Target,
+  type LucideIcon,
+} from "lucide-react";
 import {
   ATS_CATEGORIES,
   URGENCY_LEVELS,
@@ -49,6 +60,74 @@ const COMMUNITY_PURPOSE_LABELS = {
   follow_up: communityReferralPurposeLabel("follow_up"),
   assess_for_admission: communityReferralPurposeLabel("assess_for_admission"),
 };
+
+/**
+ * One fold in a referral step card (Thread C mock-up, 26 Nov 2026): the Add patient fold's markup.
+ * A title at the card-head weight, one 12px line naming what it holds, an "N added" count once
+ * something is in it, and a chevron. Required fields never fold. A fold opens itself when a field
+ * inside gets a value from elsewhere (a carried draft) or an error.
+ */
+export function ReferralFold({
+  title,
+  holds,
+  added,
+  invalid = false,
+  icon: Icon,
+  inset = false,
+  testId,
+  children,
+}: {
+  title: string;
+  holds: string;
+  added: number;
+  invalid?: boolean;
+  /** Given only when the fold is the whole card: the head then reads as the card head. */
+  icon?: LucideIcon;
+  /** Inside a card body rather than at its foot: drawn as a hairline box. */
+  inset?: boolean;
+  testId: string;
+  children: ReactNode;
+}) {
+  const filled = added > 0;
+  const [open, setOpen] = useState(filled || invalid);
+  const [seen, setSeen] = useState({ filled, invalid });
+  if (seen.filled !== filled || seen.invalid !== invalid) {
+    // Opens on a rising edge only, so a reader who closes a filled fold keeps it closed.
+    if ((filled && !seen.filled) || (invalid && !seen.invalid)) setOpen(true);
+    setSeen({ filled, invalid });
+  }
+  return (
+    <details
+      className={styles.refFold}
+      data-inset={inset || undefined}
+      data-card={Icon ? true : undefined}
+      data-testid={testId}
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+    >
+      <summary className={styles.refFoldHead}>
+        {Icon ? (
+          <span className={styles.cardIcon} aria-hidden="true">
+            <Icon aria-hidden="true" />
+          </span>
+        ) : null}
+        <span className={styles.refFoldLines}>
+          <span className={styles.refFoldTitle}>{title}</span>
+          <span className={styles.refFoldSummary} data-testid={`${testId}-summary`}>
+            {holds}
+          </span>
+        </span>
+        {filled ? (
+          <span className={styles.refFoldCount} data-testid={`${testId}-count`}>
+            {added} added
+          </span>
+        ) : null}
+        <ChevronDown aria-hidden="true" className={styles.refFoldChevron} />
+      </summary>
+      <div className={styles.refFoldBody}>{children}</div>
+    </details>
+  );
+}
 
 /** D-77 short form: what a community referral is for, then when the team should first make contact. */
 function CommunityPurposeAndFollowUp({ s }: { s: WardReferralDrawerState }) {
@@ -151,6 +230,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     setReferralSex,
     referralGender,
     setReferralGender,
+    identityFromRecord,
     highAcuity,
     setHighAcuity,
     destType,
@@ -187,6 +267,9 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     storyError,
   } = s;
   const carriedNotes = carriedNotesFor(s.carry, s);
+  // Audit two #104: asked once. A record that holds both is stated here, with Change to reopen the questions.
+  const [identityOpen, setIdentityOpen] = useState(false);
+  const showIdentityQuestions = !identityFromRecord || identityOpen;
   const community = destType === "community";
   // The location and referring service block only when the sending desk could not fill them
   // (`referralError`), so they are asked, marked and named here only then.
@@ -249,9 +332,13 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
         </CardHead>
         <div className={styles.cardBody}>
           {sendingWard ? (
-            <p className={styles.asideText} data-testid="ward-referral-drawer-sending-ward">
-              Sent from {sendingWard.name}.
-            </p>
+            <dl className={styles.factGrid} data-columns="2" data-testid="ward-referral-drawer-sending-ward">
+              {/* Audit four 109: the source stays in view as a read-only From line; no toggle, no typed team. */}
+              <div>
+                <dt>From</dt>
+                <dd>{sendingWard.name}</dd>
+              </div>
+            </dl>
           ) : senderMissing ? (
             <p className={styles.asideText} data-testid="ward-referral-drawer-no-sending-ward">
               {NO_SENDING_WARD}
@@ -401,43 +488,49 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
             )}
           </div>
           {community ? null : (
-            <>
-              <fieldset className={styles.radioField}>
-                <legend className={styles.required}>Urgency</legend>
-                <div className={styles.tierGrid}>
-                  {URGENCY_LEVELS.map((level, index) => {
-                    const words = urgencyTierLabel(level).split(" · ")[1] ?? "";
-                    return (
-                      <label key={level} className={styles.tierTile} data-selected={urgency === String(level)}>
-                        <input
-                          id={index === 0 ? `${sectionId}-urgency` : undefined}
-                          type="radio"
-                          name={`${sectionId}-urgency`}
-                          value={String(level)}
-                          aria-label={urgencyTierLabel(level)}
-                          checked={urgency === String(level)}
-                          onChange={() => setUrgency(String(level))}
-                        />
-                        <span className={styles.tierDigit} data-tier={level} aria-hidden="true">
-                          {level}
-                        </span>
-                        <span className={styles.tierWords}>{words.charAt(0).toUpperCase() + words.slice(1)}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </fieldset>
-              <Field
-                label="ATS category"
-                htmlFor={`${sectionId}-atsCategory`}
-                hint="optional — does not change BedChart urgency"
-              >
+            <fieldset className={styles.radioField}>
+              <legend className={styles.required}>Urgency</legend>
+              <div className={styles.tierGrid}>
+                {URGENCY_LEVELS.map((level, index) => {
+                  const words = urgencyTierLabel(level).split(" · ")[1] ?? "";
+                  return (
+                    <label key={level} className={styles.tierTile} data-selected={urgency === String(level)}>
+                      <input
+                        id={index === 0 ? `${sectionId}-urgency` : undefined}
+                        type="radio"
+                        name={`${sectionId}-urgency`}
+                        value={String(level)}
+                        aria-label={urgencyTierLabel(level)}
+                        checked={urgency === String(level)}
+                        onChange={() => setUrgency(String(level))}
+                      />
+                      <span className={styles.tierDigit} data-tier={level} aria-hidden="true">
+                        {level}
+                      </span>
+                      <span className={styles.tierWords}>{words.charAt(0).toUpperCase() + words.slice(1)}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+          )}
+        </div>
+        {community ? null : (
+          <ReferralFold
+            title="ATS category"
+            holds="The ED triage category. It does not change BedChart urgency."
+            added={atsCategory === undefined ? 0 : 1}
+            testId="ward-referral-fold-ats"
+          >
+            <div className={styles.fieldGrid}>
+              {/* The fold head names the field, so the select carries its own name (aria-label). */}
+              <div className={styles.formField}>
                 <SelectBox>
                   <select
                     id={`${sectionId}-atsCategory`}
                     data-testid="ward-referral-drawer-atsCategory"
                     className={styles.fieldSelect}
-                    aria-label="ATS category (optional)"
+                    aria-label="ATS category"
                     value={atsCategory ?? ""}
                     onChange={(event) =>
                       setAtsCategory(ATS_CATEGORIES.find((category) => String(category) === event.target.value))
@@ -451,10 +544,10 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                     ))}
                   </select>
                 </SelectBox>
-              </Field>
-            </>
-          )}
-        </div>
+              </div>
+            </div>
+          </ReferralFold>
+        )}
       </section>
       {community ? (
         <DocumentationPanel
@@ -470,26 +563,10 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
         <CardHead icon={Activity} title="Clinical presentation" />
         <div className={styles.cardBody}>
           <div className={styles.fieldGrid}>
-            <Field label="Provisional diagnosis" htmlFor={`${sectionId}-refDiagSelect`} hint="optional">
-              <SelectBox>
-                <select
-                  className={styles.fieldSelect}
-                  id={`${sectionId}-refDiagSelect`}
-                  value={provisionalDiag}
-                  onChange={(e) => setProvisionalDiag(e.target.value)}
-                >
-                  <option value="">Not recorded</option>
-                  {TENTATIVE_DIAGNOSIS_BLOCKS.map((block) => (
-                    <option key={block.code} value={block.code}>
-                      {block.label}
-                    </option>
-                  ))}
-                </select>
-              </SelectBox>
-            </Field>
             <Field
               label="Reason for referral"
               htmlFor="refDocInput"
+              wide
               hint={reasonNoteRequired ? undefined : "optional"}
               error={doctorNote.length > reasonRoom ? `Shorten to ${reasonRoom} characters or fewer` : null}
             >
@@ -509,6 +586,46 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                 spellCheck={false}
                 autoComplete="off"
               />
+            </Field>
+          </div>
+          <fieldset className={styles.radioField}>
+            <legend>
+              Risk flags <span className={styles.fieldHint}>select all active</span>
+            </legend>
+            <div className={styles.checkGrid}>
+              {(Object.keys(RISK_FLAG_LABELS) as (keyof typeof RISK_FLAG_LABELS)[]).map((key) => (
+                <label key={key} className={styles.checkChip} data-checked={!!riskFlags[key]}>
+                  <input type="checkbox" checked={!!riskFlags[key]} onChange={() => toggleRisk(key)} />
+                  {RISK_FLAG_LABELS[key]}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+        <ReferralFold
+          title="More clinical detail"
+          holds="Provisional diagnosis and the patient story"
+          added={(provisionalDiag ? 1 : 0) + (clinicalSummary.trim() ? 1 : 0)}
+          invalid={attempted.referral && !!storyError()}
+          testId="ward-referral-fold-clinical"
+        >
+          <div className={styles.fieldGrid}>
+            <Field label="Provisional diagnosis" htmlFor={`${sectionId}-refDiagSelect`}>
+              <SelectBox>
+                <select
+                  className={styles.fieldSelect}
+                  id={`${sectionId}-refDiagSelect`}
+                  value={provisionalDiag}
+                  onChange={(e) => setProvisionalDiag(e.target.value)}
+                >
+                  <option value="">Not recorded</option>
+                  {TENTATIVE_DIAGNOSIS_BLOCKS.map((block) => (
+                    <option key={block.code} value={block.code}>
+                      {block.label}
+                    </option>
+                  ))}
+                </select>
+              </SelectBox>
             </Field>
             <Field
               label="Patient story"
@@ -531,64 +648,68 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
               />
             </Field>
           </div>
-          <fieldset className={styles.radioField}>
-            <legend>
-              Risk flags <span className={styles.fieldHint}>select all active</span>
-            </legend>
-            <div className={styles.checkGrid}>
-              {(Object.keys(RISK_FLAG_LABELS) as (keyof typeof RISK_FLAG_LABELS)[]).map((key) => (
-                <label key={key} className={styles.checkChip} data-checked={!!riskFlags[key]}>
-                  <input type="checkbox" checked={!!riskFlags[key]} onChange={() => toggleRisk(key)} />
-                  {RISK_FLAG_LABELS[key]}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        </div>
+        </ReferralFold>
       </section>
       {destType === "ward" && (
         <section className={styles.refCard}>
           <CardHead icon={BedSingle} title="Bed requirements" />
           <div className={styles.cardBody}>
             <div className={styles.fieldGrid} data-layout="three">
-              <Field label="Recorded sex" htmlFor={`${sectionId}-sex`}>
-                <SelectBox>
-                  <select
-                    id={`${sectionId}-sex`}
-                    className={styles.fieldSelect}
-                    value={referralSex}
-                    onChange={(e) => setReferralSex(e.target.value as RecordedSex)}
-                  >
-                    {RECORDED_SEXES.map((sex) => (
-                      <option key={sex}>{sex}</option>
-                    ))}
-                  </select>
-                </SelectBox>
-              </Field>
-              {/* WS-01 (workflow speed audit, 26 Oct 2026): gender decides which bed, so it is asked
+              {!showIdentityQuestions && (
+                <div className={styles.formField} data-testid="ward-referral-identity-on-record">
+                  <div className={styles.fieldLabelRow}>
+                    <span>Sex and gender</span>
+                  </div>
+                  <span className={styles.identityOnRecord}>
+                    {referralSex} · {referralGender}, from the patient record
+                  </span>
+                  <button type="button" className={styles.textLink} onClick={() => setIdentityOpen(true)}>
+                    Change
+                  </button>
+                </div>
+              )}
+              {showIdentityQuestions && (
+                <>
+                  <Field label="Recorded sex" htmlFor={`${sectionId}-sex`}>
+                    <SelectBox>
+                      <select
+                        id={`${sectionId}-sex`}
+                        className={styles.fieldSelect}
+                        value={referralSex}
+                        onChange={(e) => setReferralSex(e.target.value as RecordedSex)}
+                      >
+                        {RECORDED_SEXES.map((sex) => (
+                          <option key={sex}>{sex}</option>
+                        ))}
+                      </select>
+                    </SelectBox>
+                  </Field>
+                  {/* WS-01 (workflow speed audit, 26 Oct 2026): gender decides which bed, so it is asked
                   before Send. "Not yet recorded" is a real answer; leaving it unanswered is not. */}
-              <Field
-                label="Gender identity"
-                htmlFor={`${sectionId}-gender`}
-                required
-                error={attempted.referral && genderUnanswered ? GENDER_UNANSWERED : null}
-              >
-                <SelectBox>
-                  <select
-                    id={`${sectionId}-gender`}
-                    className={styles.fieldSelect}
-                    value={referralGender}
-                    onChange={(e) => setReferralGender(e.target.value as ReferralGenderAnswer)}
-                    data-testid="ward-referral-gender"
+                  <Field
+                    label="Gender identity"
+                    htmlFor={`${sectionId}-gender`}
+                    required
+                    error={attempted.referral && genderUnanswered ? GENDER_UNANSWERED : null}
                   >
-                    <option value="">Choose a gender</option>
-                    <option value={REFERRAL_GENDER_NOT_RECORDED}>Not yet recorded</option>
-                    {REFERRAL_GENDERS.map((gender) => (
-                      <option key={gender}>{gender}</option>
-                    ))}
-                  </select>
-                </SelectBox>
-              </Field>
+                    <SelectBox>
+                      <select
+                        id={`${sectionId}-gender`}
+                        className={styles.fieldSelect}
+                        value={referralGender}
+                        onChange={(e) => setReferralGender(e.target.value as ReferralGenderAnswer)}
+                        data-testid="ward-referral-gender"
+                      >
+                        <option value="">Choose a gender</option>
+                        <option value={REFERRAL_GENDER_NOT_RECORDED}>Not yet recorded</option>
+                        {REFERRAL_GENDERS.map((gender) => (
+                          <option key={gender}>{gender}</option>
+                        ))}
+                      </select>
+                    </SelectBox>
+                  </Field>
+                </>
+              )}
               <div className={styles.formField}>
                 <div className={styles.fieldLabelRow}>
                   <span id={`${sectionId}-acuity`}>High-acuity nursing</span>
@@ -620,10 +741,18 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
       <ReferralAlternativesGroup sectionId={sectionId} a={s.alternatives} />
       {destType === "ed" && (
         <section className={styles.refCard} data-testid="ward-referral-needs">
-          <CardHead icon={Ambulance} title="ED needs">
-            <span className={styles.asideText}>Optional</span>
-          </CardHead>
-          <div className={styles.cardBody}>
+          <ReferralFold
+            icon={Ambulance}
+            title="ED needs"
+            holds="How they are coming, medical review first, expected arrival"
+            added={
+              (edNeeds.comingBy ? 1 : 0) +
+              (edNeeds.medicalReviewFirst === undefined ? 0 : 1) +
+              (edNeeds.expectedArrival ? 1 : 0)
+            }
+            invalid={attempted.referral && edArrivalWrong}
+            testId="ward-referral-fold-ed-needs"
+          >
             <div className={styles.fieldGrid}>
               <Choice
                 legend="Coming by"
@@ -663,7 +792,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                 />
               </Field>
             </div>
-          </div>
+          </ReferralFold>
         </section>
       )}
     </div>

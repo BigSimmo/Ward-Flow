@@ -1,25 +1,21 @@
 "use client";
 import { useCharacterShortcutsPreference } from "@/components/ward-management/shell/ward-character-shortcuts";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { waitingHref } from "@/components/ward-management/delays/waiting-href";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import {
   ChevronDown,
   ClipboardCopy,
-  Clock,
-  Highlighter,
   SlidersHorizontal,
   Keyboard,
   MonitorPlay,
-  Ellipsis,
   Printer,
   FileText,
+  Share2,
 } from "lucide-react";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen, isStoppedTransportAwaitingRelease } from "@/components/ward-management/ward-derivations";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -38,6 +34,7 @@ import {
   Button,
   Card,
   Checkbox,
+  Dialog,
   Drawer,
   FilterChip,
   FolderTabs,
@@ -46,6 +43,7 @@ import {
   HeroFigures,
   HeroQuickChips,
   HeroTop,
+  heroChipClassName,
   folderTabClasses,
   Icon,
   Menu,
@@ -56,7 +54,6 @@ import {
   StatusGlyph,
   TabPanel,
   Tabs,
-  buttonClass,
   cx,
   durMinutes,
   tableClasses,
@@ -107,7 +104,12 @@ import {
   type HandoverSort,
   type HeldHandover,
 } from "./handover-model";
-import { HandoverFlowPanel, HandoverSignOffPanel, HandoverSiteSignOffSlot } from "./handover-panels";
+import {
+  HandoverFlowPanel,
+  HandoverSignOffPanel,
+  HandoverSiteSignOffSlot,
+  signOffSignerLabel,
+} from "./handover-panels";
 import { handoverSignOffChecks, sheetSignOff } from "./handover-sign-off-checks";
 import { HandoverKeysHelp, ShowMoreRow, handoverMeetingMinutes, signOffWaitReason } from "./handover-sheet-parts";
 import * as desk from "./handover-desk";
@@ -123,9 +125,12 @@ import {
   actNowLabel,
 } from "./handover-glance";
 import pageTop from "../page-top-title.module.css";
+import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { screenColumnsFor } from "./handover-screen-columns";
 import { DEFAULT_PRINT_OPTIONS, HandoverPrintSheet } from "./handover-print-sheet";
 import { HandoverPhone } from "./handover-phone";
+import { BeforeHandoverReview } from "@/components/ward-management/review/todays-review-screen";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import styles from "./handover-refined.module.css";
 
 import { NETWORK_SCOPE_VALUE, handoverScopeValue, parseHandoverScope } from "./handover-scope";
@@ -202,6 +207,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
  * the sheet builder, where what you see is what prints.
  */
 export function HandoverPage() {
+  const canOpenHref = useCanOpenHref();
   const [dueAll, setDueAll] = useState(false);
   const {
     movements,
@@ -233,6 +239,7 @@ export function HandoverPage() {
     "staffRequests",
   );
   const now = useWardFlowClock();
+  const router = useRouter();
   const zone = useClockZoneLabel();
   const carerDue = useCarerDue(now).length; // batch 3 item 23: carer call backs join the promises count
   const partialDisplay = useWardPartialDisplay();
@@ -253,14 +260,22 @@ export function HandoverPage() {
 
   /* scope, read once from the URL */
   const searchParams = useSearchParams();
-  const [scopeValue, setScopeValue] = useState<string>(() => {
+  const headerService = useServiceScope();
+  // A link's scope, read once. A link naming a ward, ED or team that does not exist falls back to
+  // the whole network: a quiet empty sheet is the dangerous direction on a handover.
+  const [linkedScope] = useState<string | null>(() => {
     const requested = searchParams?.get("scope")?.trim();
-    if (requested === undefined || requested.length === 0) return NETWORK_SCOPE_VALUE;
-    // A link naming a ward, ED or team that does not exist falls back to the whole network: a
-    // quiet empty sheet is the dangerous direction on a handover.
+    if (requested === undefined || requested.length === 0) return null;
     const parsed = parseHandoverScope(requested);
     return handoverScopeLabel(parsed, units) === undefined ? NETWORK_SCOPE_VALUE : handoverScopeValue(parsed);
   });
+  // Audit two (#64): with no link and no choice from the menu, the header's service is the scope and
+  // follows it when it changes or arrives after hydration (Codex review, PR #1742).
+  const [chosenScope, setScopeValue] = useState<string | null>(null);
+  const scopeValue =
+    chosenScope ??
+    linkedScope ??
+    (headerService === null ? NETWORK_SCOPE_VALUE : handoverScopeValue({ kind: "service", id: headerService }));
   const scope = useMemo(() => parseHandoverScope(scopeValue), [scopeValue]);
   const scopeLabel = handoverScopeLabel(scope, units, allRecordsLabel) ?? allRecordsLabel;
 
@@ -277,6 +292,7 @@ export function HandoverPage() {
   /* view state */
   const [tab, setTab] = useState<HandoverTab>("pts");
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [phoneBedsAsk, setPhoneBedsAsk] = useState(0);
   const [promisesOpen, setPromisesOpen] = useState(false); // Note 12: hero strip opens the promises card
   // Feature 15: the Shift digest; `?digest=1` (the rail's "Read digest" near handover) opens it.
   const [digestOpen, setDigestOpen] = useHandoverDigestOpen(searchParams?.get("digest") === "1");
@@ -521,9 +537,9 @@ export function HandoverPage() {
       (event) =>
         runStep(event, {
           // Audit S-31: one short toast; the panel's own line carries the time and the record.
-          success: "Handover signed off.",
+          success: "Handover signed off",
           undo: (at) => ({ type: "UNDO_HANDOVER_SIGN_OFF", role: routeRole, now: at, unitId: signOffUnitId }),
-          undone: "Sign-off undone.",
+          undone: "Undone: Handover signed off",
         }),
       now,
       routeRole,
@@ -536,7 +552,7 @@ export function HandoverPage() {
   const handleUndoSignOff = useCallback(() => {
     runStep(
       { type: "UNDO_HANDOVER_SIGN_OFF", role: routeRole, now, unitId: signOffUnitId },
-      { success: "Sign-off undone." },
+      { success: "Undone: Handover signed off" },
     );
   }, [runStep, now, routeRole, signOffUnitId]);
   const showSignOff = () => {
@@ -658,12 +674,26 @@ export function HandoverPage() {
     dueCount: counts.due,
     preparedAt,
     meetings,
+    // Audit four item 20: the phone's amber check gets its step too, opening the phone's Beds tab.
     onCheckBeds: isPhoneWidth
-      ? undefined
+      ? () => {
+          setDrawerOpen(false);
+          setPhoneBedsAsk((n) => n + 1);
+        }
       : () => {
           setDrawerOpen(false);
           setTab("beds");
         },
+    // Audit three #29: each unmet item carries its own step.
+    onPrint: isPhoneWidth
+      ? undefined
+      : () => {
+          setDrawerOpen(false);
+          setSheetOpen(true);
+        },
+    onStartMeeting: meetingStartedAt === null ? () => toggleMeeting() : undefined,
+    // Gate r10 (call 12, flip): the phone has no print step, so it shows no amber print row either.
+    printable: !isPhoneWidth,
   });
   const openCheckCount = signChecks.filter((check) => !check.done).length;
   useEffect(() => {
@@ -682,7 +712,8 @@ export function HandoverPage() {
   const signOffPanel = noWardSignOff ? null : (
     <div ref={signOffRef}>
       <HandoverSignOffPanel
-        title={`Sign off ${formatInstantWithDay(shiftAt, now)} handover`}
+        // Audit three #29: the drawer is titled Sign off, so the card names only the handover.
+        title={`${formatInstantWithDay(shiftAt, now)} handover`}
         subtitle={`${shiftInfo.label} · ${scopeLabel}`}
         checks={signChecks}
         signedAt={signedAt}
@@ -697,6 +728,28 @@ export function HandoverPage() {
       {!passed ? signOffGate.note : null}
     </div>
   );
+  // Audit four item 37: on a tablet or desktop Sign off is a small kit dialog, the five checks in its
+  // body and the filled Sign off in its foot. The phone keeps its short sheet (`signOffPanel`).
+  const signOffDialogBody = noWardSignOff ? null : (
+    <>
+      <HandoverSignOffPanel
+        inDialog
+        title={`${formatInstantWithDay(shiftAt, now)} handover`}
+        subtitle={`${shiftInfo.label} · ${scopeLabel}`}
+        checks={signChecks}
+        signedAt={signedAt}
+        signedBy={signedBy}
+        viewerRole={routeRole}
+        now={now}
+        canSignOff={canSignOff}
+        cannotSignReason={cannotSignReason}
+        onSignOff={handleSignOff}
+        onUndoSignOff={handleUndoSignOff}
+      />
+      {!passed ? signOffGate.note : null}
+    </>
+  );
+  const signOffSigner = signOffSignerLabel(signedAt, signedBy, routeRole);
   const departedPanel =
     selectedId !== null && !selected ? (
       <p ref={focusDepartedNotice} role="status" tabIndex={-1}>
@@ -723,13 +776,13 @@ export function HandoverPage() {
   /* iPad portrait: sign off (or a journey that has left) as a slide-over. The open patient has its
      own drawer at every width (drawer review, 6 Nov 2026), so an ED desk, with no sign-off rest
      state, shows this rail only for a journey that has left. */
-  const portraitRail = (signedLine: string | null, checksDone: number) =>
-    !signOffPanel && !departedPanel ? null : (
+  // Audit four item 37: Sign off opens its small dialog at 820 too, so the slide-over is left for a
+  // journey that has left.
+  const portraitRail = () =>
+    !departedPanel ? null : (
       <PortraitRail
-        title={departedPanel ? "Journey no longer open" : "Sign off"}
-        summary={
-          departedPanel ? "Check the patient record" : (signedLine ?? `${checksDone} of ${signChecks.length} checks`)
-        }
+        title="Journey no longer open"
+        summary="Check the patient record"
         open={drawerOpen && !selected}
         onOpenChange={(open) => {
           // The trigger opens the rest state (sign off); closing returns to it.
@@ -737,7 +790,7 @@ export function HandoverPage() {
           setDrawerOpen(open);
         }}
       >
-        {departedPanel ?? signOffPanel}
+        {departedPanel}
       </PortraitRail>
     );
 
@@ -764,24 +817,26 @@ export function HandoverPage() {
     <HandoverScopeControl value={scopeValue} onChange={setScopeValue} units={units} />
   );
   const deskChips = desk.deskChips(HANDOVER_CHIPS, ownWard !== undefined);
-  const groupingControl = (
+  const groupingMenu = (context?: string) => (
     <HandoverChoiceMenu
       label="Group by"
-      context="Group"
+      context={context}
       value={grouping}
       choices={(Object.keys(GROUPING_LABEL) as HandoverGrouping[]).map((id) => ({ id, label: groupingName(id) }))}
       onChange={(id) => setGrouping(id as HandoverGrouping)}
     />
   );
-  const sortControl = (
+  const sortMenu = (context?: string) => (
     <HandoverChoiceMenu
       label="Sort"
-      context="Sort"
+      context={context}
       value={sort}
       choices={(Object.keys(SORT_LABEL) as HandoverSort[]).map((id) => ({ id, label: SORT_LABEL[id] }))}
       onChange={(id) => setSort(id as HandoverSort)}
     />
   );
+  const groupingControl = groupingMenu("Group");
+  const sortControl = sortMenu("Sort");
   const densityControl = (
     <Segmented
       label="Columns shown"
@@ -805,52 +860,41 @@ export function HandoverPage() {
   ));
 
   const activeHighlights = deskChips.filter((chip) => chips.has(chip.id)).length + (pill !== null ? 1 : 0);
-  const highlightControl = (
-    <Menu
-      label="Highlight rows"
-      items={[
-        { kind: "heading", id: "hl-head", label: "Highlight rows" },
-        ...deskChips.map((chip) => ({
-          id: chip.id,
-          label: chip.label,
-          checked: chips.has(chip.id),
-          meta: (
-            <span className={styles.mono}>
-              {rows.filter((row) => chip.test(row, now, access.role === "admin" ? undefined : access.role)).length}
-            </span>
-          ),
-          onSelect: () => toggleChip(chip.id),
-        })),
-      ]}
-      trigger={(props) => (
-        <Button
-          {...props}
-          variant="sec"
-          size="sm"
-          icon={Highlighter}
-          count={activeHighlights > 0 ? activeHighlights : undefined}
-          className={activeHighlights > 0 ? styles.barOn : undefined}
-        >
-          Highlight
-        </Button>
-      )}
-    />
-  );
   const viewControl = (
     <Popover
       label="Arrange the sheet"
       align="end"
       trigger={(props) => (
-        <Button {...props} variant="ghost" size="sm" icon={SlidersHorizontal}>
-          {groupingName(grouping)}
+        <Button
+          {...props}
+          variant="ghost"
+          size="sm"
+          icon={SlidersHorizontal}
+          count={activeHighlights > 0 ? activeHighlights : undefined}
+          className={activeHighlights > 0 ? styles.barOn : undefined}
+          data-testid="ward-handover-arrange"
+        >
+          Arrange
         </Button>
       )}
     >
       {() => (
         <div className={styles.viewPanel}>
-          <div className={styles.viewChoices}>
-            {groupingControl}
-            {sortControl}
+          {/* Audit three #59: Highlight and the grouping join Arrange, one control for the one list. */}
+          <span className={styles.viewHead}>Highlight rows</span>
+          <div className={styles.hlChips}>{chipControls}</div>
+          {/* Audit two (#63): Group, Sort and Detail are the sheet's three arrangements, one labelled row each. */}
+          <div className={styles.viewRow}>
+            <span className={styles.viewLabel}>Group</span>
+            {groupingMenu()}
+          </div>
+          <div className={styles.viewRow}>
+            <span className={styles.viewLabel}>Sort</span>
+            {sortMenu()}
+          </div>
+          <div className={styles.viewRow}>
+            <span className={styles.viewLabel}>Detail</span>
+            {densityControl}
           </div>
           <span className={styles.viewHead}>Columns</span>
           <div className={styles.viewCols}>
@@ -918,6 +962,8 @@ export function HandoverPage() {
       }}
     />
   );
+  // Batch 3: the review block is the coordinator's, the one desk that opened Today's review.
+  const showReview = canOpenHref("/bedchart/review");
   const siteSignOff = <HandoverSiteSignOffSlot phone={isPhoneWidth} onScope={setScopeValue} />;
   if (isPhoneWidth) {
     return (
@@ -951,6 +997,9 @@ export function HandoverPage() {
           since={formatInstantWithDay(newSince, now)}
           sinceItems={sinceItems}
           carryOver={<HandoverOpenPromises referrals={referrals} units={units} now={now} layout="phone" />}
+          // Batch 3: Today's review's "Before you hand over" follows the carry-over, on Patients only.
+          patientsExtra={showReview ? <BeforeHandoverReview /> : null}
+          onCallHref={canOpenHref("/bedchart/on-call") ? "/bedchart/on-call" : undefined}
           onCopySince={copySince}
           chips={deskChips.map((chip) => ({
             id: chip.id,
@@ -965,6 +1014,7 @@ export function HandoverPage() {
           history={<HandoverHistory {...historyProps} />}
           siteSignOff={siteSignOff}
           promisesAct={promisesPhoneAct(referrals, now, carerDue)}
+          bedsAsk={phoneBedsAsk}
           onPill={togglePill}
         />
         {digestSheet}
@@ -1010,8 +1060,7 @@ export function HandoverPage() {
       title={
         <>
           <SrOnly>{`Handover, ${scopeLabel}:`}</SrOnly>{" "}
-          {ownWard ? desk.peopleToHandOver(handoverCount) : `${handoverCount} to hand over`}{" "}
-          <span className={pageTop.soft}>at {shiftClock}</span>
+          {ownWard ? desk.peopleToHandOver(handoverCount) : `${handoverCount} to hand over`}
         </>
       }
       aside={
@@ -1051,17 +1100,8 @@ export function HandoverPage() {
             items={[
               {
                 id: "meeting",
-                label: "Start meeting",
+                label: "Meeting timer",
                 node: <HandoverMeetingChip startedAt={meetingStartedAt} now={now} onClick={toggleMeeting} />,
-              },
-              {
-                // Feature 15: the Shift digest, beside Start meeting; `?digest=1` also opens it.
-                id: "digest",
-                label: "Digest",
-                icon: <FileText strokeWidth={1.75} aria-hidden="true" />,
-                expanded: digestOpen,
-                testId: "ward-handover-digest-open",
-                onClick: () => setDigestOpen(true),
               },
               ...(noWardSignOff
                 ? []
@@ -1080,11 +1120,49 @@ export function HandoverPage() {
                     },
                   ]),
               {
-                id: "print",
-                label: "Print handover",
-                icon: <Printer strokeWidth={1.75} aria-hidden="true" />,
-                testId: "ward-handover-print",
-                onClick: () => setSheetOpen(true),
+                /* Audit three #28: the handover's outputs sit under one Share chip, as Discharges has.
+                   Shift digest opens the sheet, which holds Copy digest; `?digest=1` still opens it. */
+                id: "share",
+                label: "Share",
+                node: (
+                  <Menu
+                    label="Share"
+                    align="end"
+                    items={[
+                      {
+                        id: "copy",
+                        label: copied ? "Copied" : "Copy for handover",
+                        icon: ClipboardCopy,
+                        onSelect: copySummary,
+                      },
+                      {
+                        id: "print",
+                        label: <span data-testid="ward-handover-print">Print handover</span>,
+                        icon: Printer,
+                        onSelect: () => setSheetOpen(true),
+                      },
+                      {
+                        id: "digest",
+                        label: <span data-testid="ward-handover-digest-open">Shift digest</span>,
+                        icon: FileText,
+                        onSelect: () => setDigestOpen(true),
+                      },
+                      {
+                        id: "downtime",
+                        label: "Downtime pack",
+                        icon: Printer,
+                        onSelect: () => router.push("/bedchart/reports/downtime"),
+                      },
+                    ]}
+                    trigger={(props) => (
+                      <button type="button" {...props} className={heroChipClassName} data-testid="ward-handover-share">
+                        <Icon icon={Share2} size={16} />
+                        <span>Share</span>
+                        <Icon icon={ChevronDown} size={14} />
+                      </button>
+                    )}
+                  />
+                ),
               },
             ]}
           />
@@ -1112,41 +1190,19 @@ export function HandoverPage() {
       testId="ward-handover-tabs"
       more={
         <span className={styles.folderTools}>
-          <Popover
-            label="More handover actions"
-            align="end"
-            trigger={(props) => (
-              <Button
-                {...props}
-                variant="ghost"
-                size="sm"
-                iconOnly
-                icon={Ellipsis}
-                className={folderTabClasses.more}
-                aria-label="More handover actions"
-              />
-            )}
+          {/* Audit four item 6: the one-item dots menu is the Open on TV button itself, as on Capacity
+              and ED (A2-80, one name, one door). Keyboard shortcuts stays an icon. */}
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={MonitorPlay}
+            className={`${folderTabClasses.more} ${folderTabClasses.moreOutlined}`}
+            aria-pressed={present}
+            onClick={() => setPresent((on) => !on)}
+            data-testid="ward-handover-open-tv"
           >
-            {() => (
-              <div className={styles.moreList}>
-                <Button variant="ghost" size="sm" icon={MonitorPlay} onClick={() => setPresent((on) => !on)}>
-                  {present ? "Exit present" : "Present on a screen"}
-                </Button>
-                <Button variant="ghost" size="sm" icon={ClipboardCopy} onClick={copySummary}>
-                  {copied ? "Copied" : "Copy summary"}
-                </Button>
-                <Link href="/bedchart/reports/downtime" className={buttonClass({ variant: "ghost", size: "sm" })}>
-                  <Icon icon={Printer} size={14} />
-                  Downtime pack
-                </Link>
-                {/* B4: act now and due before the next handover, as Delays' For handover view. */}
-                <Link href={waitingHref("handover")} className={buttonClass({ variant: "ghost", size: "sm" })}>
-                  <Icon icon={Clock} size={14} />
-                  Open in Waiting
-                </Link>
-              </div>
-            )}
-          </Popover>
+            {present ? "Close TV view" : "Open on TV"}
+          </Button>
           <Popover
             label="Keyboard shortcuts"
             align="end"
@@ -1210,13 +1266,8 @@ export function HandoverPage() {
     >
       <div className={styles.bar} data-testid="ward-handover-prepare">
         {scopeControl}
-        <div className={styles.step}>
-          <span className={styles.stepLabel}>Detail</span>
-          {densityControl}
-        </div>
-        {highlightControl}
         {viewControl}
-        {/* Print handover is the top's chip (page tops, 9 Nov 2026). */}
+        {/* Print handover sits under the top's Share chip (audit three #28). */}
       </div>
       {(scope.kind === "network" || wardAllShown) && !anyHighlight ? null : (
         <div className={styles.scopeLine} data-testid="ward-handover-scope-line">
@@ -1444,18 +1495,22 @@ export function HandoverPage() {
       </TabPanel>
     );
   } else if (portrait) {
-    const signedLine = signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : null;
+    // Audit four item 21 (A3-28, A2-64): no portrait-only filled Print (it is under Share) and no
+    // second scope picker (the header sets the scope). The list head keeps Arrange, and says
+    // "N of M open" beside it only when the list is narrowed; the Patients tab already counts it.
+    const narrowed = rows.length !== allRows.length;
     body = (
       <TabPanel idPrefix="ward-handover-tab" id="pts">
-        <div className={styles.portraitTools}>
-          {scopeControl}
-          <span className={styles.portraitNote}>
-            <b>{rows.length}</b> of {allRows.length} open
-          </span>
-          <Button variant="pri" icon={Printer} onClick={() => setSheetOpen(true)} data-testid="ward-handover-print">
-            Print handover
-          </Button>
-          <span className={styles.portraitRailHost}>{portraitRail(signedLine, checksDone)}</span>
+        <div className={styles.portraitTools} data-testid="ward-handover-portrait-head">
+          {narrowed ? (
+            <span className={styles.portraitNote}>
+              <b>{rows.length}</b> of {allRows.length} open
+            </span>
+          ) : (
+            <span className={styles.portraitNote} />
+          )}
+          {viewControl}
+          <span className={styles.portraitRailHost}>{portraitRail()}</span>
         </div>
         <PortraitList
           label="Handover patients"
@@ -1482,12 +1537,15 @@ export function HandoverPage() {
             }),
           }))}
         />
+        {showReview ? <BeforeHandoverReview className={styles.reviewBlock} /> : null}
       </TabPanel>
     );
   } else {
     body = (
       <TabPanel idPrefix="ward-handover-tab" id="pts">
         <div className={styles.split}>{table}</div>
+        {/* Batch 3 (one Handover): Today's review's "Before you hand over", under the grouped table. */}
+        {showReview ? <BeforeHandoverReview className={styles.reviewBlock} /> : null}
       </TabPanel>
     );
   }
@@ -1511,12 +1569,42 @@ export function HandoverPage() {
       {digestSheet}
       {!portrait ? (
         <Drawer
-          open={drawerOpen && !selected && (departedPanel ?? signOffPanel) !== null}
+          open={drawerOpen && !selected && departedPanel !== null}
           onClose={() => setDrawerOpen(false)}
-          title={departedPanel ? "Journey no longer open" : "Sign off"}
+          title="Journey no longer open"
         >
-          {departedPanel ?? signOffPanel}
+          {departedPanel}
         </Drawer>
+      ) : null}
+      {signOffDialogBody ? (
+        <Dialog
+          open={drawerOpen && !selected && !departedPanel}
+          onClose={() => setDrawerOpen(false)}
+          // Gate r10 (1b upgrade 4): the next kit width, so a stale-ward check and the filled
+          // "Sign off as … at …" label each hold one line.
+          size="md"
+          title="Sign off"
+          description={`${formatInstantWithDay(shiftAt, now)} handover · ${shiftInfo.label} · ${scopeLabel}`}
+          data-testid="ward-handover-sign-off-dialog"
+          secondary={
+            signedAt !== null
+              ? [{ label: "Undo sign-off", onAction: handleUndoSignOff }]
+              : [{ label: "Not now", onAction: () => setDrawerOpen(false) }]
+          }
+          primary={
+            signedAt !== null
+              ? { label: "Done", onAction: () => setDrawerOpen(false) }
+              : {
+                  label: `Sign off as ${signOffSigner} at ${formatInstant(now)}`,
+                  onAction: handleSignOff,
+                  disabledReason: !canSignOff
+                    ? (cannotSignReason ?? "Complete sign-off checks first")
+                    : cannotSignReason,
+                }
+          }
+        >
+          {signOffDialogBody}
+        </Dialog>
       ) : null}
       <WardPrototypeFooter
         testId="ward-handover-governance"

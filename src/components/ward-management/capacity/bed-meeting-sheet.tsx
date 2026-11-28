@@ -1,17 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Printer } from "lucide-react";
 
-import { Button } from "@/components/wf";
+import { Dialog } from "@/components/wf";
 
 import { WardPrintFooter } from "@/components/ward-management/shell/ward-access";
 import { asAtStamp } from "@/components/ward-management/board/ward-daily-sheet-model";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
-import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import {
   LONG_WAIT_MINUTES,
   LONG_WAIT_TEXT,
@@ -21,6 +19,7 @@ import {
 import { countCellText } from "./capacity-derivations";
 import { bedMeetingSheetScope, type BedMeetingSheet } from "./bed-meeting-derivations";
 import styles from "./bed-meeting-sheet.module.css";
+import capacityStyles from "./capacity-page.module.css";
 
 /**
  * THE MORNING BED-MEETING SHEET, printed on A4 from Capacity's Bed meeting sheet dialog
@@ -335,11 +334,14 @@ export function BedMeetingSheetPrintCopy({
   sheet,
   now,
   screenHidden,
+  actions,
 }: {
   sheet: BedMeetingSheet;
   now: Instant;
   /** A class that hides the copy on screen, from the page that mounts it. */
   screenHidden: string;
+  /** The agenda's open actions, printed in their own section (the Agenda's launcher). */
+  actions?: readonly BedMeetingSheetAction[];
 }) {
   useEffect(() => {
     const root = document.documentElement;
@@ -351,7 +353,7 @@ export function BedMeetingSheetPrintCopy({
   return createPortal(
     <div className={`${styles.portal} ${screenHidden}`} data-testid="bed-meeting-sheet-print-copy" aria-hidden="true">
       <div className={styles.dialog}>
-        <BedMeetingSheetView sheet={sheet} now={now} />
+        <BedMeetingSheetView sheet={sheet} now={now} {...(actions ? { actions } : {})} />
       </div>
     </div>,
     document.body,
@@ -382,15 +384,9 @@ export function BedMeetingSheetLauncher({
   icon?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const panel = useRef<HTMLDivElement>(null);
-  useWardModalFocus(open, panel, () => setOpen(false));
-
-  useEffect(() => {
-    if (!open) return;
-    const root = document.documentElement;
-    root.classList.add(BED_MEETING_PRINTING_CLASS);
-    return () => root.classList.remove(BED_MEETING_PRINTING_CLASS);
-  }, [open]);
+  // Audit two #38 (N2): one meeting sheet on the kit Dialog; its footer pins Print sheet and Close.
+  // The printed copy is the same hidden portal Capacity's dialog mounts, so print sends the sheet alone.
+  const sheet = open ? buildSheet() : null;
 
   return (
     <>
@@ -405,43 +401,31 @@ export function BedMeetingSheetLauncher({
         {icon}
         Bed meeting sheet
       </button>
-      {open &&
-        createPortal(
-          <div className={styles.portal} data-testid="bed-meeting-sheet-portal">
-            <div className={styles.backdrop} aria-hidden="true" data-sheet-scrim="" onClick={() => setOpen(false)} />
-            <div
-              ref={panel}
-              className={styles.dialog}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="bed-meeting-sheet-title"
-              tabIndex={-1}
-            >
-              {/* B1 (Josh, 3 Nov 2026): a pinned head with the kit's buttons, so Print stays in reach. */}
-              <div className={styles.toolbar} data-print-hide>
-                <span className={styles.toolbarTitle}>Bed meeting sheet</span>
-                <Button
-                  variant="pri"
-                  size="sm"
-                  icon={Printer}
-                  onClick={() => window.print()}
-                  data-testid="bed-meeting-sheet-print"
-                >
-                  Print sheet
-                </Button>
-                <Button variant="sec" size="sm" onClick={() => setOpen(false)}>
-                  Close
-                </Button>
-              </div>
-              {/* Spec item 5 (F-57, 13 Nov 2026): the sheet holds nothing to press, so it is a named stop
-                  of its own and arrow keys scroll the overlay around it. */}
-              <div tabIndex={0} role="region" aria-label="Bed meeting sheet, scroll with arrow keys">
-                <BedMeetingSheetView sheet={buildSheet()} now={now} {...(actions ? { actions } : {})} />
-              </div>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Bed meeting sheet"
+        size="lg"
+        secondary={[{ label: "Close", onAction: () => setOpen(false) }]}
+        primary={{ label: "Print sheet", onAction: () => window.print() }}
+        data-testid="bed-meeting-sheet-portal"
+      >
+        {sheet ? (
+          <>
+            <BedMeetingSheetPrintCopy
+              sheet={sheet}
+              now={now}
+              screenHidden={capacityStyles.screenHidden}
+              {...(actions ? { actions } : {})}
+            />
+            {/* Spec item 5 (F-57, 13 Nov 2026): the sheet holds nothing to press, so it is a named stop
+                of its own and arrow keys scroll the dialog around it. */}
+            <div tabIndex={0} role="region" aria-label="Bed meeting sheet, scroll with arrow keys">
+              <BedMeetingSheetView sheet={sheet} now={now} {...(actions ? { actions } : {})} />
             </div>
-          </div>,
-          document.body,
-        )}
+          </>
+        ) : null}
+      </Dialog>
     </>
   );
 }

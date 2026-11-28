@@ -292,3 +292,28 @@
   min-height: 44px;
   white-space: nowrap;
 }
+
+/* The More menu's anchor shares the foot row like its neighbours, its button filling the cell. */
+.drawerTools > span {
+  display: flex;
+}
+
+.drawerTools > span > button {
+  flex: 1 1 auto;
+}
+
+/* Gate r10 F2: subtitle parts carry their own leading dot; tags close the line. */
+.subItem {
+  white-space: nowrap;
+}
+
+.subItem + .subItem::before {
+  content: "·";
+  margin-inline-end: 6px;
+}
+
+.subTags {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+}

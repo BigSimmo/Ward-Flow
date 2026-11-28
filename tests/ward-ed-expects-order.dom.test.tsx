@@ -1,4 +1,4 @@
-import { cleanup, render as rtlRender, screen, within } from "@testing-library/react";
+import { cleanup, render as rtlRender, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -66,9 +66,8 @@ function renderEd(edId: string) {
 
 /** The waits down the rendered Expects list, in render order, for one department. */
 function waitsDownTheList(): number[] {
-  const section = screen.queryByTestId("ward-ed-expects");
-  if (section === null) return [];
-  return within(section)
+  // The Expects section's own wrapper is gone (My list holds the list, 26 Nov 2026); its rows keep their testids.
+  return screen
     .queryAllByTestId(/^ward-ed-expects-row-/u)
     .map((row) => Number(row.getAttribute("data-minutes-waiting")));
 }
@@ -126,7 +125,11 @@ describe("the Expects list is ordered the way it says it is", () => {
     if (withExpects === undefined) return;
 
     renderEd(withExpects.id);
-    const said = screen.getByTestId("ward-ed-expects").textContent ?? "";
+    // The summary sentence went with the section wrapper; every row now names the clock itself.
+    const said = screen
+      .getAllByTestId(/^ward-ed-expects-row-/u)
+      .map((row) => row.textContent ?? "")
+      .join(" ");
 
     expect(
       said,
@@ -138,6 +141,6 @@ describe("the Expects list is ordered the way it says it is", () => {
       said,
       "the ordering claim no longer names which wait it means — see the file header for why the bare " +
         "word is the problem",
-    ).toMatch(/since referral|since they were referred/iu);
+    ).toMatch(/waiting since referral|since they were referred/iu);
   });
 });

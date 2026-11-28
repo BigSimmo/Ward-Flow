@@ -3612,12 +3612,15 @@
 /* Phone (10 Nov 2026): the folder tabs pin under the header while the page scrolls, as Home's do
    (home-flow.module.css .nav) and as the ward's old segmented tabs did. */
 @media (max-width: 46.4375rem) {
+  /* States B review: no padding or margin under the row (about 45px of empty sheet sat between the
+     tabs and the first card). The first card still starts below the folder sheet's painted edge
+     (tab top + 40px tab + 20px corner), which the row's own stacking would paint over. */
   .folderTabsPinned {
     position: sticky;
     top: var(--wf-header-height, 3.5rem);
     z-index: 6;
-    margin-bottom: var(--wf-s-2);
-    padding-block: var(--wf-s-2);
+    margin-bottom: 0;
+    padding-block: var(--wf-s-2) 0;
     background: var(--wf-canvas);
     box-shadow:
       var(--wf-s-4) 0 0 var(--wf-canvas),
@@ -3630,4 +3633,11 @@
   .tabBtn.tabBtn {
     min-height: 36px;
   }
+}
+
+/* Fold the Bed board into Ward (design plan 26 Nov 2026): the board's prompts and Before handover
+   in Decisions, on the page's rhythm. */
+.decisionBoardPart {
+  margin-top: var(--wf-s-3);
+  min-width: 0;
 }

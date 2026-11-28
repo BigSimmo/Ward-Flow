@@ -1,0 +1,56 @@
+/* Network's Browse card (simplification mock-up, 26 Nov 2026). */
+
+/* The lead card's own control, moved out of its head into the top of its body. */
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4) 0;
+}
+
+/* The segment switch keeps one line; on a phone it scrolls inside the head at 40px. */
+.switch {
+  flex: none;
+}
+
+@media (max-width: 46.4375rem) {
+  .switchScroll {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+}
+
+/* An old index address scrolls here; the card keeps a breath of space under the bar. */
+.root {
+  scroll-margin-top: var(--wf-s-4);
+}
+
+/* An index page's cards join Browse's own stack, so every segment keeps the Wards gap. */
+.contents {
+  display: contents;
+}
+
+/* Final look (26 Nov 2026): the Browse tables keep the kit table's cells (44px rows with no vertical
+   padding, 12px sides, the kit's 5rem column floor), as every build drew them while the kit's table
+   stylesheet loaded after the redesign's. Scoped to Browse, so the result no longer depends on the
+   order a route loads the two stylesheets in. The first and last cells keep their 16px outer edge. */
+.root table td,
+.root table th {
+  padding-block: var(--wf-cell-pad-y, 0);
+  min-width: var(--wf-col-min, 5rem);
+}
+
+.root table td {
+  height: var(--wf-row);
+}
+
+.root table :is(td, th):not(:first-child) {
+  padding-left: var(--wf-s-3);
+}
+
+.root table :is(td, th):not(:last-child) {
+  padding-right: var(--wf-s-3);
+}

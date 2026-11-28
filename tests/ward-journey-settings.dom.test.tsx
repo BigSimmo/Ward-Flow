@@ -224,8 +224,10 @@ describe("settings audited journey recovery", () => {
         }),
     ) as WardRaise;
     renderSettings();
-    // Restore defaults moved to This device (31 Oct 2026), where every desk has it.
-    fireEvent.click(screen.getByTestId("btn-restore-baseline"));
+    // Audit two #44: the rules' Restore defaults sits on the Rules tab row; This device restores only
+    // this browser ("Restore this browser").
+    fireEvent.click(screen.getByTestId("ward-settings-jump-rules"));
+    fireEvent.click(screen.getByTestId("btn-restore-rules"));
     fireEvent.click(screen.getByRole("button", { name: /^(Restore defaults|Restoring…)$/ }));
     // The kit's loading button ignores presses while the restore is pending.
     const pendingRestore = screen.getByRole("button", { name: /^(Restore defaults|Restoring…)$/ });
@@ -283,17 +285,18 @@ describe("settings audited journey recovery", () => {
     expect(screen.getByTestId("reopened-draft")).toHaveTextContent("empty");
   });
 
-  it("explains the development-only digest in production without offering a broken link", () => {
+  it("offers no design-reference digest link in production or in development", () => {
+    // r10 removed the development-only "Product design reference" line from About, so no broken link
+    // can show in production, and none shows in development either.
     vi.stubEnv("NODE_ENV", "production");
     renderSettings();
-    // Demo tools (31 Oct 2026): the design reference line shows only where the link works.
     expect(within(demoTools()).getByText("About")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "BedChart Digest" })).not.toBeInTheDocument();
     expect(screen.queryByText("Product design reference")).not.toBeInTheDocument();
     cleanup();
     vi.unstubAllEnvs();
     renderSettings();
-    expect(within(demoTools()).getByRole("link", { name: "BedChart Digest" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "BedChart Digest" })).not.toBeInTheDocument();
   });
 
   it("explains coordinator-only rules while retaining personal settings for a ward desk", () => {

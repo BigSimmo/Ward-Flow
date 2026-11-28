@@ -10,10 +10,10 @@ import { withSendingTeam } from "@/components/ward-management/referrals/referral
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { Button, StatusGlyph } from "@/components/wf";
+import { Badge, Button, StatusGlyph } from "@/components/wf";
 
 import { minutesText } from "./alerts-model";
-import { AlertPhoneRowLayout, AlertWho } from "./alerts-queue";
+import { AlertPhoneRowLayout } from "./alerts-queue";
 import styles from "./alerts.module.css";
 
 /** When the ward accepted: the accepted arm's recorded decision time, when there is one. */
@@ -43,7 +43,7 @@ export function AlertPullPhoneRows({
   const nameFor = usePatientNameDisplay();
   return (
     <ul className={styles.phoneRows} data-testid={testId}>
-      {toPull.map((entry) => {
+      {toPull.map((entry, index) => {
         const { referral } = entry;
         const who = patientOf(referral);
         const name = nameFor(who.formalName, who.umrn);
@@ -69,14 +69,22 @@ export function AlertPullPhoneRows({
                 aria-label={`${openLabel}: Accepted, bed not pulled`}
                 onClick={() => setPulling(entry)}
               >
-                <span className={styles.rowOpenText}>Accepted, bed not pulled</span>
+                <span className={styles.rowOpenText}>{name}</span>
               </button>
             }
-            who={<AlertWho name={name} umrn={who.umrn} />}
+            // Gate r10 F8: name first, as every other alert row; the alert is the tag on line two.
+            who={
+              <span className={styles.phoneRowTagLine}>
+                {who.umrn ? <span className={styles.umrn}>{who.umrn}</span> : null}
+                <Badge size="sm">Accepted, bed not pulled</Badge>
+              </span>
+            }
             line={`${entry.unitName} accepted · ${from}`}
             action={
               <Button
                 size="sm"
+                // As the desk's rows: the first is the panel's one filled button.
+                variant={index === 0 ? "pri" : "sec"}
                 className={styles.btn}
                 data-placement-action
                 aria-label={`Pull bed for ${name} at ${entry.unitName}`}

@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { useEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -83,13 +83,19 @@ describe("Arrived at ward on a pulled-bed alert (P069)", () => {
   it("asks first with the approved wording, records the arrival, and offers Undo for the whole Undo window (D-187)", async () => {
     const { unitName } = renderFor(false);
     expect(screen.getByTestId("stage")).toHaveTextContent("pulled");
-    fireEvent.click(screen.getByRole("button", { name: "Arrived at ward" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record arrival" }));
     expect(
-      screen.getByText(`Mark Synthetic patient as arrived at ${unitName}? The pulled bed becomes occupied.`),
+      screen.getByText(
+        `Record arrival at the ward? Synthetic patient at ${unitName}; check the wristband first. The pulled bed becomes occupied.`,
+      ),
     ).toBeInTheDocument();
     expect(screen.getByTestId("stage")).toHaveTextContent("pulled");
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Mark arrived" }));
+      fireEvent.click(
+        within(screen.getByRole("group", { name: "Record arrival at the ward?" })).getByRole("button", {
+          name: "Record arrival",
+        }),
+      );
     });
     expect(screen.getByTestId("stage")).not.toHaveTextContent("pulled");
     // D-192 (shared design parts item 4): one clock time in the words, no "min left" countdown.
@@ -100,10 +106,10 @@ describe("Arrived at ward on a pulled-bed alert (P069)", () => {
     expect(screen.getByRole("button", { name: /Undo/ })).toBeInTheDocument();
   });
 
-  it("Cancel records nothing", () => {
+  it("Not yet records nothing", () => {
     renderFor(false);
-    fireEvent.click(screen.getByRole("button", { name: "Arrived at ward" }));
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record arrival" }));
+    fireEvent.click(screen.getByRole("button", { name: "Not yet" }));
     expect(screen.getByTestId("stage")).toHaveTextContent("pulled");
     expect(screen.queryByText(/The pulled bed becomes occupied/)).not.toBeInTheDocument();
   });
@@ -111,6 +117,6 @@ describe("Arrived at ward on a pulled-bed alert (P069)", () => {
   it("is not offered when transport is needed, because the engine would refuse the arrival", () => {
     renderFor(true);
     expect(screen.getByTestId("stage")).toHaveTextContent("pulled");
-    expect(screen.queryByRole("button", { name: "Arrived at ward" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Record arrival" })).not.toBeInTheDocument();
   });
 });

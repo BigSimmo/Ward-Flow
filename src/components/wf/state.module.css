@@ -25,6 +25,24 @@
   background: transparent;
 }
 
+/* Loading (audit two B23): one quiet line, no edge or fill, 12px above and below, so it stands in
+   for the content's first row. The kit spinner in ink-3; the words 13 in ink-2 (the calm title).
+   The glyph rule takes two classes so it beats the spinner's own size in any load order (B21). */
+.loading {
+  min-height: 0;
+  padding: var(--wf-s-3) 0;
+  border-color: transparent;
+  background: transparent;
+}
+
+.loading .loadingGlyph {
+  width: 12px;
+  height: 12px;
+  flex-basis: 12px;
+  border-width: 1.5px;
+  color: var(--wf-ink-3);
+}
+
 .text {
   display: inline-flex;
   align-items: baseline;

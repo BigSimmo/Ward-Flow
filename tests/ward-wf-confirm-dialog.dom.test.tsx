@@ -16,6 +16,7 @@ const REQUEST: ConfirmRequest = {
   title: "Leave this page?",
   message: "You have unsaved changes. Are you sure you want to leave?",
   confirmLabel: "Leave without saving",
+  cancelLabel: "Keep editing",
 };
 
 describe("kit styled confirm", () => {

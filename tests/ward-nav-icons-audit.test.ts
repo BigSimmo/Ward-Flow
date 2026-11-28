@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Bell, DoorOpen, Hourglass, LogOut, MapPin, Siren } from "lucide-react";
+import { Bell, DoorOpen, Hourglass, LogOut, Search, Siren } from "lucide-react";
 
 import { WARD_NAV_ICONS, WARD_VIEW_ICONS } from "@/components/ward-management/ward-nav-icons";
 
@@ -15,7 +15,7 @@ describe("menu icons", () => {
     expect(WARD_NAV_ICONS.alerts).toBe(Bell);
     expect(WARD_NAV_ICONS.discharges).toBe(DoorOpen);
     expect(WARD_NAV_ICONS.discharges).not.toBe(LogOut);
-    expect(WARD_NAV_ICONS.hub).toBe(MapPin);
+    expect(WARD_NAV_ICONS.hub).toBe(Search);
     expect(WARD_VIEW_ICONS.delays).toBe(Hourglass);
   });
 });

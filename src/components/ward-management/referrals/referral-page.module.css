@@ -163,6 +163,21 @@
 .colNeeds.colNeeds {
   width: 6.5rem;
 }
+/* Audit three #58: Needs joins Asking for, so that column takes the width Needs had. */
+.colAskNeeds.colAskNeeds {
+  width: calc(14% + 6.5rem);
+}
+@container referral-queue (max-width: 44rem) {
+  .colAskNeeds.colAskNeeds {
+    width: 9rem;
+  }
+}
+/* The needs under the asks: quiet tags on one wrapping line. */
+html .askNeeds.askNeeds {
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin-top: var(--space-1);
+}
 /* No ward fits: the count shows in the danger colour. */
 .wrapRows.wrapRows [data-zero="true"] b {
   color: var(--wf-danger-ink);
@@ -387,6 +402,56 @@
   display: block;
   height: 100%;
   background: var(--wf-ink-3);
+}
+.offerChaseCode {
+  display: none;
+}
+/* Audit four item 24 (820): the answer is a two-line cell, not a pill, and Chase names the ward by its short code. */
+@media (min-width: 46.5rem) and (max-width: 64rem) {
+  .offersTable.offersTable .offerChip.offerChip {
+    border-radius: var(--wf-r-tag);
+    white-space: normal;
+    align-items: flex-start;
+  }
+  .offersTable .offerChip > span {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .offersTable .offerChaseWard {
+    display: none;
+  }
+  .offersTable .offerChaseCode {
+    display: inline;
+  }
+  /* r10: Chase and Escalate stack in one narrow column with the chevron beside them, so the
+     actions stay inside the card and the answers column keeps the width. */
+  .offersTable .offerWards {
+    min-width: 0;
+  }
+  /* fix-5: the button column is max-content, not auto. The buttons clip their own overflow, so an
+     auto track let them shrink below their text in the 1% actions cell and they spilled left over
+     Waiting; max-content gives the cell their real width and the answers column takes the squeeze.
+     Both buttons stretch to one width, so the pair reads as one aligned stack. */
+  /* Look check F5: one fixed button track, so Chase and Escalate (and a lone button) are one width
+     on every row. */
+  .offerActionRow {
+    display: inline-grid;
+    grid-template-columns: 6.5rem auto;
+    justify-items: stretch;
+    gap: var(--wf-s-1) var(--wf-s-2);
+  }
+  .offerActionRow > :not(.offerChevron) {
+    grid-column: 1;
+    inline-size: 100%;
+  }
+  .offerActionRow > .offerChevron {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+  .offerActionRow:not(:has(> :nth-child(3))) > .offerChevron {
+    grid-row: 1;
+  }
 }
 .offerSent {
   display: block;

@@ -36,12 +36,15 @@ export function TvLockControl({
   className,
   shared,
   standIn = false,
+  onLock,
 }: {
   href: string;
   className: string;
   shared: boolean;
   /** The layout's stand-in (F-65), which must not count as the TV view's own control. */
   standIn?: boolean;
+  /** Runs inside the Lock as TV press once the lock is saved; the wall view enters full screen here. */
+  onLock?: () => void;
 }) {
   const locked = useTvLock();
   useEffect(() => (standIn ? undefined : noteTvLockControl()), [standIn]);
@@ -122,11 +125,11 @@ export function TvLockControl({
         <button
           type="button"
           className={className}
-          onClick={() =>
-            setError(
-              lockTv(href) ? null : "This browser could not save the TV lock. Check storage access and try again.",
-            )
-          }
+          onClick={() => {
+            const saved = lockTv(href);
+            setError(saved ? null : "This browser could not save the TV lock. Check storage access and try again.");
+            if (saved) onLock?.();
+          }}
           data-testid="tv-lock"
         >
           <Lock aria-hidden="true" />

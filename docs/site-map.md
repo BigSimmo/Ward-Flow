@@ -93,6 +93,7 @@ See also [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md), which pairs each 
 ## Redirects
 
 - `/` - Redirects to `/bedchart`. Source: `src/app/page.tsx`.
+- `/bedchart` - Redirects to `/bedchart/movements`. Source: `src/app/bedchart/page.tsx`.
 - `/bedchart/command` - Redirects to `/bedchart`. Source: `src/app/bedchart/command/page.tsx`.
 - `/bedchart/community` - Redirects to `/bedchart/hub/catchments`. Source: `src/app/bedchart/community/page.tsx`.
 - `/bedchart/constellation` - Redirects to `/bedchart`. Source: `src/app/bedchart/constellation/page.tsx`.
@@ -100,6 +101,7 @@ See also [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md), which pairs each 
 - `/bedchart/exceptions` - Redirects to `/bedchart/waiting`. Source: `src/app/bedchart/exceptions/page.tsx`.
 - `/bedchart/network` - Redirects to `/bedchart`. Source: `src/app/bedchart/network/page.tsx`.
 - `/bedchart/queue` - Redirects to `/bedchart/waiting`. Source: `src/app/bedchart/queue/page.tsx`.
+- `/bedchart/review` - Redirects to `/bedchart/governance?tab=review`. Source: `src/app/bedchart/review/page.tsx`.
 - `/bedchart/transport` - Redirects to `/bedchart/transport/officer`. Source: `src/app/bedchart/transport/page.tsx`.
 
 ## Known caveats and stale-path flags

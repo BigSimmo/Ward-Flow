@@ -304,11 +304,31 @@
      rows stop growing to four lines. Movements redesign (1 Nov 2026): Barrier and Legal are separate columns with fixed widths at
      the ends, so no cell is ever squeezed to a letter wide; text that does not fit
      wraps onto a second line instead. */
+  /* Simplification mock-up (26 Nov 2026): tier, patient, route, held up by, legal, waited, the next step
+     (its own narrow column), then the open chevron. The head row shares this template. */
   grid-template-columns:
-    2rem minmax(8.5rem, 1fr) minmax(8rem, 1.25fr) minmax(7rem, 1.1fr)
-    8.5rem 5rem 9rem 1.5rem;
+    2.5rem minmax(10.5rem, 1.15fr) minmax(6.5rem, 1fr) minmax(10rem, 2fr) 8rem 5rem
+    6rem 2rem;
   align-items: center;
   column-gap: var(--wf-s-3);
+}
+
+.reviewTag {
+  max-width: 100%;
+  white-space: normal;
+  /* Final look (26 Nov 2026): in the narrow held-up column the tag wraps; the badge's line height of
+     1 set its two lines touching, so it takes the 12px text line height and a little more padding. */
+  padding-block: 3px;
+  line-height: var(--wf-lh-12);
+}
+
+.reviewTag > * {
+  line-height: inherit;
+}
+
+/* The worklist head: title and size on the left; the chosen stage, Sort, search and tools at the right. */
+.wlHead .search {
+  flex: 0 1 12rem;
 }
 
 .columns {
@@ -903,21 +923,69 @@
   container: wf-worklist / inline-size;
 }
 
+/* Simplification mock-up (26 Nov 2026): on a tablet or laptop the row is one line of eight cells, each under
+   its head: Tier, Patient, Route, Held up by (the reason, then the Review plan flag when there is one),
+   Legal, Waited, the next step in its own narrow column, and the chevron. The phone keeps its own card
+   below, which shows the hold-up and leaves the step to the record. */
+@media (min-width: 46.5rem) {
+  .grid.row {
+    grid-template-areas: none;
+    grid-template-rows: auto;
+    row-gap: 0;
+  }
+
+  .grid.row > :nth-child(4) {
+    align-self: center;
+  }
+
+  /* Design review (27 Nov 2026): the next step sits at the right of its column under a right-aligned
+     head, as in r7, so the Waited and Next step heads keep their gap and nothing opens before the chevron. */
+  .grid.row > :nth-child(7) {
+    align-self: center;
+    justify-self: end;
+    text-align: right;
+  }
+
+  .grid.row > :nth-child(8) {
+    align-self: center;
+  }
+
+  .grid.row > :nth-child(4) .barrier {
+    text-wrap: balance;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    color: var(--wf-ink-2);
+    font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  }
+
+  .grid.row > :nth-child(4) .barrierGlyph {
+    margin-right: 5px;
+  }
+}
+
 /* PR #1222 review: the one-line row needs about 830px. Below that, on a tablet or a narrow
    desk column, each row takes two lines: who, route, barrier and wait first, then legal and
    the next step under them, so the next-step controls never clip. Phone keeps its own card. */
 @media (min-width: 46.5rem) {
-  @container wf-worklist (max-width: 53rem) {
+  @container wf-worklist (max-width: 57rem) {
     .columns {
       display: none;
     }
 
     .grid.row {
-      grid-template-columns: 2rem minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1.3fr) 5rem 1.5rem;
+      /* One fixed track list for every row (no content-sized tracks), so route, the wait and step column and
+         the chevron start at the same x on each row. Route is top-aligned with the name; the wait and the
+         step share the 150px column, right-aligned (the step under the wait). */
+      grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1.5fr) 150px 24px;
       grid-template-areas:
-        "tier who route barrier wait review"
-        ". legal legal next next next";
-      row-gap: var(--wf-s-2);
+        "tier who route wait review"
+        ". legal barrier next .";
+      grid-template-rows: auto auto;
+      align-items: start;
+      row-gap: var(--wf-s-1);
     }
 
     .grid.row > :nth-child(1) {
@@ -934,6 +1002,15 @@
 
     .grid.row > :nth-child(4) {
       grid-area: barrier;
+      align-self: start;
+      justify-self: start;
+      text-align: left;
+      /* Audit two B16b: the reason and its Review flag share a line where they fit, wrapping only when
+         the room is short. */
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--wf-s-1) var(--wf-s-2);
     }
 
     .grid.row > :nth-child(5) {
@@ -942,16 +1019,22 @@
 
     .grid.row > :nth-child(6) {
       grid-area: wait;
+      justify-self: end;
+      text-align: right;
     }
 
     .grid.row > :nth-child(7) {
       grid-area: next;
+      align-self: start;
       justify-self: end;
       max-width: 100%;
+      text-align: right;
+      align-items: flex-end;
     }
 
     .grid.row > :nth-child(8) {
       grid-area: review;
+      align-self: start;
     }
   }
 }

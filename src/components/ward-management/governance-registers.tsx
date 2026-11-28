@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ClipboardList, Clock, FileText, Fingerprint, History, X } from "lucide-react";
+import { ArrowRightLeft, ClipboardList, Clock, Fingerprint, History, X } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useContext, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
@@ -8,7 +8,6 @@ import { useContext, useEffect, useRef, useState, type KeyboardEvent as ReactKey
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { allOverrides } from "@/components/ward-management/ward-derivations";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { ACCESS_RECORD_NOTE } from "@/components/ward-management/search/access-record";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
@@ -20,9 +19,8 @@ import type { WardCommandOutcome } from "./ward-shared-client";
 import type { AuditCategory, AuditEvent, AuditReview } from "./ward-audit";
 import { reviewHistoryLookup } from "./governance-review-history";
 import { UNDO_TOAST_MS } from "./ward-operational-defaults";
-import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF, WEEKLY_REPORT_HREF } from "./reports/report-routes";
+import { PATIENT_CHRONOLOGY_HREF } from "./reports/report-routes";
 import {
-  Badge,
   BarList,
   Button,
   Card,
@@ -58,6 +56,7 @@ import thirdEdition from "./governance-third-edition.module.css";
 import pageTop from "./page-top-title.module.css";
 import { EventDetail, EventTable } from "./governance-event-detail";
 import { GovernancePhone } from "./governance-phone";
+import { EverythingTodayGroup } from "./review/todays-review-screen";
 import {
   REVIEWING_ROLES,
   actionLabels,
@@ -76,7 +75,8 @@ import {
 } from "./governance-shared";
 import { GAP_KEYS, GAP_LABEL, GapPill, cellTone, siteGaps } from "./governance-site-gaps";
 import { coverEvents, isPattern, openingEvents, viewsOfRecord } from "./governance-access-review";
-import { RecordViewsTable, WhoOpenedList } from "./governance-record-views";
+import { WhoOpenedList } from "./governance-record-views";
+import { AccessLog } from "./settings/access-log";
 import { useGovernanceAccessReview } from "./use-governance-access-review";
 
 export { EventFacts } from "./governance-event-facts";
@@ -135,12 +135,23 @@ export function GovernanceOverridesRegisterPanel({
         </div>
       </header>
       <CardBody>
+        {/* Audit four #105: with nothing saved on a referral the card is one line; the card stays. */}
         {sessionCount !== undefined ? (
-          <p className={thirdEdition.quiet} data-testid="ward-governance-overrides-session">
-            {sessionOverrideSentence(sessionCount)} This register lists overrides saved on a referral.
+          // Gate r10 look upgrade 3: the Access record's one-line notice, with its own quiet glyph,
+          // so the two one-line cards read as a pair.
+          <p className={thirdEdition.notice} data-testid="ward-governance-overrides-session">
+            <ArrowRightLeft aria-hidden="true" size={16} />
+            <span>
+              {sessionOverrideSentence(sessionCount)}
+              {entries.length === 0
+                ? " None saved on a referral."
+                : " This register lists overrides saved on a referral."}
+            </span>
           </p>
         ) : null}
-        <OverrideRegister entries={entries} units={units} now={now} />
+        {sessionCount !== undefined && entries.length === 0 ? null : (
+          <OverrideRegister entries={entries} units={units} now={now} />
+        )}
       </CardBody>
     </Card>
   );
@@ -175,18 +186,21 @@ export function GovernanceAccessRecordPanel({ sessionCount }: { sessionCount?: n
         </div>
       </header>
       <CardBody className={thirdEdition.noticeStack}>
-        {sessionCount !== undefined ? (
-          <p className={thirdEdition.quiet} data-testid="ward-governance-access-session">
-            {sessionCount === 0
-              ? "No record opening from this session waits in Review."
-              : `${sessionCount} record ${sessionCount === 1 ? "opening" : "openings"} from this session ${sessionCount === 1 ? "waits" : "wait"} in Review.`}
-          </p>
-        ) : null}
-        <p className={thirdEdition.notice}>
-          <History aria-hidden="true" size={16} /> {ACCESS_RECORD_NOTE}
-        </p>
+        {/* Audit four #105: the session count and the two caveats are one line; the card stays. */}
         <p className={thirdEdition.notice} data-testid="ward-governance-access-record-scope">
-          <Fingerprint aria-hidden="true" size={16} /> Rows show the screen a search ran from; no row names who looked.
+          <Fingerprint aria-hidden="true" size={16} />
+          {/* Gate r10 (call 105): one text run, so the two sentences part by a single space. */}
+          <span>
+            <span data-testid="ward-governance-access-session">
+              {sessionCount === undefined
+                ? ""
+                : sessionCount === 0
+                  ? "No record opening from this session waits in Review."
+                  : `${sessionCount} record ${sessionCount === 1 ? "opening" : "openings"} from this session ${sessionCount === 1 ? "waits" : "wait"} in Review.`}
+            </span>
+            {sessionCount === undefined ? "" : " "}
+            Kept for this session only, and none is sent anywhere. No row names who looked.
+          </span>
         </p>
       </CardBody>
     </Card>
@@ -204,8 +218,13 @@ export function GovernanceWorkbench(props: WorkbenchProps) {
   // GV1: Forms' seclusion view links here with `?tab=registers`.
   const askedTab = useSearchParams()?.get("tab");
   const [tab, setTab] = useState<GovernanceTab>(() => {
+    // Audit two #124 (Josh, 28 Nov 2026): the Access log's one home is the Audit trail, and Staff
+    // access and Help link here with `?tab=audit`. Both desks that read the log open Governance.
+    if (askedTab === "audit") return "audit";
     if (adminDesk) return "review";
     if (askedTab === "registers") return "registers";
+    // Batch 3 (one Handover): /bedchart/review redirects here, to Review's "Everything today".
+    if (askedTab === "review") return "review";
     const read = readGovernanceEvents(props.api);
     const waiting = read?.status === "allowed" && read.value.some(isReviewableEvent);
     return waiting ? "review" : "gaps";
@@ -242,7 +261,7 @@ function GovernanceSession({
     // Every row, pane and phone line names the person surname first (D-83).
     return { ...info, displayName: info.formalName };
   };
-  const [category, setCategory] = useState<"all" | AuditCategory | "record-views">("all");
+  const [category, setCategory] = useState<"all" | AuditCategory>("all");
   const [outcome, setOutcome] = useState<"all" | AuditEvent["outcome"]>("all");
   const [reviewFilter, setReviewFilter] = useState<"all" | "unreviewed" | AuditReview["decision"]>("all");
   // `undefined` until someone chooses, so the pane opens on the newest event waiting; `null` once
@@ -482,7 +501,8 @@ function GovernanceSession({
   };
 
   // Audit settings-4: once the phone review is settled, the sheet loads the next event still
-  // waiting, or closes when none is left. A refused review stays put. Adjusted while rendering
+  // waiting, or closes when none is left. Audit three #11: the desktop drawer's Reviewed uses the
+  // same step, so the drawer moves to the next waiting event too. A refused review stays put. Adjusted while rendering
   // (React's pattern for state that follows other state), so no effect sets state.
   if (phoneAdvance && reviewSettled) {
     setPhoneAdvance(false);
@@ -619,8 +639,32 @@ function GovernanceSession({
         patientOf={patientOf}
         reviewState={reviewState}
         canReview={canReview}
-        onReview={recordReview}
+        // Audit three #11: Reviewed records (the toast offers Undo) and opens the next event still
+        // waiting, as the phone sheet does; Follow-up stays on the event.
+        onReview={(decision) => {
+          if (recordReview(decision)) {
+            if (decision === "reviewed") setPhoneAdvance(true);
+          } else if (canReview) {
+            // A record that changed since it was opened is refused before dispatch: say so, never silently.
+            setAnnouncement("Review not confirmed. The record may have changed; select it again.");
+          }
+        }}
         onChoose={choose}
+        // Audit three #34: previous and next through the list the event was opened from.
+        pager={(() => {
+          const list = tab === "audit" ? visible : toReview;
+          const index = list.findIndex((event) => event.id === selected.id);
+          return {
+            index,
+            total: list.length,
+            noun: "event",
+            onStep: (delta: -1 | 1) => {
+              const next = list[(Math.max(index, 0) + delta + list.length) % list.length];
+              // eslint-disable-next-line react-hooks/refs -- onStep runs on a press, never in render; `choose` only bumps a command counter ref
+              if (next) choose(next);
+            },
+          };
+        })()}
         roleReason={reviewGate.allowed ? undefined : reviewGate.reason}
         feedback={
           pending
@@ -741,8 +785,8 @@ function GovernanceSession({
                 action={
                   newest
                     ? {
-                        label: "Review next",
-                        phoneLabel: "Review",
+                        label: "Open newest",
+                        phoneLabel: "Open",
                         testId: "ward-governance-review-next",
                         onClick: () => choose(newest),
                       }
@@ -755,23 +799,6 @@ function GovernanceSession({
             <HeroQuickChips
               label="Governance actions"
               items={[
-                // Shown whenever events wait; a desk that may not review is told why in the form.
-                ...(adminEmpty
-                  ? []
-                  : [
-                      {
-                        id: "record",
-                        label: "Record review",
-                        icon: <Check strokeWidth={1.75} aria-hidden="true" />,
-                        testId: "ward-governance-record-review",
-                        onClick: () => {
-                          // Starting a review makes the event the user's own, so a rotation cannot close it.
-                          setAutoOpened(false);
-                          if (selected === null && newest) choose(newest, false);
-                          if (selected !== null || newest) setEndorseOpen(true);
-                        },
-                      },
-                    ]),
                 // Role (access admin): a patient's chronology is not this desk's to open.
                 ...(adminDesk
                   ? []
@@ -828,7 +855,6 @@ function GovernanceSession({
                   { id: "gaps", label: "Forms to chase", count: totalGaps },
                   { id: "audit", label: "Audit trail" },
                   { id: "registers", label: "Registers" },
-                  { id: "reports", label: "Reports" },
                 ]
           }
         />
@@ -853,30 +879,15 @@ function GovernanceSession({
                     {/* A notice, not a button: plain text (device audit 11 Oct 2026). Newest first is the act row's. */}
                     {chip
                       ? `${chipCount} of ${toReview.length} highlighted, all rows stay`
-                      : "Safety incidents not recorded here"}
+                      : "Safety incidents are not recorded here"}
                   </span>
                 }
               />
             )}
-            {adminEmpty ? null : (
+            {adminEmpty || !accessReview.problem ? null : (
               <div className={cx(thirdEdition.filterRow, thirdEdition.reviewFilter)}>
-                <Segmented<"all" | "override" | "refused" | "access">
-                  label="Show in the review list"
-                  value={chip === "override" || chip === "refused" || chip === "access" ? chip : "all"}
-                  onChange={(next) => setChip(next === "all" ? null : next)}
-                  items={[
-                    { id: "all", label: "All" },
-                    { id: "override", label: "Overrides" },
-                    { id: "refused", label: "Steps not saved" },
-                    { id: "access", label: "Record access" },
-                  ]}
-                />
                 <span className={thirdEdition.quietText} data-testid="ward-governance-break-glass-source">
-                  {accessReview.problem
-                    ? "Break glass could not be read from the server"
-                    : accessReview.from === "server"
-                      ? "Break glass is read from the server"
-                      : "Break glass openings here are synthetic"}
+                  Break glass could not be read from the server
                 </span>
               </div>
             )}
@@ -888,15 +899,16 @@ function GovernanceSession({
                   {reviewable.length > 0
                     ? "Every recorded event has been reviewed."
                     : "No override, refused action or record access this session."}{" "}
-                  {/* Role (access admin): who opened which record lives in Settings, so point there. */}
-                  <Link href="/bedchart/settings#access" className={eventList.accessLink}>
+                  {/* Audit two #124: who opened which record is the Audit trail's Access log. */}
+                  <button type="button" className={eventList.accessLink} onClick={() => changeTab("audit")}>
                     Open the Access log
-                  </Link>
+                  </button>
                 </p>
               </div>
             ) : (
               <EventTable
                 label="Events waiting for review"
+                hideReview
                 isDim={(event) => !chipMatches(event)}
                 rows={toReview}
                 selected={selected}
@@ -918,6 +930,9 @@ function GovernanceSession({
                 }
               />
             )}
+            {/* Batch 3 (one Handover): Today's review's "Everything today", the second group here.
+                Not on the access admin's desk, which sees no patients. */}
+            {adminDesk ? null : <EverythingTodayGroup />}
           </Card>
           {/* Role (access admin): with nothing waiting, the review panel has nothing to act on. */}
           {adminEmpty ? null : placedDetail}
@@ -1113,7 +1128,6 @@ function GovernanceSession({
                     {label}
                   </option>
                 ))}
-                <option value="record-views">Record views</option>
               </Select>
               <Select
                 id="governance-filter-outcome"
@@ -1148,53 +1162,50 @@ function GovernanceSession({
                 <option value="follow-up-required">Follow-up required</option>
               </Select>
             </div>
-            {category === "record-views" ? (
-              <RecordViewsTable views={accessReview.views} now={now} patientOf={patientOf} from={accessReview.from} />
-            ) : (
-              <EventTable
-                label="Captured events"
-                rows={visible}
-                selected={selected}
-                now={now}
-                patientOf={patientOf}
-                reviewState={reviewState}
-                onChoose={choose}
-                onKey={(event) => rowKey(event, visible)}
-                empty={
-                  <div className={thirdEdition.emptyBlock}>
-                    <ClipboardList aria-hidden="true" size={16} />
-                    <h3>{events.length ? "No matching events" : "No events captured yet"}</h3>
-                    {events.length ? <p>Change the filters to see other captured events.</p> : null}
-                    {events.length > 0 && (category !== "all" || outcome !== "all" || reviewFilter !== "all") ? (
-                      <button
-                        type="button"
-                        className={buttonClass({ variant: "sec", size: "sm" })}
-                        onClick={() => {
-                          setCategory("all");
-                          setOutcome("all");
-                          setReviewFilter("all");
-                          choose(null);
-                        }}
-                      >
-                        Clear filters
-                      </button>
-                    ) : null}
-                  </div>
-                }
-                allowed={allowed}
-              />
-            )}
+            <EventTable
+              label="Captured events"
+              rows={visible}
+              selected={selected}
+              now={now}
+              patientOf={patientOf}
+              reviewState={reviewState}
+              onChoose={choose}
+              onKey={(event) => rowKey(event, visible)}
+              empty={
+                <div className={thirdEdition.emptyBlock}>
+                  <ClipboardList aria-hidden="true" size={16} />
+                  <h3>{events.length ? "No matching events" : "No events captured yet"}</h3>
+                  {events.length ? <p>Change the filters to see other captured events.</p> : null}
+                  {events.length > 0 && (category !== "all" || outcome !== "all" || reviewFilter !== "all") ? (
+                    <button
+                      type="button"
+                      className={buttonClass({ variant: "sec", size: "sm" })}
+                      onClick={() => {
+                        setCategory("all");
+                        setOutcome("all");
+                        setReviewFilter("all");
+                        choose(null);
+                      }}
+                    >
+                      Clear filters
+                    </button>
+                  ) : null}
+                </div>
+              }
+              allowed={allowed}
+            />
             <CardFoot
               meta={
                 allowed
                   ? `${reviewedCount} reviewed · ${followUp} follow-up · ${unreviewed} unreviewed`
                   : "Record access unavailable"
               }
-            >
-              System advice and bed state at decision time are not recorded
-            </CardFoot>
+            />
           </Card>
           {placedDetail}
+          {/* Audit two #124 (Josh, 28 Nov 2026): the Access log's one home. The card and the log it
+              reads are unchanged; it replaces the Record views filter and the Staff access card. */}
+          <AccessLog />
         </div>
       ) : null}
 
@@ -1202,124 +1213,14 @@ function GovernanceSession({
         <div className={thirdEdition.stackGap}>
           {/* GV1 (Josh, 3 Nov 2026): the after-the-fact record. Live episodes are in Forms. */}
           <GovernanceRestrictiveRegister units={units} now={now} />
-          <div className={thirdEdition.previewGrid}>
-            {[
-              {
-                title: "Notifiable incidents",
-                text: "Absent without leave, death and serious harm, with the time the Chief Psychiatrist was told.",
-              },
-            ].map((entry) => (
-              <Card key={entry.title} className={thirdEdition.previewCard} aria-label={`${entry.title} register`}>
-                <CardHead
-                  title={entry.title}
-                  level={2}
-                  aside={
-                    <Badge variant="plain" tone="neutral">
-                      Preview
-                    </Badge>
-                  }
-                />
-                <CardBody className={thirdEdition.stackGap}>
-                  <p className={thirdEdition.quiet}>{entry.text}</p>
-                  <span className={thirdEdition.previewLines} aria-hidden="true">
-                    <span />
-                    <span />
-                    <span />
-                  </span>
-                </CardBody>
-              </Card>
-            ))}
-          </div>
-          <div className={thirdEdition.previewGrid} data-columns="2">
-            <GovernanceOverridesRegisterPanel
-              movements={movements}
-              units={units}
-              now={now}
-              sessionCount={overrideCount}
-            />
-            <GovernanceAccessRecordPanel sessionCount={accessCount} />
-          </div>
-        </div>
-      ) : null}
-
-      {tab === "reports" ? (
-        <div className={thirdEdition.previewGrid} data-columns="2">
-          {[
-            {
-              title: "Weekly operations report",
-              text: "Flow, delays, overrides and reviews for the week",
-              href: WEEKLY_REPORT_HREF,
-            },
-            {
-              title: "PIR chronology",
-              text: "One patient's events in time order, for a post incident review",
-              href: PATIENT_CHRONOLOGY_HREF,
-            },
-            {
-              title: "Downtime pack",
-              text: "Printable board for when the system is down",
-              href: DOWNTIME_PACK_HREF,
-            },
-          ].map((report) => (
-            <Card key={report.title} aria-label={report.title}>
-              <CardHead title={report.title} icon={FileText} level={2} />
-              <CardBody>
-                <p className={thirdEdition.quiet}>{report.text}</p>
-              </CardBody>
-              <CardFoot>
-                <Link href={report.href} className={buttonClass({ variant: "sec", size: "sm" })}>
-                  Open
-                </Link>
-              </CardFoot>
-            </Card>
-          ))}
-          <Card aria-label="Settings change log">
-            <CardHead title="Settings change log" icon={FileText} level={2} />
-            <CardBody>
-              <p className={thirdEdition.quiet}>Who changed warning windows or thresholds, and when</p>
-            </CardBody>
-            <CardFoot>
-              <Button
-                variant="sec"
-                size="sm"
-                onClick={() => {
-                  setCategory("configuration");
-                  setOutcome("all");
-                  setReviewFilter("all");
-                  choose(null);
-                  changeTab("audit");
-                }}
-              >
-                Open
-              </Button>
-            </CardFoot>
-          </Card>
-          {[
-            {
-              title: "Chief Psychiatrist return",
-              text: "Restrictive practice and incident counts.",
-            },
-            {
-              title: "Tribunal and advocacy",
-              // F-91 (K22): says what is recorded, never that a legal time was met.
-              text: "Review dates and advocate contact, as recorded.",
-            },
-          ].map((report) => (
-            <Card key={report.title} className={thirdEdition.previewCard} aria-label={report.title}>
-              <CardHead
-                title={report.title}
-                level={2}
-                aside={
-                  <Badge variant="plain" tone="neutral">
-                    Preview
-                  </Badge>
-                }
-              />
-              <CardBody>
-                <p className={thirdEdition.quiet}>{report.text}</p>
-              </CardBody>
-            </Card>
-          ))}
+          {/* Audit two B23: Overrides take the full width; the Access record sits under them, not beside. */}
+          <GovernanceOverridesRegisterPanel
+            movements={movements}
+            units={units}
+            now={now}
+            sessionCount={overrideCount}
+          />
+          <GovernanceAccessRecordPanel sessionCount={accessCount} />
         </div>
       ) : null}
 

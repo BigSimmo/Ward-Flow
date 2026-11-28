@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, renderHook, screen, within } from "@testing-library/react";
+import { cleanup, render, renderHook, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -156,9 +156,19 @@ describe('D-186 Q11: "Chosen today" on the form, "On record" on the chip', () =>
 });
 
 describe("D-186 Q14: How to names every field signing saves", () => {
-  it("lists them on What gets saved, and no longer says only the review date and flags", () => {
-    render(<HowToDrawer open onClose={vi.fn()} onStartNew={vi.fn()} onGoTo={vi.fn()} />);
-    fireEvent.click(screen.getByRole("tab", { name: "What gets saved" }));
+  it("lists them on About this form, and no longer says only the review date and flags", () => {
+    render(
+      <HowToDrawer
+        open
+        onClose={vi.fn()}
+        onGoTo={vi.fn()}
+        tab="about"
+        onTab={vi.fn()}
+        guide="note"
+        noteText=""
+        onHeading={vi.fn()}
+      />,
+    );
     const sheet = screen.getByTestId("triage-how-sheet");
     const text = (sheet.textContent ?? "").replace(/\s+/gu, " ").toLowerCase();
     for (const words of Object.values(SIGNED_RECORD_WORDS))

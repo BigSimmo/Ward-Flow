@@ -219,7 +219,7 @@ describe("Ward answer current facts", () => {
 
     const capacityPanel = screen.getByRole("region", { name: "Confirm your beds" });
     expect(screen.getAllByTestId("ward-capacity-form")).toHaveLength(1);
-    expect(within(capacityPanel).getByText("Empty, any state")).toBeInTheDocument();
+    expect(within(capacityPanel).getByText("Empty, ready or not")).toBeInTheDocument();
     expect(within(capacityPanel).getByText("Confirmed free")).toBeInTheDocument();
 
     const nextCapacity = HISTORY_UNIT.allocatable.value + 1;
@@ -254,7 +254,8 @@ describe("Ward answer current facts", () => {
     renderAnswer();
 
     // Initially has an incoming movement (WF-002, urgency tier 1)
-    expect(screen.getByText("Emergency department origin")).toBeInTheDocument();
+    // Audit two #60 (r10): the "Emergency department origin" subtitle is gone from the card head.
+    expect(screen.getByRole("heading", { name: "Incoming referral" })).toBeInTheDocument();
     expect(screen.queryByText("none waiting")).not.toBeInTheDocument();
 
     // Decline the incoming movement so incoming is empty
@@ -268,10 +269,13 @@ describe("Ward answer current facts", () => {
 
     // Empty state (redesign approved by Josh, 31 Oct 2026): the hero already says "Nothing to
     // answer", so the Bed request panel is one quiet line, not a card head with a coloured badge.
-    expect(screen.getByTestId("ward-answer-all-answered")).toHaveTextContent("No requests waiting.");
+    // Audit four 106 (r10): with nothing to answer and no note the panel is not drawn; a decline note
+    // (if any) is its only content, and the "No requests waiting" band is gone.
+    expect(screen.getByTestId("ward-answer-all-answered")).toBeInTheDocument();
+    expect(screen.queryByText("No requests waiting.")).not.toBeInTheDocument();
     expect(screen.queryByText("none waiting")).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Bed request" })).not.toBeInTheDocument();
-    expect(screen.queryByText("Emergency department origin")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Incoming referral" })).not.toBeInTheDocument();
     expect(screen.queryByText(/^Tier\b/)).not.toBeInTheDocument();
   });
 

@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 
-import { BedSingle, ChevronLeft, ChevronRight, FileText, Hourglass, LogIn } from "lucide-react";
+import { BarChart2, BedSingle, FileText, Hourglass, LogIn } from "lucide-react";
 
-import { Button, FactGrid, Icon, StatusGlyph, buttonClass, useIsPhone } from "@/components/wf";
+import { FactGrid, Icon, StatusGlyph, buttonClass, useIsPhone } from "@/components/wf";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { legalFormNowWords } from "@/components/ward-management/ward-legal-form-progression";
 import { splitDuration } from "@/components/ward-management/ward-clock";
-import { edHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { edHref, edStatisticsHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 
 import {
   CLOCK_TONE,
@@ -202,7 +202,7 @@ export function EdLanePicked({ person, row }: { person: EdPerson; row: EdRow }) 
       </span>
       <span className={styles.pickedActions}>
         <Link className={buttonClass({ variant: "sec", size: "sm" })} href={person.href}>
-          Open patient
+          Patient page
         </Link>
         <Link className={buttonClass({ variant: "pri", size: "sm" })} href={edHref(row.summary.ed.id)}>
           Open {row.short}
@@ -214,14 +214,10 @@ export function EdLanePicked({ person, row }: { person: EdPerson; row: EdRow }) 
 
 /** The ED preview's footer: raise a referral from this ED, or enter it. */
 export function EdPreviewFoot({ row }: { row: EdRow }) {
+  // Audit four #41: the one unit drawer foot. Filled Open <unit> first, then quiet Statistics and
+  // New referral, all one size.
   return (
     <div className={styles.previewFoot}>
-      <Link
-        className={buttonClass({ variant: "sec" })}
-        href={raiseReferralHref({ source: "ed_medical", originEdId: row.summary.ed.id })}
-      >
-        New referral
-      </Link>
       <Link
         className={buttonClass({ variant: "pri" })}
         href={edHref(row.summary.ed.id)}
@@ -230,24 +226,22 @@ export function EdPreviewFoot({ row }: { row: EdRow }) {
         <Icon icon={LogIn} size={16} />
         Open {row.short}
       </Link>
+      {/* Find: the old Places preview's "View statistics" link, for this ED. */}
+      <Link
+        className={buttonClass({ variant: "ghost" })}
+        href={edStatisticsHref(row.summary.ed.id)}
+        aria-label={`Statistics, ${row.short}`}
+      >
+        <Icon icon={BarChart2} size={16} />
+        Statistics
+      </Link>
+      <Link
+        className={buttonClass({ variant: "ghost" })}
+        href={raiseReferralHref({ source: "ed_medical", originEdId: row.summary.ed.id })}
+      >
+        New referral
+      </Link>
     </div>
-  );
-}
-
-/** The ED preview header's step buttons, to the previous or next ED in the current order. */
-export function EdPreviewSteps({ onStep }: { onStep: (by: -1 | 1) => void }) {
-  return (
-    <span className={styles.previewSteps}>
-      <Button
-        variant="ghost"
-        size="sm"
-        iconOnly
-        icon={ChevronLeft}
-        aria-label="Previous ED"
-        onClick={() => onStep(-1)}
-      />
-      <Button variant="ghost" size="sm" iconOnly icon={ChevronRight} aria-label="Next ED" onClick={() => onStep(1)} />
-    </span>
   );
 }
 

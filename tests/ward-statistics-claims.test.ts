@@ -41,7 +41,10 @@ import {
 // and audit 24-1 decision 4 removed RELEASE_BED, the code it cited.
 // 78 -> 77 on 25 October 2026 (production audit USC-07): the back-link claim went with
 // `statistics-section-frame.tsx`, a component no page rendered, deleted with Josh's approval.
-const EXPECTED_MODEL_CLAIMS = 77;
+// 77 -> 76 on 28 November 2026: the team-screen-carries-the-other-teams-switcher claim went with the
+// switcher (`CommunityOtherTeams`, cut by r10 and deleted with Josh's approval); the community index's
+// sentence about it is now written in the past tense.
+const EXPECTED_MODEL_CLAIMS = 76;
 /*
  * 12 -> 11 on 2026-09-05. The admitted gap that left was
  * `statistics-ward-screen/computed/ward-statistics-has-no-consumer-in-the-app`, and it left because
@@ -99,6 +102,8 @@ const RETIRED_PAGE_CLAIM_IDS = new Set([
   ...PRESENTATION_RETIRED_PAGE_CLAIM_IDS,
   // Compare's own chooser went with D-91 (Josh, 31 Oct 2026); the one finder is on the hub page.
   "statistics-compare-screen/chooser/a-site-code-may-resolve-to-nothing",
+  // The Community index dropped its source-document sentence (26 Nov 2026 simplification).
+  "community-index/enumeration/the-vocabulary-comes-from-one-source-document",
   "statistics-screen/bed-readiness/confirming-the-discharge-overwrites-it",
   "statistics-screen/bed-readiness/blocking-the-bed-overwrites-it",
   "statistics-screen/bed-readiness/clearing-the-block-overwrites-it",
@@ -384,18 +389,20 @@ describe("the model-claims register", () => {
     ).toBe(EXPECTED_MODEL_CLAIMS);
     const retired = MODEL_CLAIMS.filter((claim) => claim.retiredPageProse !== undefined);
     expect(retired.map((claim) => claim.id).sort()).toEqual([...RETIRED_PAGE_CLAIM_IDS].sort());
-    expect(retired).toHaveLength(53);
-    expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(24);
+    expect(retired).toHaveLength(54);
+    expect(MODEL_CLAIMS.filter((claim) => claim.retiredPageProse === undefined)).toHaveLength(22);
     for (const claim of retired) {
       expect(claim.retiredPageProse?.date).toBe(
         PRESENTATION_RETIRED_PAGE_CLAIM_IDS.has(claim.id)
           ? "2026-10-07"
-          : claim.id === "statistics-compare-screen/chooser/a-site-code-may-resolve-to-nothing"
-            ? "2026-10-31"
-            : claim.id === "statistics-compare-screen/chooser/one-dynamic-route-serves-every-ward" ||
-                claim.id === "statistics-compare-screen/chooser/another-serves-every-department"
-              ? "2026-10-02"
-              : "2026-09-13",
+          : claim.id === "community-index/enumeration/the-vocabulary-comes-from-one-source-document"
+            ? "2026-11-26"
+            : claim.id === "statistics-compare-screen/chooser/a-site-code-may-resolve-to-nothing"
+              ? "2026-10-31"
+              : claim.id === "statistics-compare-screen/chooser/one-dynamic-route-serves-every-ward" ||
+                  claim.id === "statistics-compare-screen/chooser/another-serves-every-department"
+                ? "2026-10-02"
+                : "2026-09-13",
       );
       expect(claim.retiredPageProse?.reason.trim()).not.toBe("");
       expect(

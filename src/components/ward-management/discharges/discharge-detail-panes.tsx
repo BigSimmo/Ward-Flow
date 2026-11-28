@@ -23,7 +23,6 @@ import {
   durMinutes,
 } from "@/components/wf";
 import { DischargeFollowUp } from "./discharge-follow-up";
-import { ReadyToLeave } from "./discharge-ready-to-leave";
 import { SupportNotificationChecklist } from "../movements/support-notification-checklist";
 import pageStyles from "./discharges-third-edition.module.css";
 import releaseList from "./discharge-release-list.module.css";
@@ -52,8 +51,10 @@ const DATE_UPDATED = "Expected discharge updated.";
  */
 
 /** The drawer's tabs: milestones, held up, transport and the record. */
-export function dischargeDrawerTabs(hasBlocker: boolean) {
-  return [
+export function dischargeDrawerTabs(hasBlocker: boolean, forRelease = false) {
+  // Audit four 38: a bed release has three tabs; its Record facts moved (Waiting on to Held up, Last
+  // reported to the subtitle, Bed preparation to Transport). An admission record keeps its Record tab.
+  const tabs = [
     { id: "milestones" as const, label: "Milestones" },
     {
       id: "barriers" as const,
@@ -70,22 +71,18 @@ export function dischargeDrawerTabs(hasBlocker: boolean) {
     { id: "transport" as const, label: "Transport" },
     { id: "dossier" as const, label: "Record" },
   ];
+  return forRelease ? tabs.filter((tab) => tab.id !== "dossier") : tabs;
 }
 
 export type DischargeDrawerHead = { title: ReactNode; subtitle: ReactNode; tag: ReactNode; hasBlocker: boolean };
 
-function subtitleLine(parts: (ReactNode | null | undefined | false)[]) {
-  const shown = parts.filter(Boolean) as ReactNode[];
-  return (
-    <span className={pageStyles.drawerSubtitle}>
-      {shown.map((part, index) => (
-        <span key={index} className={pageStyles.drawerSubtitlePart}>
-          {index > 0 ? <span aria-hidden="true">· </span> : null}
-          {part}
-        </span>
-      ))}
-    </span>
-  );
+/**
+ * The head's meta parts, passed to the kit drawer as a list: each part becomes a kit meta part
+ * with its own leading dot, which the kit hides when a part starts a line (fix-5: the hand-written
+ * "· " span left a bare dot opening a wrapped "Last reported" line).
+ */
+function subtitleLine(parts: (ReactNode | null | undefined | false)[]): ReactNode[] {
+  return parts.filter(Boolean) as ReactNode[];
 }
 
 /** The head of an admission record opened from History. */
@@ -120,6 +117,10 @@ export function releaseDrawerHead(s: DischargeWorkspaceState, release: BedReleas
       ) : null,
       personName ? wardName : null,
       healthServiceLabel(s.selectedUnit),
+      <span key="last-reported">
+        Last reported{" "}
+        <WardFreshness confirmedAt={release.confirmedAt} confirmedByRole={release.confirmedBy} now={s.now} />
+      </span>,
     ]),
     tag: s.detailTone ? <StatusPill tone={s.detailTone}>{heldUp ? HELD_UP : s.detailBadgeLabel}</StatusPill> : null,
     hasBlocker: Boolean(release.blocker),
@@ -444,12 +445,7 @@ export function DischargeReleaseDetail({
     isPhone,
     phoneReleaseMore,
     setPhoneReleaseMore,
-    readyChange,
-    setReadyChange,
-    ticksFor,
-    setTick,
     linkedReleaseRecord,
-    releaseOnCto,
     selectedUnit,
     releasePaneClass,
   } = s;
@@ -598,26 +594,6 @@ export function DischargeReleaseDetail({
             },
           ]}
         />
-        {detailRelease.preparing ? (
-          <p className={pageStyles.note}>
-            Preparation recorded: {detailRelease.preparationNote ?? "Reason not recorded"}.
-          </p>
-        ) : null}
-        <ReadyToLeave
-          onCto={releaseOnCto}
-          ticked={ticksFor(detailRelease.id)}
-          onToggle={(itemId) => {
-            const on = !ticksFor(detailRelease.id).includes(itemId);
-            setTick(detailRelease.id, itemId, on);
-            setReadyChange({ releaseId: detailRelease.id, itemId, ticked: on });
-          }}
-          lastChange={readyChange?.releaseId === detailRelease.id ? readyChange : null}
-          onUndo={() => {
-            if (readyChange) setTick(readyChange.releaseId, readyChange.itemId, !readyChange.ticked);
-            setReadyChange(null);
-          }}
-          onDismiss={() => setReadyChange(null)}
-        />
       </div>
 
       <div ref={panelRef} className={releasePaneClass("barriers")}>
@@ -651,6 +627,7 @@ export function DischargeReleaseDetail({
             </div>
           )}
         </div>
+        {detailRelease.waitingOn ? <p className={pageStyles.note}>Waiting on {detailRelease.waitingOn}.</p> : null}
         <DischargeDependenciesPanel
           release={detailRelease}
           now={now}
@@ -667,10 +644,15 @@ export function DischargeReleaseDetail({
           aria-expanded={phoneReleaseMore}
           onClick={() => setPhoneReleaseMore((open) => !open)}
         >
-          {phoneReleaseMore ? "Hide transport and record" : "Show transport and record"}
+          {phoneReleaseMore ? "Hide transport" : "Show transport"}
         </button>
       ) : null}
       <div className={releasePaneClass("transport")}>
+        {detailRelease.preparing ? (
+          <p className={pageStyles.note}>
+            Bed preparation: {detailRelease.preparationNote ?? "in progress, reason not recorded"}.
+          </p>
+        ) : null}
         <dl className={pageStyles.factList}>
           <dt>Booking reference</dt>
           <dd>Not recorded</dd>
@@ -678,45 +660,6 @@ export function DischargeReleaseDetail({
           <dd>Not recorded</dd>
           <dt>Unit</dt>
           <dd>{wardName}</dd>
-        </dl>
-      </div>
-
-      <div className={releasePaneClass("dossier")}>
-        <dl className={pageStyles.factList}>
-          <dt>{detailRelease.state === "discharged" ? "Recorded release" : "Expected release"}</dt>
-          <dd>
-            {recordedMoment(
-              detailRelease.state === "discharged" ? detailRelease.confirmedAt : detailRelease.expectedAt,
-              dayZero,
-            )}
-          </dd>
-          {detailRelease.waitingOn && (
-            <>
-              <dt>Waiting on</dt>
-              <dd>{detailRelease.waitingOn}</dd>
-            </>
-          )}
-          {detailRelease.blocker && (
-            <>
-              <dt>Held up by</dt>
-              <dd className={pageStyles.blocker}>{detailRelease.blocker}</dd>
-            </>
-          )}
-          <dt>Last reported</dt>
-          <dd>
-            <WardFreshness
-              confirmedAt={detailRelease.confirmedAt}
-              confirmedByRole={detailRelease.confirmedBy}
-              now={now}
-            />
-            <span className={pageStyles.secondary}>{recordedMoment(detailRelease.confirmedAt, dayZero)}</span>
-          </dd>
-          {detailRelease.preparing && (
-            <>
-              <dt>Bed preparation</dt>
-              <dd>{detailRelease.preparationNote ?? "In progress · reason not recorded"}</dd>
-            </>
-          )}
         </dl>
       </div>
     </>

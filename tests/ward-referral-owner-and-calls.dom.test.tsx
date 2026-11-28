@@ -92,7 +92,7 @@ describe("referral owner and call log", () => {
     setup();
     const owner = () => screen.getByTestId(/^ward-referral-owner-RF-/u);
     expect(owner()).toHaveTextContent("Owner Not assigned");
-    const assign = screen.getByRole("button", { name: "Assign" });
+    const assign = screen.getByRole("button", { name: "Hand to" });
     expect(assign).toHaveAttribute("aria-disabled", "true");
     fireEvent.change(screen.getByRole("combobox", { name: "Assign to" }), { target: { value: "coordinator" } });
     fireEvent.click(assign);
@@ -103,7 +103,7 @@ describe("referral owner and call log", () => {
 
   it("logs a call with who was rung and what they said, without answering the referral", () => {
     setup();
-    const log = screen.getByRole("button", { name: "Log a call" });
+    const log = screen.getByRole("button", { name: "Record a call" });
     expect(log).toHaveAttribute("aria-disabled", "true");
     fireEvent.change(screen.getByRole("combobox", { name: "Who was rung" }), { target: { value: `ward:${WARD.id}` } });
     fireEvent.change(screen.getByRole("combobox", { name: "What they said" }), { target: { value: "said_yes" } });
@@ -177,8 +177,8 @@ describe("community team Assign", () => {
         <Owner />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getAllByRole("button", { name: "Assign" })[0]!);
-    const dialog = within(screen.getByRole("dialog", { name: /^Assign referral/u }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Hand to" })[0]!);
+    const dialog = within(screen.getByRole("dialog", { name: /^Hand to/u }));
     expect(dialog.queryByText(/Not wired in this prototype/u)).not.toBeInTheDocument();
     fireEvent.click(dialog.getByRole("button", { name: "Take for this team" }));
     expect(screen.getByTestId("owner")).toHaveTextContent("community");

@@ -62,7 +62,7 @@ describe("a Community save that did not go through stays on screen (CT-09)", () 
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Create referral" }));
-    fireEvent.click(screen.getByRole("button", { name: "Log team contact" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record team contact" }));
     const toast = screen.getByTestId("community-action-toast");
     expect(toast).toHaveTextContent("Not recorded: Synthetic refusal.");
     expect(toast).toHaveAttribute("data-tone", "warning");

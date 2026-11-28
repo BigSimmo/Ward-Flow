@@ -43,6 +43,12 @@
     );
     font-size: var(--wf-fs-12);
   }
+
+  /* Audit four #84: while the note shows, the page ends clear of it, so it never sits over the last
+     list row above the dock. About three lines of 12px note plus its gap. */
+  :global(body):has(.banner) :global(#main-content) {
+    padding-bottom: calc(var(--wf-phone-foot-lift, 0px) + 5.5rem);
+  }
 }
 
 /* S-1: a quiet note, not a warning: neutral line, secondary ink, no fill of its own. */

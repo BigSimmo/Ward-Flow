@@ -162,7 +162,7 @@ describe("final Tell command feedback survives its outstanding-queue removal (WF
     expect(await screen.findByText("Carer record saved")).toBeVisible();
     expect(screen.getByTestId("ward-support-notifications")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
-    expect(await screen.findByText("Tell record undone.")).toBeVisible();
+    expect(await screen.findByText("Undone: Tell record")).toBeVisible();
     expect(control.calls.at(-1)?.type).toBe("UNDO_SUPPORT_NOTIFICATION");
     expect(screen.getByRole("button", { name: "Record Carer" })).toBeVisible();
   });

@@ -79,16 +79,15 @@ describe("the Decisions cockpit's Accept (Q93)", () => {
     });
     expect(screen.queryByTestId("ward-accept-dialog")).not.toBeInTheDocument();
     expect(Number(screen.getByTestId("accepted-here").textContent)).toBe(before + 1);
-    expect(await screen.findByText(`Accepted ${name} in principle.`)).toBeInTheDocument();
+    expect(await screen.findByText(`Accepted in principle for ${name}`)).toBeInTheDocument();
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Undo" }));
       await Promise.resolve();
     });
     expect(Number(screen.getByTestId("accepted-here").textContent)).toBe(before);
-    expect(
-      await screen.findByText(`Acceptance undone for ${name}. The referral is back with this ward.`),
-    ).toBeInTheDocument();
+    // Audit four #10 toast words: both toasts name the person.
+    expect(await screen.findByText(`Undone: Acceptance for ${name}`)).toBeInTheDocument();
   });
 
   it("Cancel in the dialog accepts nothing", async () => {

@@ -17,7 +17,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 // The Patients census search is the kit's one page search field (D-91, Patients redesign).
-const SEARCH_LABEL = "Find a person by name, UMRN or place";
+const SEARCH_LABEL = "Find a person by name, UMRN, place or date of birth";
 
 // Drawer review (6 Nov 2026): the side card and its sticky rail are gone, so a chosen row opens the
 // kit right drawer at every width above the phone. matchMedia stands in for the phone layout.

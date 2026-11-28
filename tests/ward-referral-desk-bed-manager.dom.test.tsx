@@ -139,7 +139,9 @@ describe("the site bed manager's Referrals desk", () => {
     const hero = screen.getByTestId("ward-referral-kpis");
     expect(hero).toHaveTextContent("Nothing awaiting a decision");
     expect(hero).not.toHaveTextContent(/Oldest/);
-    expect(within(hero).queryByRole("group", { name: "Highlight referrals" })).not.toBeInTheDocument();
+    // The figures group now holds only the Bed meeting link; no zero highlight sits over an empty queue.
+    expect(within(hero).queryByTestId("ward-referral-figure-overdue")).not.toBeInTheDocument();
+    expect(within(hero).queryByTestId("ward-referral-highlight-ward")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-referral-board-order-note")).not.toBeInTheDocument();
     // Drawer review (6 Nov 2026): no empty detail column; the note sits under the full-width queue.
     const note = screen.getByTestId("ward-referral-read-only-empty");

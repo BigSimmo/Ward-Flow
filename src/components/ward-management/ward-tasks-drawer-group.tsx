@@ -74,7 +74,7 @@ export function AlertKindGroupRow({
       </ul>
       {long ? (
         <ShowMoreRow expanded={expanded} controls={listId} onClick={() => setShowAll((value) => !value)}>
-          {expanded ? "Show fewer" : `Show ${group.items.length - GROUP_SHOW_FIRST} more`}
+          {expanded ? "Show fewer" : `Show all ${group.items.length}`}
         </ShowMoreRow>
       ) : null}
     </li>

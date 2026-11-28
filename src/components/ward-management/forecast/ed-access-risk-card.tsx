@@ -85,7 +85,6 @@ export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant })
           <b>{BED_KIND_LABEL[row.kind]}</b> in {splitDuration(row.minutesLeft)}
         </span>
         <span className={handover.riskSoft}>{releaseText(row, now, showWards)}</span>
-        {over > 0 ? <span className={handover.riskSoft}>{over} already past</span> : null}
         <span className={handover.riskMethod} data-testid="forecast-ed-risk-method">
           {FORECAST_METHOD_LINE}
         </span>

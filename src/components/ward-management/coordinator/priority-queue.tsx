@@ -63,7 +63,7 @@ import flowStyles from "./home-flow.module.css";
 import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 /** "Offered to BTY Adult Secure", or "Offered to 2 wards". */
-export function offeredToLabel(unitIds: readonly string[], units: readonly { id: string; name: string }[]): string {
+function offeredToLabel(unitIds: readonly string[], units: readonly { id: string; name: string }[]): string {
   if (unitIds.length === 1) {
     const name = units.find((unit) => unit.id === unitIds[0])?.name;
     return `Offered to ${name ? name.split(" — ")[0] : "a ward"}`;
@@ -72,7 +72,7 @@ export function offeredToLabel(unitIds: readonly string[], units: readonly { id:
 }
 
 /** What the hero's Overdue and Tier 1 counts highlight in the queue. */
-export type QueueHighlight = "overdue" | "tier1";
+type QueueHighlight = "overdue" | "tier1";
 
 const HIGHLIGHT_LABEL: Record<QueueHighlight, string> = { overdue: "overdue", tier1: "Tier 1" };
 
@@ -145,8 +145,8 @@ export const FLOW_STAGES = [
   // D-220 (Josh, 14 Nov 2026): no ward has accepted yet. "Need a bed" is Capacity's wider figure.
   { id: "bed", label: "No ward yet", next: "Find a bed" },
   { id: "agreed", label: "Bed agreed", next: "Pull the bed" },
-  { id: "ready", label: "Ready to move", next: "Book transport" },
-  { id: "moving", label: "Moving", next: "Confirm arrival" },
+  { id: "ready", label: "Ready to move", next: "Record transport booking" },
+  { id: "moving", label: "Moving", next: "Record arrival" },
 ] as const;
 export type FlowStageId = (typeof FLOW_STAGES)[number]["id"];
 

@@ -62,13 +62,15 @@ describe("one ward's statistics, coordinator and ward desk", () => {
     expect(screen.getByText("discharges due, 7 days")).toBeTruthy();
   });
 
-  it("opens the coordinator's roster on its first eight rows, then Show more", () => {
+  it("opens the coordinator's roster on its first eight rows, then Show all", () => {
     expect(current(busiest.id).length).toBeGreaterThan(8);
     renderAs(coordinator);
+    // The roster sits in the folded More figures; open it first.
+    fireEvent.click(screen.getByTestId("ward-statistics-more-figures-toggle"));
     const roster = screen.getByTestId("ward-statistics-ward-roster");
     const rows = () => roster.querySelectorAll("tbody tr").length;
     expect(rows()).toBe(8);
-    const more = within(roster).getByRole("button", { name: /^Show \d+ more$/u });
+    const more = within(roster).getByRole("button", { name: /^Show all \d+$/u });
     expect(more.getAttribute("aria-expanded")).toBe("false");
     fireEvent.click(more);
     expect(rows()).toBeGreaterThan(8);

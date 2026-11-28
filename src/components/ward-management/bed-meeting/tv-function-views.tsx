@@ -290,7 +290,7 @@ export function EdBedSearchTvView({
     {
       id: "book",
       title: "Bed agreed",
-      hint: "Book transport",
+      hint: "Record transport booking",
       tone: "warning",
       cards: step("book").map((row) => edCard(row, row.referral)),
     },

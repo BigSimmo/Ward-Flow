@@ -1,8 +1,8 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
-import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { FLOW_STAGES, PriorityQueue, TIER_TARGETS_NOTE } from "@/components/ward-management/coordinator/priority-queue";
 import { ShortlistPanel } from "@/components/ward-management/coordinator/shortlist-panel";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
@@ -14,7 +14,6 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 
 /**
  * Home placement redesign, Josh 19 Oct 2026. Desktop Home scrolls once: each Flow stage shows its
@@ -88,18 +87,41 @@ const FLOW_STAGE_CAP = 5;
 /** The Flow stage sections that list rows (Referral is listed under Needs you), with their counts. */
 const ROW_STAGES = FLOW_STAGES.filter((stage) => stage.id !== "referral");
 
-/** Switches to Flow and returns the first stage with more rows than the cap, and its count. */
-function cappedStage() {
-  showEveryoneWaiting();
-  const tabs = screen.getByRole("toolbar", { name: "Flow stages" });
-  for (const stage of ROW_STAGES) {
-    const total = Number(
-      within(within(tabs).getByRole("button", { name: new RegExp(`^${stage.label}`, "u") })).getByText(/^\d+$/u)
-        .textContent,
+/**
+ * Home without Flow (simplification round, item 4, built in r10): the screen no longer mounts the
+ * Flow list, so the component is rendered directly, with its stages unfiltered.
+ */
+function renderFlow() {
+  const state = seedWardFlowState();
+  const queue = queueOrder(state.movements.filter(isOpen), NOW_ANCHOR);
+  function Flow() {
+    const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+    return (
+      <PriorityQueue
+        movements={queue}
+        units={state.units}
+        now={NOW_ANCHOR}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+        filterEdId={undefined}
+        onClearFilter={() => {}}
+      />
     );
-    if (total > FLOW_STAGE_CAP) {
-      return { section: screen.getByRole("region", { name: stage.label }), total };
-    }
+  }
+  return render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <Flow />
+    </WardFlowProvider>,
+  );
+}
+
+/** Returns the first stage with more rows than the cap, and its count. */
+function cappedStage() {
+  renderFlow();
+  for (const stage of ROW_STAGES) {
+    const section = screen.queryByRole("region", { name: stage.label });
+    const showAll = section ? within(section).queryByRole("button", { name: /^Show all \d+$/u }) : null;
+    if (section && showAll) return { section, total: Number(/\d+/u.exec(showAll.textContent ?? "")![0]) };
   }
   throw new Error(`the fixture must hold a Flow stage with more than ${FLOW_STAGE_CAP} rows for the cap to matter`);
 }
@@ -108,11 +130,6 @@ function cappedStage() {
 // each showing its oldest 5 rows behind its own "Show all N".
 describe("desktop Home Flow: top 5 per stage, then Show all N", () => {
   it("shows each stage's top 5 rows and reveals the rest of that stage in place", () => {
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <CoordinatorScreen />
-      </WardFlowProvider>,
-    );
     const { section, total } = cappedStage();
     // Every stage is capped, not only the long one.
     for (const stage of ROW_STAGES) {
@@ -130,11 +147,6 @@ describe("desktop Home Flow: top 5 per stage, then Show all N", () => {
   });
 
   it("keeps a chosen patient below the cap in view, in its own place, when the stage folds again", () => {
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <CoordinatorScreen />
-      </WardFlowProvider>,
-    );
     const { section, total } = cappedStage();
     fireEvent.click(within(section).getByRole("button", { name: `Show all ${total}` }));
     const rows = within(section).getAllByTestId(/^ward-queue-row-/);

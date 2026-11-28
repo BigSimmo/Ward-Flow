@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { communityScopedReferrals } from "@/components/ward-management/ward-referral-visibility";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -31,10 +31,10 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 // Locked design (Josh, 1 Nov 2026, design/community-team-2026-11): five section tabs in the ward tab row.
 const SOVEREIGN_TABS = ["Team home", "Caseload", "In hospital", "Referrals", "Clinicians"] as const;
 
-const SOVEREIGN_ACTIONS = ["Refer from team", "Record contact", "More"] as const;
+const SOVEREIGN_ACTIONS = ["Refer from team", "Record contact", "Catchment counts"] as const;
 
-/** Under More since the locked design (1 Nov 2026). */
-const MORE_ITEMS = ["CTO register", "Catchment counts", "How to reach the team"] as const;
+/** Audit two #19 (27 Nov 2026): the More menu is gone; CTO register and How to reach the team only jumped to tabs. */
+const RETIRED_MORE_ITEMS = ["CTO register", "How to reach the team"] as const;
 
 /*
  * v10 (10 Oct 2026): at most five hero chips. The four list chips stay in the hero; the caseload
@@ -138,10 +138,8 @@ describe("the community team screen's Sovereign action bar and telemetry capsule
       });
       expect(button, `Sovereign action button "${action}" is missing`).toBeInTheDocument();
     }
-    fireEvent.click(screen.getByRole("button", { name: /^More$/ }));
-    for (const item of MORE_ITEMS) {
-      expect(screen.getByRole("menuitem", { name: item }), `More menu item "${item}" is missing`).toBeInTheDocument();
-    }
+    expect(screen.queryByRole("button", { name: /^More$/ })).toBeNull();
+    for (const item of RETIRED_MORE_ITEMS) expect(screen.queryByRole("menuitem", { name: item })).toBeNull();
   });
 
   it("renders one list switch and the caseload in the Checking foot", () => {

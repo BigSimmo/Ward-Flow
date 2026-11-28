@@ -263,7 +263,7 @@ function PlannedMovesBody({
                   className={styles.pmEmptyState}
                   icon={ArrowDownRight}
                   title="Nobody is marked for step down"
-                  meta="Mark a patient on their ward's Bed board and they appear here."
+                  meta="Mark a patient on their ward's page and they appear here."
                 />
               ) : (
                 <ul className={styles.pmList}>
@@ -375,6 +375,20 @@ function PlannedMovesBody({
         ready={shownPlanned ? rowOf(shownPlanned.unitId)?.ready : undefined}
         preparing={shownPlanned ? preparing(shownPlanned.unitId) : 0}
         onClose={() => onShow(null)}
+        // Audit three #34: previous and next through the bookings shown, in list order.
+        pager={(() => {
+          const list = visible.flatMap((group) => (group.id === "stepDown" ? [] : byLane[group.id]));
+          const index = shownPlanned ? list.findIndex((planned) => planned.id === shownPlanned.id) : -1;
+          return {
+            index,
+            total: list.length,
+            noun: "booking",
+            onStep: (delta: -1 | 1) => {
+              const next = list[(Math.max(index, 0) + delta + list.length) % list.length];
+              if (next) onShow({ kind: "planned", id: next.id });
+            },
+          };
+        })()}
       />
       <StepDownDrawer row={shownStepDown ?? null} now={now} kit={kit} onClose={() => onShow(null)} />
     </div>

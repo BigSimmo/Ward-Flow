@@ -16,6 +16,15 @@
   padding: var(--wf-s-4);
 }
 
+/* Capacity's Wards tab (area 3 item 1): the directory under Capacity's hero and tabs, at the
+   page's own rhythm. */
+.directory {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
 /* Page tops (Josh, 9 Nov 2026): the service choice is the page tabs, so what is left (the bed key
    and the ward count, and the Filters panel when open) sits on the page with no card around it. */
 .filters {
@@ -36,9 +45,20 @@
 
 /* When the row wraps (tablet), the view switch keeps to the right-hand edge. */
 
+/* Josh, 28 Nov 2026: the search starts at about 200px and the groups sit closer, so Status, Cohort
+   and Sort share row 1 at 1440. Where all four cannot fit (1280), Cohort and Sort wrap together as
+   one pair onto row 2, and the search grows back to show its whole placeholder. */
 .search {
   flex: 1 1 12rem;
   min-width: 10rem;
+}
+
+.filterPair {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
 }
 
 /* Status, Cohort and Order: kit choices behind Filters, one quiet line under the row when open. */
@@ -50,7 +70,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-2) var(--wf-s-4);
+  gap: var(--space-2);
   padding: var(--wf-s-3);
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-lg);
@@ -185,6 +205,16 @@
 
 .checkName:hover {
   text-decoration: underline;
+}
+
+.checkList li:has(.checkAsk) {
+  min-height: 2.5rem;
+}
+
+/* Audit two #55: ward name left, the age beside it, a ghost Ask right. */
+.checkAsk {
+  flex: none;
+  margin-inline-start: auto;
 }
 
 .checkAge {
@@ -392,7 +422,28 @@
   color: var(--wf-warning-ink);
 }
 
+/* Perfection (26 Nov 2026): the stale words run as one sentence. As a flex row, "5 h 01 min" and
+   "stale, ask the nurse unit manager" became two narrow columns once the age grew past "5 h". */
+.staleLine .confirmed {
+  display: inline;
+}
+
+.staleLine .confirmed > :first-child {
+  margin-right: 4px;
+  vertical-align: 1px;
+}
+
+.staleLine .confirmed .num {
+  white-space: nowrap;
+}
+
 /* Open is the usual case, so it reads as quiet text; Locked and Mixed keep the pill. */
+/* Perfection (26 Nov 2026): the Locked pill (icon and padding) no longer pushes its card's name
+   3px below the names on neighbouring cards; the pill keeps its size and baseline. */
+.cardHead > .acuityBadge {
+  margin-block: -4px;
+}
+
 .acuityBadge[data-category="Open"] {
   padding-inline: 0;
   background: transparent;
@@ -423,12 +474,15 @@
 
 /* Card and rail text wraps ("Sir Charles Gairdner · Older adult") instead of ending in "…". */
 .main article *,
+.directory article *,
 .wrapText * {
   text-overflow: clip;
 }
 
 .main article p,
 .main article span,
+.directory article p,
+.directory article span,
 .wrapText p {
   overflow: visible;
   white-space: normal;
@@ -532,8 +586,48 @@
 .tableCard {
   position: relative;
   padding: 0;
+  overflow: hidden;
+}
+
+/* fix-5: the scroll band inside the card (it was the card itself), so a fade can sit on the cut edge. */
+.tableScroll {
   overflow-x: auto;
   overflow-y: hidden;
+}
+
+/* fix-5 (audit four #97's edge fade, 820): the table is wider than the card here, so its right edge
+   fades like the Home ED strip to show that it scrolls; the fade lifts at the end of the scroll.
+   Wider screens fit the table and keep a hard, full face. */
+@property --wf-table-fade {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 32px;
+}
+
+@keyframes tableFadeEnd {
+  0%,
+  92% {
+    --wf-table-fade: 32px;
+  }
+  100% {
+    --wf-table-fade: 0px;
+  }
+}
+
+@media (min-width: 46.5rem) and (max-width: 64rem) {
+  .tableScroll {
+    -webkit-mask-image: linear-gradient(90deg, black calc(100% - 32px), transparent);
+    mask-image: linear-gradient(90deg, black calc(100% - 32px), transparent);
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .tableScroll {
+      -webkit-mask-image: linear-gradient(90deg, black calc(100% - var(--wf-table-fade)), transparent);
+      mask-image: linear-gradient(90deg, black calc(100% - var(--wf-table-fade)), transparent);
+      animation: tableFadeEnd 1ms linear both;
+      animation-timeline: scroll(self inline);
+    }
+  }
 }
 
 .table {
@@ -682,7 +776,11 @@
     padding-top: var(--wf-s-2);
   }
 
-  .moreFilters[data-open="true"] > .filterGroup {
+  .filterPair {
+    display: contents;
+  }
+
+  .moreFilters[data-open="true"] .filterGroup {
     flex-direction: column;
     align-items: stretch;
     gap: 0;
@@ -705,6 +803,12 @@
     width: max-content;
     max-width: none;
     overflow: visible;
+  }
+
+  /* States B review: the choices take 8px side padding, so Cohort's five fit a 390 phone whole
+     ("Perinatal" was cut at the edge). html wins over the kit's segment padding. */
+  html .filterGroup .phoneFilterChoices > * {
+    padding-inline: var(--space-2);
   }
 
   .search {
@@ -1020,6 +1124,18 @@
   min-width: 0;
 }
 
+/* Josh, 28 Nov 2026: off the phone, the choices drop the phone scroller's 24px end fade padding,
+   which read as a wide gap between groups. */
+@media (min-width: 46.5rem) {
+  .moreFilters .filterGroup {
+    gap: var(--wf-s-1);
+  }
+
+  html .moreFilters .phoneFilterScroll > div {
+    padding-inline-end: 2px;
+  }
+}
+
 /* Audit 11 Oct 2026: the bed strip key as one line under the filters. */
 .legendLine {
   display: flex;
@@ -1209,4 +1325,154 @@
   .cardGrid {
     grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
   }
+
+  /* Perfection (26 Nov 2026): each card's five parts (name, place, ready line, beds, foot) sit on
+     the row's shared tracks, so ready lines, strips and Open ward links are level across a row
+     whether a name wraps or a note runs to a second line. */
+  .cardGrid > .wardCard {
+    display: grid;
+    grid-row: span 4;
+    grid-template-rows: subgrid;
+    row-gap: var(--wf-s-2);
+    align-content: start;
+  }
+
+  .cardGrid > .wardCard > .stripFoot {
+    margin-top: 0;
+  }
+}
+
+.cardTitleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  min-width: 0;
+}
+
+.cardBeds {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+/* Find's Wards tab: the health service choice sits on its own row under the tabs, after the strip of
+   pinned places (order 2 before the strip's 3 would put it first, so the strip keeps order 3). */
+.findServices {
+  order: 2;
+  flex: 1 0 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.findActions {
+  flex: none;
+  margin-left: auto;
+}
+
+/* Find: Filters and Table view read at the service pills' size (13px), and on a phone the pills scroll
+   beside the two icons rather than the icons taking a notch of their own. */
+.findActions .tabControl {
+  font-size: var(--wf-fs-13);
+}
+
+.findServices > :first-child {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Find, tablet and phone: Filters and the view switch sit on the sheet beside the pills, not on the
+   slate block the kit gives a folder tab off the row. */
+.findActions .tabControl.tabControl.tabControl.tabControl:not(:hover) {
+  background-color: transparent;
+  color: var(--wf-ink-2);
+}
+
+.findActions .tabControl.tabControl.tabControl.tabControl[data-active="true"] {
+  color: var(--wf-ink-1);
+}
+
+.findPhoneActions {
+  margin-left: auto;
+}
+
+.findPhoneActions .tabControl.tabControl.tabControl.tabControl:not(:hover) {
+  background-color: transparent;
+  color: var(--wf-ink-2);
+}
+
+.findPhoneActions .tabControl.tabControl.tabControl.tabControl[data-active="true"] {
+  color: var(--wf-ink-1);
+}
+
+/* Fable batch 3: in the shared Ward panel, "Heading here" lines up with "Ward profile" and the
+   panel padding, and both dividers are inset to that padding. */
+.drawerHeading {
+  margin: 0 var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.drawerHeading > section {
+  padding: var(--wf-s-3) 0;
+  border-bottom: 0;
+}
+
+.drawerHeading > section > h3 {
+  margin: 0 0 var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+}
+
+.drawerProfile.drawerInset {
+  margin: 0 var(--wf-s-4);
+  padding-inline: 0;
+}
+
+/* Find: the pinned and recent places line draws nothing until used; it then leads the sheet. */
+.findMemory:empty {
+  display: none;
+}
+
+/* Audit three review: the plain ward count that stands in for a lone All tab at the row's left. */
+.tabCount {
+  align-self: center;
+  margin: 0;
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-14);
+}
+
+/* Audit four #9: at tablet width the count sits on the hero's foot (light ink, readable in both themes)
+   and the key line gets room under the sheet's curved top instead of being clipped by it. */
+@media (min-width: 46.5rem) and (max-width: 62.5rem) {
+  .filters {
+    padding-top: var(--wf-s-3);
+  }
+  /* r10: the numeral takes the hero's on-navy ink too (it kept the sheet's dark ink in light). */
+  .tabCount .num.num {
+    color: var(--wf-hero-ink);
+  }
+}
+
+/* Gate r10 FIX 1: the hero ink is the tablet rule's only; on a desktop the count sits on the light
+   sheet and keeps the sheet's muted ink. */
+@media (min-width: 62.5625rem) {
+  .tabCount {
+    color: var(--wf-ink-3);
+  }
+}
+
+/* "Show all wards" after a service filter: a quiet inline link (D-41 pattern). */
+html .showAllLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-ink-2);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }

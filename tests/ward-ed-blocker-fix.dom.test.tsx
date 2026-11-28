@@ -47,7 +47,7 @@ describe("a greyed item in the ED actions menu", () => {
         </button>
         <EdUnavailableNote
           testId="ward-ed-unavailable-handover-m1"
-          line={{ because: "Needs transport logged first", fix: { label: "Log booking", testId: "fix-m1", run } }}
+          line={{ because: "Needs transport logged first", fix: { label: "Record booking", testId: "fix-m1", run } }}
         />
       </EdActionsMenu>,
     );
@@ -66,7 +66,7 @@ describe("a greyed item in the ED actions menu", () => {
     expect(within(group).getByTestId("ward-ed-unavailable-handover-m1").textContent).toContain(
       "Needs transport logged first",
     );
-    const fix = within(group).getByRole("menuitem", { name: "Log booking", hidden: true });
+    const fix = within(group).getByRole("menuitem", { name: "Record booking", hidden: true });
     fireEvent.click(fix);
     expect(run).toHaveBeenCalledTimes(1);
   });
@@ -124,7 +124,7 @@ describe("greyed actions on the ED board", () => {
     expect(checked).toBeGreaterThan(0);
   });
 
-  it("puts Log transport booking beside a handover that waits on transport, and it opens the booking form", () => {
+  it("puts Record transport booking beside a handover that waits on transport, and it opens the booking form", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <EdScreen edId="arm-ed" />
@@ -134,8 +134,11 @@ describe("greyed actions on the ED board", () => {
     openNotAvailable(screen.getByTestId("ward-ed-phone-actions-WF-011"));
     const note = screen.getByTestId("ward-ed-unavailable-handover-WF-011");
     expect(note.textContent).toContain("Transport not logged");
-    fireEvent.click(within(note).getByRole("button", { name: "Log transport booking" }));
-    expect(screen.getByTestId("ward-ed-book-transport-toggle-WF-011").getAttribute("aria-expanded")).toBe("true");
+    fireEvent.click(within(note).getByRole("button", { name: "Record transport booking" }));
+    // The booking opens in its own popup (A12-08), titled for the step.
+    expect(screen.getByRole("dialog", { name: "Record transport booking" })).toBe(
+      screen.getByTestId("ward-ed-book-transport-WF-011"),
+    );
     // The community referral waits on an examination. H-0974 (26 Oct 2026): with the bed pulled,
     // Transport booked is this sheet's pinned next step, not Record exam, so the note offers
     // Record examination beside its words.
@@ -233,7 +236,7 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     openSheet();
     fireEvent.click(
       within(screen.getByTestId("ward-ed-unavailable-handover-WF-011")).getByRole("button", {
-        name: "Log transport booking",
+        name: "Record transport booking",
       }),
     );
     const dialog = screen.getByTestId("ward-ed-book-transport-WF-011");

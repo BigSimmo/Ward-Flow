@@ -67,7 +67,7 @@ export function ForecastCard({
     <Card id="capacity-forecast" aria-labelledby="capacity-forecast-card-title" data-testid={testId}>
       <CardHead
         id="capacity-forecast-card-title"
-        title="Expected from recorded dates"
+        title="Next few days"
         meta={networkWide ? "From ward dates · Network-wide" : "From ward dates"}
         action={
           <Button
@@ -77,7 +77,8 @@ export function ForecastCard({
             aria-haspopup="dialog"
             data-testid="capacity-forecast-open"
           >
-            Open
+            {/* Audit three #18: the button names where it goes. */}
+            Forecast
           </Button>
         }
       />

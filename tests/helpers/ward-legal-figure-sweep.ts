@@ -2431,6 +2431,27 @@ export function applyFirstAccepted(
   code?: string,
   supplyDueAt = true,
 ): { applied: WardFlowState; event: WardFlowEvent } | undefined {
+  // Mock-up R1 (26 Nov 2026): a diversion and the release of its held bed name a movement and nothing
+  // else the generic candidates could vary, so the first movement that takes the step is used.
+  if (type === "RECORD_DIVERSION" || type === "RELEASE_DIVERTED_BED") {
+    for (const movement of state.movements) {
+      const event = (
+        type === "RECORD_DIVERSION"
+          ? {
+              type,
+              role: EVENT_ROLE.RECORD_DIVERSION[0],
+              now,
+              movementId: movement.id,
+              reason: DIVERSION_REASONS[0],
+              place: TRANSPORT_WHEREABOUTS[0],
+            }
+          : { type, role: EVENT_ROLE.RELEASE_DIVERTED_BED[0], now, movementId: movement.id }
+      ) as WardFlowEvent;
+      const next = wardFlowReducer(state, event);
+      if (next.rejections.length === state.rejections.length) return { applied: next, event };
+    }
+    return undefined;
+  }
   for (const event of iterateCandidateEvents(type, state, now, code, supplyDueAt)) {
     preparationProfile.count("reducerAttempts");
     if (clinicalStepRefuses(state, event)) {

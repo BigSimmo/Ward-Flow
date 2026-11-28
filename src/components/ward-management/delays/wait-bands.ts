@@ -20,6 +20,7 @@ export type WaitBandId = "over24" | "over8" | "under8";
 export const WAIT_BANDS: readonly {
   id: WaitBandId;
   title: string;
+  /** Audit two #51 (P14): empty, as the list head already says "Longest wait first". */
   note: string;
   tone: "danger" | "warning" | undefined;
   limit: number;
@@ -30,7 +31,7 @@ export const WAIT_BANDS: readonly {
     // Time audit T8: from the long-wait value and its words, never a typed 24 * 60.
     title: LONG_WAIT_TEXT.charAt(0).toUpperCase() + LONG_WAIT_TEXT.slice(1),
     // D-122 (Josh, 10 Nov 2026): no "past the access target" here, as that target is a setting and this band is fixed.
-    note: "longest first",
+    note: "",
     // D-24, restored by D-194 (Josh, 13 Nov 2026): a wait past 24 hours is plain, like the other groups.
     tone: undefined,
     limit: Number.POSITIVE_INFINITY,
@@ -39,7 +40,7 @@ export const WAIT_BANDS: readonly {
   {
     id: "over8",
     title: `${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60} to ${LONG_WAIT_MINUTES / 60} hours`,
-    note: "longest first",
+    note: "",
     tone: "warning",
     limit: 4,
     test: (row) => row.waited >= ED_SEVERE_PRESSURE_WAIT_MINUTES && row.waited < LONG_WAIT_MINUTES,
@@ -47,7 +48,7 @@ export const WAIT_BANDS: readonly {
   {
     id: "under8",
     title: `Under ${ED_SEVERE_PRESSURE_WAIT_MINUTES / 60} hours`,
-    note: "longest first",
+    note: "",
     tone: undefined,
     limit: 0,
     test: (row) => row.waited < ED_SEVERE_PRESSURE_WAIT_MINUTES,

@@ -150,8 +150,7 @@ export const LATE_JOBS: readonly HowTo[] = [
     topic: "Settings and display",
     title: "Fit more rows on screen",
     keywords: "compact density smaller rows more on screen",
-    answer:
-      "Settings, Display, Row density: Compact fits more rows on each screen. On a computer, Sidebar: Compact shows the side menu as icons only, which leaves more room for the page. Both change this device only.",
+    answer: "Settings, Display, Row density: Compact fits more rows on each screen. It changes this device only.",
     desks: EVERY_DESK,
     go: "settings#display",
     showMe: [
@@ -164,12 +163,6 @@ export const LATE_JOBS: readonly HowTo[] = [
         target: [{ sel: '[data-setting="density"] [role="radiogroup"]' }, setting("density", "display")],
         title: "Choose Compact",
         body: "Compact fits more rows on each screen. It saves at once, on this device only.",
-      },
-      {
-        device: "desk",
-        target: setting("sidebar", "display"),
-        title: "Sidebar",
-        body: "Compact shows the side menu as icons only, which gives the page more room.",
       },
     ],
   },
@@ -317,7 +310,7 @@ export const LATE_JOBS: readonly HowTo[] = [
     title: "Undo something I just did",
     keywords: "undo mistake wrong reverse back",
     answer:
-      "Many saves show Undo in the message at the foot of the screen, and Undo works for 5 minutes. After that, change the record back yourself; the history keeps both steps. Undo on Arrived can reverse a recent arrival when the normal Undo checks pass. If the person really has gone back, record that as its own step.",
+      "Many saves show Undo in the message at the foot of the screen, and Undo works until the time shown (up to 5 minutes). After that, change the record back yourself; the history keeps both. Undo on Arrived can reverse a recent arrival if the usual checks pass. If the person really has gone back, record that as its own step.",
     desks: EVERY_DESK,
   },
   {
@@ -370,7 +363,7 @@ export const LATE_JOBS: readonly HowTo[] = [
     title: "See the statistics",
     keywords: "statistics stats trends reports figures numbers",
     answer:
-      "Open Statistics for the network's trends. Choose a view: Network, Compare, Services, Wards, EDs, Teams or Weekly. On a computer, Export downloads the figures at the top of the page. Every figure is from synthetic records.",
+      "Open Statistics for the network's trends. Choose a view: Network, Compare, Services, Wards, EDs, Teams or Weekly. On a computer, Export in the Share menu downloads the figures at the top of the page. Every figure is from synthetic records.",
     desks: ["executive", "coordinator", "bed_manager"],
     go: "statistics",
     showMe: [
@@ -381,9 +374,11 @@ export const LATE_JOBS: readonly HowTo[] = [
         body: "Network, Compare, Services, Wards, EDs, Teams and Weekly. Every figure is from synthetic records.",
       },
       {
-        target: { sel: '[data-testid="ward-statistics-export"], [data-testid="ward-statistics-tools-menu"]' },
+        target: {
+          sel: '[data-testid="ward-statistics-share"], [data-testid="ward-statistics-export"], [data-testid="ward-statistics-tools-menu"]',
+        },
         title: "Export the figures",
-        body: "Downloads the figures at the top of the page as a spreadsheet file, on a computer.",
+        body: "Export, in the Share menu, saves the figures at the top of the page as a spreadsheet file, on a computer.",
       },
     ],
   },

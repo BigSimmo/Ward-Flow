@@ -28,7 +28,9 @@ describe("Ward Flow route loading state", () => {
     ["/bedchart/", "home"],
     ["/bedchart/capacity", "capacity"],
     ["/bedchart/waiting", "waiting"],
-    ["/bedchart/delays", "plain"],
+    // Audit four #83: Delays opens on the hero band; Help keeps the pale skeleton (PALE_PAGES).
+    ["/bedchart/delays", "hero"],
+    ["/bedchart/help", "plain"],
     [null, "plain"],
   ])("draws the %s placeholder in the %s shape, hidden from screen readers", (pathname, shape) => {
     navigation.pathname = pathname;

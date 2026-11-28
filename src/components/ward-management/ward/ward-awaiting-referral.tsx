@@ -83,7 +83,7 @@ export function AwaitingIdentity({
         onClick={onOpen}
       >
         {person.formalName}
-        <span className={styles.awaitingNameHint}>View referral</span>
+        <span className={styles.awaitingNameHint}>Open referral</span>
       </button>
       <span className={styles.awaitingMeta}>
         {[person.umrn, movement.sex, movement.legalStatus, `Tier ${movement.urgency}`].filter(Boolean).join(" · ")}

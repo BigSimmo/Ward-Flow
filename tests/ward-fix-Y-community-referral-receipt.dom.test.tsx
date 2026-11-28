@@ -68,7 +68,7 @@ describe("F-44: a completed Community referral reaches its receipt", () => {
     fireEvent.click(steps().getByRole("button", { name: "Team" }));
     const teams = within(screen.getByRole("radiogroup", { name: "Community team to refer to" })).getAllByRole("radio");
     fireEvent.click(teams[0]!);
-    fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
+    fireEvent.click(screen.getByRole("button", { name: "Review and send" }));
     expect(screen.getByRole("heading", { name: "Confirm and send" })).toBeVisible();
     expect(screen.getByTestId("ward-referral-confirm-charts")).toHaveTextContent("Not needed");
     expect(screen.getByTestId("ward-referral-confirm-charts")).not.toHaveTextContent("attached");

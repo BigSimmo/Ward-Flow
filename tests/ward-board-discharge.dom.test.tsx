@@ -271,7 +271,7 @@ describe("recording a departure from the ward board", () => {
     fireEvent.click(screen.getByTestId("ward-board-record-leaving-submit"));
 
     const recorded = departuresInModel().filter((departure) => !alreadyGone.has(departure.id));
-    expect(recorded, "clicking Record that they have left put no new departure in the model").toHaveLength(1);
+    expect(recorded, "clicking Record discharge put no new departure in the model").toHaveLength(1);
     expect(
       recorded[0].destination,
       `the ward chose "${chosenDestination.label}" and the model recorded "${recorded[0].destination}"` +
@@ -289,14 +289,14 @@ describe("recording a departure from the ward board", () => {
     selectAnOccupiedBed();
     fireEvent.click(screen.getByTestId("ward-board-record-leaving-submit"));
 
-    const dialog = screen.getByRole("dialog", { name: "Confirm discharge" });
-    const proceed = within(dialog).getByTestId("ward-board-confirm-proceed");
-    expect(proceed).toBeDisabled();
+    const dialog = screen.getByRole("alertdialog", { name: "Record discharge" });
+    const proceed = within(dialog).getByRole("button", { name: "Record discharge" });
+    expect(proceed).toHaveAttribute("aria-disabled", "true");
     expect(departures()).toBe(before);
     const chosen = LEAVING_DESTINATIONS[1];
     fireEvent.change(within(dialog).getByTestId("ward-board-confirm-destination"), { target: { value: chosen.id } });
     expect(within(dialog).getByTestId("ward-board-confirm-destination-text")).toHaveTextContent(chosen.label);
-    fireEvent.click(proceed);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Record discharge" }));
     expect(departures()).toBe(before + 1);
   });
 });
@@ -325,5 +325,5 @@ it("offers guarded Undo after a board departure and restores the occupied bed", 
   expect(screen.getByTestId(`model-departure-${admissionId}`)).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Undo" }));
   expect(screen.queryByTestId(`model-departure-${admissionId}`)).toBeNull();
-  expect(screen.getByText("Discharge undone. This patient is back on the ward.")).toBeTruthy();
+  expect(screen.getByText("Undone: Discharge · This patient is back on the ward")).toBeTruthy();
 });

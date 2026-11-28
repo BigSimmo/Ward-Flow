@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { Button, StatusGlyph } from "@/components/wf";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -16,56 +16,80 @@ import type { DirectoryEntry } from "./on-call-directory";
 import styles from "./on-call.module.css";
 import own from "./on-call-check-foot.module.css";
 
-/**
- * Closing-the-loop (package E): the contact card's foot. When the entry was last checked and by which
- * desk, the factual "Not checked in over N days" note past the directory's threshold, and a button to
- * record a check now. The entry's figures already carry any recorded check (`withRecordedChecks`).
- */
-function MarkChecked({ entry, role }: { entry: DirectoryEntry; role: WardFlowRole }) {
+/** Mark checked now: the button and its one status line ("Check recorded." or the error). */
+export function useMarkChecked(
+  entry: DirectoryEntry,
+  role: WardFlowRole,
+  /** The contact drawer's foot draws it at the size of its other quiet buttons. */
+  size: "sm" | "md" = "sm",
+): { button: ReactNode; status: ReactNode } {
   const raise = useWardRaise(role);
   const [done, setDone] = useState(false);
   const save = useWardFormSave(`directory-check:${entry.id}`);
+  const button = (
+    <Button
+      size={size}
+      variant="sec"
+      aria-label={`Mark checked now: ${entry.name}`}
+      data-testid="ward-on-call-mark-checked"
+      disabledReason={save.pending ? "Saving" : undefined}
+      onClick={() => {
+        setDone(false);
+        save.submit(
+          () => raise("RECORD_DIRECTORY_CHECK", { entryId: entry.id }),
+          () => setDone(true),
+        );
+      }}
+    >
+      Mark checked now
+    </Button>
+  );
+  const status = save.error ? (
+    <span className={own.status} role="alert">
+      {save.error}
+    </span>
+  ) : done ? (
+    <span className={own.status} role="status">
+      Check recorded.
+    </span>
+  ) : null;
+  return { button, status };
+}
+
+function MarkChecked({ entry, role }: { entry: DirectoryEntry; role: WardFlowRole }) {
+  const { button, status } = useMarkChecked(entry, role);
   return (
     <>
-      <Button
-        size="sm"
-        variant="sec"
-        aria-label={`Mark checked now: ${entry.name}`}
-        data-testid="ward-on-call-mark-checked"
-        disabledReason={save.pending ? "Saving" : undefined}
-        onClick={() => {
-          setDone(false);
-          save.submit(
-            () => raise("RECORD_DIRECTORY_CHECK", { entryId: entry.id }),
-            () => setDone(true),
-          );
-        }}
-      >
-        Mark checked now
-      </Button>
-      {save.error ? (
-        <span className={own.status} role="alert">
-          {save.error}
-        </span>
-      ) : null}
-      {done ? (
-        <span className={own.status} role="status">
-          Check recorded.
-        </span>
-      ) : null}
+      {button}
+      {status}
     </>
   );
 }
 
-export function CheckFoot({ entry }: { entry: DirectoryEntry }) {
+/**
+ * The desk that may record a check on this entry, or null: only desks the event permits (not the
+ * executive or the access admin), and only inside a provider (a hand-built sheet only reads). The
+ * key resets the check's saved state when the session, entry or desk changes.
+ */
+export function useCheckRecorder(entry: DirectoryEntry): { role: WardFlowRole | null; key: string } {
   const access = useEffectiveWardAccess();
   const lifetime = useWardShellPublic()?.accessLifetime;
-  // Rendered outside a provider (a hand-built sheet), the foot reads only; there is nothing to record into.
-  // Only desks the event permits (not the executive or the access admin) see the button.
   const role = (EVENT_ROLE.RECORD_DIRECTORY_CHECK as readonly string[]).includes(access.role)
     ? (access.role as WardFlowRole)
     : null;
   const canRecord = useOptionalWardFlowSelect("dispatch") !== null && role !== null;
+  return { role: canRecord ? role : null, key: JSON.stringify([lifetime, entry.id, role]) };
+}
+
+/**
+ * Closing-the-loop (package E): the contact card's foot. When the entry was last checked and by which
+ * desk, the factual "Not checked in over N days" note past the directory's threshold, and a button to
+ * record a check now. The entry's figures already carry any recorded check (`withRecordedChecks`).
+ * `showMark` false (the contact drawer) draws it as quiet text only: the drawer's foot holds Mark
+ * checked now.
+ */
+export function CheckFoot({ entry, showMark = true }: { entry: DirectoryEntry; showMark?: boolean }) {
+  const { role, key } = useCheckRecorder(entry);
   const check: LastCheck = { at: 0, by: entry.checkedBy, daysAgo: entry.checkedDaysAgo, recorded: false };
   const due = checkIsDue(check);
   const note = notCheckedNote(check);
@@ -82,9 +106,7 @@ export function CheckFoot({ entry }: { entry: DirectoryEntry }) {
       <span className={own.owner} data-testid="ward-on-call-owner">
         Kept up to date by {WARD_FLOW_ROLE_LABELS[entry.ownerRole]}
       </span>
-      {canRecord && role !== null ? (
-        <MarkChecked key={JSON.stringify([lifetime, entry.id, role])} entry={entry} role={role} />
-      ) : null}
+      {showMark && role !== null ? <MarkChecked key={key} entry={entry} role={role} /> : null}
     </div>
   );
 }

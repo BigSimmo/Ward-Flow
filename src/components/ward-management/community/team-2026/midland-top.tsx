@@ -28,10 +28,10 @@ import {
   cx,
   folderTabClasses,
   heroChipClassName,
+  useIsTabletPortrait,
   type HeroChipItem,
 } from "@/components/wf";
 import topTitle from "@/components/ward-management/shell/page-top-title.module.css";
-import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import ward from "@/components/ward-management/ward/ward.module.css";
 import type { CommunityTeamSection } from "../community-screen-hero";
 import { perthClockTime } from "@/components/ward-management/ward-clock";
@@ -62,15 +62,31 @@ function phoneSections(section: CommunityTeamSection): CommunityTeamSection[] {
 /** Marks the act-now list on Team home (desktop and phone), for Show act now to scroll to and focus. */
 export const MIDLAND_ACT_NOW_ATTR = "data-midland-act-now";
 
-/** After Team home has drawn, bring its act-now list into view and move focus to it. */
-function revealActNow(): void {
+/**
+ * Marks each act-now row's own step button on Team home (desktop), or the act-now row whose one
+ * action is its step (phone, where the kit row draws the action button), for Open next to press.
+ */
+export const MIDLAND_ACT_NOW_STEP_ATTR = "data-midland-act-now-step";
+
+/**
+ * Audit four #56: "Open next" opens the first act-now row's own step, as the hero button does on the
+ * other pages. After Team home has drawn it presses that row's step, so the step runs through the
+ * row's own handler (record contact, answer, book) with no second copy of it here. The steps are
+ * marked in the rows themselves, so no button is guessed from the layout; a step that is off is
+ * passed over.
+ */
+function openNextActNow(): void {
   if (typeof window === "undefined") return;
   window.requestAnimationFrame(() =>
     window.requestAnimationFrame(() => {
-      const target = document.querySelector<HTMLElement>(`[${MIDLAND_ACT_NOW_ATTR}]`);
-      if (!target) return;
-      target.scrollIntoView?.({ block: "start", behavior: wardScrollBehavior() });
-      target.focus({ preventScroll: true });
+      for (const marked of document.querySelectorAll<HTMLElement>(`[${MIDLAND_ACT_NOW_STEP_ATTR}]`)) {
+        // Phone: the mark is on the kit row, whose one action button comes after the row target.
+        const step =
+          marked instanceof HTMLButtonElement ? marked : Array.from(marked.querySelectorAll("button")).at(-1);
+        if (!step || step.disabled || step.getAttribute("aria-disabled") === "true") continue;
+        step.click();
+        return;
+      }
     }),
   );
 }
@@ -202,25 +218,41 @@ export function MidlandTop({
     ...(isPhone ? [] : moreItems),
   ];
 
+  // Audit four #26: on a tablet the tab row has no room for the find box, so it leads the sheet at full
+  // width and Catchment counts (under More) keeps the end of the tab row.
+  const tablet = useIsTabletPortrait() && !isPhone;
+  const findField = find ? (
+    <TextInput
+      type="search"
+      icon={Search}
+      boxClassName={cx(ward.findBox, top.find)}
+      aria-label="Find a client or clinician"
+      placeholder="Find client or clinician"
+      value={find.value}
+      onChange={(event) => {
+        find.set(event.target.value);
+        if (section !== "caseload" && section !== "clinicians") open("caseload");
+      }}
+      onClear={() => find.set("")}
+      data-testid="community-find-input"
+    />
+  ) : null;
+
   const more: ReactNode = (
     <span className={top.moreRow}>
-      {find ? (
-        <TextInput
-          type="search"
-          icon={Search}
-          boxClassName={cx(ward.findBox, top.find)}
-          aria-label="Find a client or clinician"
-          placeholder="Find client or clinician"
-          value={find.value}
-          onChange={(event) => {
-            find.set(event.target.value);
-            if (section !== "caseload" && section !== "clinicians") open("caseload");
-          }}
-          onClear={() => find.set("")}
-          data-testid="community-find-input"
-        />
-      ) : null}
-      {menuItems.length > 0 ? (
+      {find && !tablet ? findField : null}
+      {!isPhone && menuItems.length === 1 && menuItems[0] ? (
+        // #19 (audit two): a menu of one is a plain button in the same slot.
+        <button
+          type="button"
+          // Audit four #26 (r10): the folder row's More ink on the navy foot, on the tab labels' line.
+          className={cx(buttonClass({ variant: "ghost", size: "sm" }), folderTabClasses.more)}
+          onClick={menuItems[0].onSelect}
+          data-testid="community-top-more"
+        >
+          {menuItems[0].label}
+        </button>
+      ) : menuItems.length > 0 ? (
         <Menu
           label={isPhone ? "More team sections" : "More team actions"}
           align="end"
@@ -283,11 +315,11 @@ export function MidlandTop({
               tone="danger"
               title={`${f.actNow} need someone today`}
               action={{
-                label: "Show act now",
-                phoneLabel: "Show",
+                label: "Open next",
+                phoneLabel: "Open next",
                 onClick: () => {
                   open("home");
-                  revealActNow();
+                  openNextActNow();
                 },
                 testId: "community-top-act",
               }}
@@ -354,6 +386,7 @@ export function MidlandTop({
           />
         )}
       </FolderTabs>
+      {find && tablet ? <div className={top.tabletFind}>{findField}</div> : null}
     </>
   );
 }

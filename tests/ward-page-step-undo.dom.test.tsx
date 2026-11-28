@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
@@ -9,6 +9,12 @@ vi.mock("next/link", () => ({
       {children}
     </a>
   ),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  usePathname: () => "/bedchart/handover",
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 import { ToastProvider } from "@/components/wf/toast-provider";
@@ -35,12 +41,14 @@ describe("Handover sign-off with Undo", () => {
     );
     // 3 Nov 2026: Sign off lives in the hero on every tab; it opens the checklist drawer.
     fireEvent.click(screen.getByTestId("ward-handover-hero-sign-off"));
-    fireEvent.click(screen.getByTestId("ward-handover-sign-off-button"));
+    // Audit four item 37: Sign off is a small kit dialog; its filled foot button records the sign-off.
+    const dialog = screen.getByTestId("ward-handover-sign-off-dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: /^Sign off as / }));
     expect(screen.getByTestId("ward-handover-hero-sign-off")).toHaveTextContent("Signed 10:42");
 
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(screen.getByTestId("ward-handover-hero-sign-off")).not.toHaveTextContent("Signed 10:42");
-    expect(screen.getByText("Sign-off undone.")).toBeInTheDocument();
+    expect(screen.getByText("Undone: Handover signed off")).toBeInTheDocument();
   });
 });
 
@@ -65,7 +73,7 @@ describe("Transport stage step with Undo", () => {
       "aria-label",
       "Transport stage: Accepted, next en route",
     );
-    expect(screen.getByText("Undone. Back as it was.")).toBeInTheDocument();
+    expect(screen.getByText("Undone: Back as it was")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-officer-toast-undo")).not.toBeInTheDocument();
   });
 });

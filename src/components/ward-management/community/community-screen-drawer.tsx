@@ -174,11 +174,9 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
   const footer = isPx ? (
     // Edit dossier removed: it was not wired (simplification A5, 19 Oct 2026, supersedes archived D-16).
     <div className={d.foot}>
-      <Button variant="sec" onClick={() => openPatientCare()}>
+      {/* Audit four #43: one filled button, as the Midland team home has; Arrange follow-up is the editor's heading. */}
+      <Button variant="pri" id="pxConfirmFollowupBtn" onClick={() => openPatientCare()}>
         Record contact
-      </Button>
-      <Button variant="pri" id="pxConfirmFollowupBtn" onClick={openPatientCare}>
-        Arrange follow-up
       </Button>
     </div>
   ) : isReferral ? (
@@ -193,7 +191,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
           setActiveDrawer(null);
         }}
       >
-        Decline / redirect
+        Decline
       </Button>
       <Button
         variant="pri"
@@ -365,6 +363,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
 
         {isPx && showCareEditor && (
           <section aria-label="Patient follow-up and contact" data-testid="community-patient-care" className={d.care}>
+            <h3 className={d.kicker}>Arrange follow-up</h3>
             {patientAdmissions.length === 0 ? (
               <p role="alert" className={d.alert}>
                 No matching admission is available to this team. Follow-up and patient contact cannot be recorded here.

@@ -89,7 +89,7 @@ export function PatientTypeahead({
   onValueChange,
   onPick,
   label = "Find a person",
-  placeholder = "Name or UMRN…",
+  placeholder = "Name or UMRN",
   offerAddPerson = true,
   suggestions = true,
   adornment,

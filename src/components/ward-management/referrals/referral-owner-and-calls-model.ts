@@ -1,5 +1,6 @@
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
-import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
+import { type Instant } from "@/components/ward-management/ward-clock";
+import { agoText } from "@/components/ward-management/ward-ago-text";
 import type { Referral, ReferralContactEntry, ReferralOwnerEntry, Unit } from "@/components/ward-management/ward-model";
 import { referralState } from "@/components/ward-management/ward-referrals";
 
@@ -47,11 +48,9 @@ export function referralContactTargetLabel(
   }
 }
 
-/** "5m ago", "1h 40m ago", "2d 3h ago" (`splitDuration`, F-35), or "just now". */
+/** "5 min ago", "1 h 40 min ago" or "just now": the one shared ago helper (audit two #23). */
 export function minutesAgoLabel(at: Instant, now: Instant): string {
-  const minutes = Math.max(0, Math.round(now - at));
-  if (minutes < 1) return "just now";
-  return `${splitDuration(minutes)} ago`;
+  return agoText(Math.max(0, Math.round(now - at)));
 }
 
 /**

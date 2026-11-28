@@ -166,16 +166,16 @@ export function HandoverSiteSignOff({
     runStep(
       { type: "RECORD_SITE_HANDOVER_SIGN_OFF", role: routeRole, now, siteCode, shiftAt },
       {
-        success: "Site handover signed off.",
+        success: "Site handover signed off",
         undo: (at) => ({ type: "UNDO_SITE_HANDOVER_SIGN_OFF", role: routeRole, now: at, siteCode }),
-        undone: "Site sign-off undone.",
+        undone: "Undone: Site handover signed off",
       },
     );
   };
   const undoSignOff = () =>
     runStep(
       { type: "UNDO_SITE_HANDOVER_SIGN_OFF", role: routeRole, now, siteCode },
-      { success: "Site sign-off undone." },
+      { success: "Undone: Site handover signed off" },
     );
 
   const unsignedNames = record ? record.unsignedUnitIds.map(wardName) : [];

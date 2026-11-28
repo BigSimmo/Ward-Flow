@@ -3,6 +3,11 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  usePathname: () => "/bedchart/handover",
+  useSearchParams: () => new URLSearchParams(),
+}));
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
     <a href={href} {...rest}>
@@ -25,14 +30,23 @@ afterEach(cleanup);
 
 const withProvider = (children: ReactNode) =>
   render(<WardFlowProvider initialNow={NOW_ANCHOR}>{children}</WardFlowProvider>);
+/** Opens the list head's Filters menu and returns the saved view's item, as a coordinator would. */
+const viewItem = (name: RegExp) => {
+  if (screen.queryByRole("menu") === null) fireEvent.click(screen.getByTestId("delays-filters"));
+  return screen.getByRole("menuitemcheckbox", { name });
+};
+const closeMenu = () => {
+  if (screen.queryByRole("menu") !== null) fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
+};
 const shownCount = () => screen.getByTestId("delays-shown-count").textContent ?? "";
 
 describe("the Delays board's saved views", () => {
   it("opens on the view a link names, narrowed, with the chip pressed", () => {
     window.history.replaceState(null, "", "/bedchart/waiting?view=form");
     withProvider(<DelaysScreen />);
-    expect(screen.getByTestId("delays-view-form")).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByTestId("delays-view-form")).toHaveTextContent("Form due within 3h");
+    // Simplification mock-up (26 Nov 2026): the saved views live in the list head's Filters menu.
+    expect(viewItem(/^Form due within 3\s?h/u)).toHaveAttribute("aria-checked", "true");
+    closeMenu();
     const [shown, total] = shownCount().split(" of ").map(Number);
     expect(shown).toBeLessThan(total!);
   });
@@ -40,12 +54,13 @@ describe("the Delays board's saved views", () => {
   it("keeps one view at a time and writes it to the address", () => {
     window.history.replaceState(null, "", "/bedchart/waiting");
     withProvider(<DelaysScreen />);
-    fireEvent.click(screen.getByTestId("delays-view-needs-me"));
-    fireEvent.click(screen.getByTestId("delays-view-handover"));
-    expect(screen.getByTestId("delays-view-needs-me")).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByTestId("delays-view-handover")).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(viewItem(/^Due soon or on you/u));
+    fireEvent.click(viewItem(/^For handover/u));
+    expect(viewItem(/^Due soon or on you/u)).toHaveAttribute("aria-checked", "false");
+    expect(viewItem(/^For handover/u)).toHaveAttribute("aria-checked", "true");
+    closeMenu();
     expect(new URLSearchParams(window.location.search).get("view")).toBe("handover");
-    fireEvent.click(screen.getByTestId("delays-view-handover"));
+    fireEvent.click(viewItem(/^For handover/u));
     expect(new URLSearchParams(window.location.search).get("view")).toBeNull();
   });
 
@@ -71,13 +86,11 @@ describe("the Delays board's saved views", () => {
 describe("screens link into a view", () => {
   // Movements' "All in Waiting" link went with its Tier 1 card (Movements redesign, 1 Nov 2026, Q102).
 
-  it("Handover opens For handover", () => {
+  // Audit three fix 4 (r10): Handover's menu keeps only "Open on TV", so it no longer links into Waiting.
+  it("Handover no longer carries an Open in Waiting link", () => {
     withProvider(<HandoverPage />);
-    fireEvent.click(screen.getByRole("button", { name: "More handover actions" }));
-    expect(screen.getByRole("link", { name: "Open in Waiting" })).toHaveAttribute(
-      "href",
-      "/bedchart/waiting?view=handover",
-    );
+    expect(screen.queryByRole("button", { name: "More handover actions" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Open in Waiting" })).toBeNull();
   });
 
   // Q376: the Flow card is the queue's one layout; it has no Form due filter, so it always opens Waiting.
@@ -132,7 +145,7 @@ describe("screens link into a view", () => {
     expect(screen.getByTestId(`ward-queue-row-${ended.id}`)).not.toHaveTextContent(/Form 1A/u);
   });
 
-  it("the Patients shift panel opens the whole list", () => {
+  it("the Patients shift panel no longer carries a Waiting list link (r10 removed its foot)", () => {
     render(
       <ShiftSummary
         rows={[]}
@@ -146,6 +159,6 @@ describe("screens link into a view", () => {
         onHistory={() => {}}
       />,
     );
-    expect(screen.getByRole("link", { name: "Waiting list" })).toHaveAttribute("href", "/bedchart/waiting");
+    expect(screen.queryByRole("link", { name: "Waiting list" })).toBeNull();
   });
 });

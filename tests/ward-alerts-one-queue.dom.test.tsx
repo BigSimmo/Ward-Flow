@@ -87,11 +87,8 @@ describe("the drawer with one Alerts queue", () => {
     const drawer = screen.getByRole("complementary", { name: "Alerts" });
     expect(within(drawer).getByRole("heading", { level: 2, name: "Alerts" })).toBeInTheDocument();
 
-    const filters = within(drawer).getByRole("group", { name: "Filter alerts by status" });
-    const red = items.filter((item) => item.tone === "danger").length;
-    expect(within(filters).getByRole("button", { name: `Act now ${red}` })).toBeInTheDocument();
-    expect(within(filters).getByRole("button", { name: `Waiting ${items.length - red}` })).toBeInTheDocument();
-    expect(within(filters).queryByRole("button", { name: /Critical|Review/u })).toBeNull();
+    // r10: the Alerts queue drops its All / Act now / Waiting filter bar; the grouped rows carry the counts.
+    expect(within(drawer).queryByRole("group", { name: "Filter alerts by status" })).toBeNull();
 
     expect(within(drawer).getByTestId("ward-tasks-open-alerts")).toHaveAttribute("href", WARD_ALERTS_HREF);
     // The old text link to the same screen goes, so the quick look offers one way there.
@@ -133,7 +130,8 @@ describe("the drawer with one Alerts queue", () => {
     expect(onClose).toHaveBeenCalled();
     const row = action.closest("li")!;
     expect(within(row).getAllByRole("link")).toHaveLength(1);
-    expect(within(row).getByRole("button", { name: "Open patient" })).toBeInTheDocument();
+    // r10: the name opens the patient, so there is no separate "Open patient" button.
+    expect(within(row).queryByRole("button", { name: "Open patient" })).toBeNull();
   });
 });
 
@@ -183,7 +181,7 @@ describe("the Alerts drawer redesign (pop-alerts, approved 31 Oct 2026)", () => 
     expect(within(drawer).getAllByRole("heading", { level: 4, name: title })).toHaveLength(1);
     // Names read "Surname, Given" (D-83), never given name first.
     const member = within(list).getAllByRole("listitem")[0]!;
-    expect(member.querySelector("strong")?.textContent).toMatch(/^[^,]+, [^,]+$/u);
+    expect(member.querySelector("button")?.textContent).toMatch(/^[^,]+, [^,]+$/u);
   });
 
   it("keeps each grouped alert's acknowledgement status, so seen and unseen still differ", () => {
@@ -211,7 +209,7 @@ describe("the Alerts drawer redesign (pop-alerts, approved 31 Oct 2026)", () => 
     const drawer = renderDrawer(many);
     const list = within(drawer).getByRole("list", { name: `${transport.title}, 9 people` });
     expect(within(list).getAllByRole("listitem")).toHaveLength(6);
-    fireEvent.click(within(drawer).getByRole("button", { name: "Show 3 more" }));
+    fireEvent.click(within(drawer).getByRole("button", { name: "Show all 9" }));
     expect(within(list).getAllByRole("listitem")).toHaveLength(9);
     expect(within(drawer).getByRole("button", { name: "Show fewer" })).toHaveAttribute("aria-expanded", "true");
   });
@@ -224,16 +222,10 @@ describe("the Alerts drawer redesign (pop-alerts, approved 31 Oct 2026)", () => 
     expect(drawer).not.toHaveTextContent(/Overdue/u);
   });
 
-  it("shows '12 of 12 alerts' only while a filter narrows the list, and greys an empty filter's zero", () => {
+  it("has no status filter bar, so no '12 of 12 alerts' line", () => {
     const drawer = renderDrawer(items.filter((item) => item.tone === "danger"));
-    const status = within(drawer).getByRole("status");
-    expect(status).toHaveClass("sr-only");
-    const filters = within(drawer).getByRole("group", { name: "Filter alerts by status" });
-    const waiting = within(filters).getByRole("button", { name: "Waiting 0" });
-    expect(waiting.querySelector("[data-zero]")).not.toBeNull();
-    expect(within(filters).getByRole("button", { name: /^All / }).querySelector("[data-zero]")).toBeNull();
-    fireEvent.click(waiting);
-    expect(within(drawer).getByRole("status")).not.toHaveClass("sr-only");
+    expect(within(drawer).queryByRole("status")).toBeNull();
+    expect(within(drawer).queryByRole("group", { name: "Filter alerts by status" })).toBeNull();
   });
 });
 

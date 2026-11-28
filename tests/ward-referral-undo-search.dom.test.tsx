@@ -64,7 +64,7 @@ describe("Referrals v10: Accept then Undo", () => {
       fireEvent.click(undo);
     });
     expect(queueIds()).toEqual(before);
-    expect(screen.getByText("Decision undone")).toBeInTheDocument();
+    expect(screen.getByText("Undone: Decision")).toBeInTheDocument();
   });
 
   it("names the destination that declined, not the whole referral (F-109, A14-18)", () => {

@@ -1,10 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { Button, buttonClass } from "@/components/wf";
 import { ReferralMatchView } from "@/components/ward-management/referrals/referral-match";
 import { WardArrivalsCorridor } from "@/components/ward-management/ward/ward-arrivals-corridor";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { GENDER_PLACEMENT_REASONS, OVERRIDE_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { MatchRow } from "@/components/ward-management/referrals/referral-match-rows";
 import { REFERRAL_DECLINE_REASONS } from "@/components/ward-management/ward-model";
@@ -260,47 +261,70 @@ describe("candidate placement documentation", () => {
   });
 });
 
+/** Shows what the engine was asked to do, since the shared sheet dispatches through the provider. */
+function AttemptsProbe() {
+  const { rejections } = useWardFlow();
+  return (
+    <span data-testid="ward-release-attempts">
+      {rejections.length === 0 ? "0" : rejections.map((r) => r.attempted).join(",")}
+    </span>
+  );
+}
+
 describe("stopped transport: release pulled bed asks first (Audit 1, CS-07)", () => {
-  it("names the person and UMRN, and records nothing on Keep as is", () => {
+  it("names the person and UMRN, and records nothing until its own button is pressed", () => {
     const state = seedWardFlowState();
     const movement = state.movements.find((m) => m.acceptedUnitId)!;
     const unit = state.units.find((u) => u.id === movement.acceptedUnitId)!;
     const dispatch = vi.fn();
     render(
-      <WardArrivalsCorridor
-        unit={unit}
-        accepted={[]}
-        heldAfterStop={[movement]}
-        now={NOW_ANCHOR}
-        resolvePatientIdentity={() => ({
-          displayName: "Synthetic patient",
-          formalName: "PATIENT, Synthetic",
-          initials: "SP",
-          umrn: "UM000001",
-        })}
-        releaseOpenFor={undefined}
-        toggleRelease={vi.fn()}
-        releaseReason={undefined}
-        setReleaseReason={vi.fn()}
-        submitRelease={vi.fn()}
-        lastActionRejection={undefined}
-        dispatch={dispatch}
-        setCheckToken={vi.fn()}
-        priorRejectionCountRef={{ current: 0 }}
-        rejections={[]}
-        overrideReasonForm={() => null}
-      />,
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardArrivalsCorridor
+          unit={unit}
+          accepted={[]}
+          heldAfterStop={[movement]}
+          now={NOW_ANCHOR}
+          resolvePatientIdentity={() => ({
+            displayName: "Synthetic patient",
+            formalName: "PATIENT, Synthetic",
+            initials: "SP",
+            umrn: "UM000001",
+          })}
+          releaseOpenFor={undefined}
+          toggleRelease={vi.fn()}
+          releaseReason={undefined}
+          setReleaseReason={vi.fn()}
+          submitRelease={vi.fn()}
+          lastActionRejection={undefined}
+          dispatch={dispatch}
+          setCheckToken={vi.fn()}
+          priorRejectionCountRef={{ current: 0 }}
+          rejections={[]}
+          overrideReasonForm={() => null}
+        />
+        <AttemptsProbe />
+      </WardFlowProvider>,
     );
+    // Simplification R1: the release is the one shared "Release pulled bed" sheet (no separate Keep as is
+    // confirm). It names the person and UMRN, and nothing is recorded until its own button is pressed.
     fireEvent.click(screen.getByTestId(`ward-release-stopped-bed-${movement.id}`));
     expect(dispatch).not.toHaveBeenCalled();
-    expect(screen.getByTestId("ward-release-stopped-identity")).toHaveTextContent(
-      "Check: PATIENT, Synthetic · UM000001",
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Keep as is" }));
-    expect(dispatch).not.toHaveBeenCalled();
+    expect(screen.getByTestId("ward-release-pulled-bed-sheet-who")).toHaveTextContent("Synthetic patient");
+    expect(screen.getByTestId("ward-release-pulled-bed-sheet-who")).toHaveTextContent("UM000001");
+    expect(screen.getByTestId("ward-release-attempts")).toHaveTextContent("0");
+    // Closing the sheet records nothing.
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.queryByTestId("ward-release-pulled-bed-sheet-who")).toBeNull();
+    expect(screen.getByTestId("ward-release-attempts")).toHaveTextContent("0");
+    // Pressing the button that names the patient sends RELEASE_HELD_BED to the engine.
     fireEvent.click(screen.getByTestId(`ward-release-stopped-bed-${movement.id}`));
-    fireEvent.click(screen.getByRole("button", { name: "Release pulled bed" }));
-    expect(dispatch).toHaveBeenCalledTimes(1);
-    expect(dispatch.mock.calls[0]![0]).toMatchObject({ type: "RELEASE_HELD_BED", movementId: movement.id });
+    fireEvent.click(
+      within(screen.getByTestId("ward-release-pulled-bed-sheet")).getByRole("button", {
+        name: /^Release pulled bed for /,
+      }),
+    );
+    expect(screen.queryByTestId("ward-release-pulled-bed-sheet-who")).toBeNull();
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(screen.getByTestId("ward-release-attempts")).toHaveTextContent("RELEASE_HELD_BED");
   });
 });

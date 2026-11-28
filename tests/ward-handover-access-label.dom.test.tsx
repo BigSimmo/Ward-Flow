@@ -43,13 +43,17 @@ const TWO_WARD_DESK: WardAccess = {
   scope: { kind: "ward", unitIds: ["brm-adult-secure", "bun-adult-open"] },
 };
 
-// 1 Nov 2026 redesign: Copy summary sits in the toolbar's More handover actions; Print handover is
-// the sheet bar's one primary button.
+// Audit three #28: Copy for handover and Print handover sit under the hero's Share menu.
+function openShare() {
+  fireEvent.click(screen.getByTestId("ward-handover-share"));
+}
 function copySummary() {
-  const copyName = /^(Copy summary|Copied)$/;
-  if (!screen.queryByRole("button", { name: copyName }))
-    fireEvent.click(screen.getByRole("button", { name: "More handover actions" }));
-  fireEvent.click(screen.getByRole("button", { name: copyName }));
+  openShare();
+  fireEvent.click(screen.getByRole("menuitem", { name: /^(Copy for handover|Copied)$/ }));
+}
+function printHandover() {
+  openShare();
+  fireEvent.click(screen.getByTestId("ward-handover-print"));
 }
 
 describe("handover labels describe the records the desk can access", () => {
@@ -61,15 +65,15 @@ describe("handover labels describe the records the desk can access", () => {
     copySummary();
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
     expect(writeText.mock.calls[0]?.[0]).toContain(label);
-    fireEvent.click(screen.getByTestId("ward-handover-print"));
+    printHandover();
     const print = screen.getByTestId("ward-handover-print-sheet");
     expect(print).toHaveTextContent(label);
-    expect(print).not.toHaveTextContent("Whole network");
+    expect(print).not.toHaveTextContent("Statewide");
   });
 
   it.each([
     [TWO_WARD_DESK, "All records you can access"],
-    [{ role: "coordinator", scope: { kind: "statewide" } }, "Whole network"],
+    [{ role: "coordinator", scope: { kind: "statewide" } }, "Statewide"],
   ] satisfies readonly (readonly [WardAccess, string])[])(
     "uses the same all-records label on screen, in copy and on the print sheet for %j",
     async (access, label) => {
@@ -79,10 +83,10 @@ describe("handover labels describe the records the desk can access", () => {
       copySummary();
       await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
       expect(writeText.mock.calls[0]?.[0]).toContain(label);
-      fireEvent.click(screen.getByTestId("ward-handover-print"));
+      printHandover();
       const print = screen.getByTestId("ward-handover-print-sheet");
       expect(print).toHaveTextContent(label);
-      if (access.role === "ward") expect(print).not.toHaveTextContent("Whole network");
+      if (access.role === "ward") expect(print).not.toHaveTextContent("Statewide");
     },
   );
 

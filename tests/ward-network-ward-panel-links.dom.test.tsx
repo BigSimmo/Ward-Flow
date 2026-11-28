@@ -44,14 +44,16 @@ describe("Capacity ward panel links follow the desk's access", () => {
   it("shows both links to a desk that may open them", () => {
     access.canOpen = () => true;
     const row = renderSidebar();
-    expect(screen.getByRole("link", { name: "Open ward" })).toHaveAttribute("href", `/bedchart/ward/${row.unit.id}`);
-    expect(screen.getByRole("link", { name: "Discharge board" })).toHaveAttribute("href", "/bedchart/discharges");
+    expect(screen.getByRole("link", { name: `Open ${row.unit.name}` })).toHaveAttribute(
+      "href",
+      `/bedchart/ward/${row.unit.id}`,
+    );
   });
 
   it("hides a link the desk cannot open", () => {
     access.canOpen = (href) => href === "/bedchart/discharges";
-    renderSidebar();
-    expect(screen.queryByRole("link", { name: "Open ward" })).toBeNull();
+    const row = renderSidebar();
+    expect(screen.queryByRole("link", { name: `Open ${row.unit.name}` })).toBeNull();
     expect(screen.getByRole("link", { name: "Discharge board" })).toBeInTheDocument();
   });
 });

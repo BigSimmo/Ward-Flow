@@ -1,3 +1,6 @@
+/* Audit two B21: every table cell rule here starts with `html`, one element more than the kit's
+   `.table td` and `.table th`, so the page's own cell rules win in the production build as in dev,
+   whatever order the two style sheets load in. Order among this file's own rules is unchanged. */
 /*
  * The Patients census (direction A with search bar 1, Josh's pick, 9 Oct 2026). Tokens only: every
  * colour, radius and size comes from the v6 tokens, so day and night follow them.
@@ -259,17 +262,25 @@
 }
 
 /* "This shift" sits above the census on wide pages: the items flow into columns so the band stays
-   short, and the table keeps the full width. Under 68rem it stays hidden, as the side card was. */
-.shiftCard {
-  display: none;
+   short, and the table keeps the full width. Find review (26 Nov 2026): it shows at every width the
+   page draws it (a phone has its own census), as the Patients page did at 1440, 1280 and 820; the
+   old 68rem cut-off only ever applied when this sheet happened to load after the Card's own. */
+.shiftCard.shiftCard {
+  display: block;
   min-width: 0;
   padding: 0;
   overflow: hidden;
 }
 
+/* #86 (audit two, 27 Nov 2026): three tiles on equal thirds in one level row, no foot. */
 .shiftCard .summaryList {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* #86: a Highlight chip's hover text sits on this wrapper, which draws no box of its own. */
+.chipHint {
+  display: contents;
 }
 
 .summaryFoot {
@@ -444,7 +455,7 @@ table.censusTable {
   width: 18%;
 }
 
-.censusTable thead th {
+html .censusTable thead th {
   background: var(--wf-surface);
   font: 600 var(--wf-fs-12) / 16px var(--wf-font);
   letter-spacing: 0.05em;
@@ -452,15 +463,15 @@ table.censusTable {
   white-space: normal;
 }
 
-.censusTable td {
+html .censusTable td {
   vertical-align: middle;
 }
 
 /* Redesign: every cell wraps instead of ending in "…" ("Sent to 1 pla…", "RPH Com…"), over the
    shared wf table's one-line cells and this page's own truncating spans (screen-reader-only text
    keeps its own clipping). */
-table.censusTable td,
-table.censusTable td *:not(:global(.sr-only)) {
+html table.censusTable td,
+html table.censusTable td *:not(:global(.sr-only)) {
   overflow: visible;
   white-space: normal;
   text-overflow: clip;
@@ -470,7 +481,7 @@ table.censusTable td *:not(:global(.sr-only)) {
   text-align: right;
 }
 
-.groupRow th {
+html .groupRow th {
   height: 40px;
   padding: 0;
   border-bottom: 1px solid var(--wf-line);
@@ -542,7 +553,7 @@ table.censusTable td *:not(:global(.sr-only)) {
   cursor: pointer;
 }
 
-.row:hover td {
+html .row:hover td {
   background: var(--wf-hover);
 }
 
@@ -551,16 +562,16 @@ table.censusTable td *:not(:global(.sr-only)) {
   outline-offset: -2px;
 }
 
-.lifted td {
+html .lifted td {
   background: var(--wf-accent-tint);
 }
 
-.row.selected td,
-.lifted.selected td {
+html .row.selected td,
+html .lifted.selected td {
   background: var(--wf-selected);
 }
 
-.flash td {
+html .flash td {
   animation: censusFlash 1.6s var(--wf-ease);
 }
 
@@ -571,7 +582,7 @@ table.censusTable td *:not(:global(.sr-only)) {
   }
 }
 
-.quietRow td {
+html .quietRow td {
   color: var(--wf-ink-3);
 }
 
@@ -582,11 +593,11 @@ table.censusTable td *:not(:global(.sr-only)) {
 
 /* The one Show more row fills its cell and draws the only line above it, so the row before it
    drops its own. */
-.moreRow.moreRow > td:is(:first-child, :last-child) {
+html .moreRow.moreRow > td:is(:first-child, :last-child) {
   height: auto;
   padding: 0;
 }
-tr:has(+ .moreRow) > td {
+html tr:has(+ .moreRow) > td {
   border-bottom-color: transparent;
 }
 
@@ -1171,12 +1182,12 @@ tr:has(+ .moreRow) > td {
 }
 
 @media (forced-colors: active) {
-  .lifted td,
+  html .lifted td,
   .phoneRow.lifted {
     outline: 1px solid CanvasText;
   }
 
-  .row.selected td:first-child {
+  html .row.selected td:first-child {
     box-shadow: none;
     border-left: 3px solid Highlight;
   }
@@ -1200,7 +1211,7 @@ tr:has(+ .moreRow) > td {
     display: table-header-group;
   }
 
-  table.censusTable td .time {
+  html table.censusTable td .time {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: baseline;
@@ -1208,7 +1219,7 @@ tr:has(+ .moreRow) > td {
     min-width: 0;
   }
 
-  table.censusTable td .time * {
+  html table.censusTable td .time * {
     white-space: nowrap;
   }
 }
@@ -1448,6 +1459,16 @@ tr:has(+ .moreRow) > td {
   font-size: var(--wf-fs-12);
 }
 
+/* #45 (audit two): the row's own record link, as the drawer's third action, at the phone's 40px. */
+.phoneSheetRecord {
+  display: flex;
+}
+
+.phoneSheetRecord > a {
+  flex: 1;
+  min-height: 40px;
+}
+
 /* PS1: the phone state switch scrolls sideways rather than wrapping to two lines. */
 /* PS1: the state switch pins under the header, as the old Now and History tabs did, so a
    coordinator deep in the list can still change state. */
@@ -1484,4 +1505,37 @@ tr:has(+ .moreRow) > td {
 /* The date of birth switch keeps the field's height beside it. */
 .findRow .dobToggle {
   height: 40px;
+}
+
+/* Audit four #107: the phone's one Highlight menu button sits on its own quiet line above the list. */
+.phoneHighlight {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-1) 0;
+}
+
+.phoneHighlightCount {
+  margin-inline-start: auto;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Audit four #94: at tablet width Legal takes its width from Where, so "No due time" holds one line and
+   rows with a form are no taller than the rest. */
+@media screen and (min-width: 46.5rem) and (max-width: 62.5rem) {
+  /* r10 (final-b1 #10): Patient takes back about 19px from Legal, which still holds "No due time". */
+  .colWho {
+    width: 21%;
+  }
+
+  .colWhere {
+    width: 20%;
+  }
+
+  .colLegal {
+    width: 13%;
+  }
 }

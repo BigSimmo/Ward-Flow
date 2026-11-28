@@ -79,7 +79,7 @@ afterEach(() => {
 
 describe("Audit 24-7 undo toasts", () => {
   it.each([
-    ["accepted", "Undone. Back as it was."],
+    ["accepted", "Undone: Referred"],
     ["refused", "Not recorded: Too late to undo"],
   ] as const)("says an Undo %s after the page has gone (CT-08)", async (status, said) => {
     const undo = deferred();
@@ -177,7 +177,7 @@ describe("Audit 24-7 undo toasts", () => {
     render(<Layout />);
     fireEvent.change(screen.getByLabelText("Given name"), { target: { value: "Testable" } });
     fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
-    fireEvent.click(screen.getByTestId("ward-add-patient-reset-confirm"));
+    // Reset clears at once and offers Undo on the toast; there is no confirm step to press.
     expect(screen.getByTestId("toast")).toHaveTextContent("Form cleared");
     fireEvent.click(screen.getByText("Leave"));
     expect(screen.queryByTestId("toast")).toBeNull();

@@ -23,9 +23,9 @@ New here? Open **Help** and choose **Take the tour**.
 
 1. **Send a referral.** Use **New referral** or **Raise referral**. For a referral to a
    community team, choose **Community follow-up** or **Assess for admission** and the first contact
-   time, then **Send referral**.
+   time, then **Review and send**.
 2. **Check what you sent.** The **Sent** tab shows your referrals and whether a ward accepted.
-3. **Answer a referral to your team.** Open it, then **Accept referral** or **Decline referral**.
+3. **Answer a referral to your team.** Open it, then **Accept** or **Decline referral**.
 4. **Record contact.** Use **Record contact** after you reach the person.
 5. **Follow a move.** Follow an accepted referral on **Movements**.
 

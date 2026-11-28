@@ -7,6 +7,8 @@ import { ChevronDown } from "lucide-react";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
+import { edHealthService, unitHealthService } from "@/components/ward-management/ward-service-scope";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { HEALTH_SERVICES, type Unit } from "@/components/ward-management/ward-model";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
@@ -169,27 +171,34 @@ export function HandoverScopeControl({
   // Only the places this desk may read are offered: a ward desk never lists another ward's name.
   const whole = accessIsWholeNetwork(access);
   const places = useMemo(() => wardPlaceLookup(units), [units]);
+  // Audit two (#64): the header's service is the default scope, so this menu only narrows it: the
+  // service itself, then its wards, EDs and teams. With no service chosen, nothing is offered twice.
+  const headerService = useServiceScope();
   const sortedUnits = useMemo(
     () =>
       units
         .filter((unit) => whole || unitInScope(access.scope, unit.id, places))
+        .filter((unit) => headerService === null || unitHealthService(unit) === headerService)
         .sort((a, b) => a.name.localeCompare(b.name)),
-    [units, whole, access.scope, places],
+    [units, whole, access.scope, places, headerService],
   );
   const services = useMemo(
     () =>
-      whole
-        ? HEALTH_SERVICES
-        : HEALTH_SERVICES.filter((service) => sortedUnits.some((unit) => places.unitService(unit.id) === service)),
-    [whole, sortedUnits, places],
+      headerService !== null
+        ? [headerService]
+        : whole
+          ? HEALTH_SERVICES
+          : HEALTH_SERVICES.filter((service) => sortedUnits.some((unit) => places.unitService(unit.id) === service)),
+    [headerService, whole, sortedUnits, places],
   );
   const sortedEds = useMemo(
     () =>
       sites
         .flatMap((site) => (site.emergencyDepartment ? [site.emergencyDepartment] : []))
         .filter((ed) => whole || edInScope(access.scope, ed.id, places))
+        .filter((ed) => headerService === null || edHealthService(ed.id) === headerService)
         .sort((a, b) => a.name.localeCompare(b.name)),
-    [sites, whole, access.scope, places],
+    [sites, whole, access.scope, places, headerService],
   );
   const sortedTeams = useMemo(
     () =>
@@ -202,13 +211,16 @@ export function HandoverScopeControl({
   // A group with nothing this desk may read is left out, heading and all.
   const group = (id: string, heading: string, entries: HandoverChoice[]): HandoverChoice[] =>
     entries.length === 0 ? [] : [{ kind: "heading", id: `scope-head-${id}`, label: heading }, ...entries];
+  const serviceChoices = services.map((service) => ({
+    id: handoverScopeValue({ kind: "service", id: service }),
+    label: service,
+  }));
   const choices: HandoverChoice[] = [
-    { id: NETWORK_SCOPE_VALUE, label: allRecordsScopeLabel(access) },
-    ...group(
-      "service",
-      "Service",
-      services.map((service) => ({ id: handoverScopeValue({ kind: "service", id: service }), label: service })),
-    ),
+    ...(headerService === null || value === NETWORK_SCOPE_VALUE
+      ? [{ id: NETWORK_SCOPE_VALUE, label: allRecordsScopeLabel(access) }]
+      : []),
+    // The header's service leads the menu as the scope itself, with no head over one entry.
+    ...(headerService !== null ? serviceChoices : group("service", "Service", serviceChoices)),
     ...group(
       "ward",
       "Ward",

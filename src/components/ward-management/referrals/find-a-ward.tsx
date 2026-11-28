@@ -272,7 +272,7 @@ export function FindAWard({
               expanded={showAllReview}
               controls={`${baseId}-review-rows`}
             >
-              {showAllReview ? "Show fewer" : `Show ${review.length - REVIEW_FIRST_ROWS} more to review`}
+              {showAllReview ? "Show fewer" : `Show all ${review.length}`}
             </ShowMoreRow>
           ) : null}
         </section>

@@ -6,11 +6,10 @@
 // search and order; the filter chips and tier key under it; quiet capital column heads; rows grouped
 // by time in the department; and an Enlarge button that gives the table the whole screen.
 import { ChevronDown, ChevronUp, Minimize2 } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Button, PortraitRail, SearchField, StatusGlyph, FullScreenFrame, FullScreenMarkSlot } from "@/components/wf";
+import { useEffect, useState, type ReactNode } from "react";
+import { Button, InfoTip, SearchField, StatusGlyph, FullScreenFrame, FullScreenMarkSlot } from "@/components/wf";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { EdBoardChips } from "./ed-board-chips";
-import { EdNeedsYou } from "./ed-needs-you";
 import type { EdScreenContext } from "./ed-screen-context";
 import styles from "./ed.module.css";
 import { recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
@@ -25,7 +24,7 @@ import handover from "./ed-handover.module.css";
 import { EdCrewsWaitingLine } from "@/components/ward-management/ed-crews-waiting-line";
 import { useClockZoneLabel } from "@/components/ward-management/use-clock-zone-label";
 
-const COLUMNS = ["Patient", "In ED", "Bay", "Presentation", "Form", "Checks", "Referral", "Next"] as const;
+const COLUMNS = ["Patient", "In ED", "Presentation", "Form", "Checks", "Referral", "Next"] as const;
 
 type Band = {
   id: string;
@@ -38,10 +37,6 @@ type Band = {
 export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
   const zone = useClockZoneLabel();
   const {
-    needsRailSlides,
-    needsYouItems,
-    needsRailOpen,
-    setNeedsRailOpen,
     fullscreenBoard,
     setFullscreenBoard,
     patients,
@@ -55,29 +50,6 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
     now,
   } = ctx;
   const [folded, setFolded] = useState<Record<string, boolean>>({});
-  // D-276: the tier key closes with Escape or a press outside it, like the kit's other pop-overs.
-  const keyRef = useRef<HTMLDetailsElement>(null);
-  useEffect(() => {
-    const close = (event: Event) => {
-      const key = keyRef.current;
-      if (!key?.open) return;
-      if (event instanceof KeyboardEvent) {
-        if (event.key !== "Escape") return;
-        event.preventDefault();
-        key.open = false;
-        key.querySelector("summary")?.focus();
-        return;
-      }
-      if (event.target instanceof Node && !key.contains(event.target)) key.open = false;
-    };
-    document.addEventListener("keydown", close);
-    document.addEventListener("pointerdown", close);
-    return () => {
-      document.removeEventListener("keydown", close);
-      document.removeEventListener("pointerdown", close);
-    };
-  }, []);
-
   // The enlarged table covers the page; Escape gives the page back.
   useEffect(() => {
     if (!fullscreenBoard) return;
@@ -102,7 +74,7 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
     {
       id: "over",
       title: `Over ${Math.round(accessTarget / 60)} hours`,
-      note: "past the access target",
+      note: "over the access target",
       tone: "danger",
       test: (minutes) => minutes >= accessTarget,
     },
@@ -205,12 +177,8 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
         <div className={handover.handoverTitle}>
           {/* UX review 20 Nov 2026 (Josh "yes"): "On the board", since the page is already the ED's
               and "handover" is the print's word. */}
-          <h2>
-            On the board{" "}
-            <span className={handover.handoverCount}>
-              {filtered ? `${boardMatchCount} of ${patients.length}` : patients.length}
-            </span>
-          </h2>
+          {/* Audit two #61: the head carries no count; the chips and the table rows say who is here. */}
+          <h2>On the board</h2>
           <EdCrewsWaitingLine movements={patients} now={now} />
         </div>
         <div className={handover.handoverTools}>
@@ -222,16 +190,6 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
             value={patientQuery}
             onValueChange={setPatientQuery}
           />
-          {needsRailSlides && !fullscreenBoard ? (
-            <PortraitRail
-              title="My list"
-              summary={String(needsYouItems.length)}
-              open={needsRailOpen}
-              onOpenChange={setNeedsRailOpen}
-            >
-              <EdNeedsYou items={needsYouItems} framed={false} />
-            </PortraitRail>
-          ) : null}
           <ListExportButton load={exportList} disabled={patients.length === 0} testId="ed-handover-export" />
           {/* Enlarge sits on the tab row; enlarged, the tab row is covered, so the way back sits here. */}
           {fullscreenBoard ? (
@@ -246,14 +204,10 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
               Exit full screen
             </Button>
           ) : null}
-          <details ref={keyRef} className={handover.keyToggle}>
-            <summary aria-label="What the bars mean" title="What the bars mean">
-              ?
-            </summary>
-            <div className={handover.keyPopover}>
-              <TierBarsKey />
-            </div>
-          </details>
+          {/* Audit two #77: the bars key is the kit's one InfoTip at the list head. */}
+          <InfoTip about="the urgency bars" placement="bottom">
+            <TierBarsKey />
+          </InfoTip>
         </div>
       </div>
       <div className={handover.handoverFilters}>

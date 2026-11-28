@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { useLayoutEffect, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
@@ -159,7 +160,7 @@ describe("the downtime pack screen", () => {
     fireEvent.click(print);
     // Root-cause fix 3.3: nothing is recorded until the person says it printed.
     expect(screen.queryByTestId("ward-downtime-last-printed")).toBeNull();
-    fireEvent.click(await screen.findByRole("button", { name: "Yes" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Record print time" }));
     expect(await screen.findByTestId("ward-downtime-last-printed")).toHaveTextContent(
       `Last printed ${formatInstant(NOW_ANCHOR)}`,
     );
@@ -207,6 +208,20 @@ describe("item 25: record an outage", () => {
     expect(screen.getByRole("radio", { name: "Today" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByTestId("ward-downtime-outage-save")).not.toHaveAttribute("aria-disabled");
     expect(screen.queryByText(SAVE_NEEDS_BOTH_TIMES)).toBeNull();
+  });
+
+  // Build of audit four, item 85: real typing (keyboard events, not a set value) turns Save on.
+  it("turns Save on after typing both times with the keyboard and picking Today", async () => {
+    const user = userEvent.setup();
+    renderIn(<DowntimeRecordOutage now={NOW_ANCHOR} onDone={() => undefined} />);
+    const save = screen.getByTestId("ward-downtime-outage-save");
+    await user.type(screen.getByLabelText("We were down from"), "0900");
+    await user.type(screen.getByLabelText(/^to/), "1000");
+    expect(save).toHaveAttribute("aria-disabled", "true");
+    await user.click(screen.getByRole("radio", { name: "Today" }));
+    expect(screen.getByTestId("ward-downtime-outage-save")).not.toHaveAttribute("aria-disabled");
+    expect(screen.queryByText(SAVE_NEEDS_BOTH_TIMES)).toBeNull();
+    expect(screen.queryByText(SAVE_NEEDS_START_DAY)).toBeNull();
   });
 
   it("saves the typed window as RECORD_OUTAGE_WINDOW and closes", () => {

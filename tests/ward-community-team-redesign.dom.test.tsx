@@ -90,18 +90,16 @@ afterEach(() => {
 });
 
 describe("the community desk sees its own team only", () => {
-  it("keeps the coordinator's way across: Change team, the Caseload foot item and the other teams", () => {
+  it("keeps the coordinator's way across: Change team and the Caseload foot item", () => {
     renderTeam();
     expect(screen.getByRole("button", { name: "Switch team" })).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: "Other community teams" })).toBeInTheDocument();
     expect(screen.getByText("The bed coordinator's view of this team's referrals and bed flow.")).toBeInTheDocument();
   });
 
-  it("hides Change team, the Caseload foot item and the other teams, and says it is the team's own view", () => {
+  it("hides Change team and the Caseload foot item, and says it is the team's own view", () => {
     asCommunityDesk();
     renderTeam();
     expect(screen.queryByRole("button", { name: "Switch team" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("navigation", { name: "Other community teams" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-community-switch-team")).not.toBeInTheDocument();
     expect(screen.getByText("Your team's referrals and bed flow.")).toBeInTheDocument();
     expect(screen.queryByText("The bed coordinator's view of this team's referrals and bed flow.")).toBeNull();
@@ -143,7 +141,6 @@ describe("a long list folds only when two or more rows would be hidden (Josh, 31
           howToReach={null}
           onDuty={null}
           coverage={null}
-          samples={[]}
           actions={[]}
           attention={[]}
         />
@@ -201,7 +198,7 @@ describe("the redesigned pop-ups (states the sample cannot reach)", () => {
         <CommunityScreenReferralModal view={view as never} />
       </WardFlowProvider>,
     );
-    const dialog = screen.getByRole("dialog", { name: "Assign referral" });
+    const dialog = screen.getByRole("dialog", { name: "Hand to" });
     expect(dialog).toHaveTextContent("Testperson, Alex · UM900001");
     expect(within(dialog).getByText("Urgency")).toBeInTheDocument();
     expect(within(dialog).getByText("Region")).toBeInTheDocument();
@@ -240,7 +237,7 @@ describe("the redesigned pop-ups (states the sample cannot reach)", () => {
         answer({ status: "accepted" });
         await Promise.resolve();
       });
-      const dialog = screen.getByRole("dialog", { name: "Assign referral" });
+      const dialog = screen.getByRole("dialog", { name: "Hand to" });
       expect(dialog).toHaveTextContent("Testperson, RF-TB");
       expect(within(dialog).queryByRole("status")).toBeNull();
       expect(dialog).not.toHaveTextContent("Assigned to this team's desk.");

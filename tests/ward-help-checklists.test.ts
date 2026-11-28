@@ -39,7 +39,7 @@ describe("guided checklists (Josh, 2 Nov 2026, approved word for word)", () => {
           "Chase the overdue ward promises first.",
           "Check the Before you sign list.",
           "Choose Sign off.",
-          "Print handover and Present are under More.",
+          "Print handover is under Share. Open on TV shows the sheet on a big screen.",
         ],
       ],
       [

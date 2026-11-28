@@ -1,7 +1,7 @@
 "use client";
 
 import { useId } from "react";
-import { Badge } from "@/components/wf";
+import { Badge, Card, CardHead } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease } from "@/components/ward-management/ward-model";
@@ -35,15 +35,22 @@ export function LongStaySummary({
   const byId = new Map(admissions.map((admission) => [admission.id, admission]));
 
   return (
-    <section
-      className={styles.panel}
+    // Fable batch 3: a kit card with a head and a count chip, as "Beds now" above it.
+    <Card
+      className={styles.card}
       aria-labelledby={`${baseId}-ward-long-stay-summary-heading`}
       data-testid="ward-long-stay-summary"
     >
-      <h3 id={`${baseId}-ward-long-stay-summary-heading`} className={styles.heading}>
-        Long stays and delayed discharges ({summaries.length})
-      </h3>
-      <ul className={styles.list}>
+      <CardHead
+        id={`${baseId}-ward-long-stay-summary-heading`}
+        title="Long stays and delayed discharges"
+        aside={
+          <Badge size="sm" tone="neutral">
+            {summaries.length}
+          </Badge>
+        }
+      />
+      <ul className={`${styles.list} ${styles.cardList}`}>
         {summaries.map((summary) => {
           const admission = byId.get(summary.flag.admissionId);
           if (!admission) return null;
@@ -75,6 +82,6 @@ export function LongStaySummary({
           );
         })}
       </ul>
-    </section>
+    </Card>
   );
 }

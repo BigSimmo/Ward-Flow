@@ -11,12 +11,12 @@ import { ClipboardCopy } from "lucide-react";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { shortcutSectionsForDesk } from "@/components/ward-management/help/ward-help-content";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { Button, Sheet, TierTile, cx } from "@/components/wf";
 
 import {
-  REFERRAL_SHORTCUTS,
   WaitCell,
   type BedsReadySummary,
   REFERRAL_SOURCE_WORDS,
@@ -306,7 +306,7 @@ export function IsbarSheet({
           <Button variant="ghost" size="sm" onClick={onClose}>
             Close
           </Button>
-          <CopyButton text={text} label="Copy summary" />
+          <CopyButton text={text} label="Copy for handover" />
         </div>
       }
     >
@@ -327,23 +327,29 @@ export function IsbarSheet({
 }
 
 export function ShortcutsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  // Josh, 31 Oct 2026 (answer 35): M is off on the ED desk, so its list leaves it out.
-  const edDesk = useEffectiveWardAccess().role === "ed";
-  const shortcuts = edDesk ? REFERRAL_SHORTCUTS.filter(([key]) => key !== "M") : REFERRAL_SHORTCUTS;
+  // Audit two (#82, K33): the one shared list, the page's own keys first. Josh, 31 Oct 2026
+  // (answer 35): M is off on the ED desk, so the Referrals group leaves it out there.
+  const role = useEffectiveWardAccess().role;
+  const sections = shortcutSectionsForDesk(role, "Referrals");
   return (
     <Sheet open={open} onClose={onClose} title="Keyboard shortcuts">
-      <dl className={styles.keys}>
-        {shortcuts.map(([key, words]) => (
-          <div key={key}>
-            <dt>
-              {key.split(" ").map((part) => (
-                <kbd key={part}>{part}</kbd>
-              ))}
-            </dt>
-            <dd>{words}</dd>
-          </div>
-        ))}
-      </dl>
+      {sections.map((section) => (
+        <section key={section.group} aria-label={section.group}>
+          <h3 className={styles.keysGroup}>{section.group}</h3>
+          <dl className={styles.keys}>
+            {section.rows.map(({ keys, short }) => (
+              <div key={keys}>
+                <dt>
+                  {keys.split(" ").map((part) => (
+                    <kbd key={part}>{part}</kbd>
+                  ))}
+                </dt>
+                <dd>{short}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ))}
     </Sheet>
   );
 }

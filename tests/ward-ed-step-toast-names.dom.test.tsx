@@ -33,14 +33,14 @@ describe("ED step toasts name the person", () => {
     expect(edStepUndone(who)).toBe("Undone for SYNTHETIC, Test. Back as it was.");
   });
 
-  it("says Undo brings Log booking back after no transport needed (A12-01, D-263)", () => {
+  it("says Undo brings Record booking back after no transport needed (A12-01, D-263)", () => {
     const who = "SYNTHETIC, Test";
     const notNeeded = { type: "RECORD_TRANSPORT_NEED", role: "ed", now: 0, movementId: "m", needed: false } as never;
     const needed = { type: "RECORD_TRANSPORT_NEED", role: "ed", now: 0, movementId: "m", needed: true } as never;
     expect(edStepSaid(notNeeded, who)).toBe(
-      "Recorded: no transport needed for SYNTHETIC, Test. Undo brings Log booking back.",
+      "Recorded: no transport needed for SYNTHETIC, Test. Undo brings Record booking back.",
     );
-    expect(edStepUndone(who, notNeeded)).toBe("Undone for SYNTHETIC, Test. Log booking is back.");
+    expect(edStepUndone(who, notNeeded)).toBe("Undone for SYNTHETIC, Test. Record booking is back.");
     expect(edStepSaid(needed, who)).toBe("Recorded: transport needed for SYNTHETIC, Test");
     expect(edStepUndone(who, needed)).toBe("Undone for SYNTHETIC, Test. Back as it was.");
   });

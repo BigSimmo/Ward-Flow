@@ -11,7 +11,7 @@ import { Dialog, Segmented } from "@/components/wf";
 import rx from "./settings-layout.module.css";
 import { DEFAULT_RULES, RULES } from "./settings-rule-catalogue";
 
-export type RestoreScope = "rules" | "rules-and-browser";
+export type RestoreScope = "rules" | "rules-and-browser" | "browser";
 
 /** This browser's settings a full restore puts back, with the value each returns to. */
 const BROWSER_DEFAULTS: readonly (readonly [string, string])[] = [
@@ -30,6 +30,7 @@ export function SettingsRestoreDialog({
   onConfirm,
   pending,
   rulesUnavailable,
+  onlyBrowser = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -37,9 +38,11 @@ export function SettingsRestoreDialog({
   pending: boolean;
   /** Why this desk cannot restore the rules; it may still restore this browser's settings. */
   rulesUnavailable: string | undefined;
+  /** Audit two #44: the Display tab's restore changes this browser only; the Rules tab restores the rules. */
+  onlyBrowser?: boolean;
 }) {
   const [scope, setScope] = useState<RestoreScope>("rules");
-  const browserOnly = !!rulesUnavailable;
+  const browserOnly = !!rulesUnavailable || onlyBrowser;
   return (
     <Dialog
       open={open}
@@ -49,12 +52,14 @@ export function SettingsRestoreDialog({
       title={browserOnly ? "Restore this browser's settings?" : "Restore defaults?"}
       description={
         browserOnly
-          ? "Only this browser changes. The rules are set by the statewide coordinator."
+          ? rulesUnavailable
+            ? "Only this browser changes. The rules are set by the statewide coordinator."
+            : "Only this browser changes. The rules stay as they are."
           : `Saves all ${RULES.length} rules at their defaults and records it in the audit. You can undo it from the toast.`
       }
       primary={{
         label: pending ? "Restoring…" : browserOnly ? "Restore this browser" : "Restore defaults",
-        onAction: () => onConfirm(browserOnly ? "rules-and-browser" : scope),
+        onAction: () => onConfirm(browserOnly ? "browser" : scope),
         loading: pending,
         tone: "danger",
       }}

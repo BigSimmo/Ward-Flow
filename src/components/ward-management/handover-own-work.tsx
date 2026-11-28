@@ -4,7 +4,17 @@ import { useId, useState } from "react";
 import Link from "next/link";
 import { ArrowRightLeft } from "lucide-react";
 
-import { Button, FormalName, Icon, Menu, ShowMoreRow, buttonClass, foldHidden, foldLimit } from "@/components/wf";
+import {
+  Button,
+  FormalName,
+  Icon,
+  Menu,
+  ShowMoreRow,
+  StatusPill,
+  buttonClass,
+  foldHidden,
+  foldLimit,
+} from "@/components/wf";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { bedMeetingActionLabel } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
@@ -124,6 +134,26 @@ export function HandoverOwnWork({ now, layout = "page" }: { now: Instant; layout
   const handTo = (item: HandedItemRef, pending: HandedItemRecord | undefined, describedBy: string) => {
     const targets = handOverTargets(state, item);
     if (previewing || targets.length === 0) return null;
+    /* Audit three #4: one possible desk acts at once and names it; the pop-up is for two or more.
+       Handed already, the row keeps r8's Hand to pop-up with the chosen desk checked (Withdraw needs
+       an engine event that does not exist yet, so it is not offered; audit three review). */
+    // Audit four item 18: one possible desk, already handed, offers nothing more. The line under the
+    // row ("Handed to <desk>, not accepted yet · still yours") is the status, so no menu of one.
+    if (targets.length === 1 && pending) return null;
+    if (targets.length === 1 && !pending) {
+      const target = targets[0];
+      return (
+        <Button
+          variant="sec"
+          size="sm"
+          aria-describedby={describedBy}
+          data-testid="ward-handover-own-work-hand-to"
+          onClick={() => void raise("HAND_OVER_ITEM", { item, toRole: target.role, ...acting })}
+        >
+          Hand to {deskLabel(target)}
+        </Button>
+      );
+    }
     return (
       <Menu
         label="Hand to"
@@ -218,8 +248,16 @@ export function HandoverOwnWork({ now, layout = "page" }: { now: Instant; layout
                   whoLine(who)
                 )}
               </span>
+              {/* Gate r10 F5: a handed row with nothing left to press draws its status as the kit
+                  amber tag at the row's right edge, so the row has no hole where the button was. */}
               <span className={styles.status} data-pending={pending ? "" : undefined}>
-                {pending ? `Handed to ${deskLabel(pending.to)}, not accepted yet · still yours` : when}
+                {pending ? (
+                  <StatusPill tone="warning" size="sm" className={styles.pendingPill}>
+                    {`Handed to ${deskLabel(pending.to)}, not accepted yet · still yours`}
+                  </StatusPill>
+                ) : (
+                  when
+                )}
               </span>
               {handTo(item, pending, whatId)}
             </li>

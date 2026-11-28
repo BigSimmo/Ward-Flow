@@ -1,5 +1,12 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// The movement drawer reads the router for its Open on Home and Find a bed steps (r10).
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
@@ -17,10 +24,7 @@ import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-c
 // Home flow (Q340, Q341, Q345, 3 Nov 2026): the "My List | Open | Planned" switch became the
 // "Home list" switch, Needs you and Flow. Flow is the stage-grouped queue (was Open), and referrals
 // are listed only under Needs you.
-function showFlow(): void {
-  const flow = screen.getByRole("radio", { name: /^Flow/u });
-  if (flow.getAttribute("aria-checked") !== "true") fireEvent.click(flow);
-}
+// r10 item 1 folded Flow into Waiting: Home is Needs you only on a laptop, with no list switch.
 
 /** Opens every stage's "Show all N" so the Flow card lists every row (each stage shows 5 at rest). */
 function showEveryFlowRow(queue: HTMLElement): void {
@@ -82,19 +86,22 @@ describe("Q004 refinement interaction regressions", () => {
     expect(recordFor(movementId)).toHaveFocus();
     expect(screen.queryByRole("dialog")).toBeNull();
 
-    const transportOrder = screen.getByRole("radio", { name: "Transport" });
-    transportOrder.focus();
-    fireEvent.click(transportOrder);
-    expect(transportOrder).toHaveAttribute("aria-checked", "true");
-    expect(transportOrder).toHaveFocus();
+    // Simplification 26 Nov 2026: Sort is one kit menu on the list head, not an Arrange radio row.
+    const sort = screen.getByTestId("ward-movements-sort");
+    sort.focus();
+    fireEvent.click(sort);
+    fireEvent.click(screen.getByRole("menuitemradio", { name: /^Transport/u }));
+    expect(screen.getByTestId("ward-movements-sort")).toHaveTextContent("Sort: Transport");
     expect(screen.queryByRole("dialog")).toBeNull();
+    // Choosing a sort leaves focus on the sort control, not on a reset page or the worklist top.
+    expect(screen.getByTestId("ward-movements-sort")).toHaveFocus();
 
     fireEvent.click(button);
     expect(recordFor(movementId)).toHaveFocus();
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("returns from Resolved today to All and focuses the requested attention record", async () => {
+  it("returns from Resolved today to Open and focuses the requested attention record", async () => {
     renderMovements();
     const { button, movementId } = firstAttentionTarget();
     const resolvedTab = screen.getByRole("tab", { name: /Resolved today/u });
@@ -107,65 +114,45 @@ describe("Q004 refinement interaction regressions", () => {
 
     fireEvent.click(button);
     await act(async () => {});
-    expect(screen.getByRole("tab", { name: /^All\b/u })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /^Open\b/u })).toHaveAttribute("aria-selected", "true");
     expect(recordFor(movementId)).toHaveFocus();
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("starts Command with the shortlist closed, opens it only on selection, and Close clears view state only", () => {
     renderCoordinator();
-    showFlow();
-    const queue = screen.getByRole("region", { name: "Flow" });
-    const row = within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!;
+    const row = screen.getAllByRole("button", { name: /^Open referral for /u })[0]!;
     const before = screen.getByTestId("ward-refinement-domain-state").textContent;
 
     // Home v7 (Josh, 22 Oct 2026): nobody is pre-selected. At rest Placement is a prompt with
-    // nothing to act on, and no queue row is pressed until a coordinator picks one.
+    // nothing to act on, and no row is pressed until a coordinator picks one.
     expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
     expect(document.querySelector('aside[aria-label="Placement"]')).toBeNull();
     expect(screen.queryByLabelText("Referral placement")).toBeNull();
-    expect(row).toHaveAttribute("aria-pressed", "false");
 
     fireEvent.click(row);
-    expect(row).toHaveAttribute("aria-pressed", "true");
     expect(screen.queryByTestId("home-placement-prompt")).toBeNull();
-    const shortlist = screen.getByRole("complementary", { name: "Placement" });
+    const shortlist = screen.getByTestId("home-placement-drawer");
+    expect(shortlist).toBeInTheDocument();
     fireEvent.click(within(shortlist).getByRole("button", { name: "Close placement and clear selection" }));
 
     expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
-    expect(document.querySelector('aside[aria-label="Placement"]')).toBeNull();
-    expect(row).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByTestId("home-placement-drawer")).toBeNull();
     expect(screen.getByTestId("ward-refinement-domain-state").textContent).toBe(before);
   });
 
-  it("offers nothing to act on before a patient is chosen, on either list", () => {
+  it("offers nothing to act on before a patient is chosen, on Home", () => {
     // Home v7 replaced the WP-06 preview (Audit 1, Josh 20 Oct): with no preview there is no
-    // first tap to intercept, so neither list (Needs you, Flow) offers a Placement action at rest.
+    // first tap to intercept, so Home's one list (Needs you) offers a Placement action at rest.
     renderCoordinator();
     const before = screen.getByTestId("ward-refinement-domain-state").textContent;
-    expect(screen.getByRole("radio", { name: /^Needs you/u })).toHaveAttribute("aria-checked", "true");
-    expect(screen.queryByRole("button", { name: /^Offer /u })).toBeNull();
-    expect(screen.queryByTestId("ward-placement-top-of-queue")).toBeNull();
-
-    showFlow();
     expect(screen.queryByRole("button", { name: /^Offer /u })).toBeNull();
     expect(screen.queryByTestId("ward-placement-top-of-queue")).toBeNull();
     expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
     expect(screen.getByTestId("ward-refinement-domain-state").textContent).toBe(before);
   });
 
-  it("clears the chosen patient when the coordinator switches lists", () => {
-    // Home v7: Placement never shows someone the list on screen does not highlight.
-    renderCoordinator();
-    showFlow();
-    const queue = screen.getByRole("region", { name: "Flow" });
-    fireEvent.click(within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!);
-    expect(screen.getByRole("complementary", { name: "Placement" })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("radio", { name: /^Needs you/u }));
-    expect(document.querySelector('aside[aria-label="Placement"]')).toBeNull();
-    expect(screen.queryByTestId("home-placement-prompt")).toBeNull(); // notes 4: no at-rest prompt
-  });
+  // r10 item 1: the "clears the chosen patient when the coordinator switches lists" case went with the Flow list.
 
   // Sticky header redesign (Josh, 9 Nov 2026): Home's hero no longer has a Past target chip; the
   // overdue highlight comes from the next step ("N past target in the flow", Show past target), whose
@@ -205,7 +192,6 @@ describe("Q004 refinement interaction regressions", () => {
     // redesign (Josh, 9 Nov 2026): the hero's To decide chip went; the focus is the page address's
     // `focus=decide` (the next step sets it when referrals lead), and the list's Show all clears it.
     renderCoordinator();
-    expect(screen.getByRole("radio", { name: /^Needs you/u })).toHaveAttribute("aria-checked", "true");
 
     // Accepted pulls carry a referral id too; the referral to decide is the row that opens one.
     const openReferral = screen.getAllByRole("button", { name: /^Open referral for /u })[0];

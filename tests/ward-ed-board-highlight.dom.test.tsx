@@ -24,17 +24,17 @@ function renderEd() {
 const rows = () => screen.getAllByTestId(/^ward-ed-patient-/u).filter((row) => row.tagName === "TR");
 
 describe("ED page — hero chips and board filters highlight, never hide", () => {
-  it("has three hero chips at most, each a pressed toggle", () => {
+  it("has no pressable hero highlight; the figures are plain and the board's own chips do the filtering", () => {
     renderEd();
-    // The "severe" chip left the hero (simplification A1, 19 Oct 2026). Page tops (Josh, 9 Nov 2026):
-    // no bed yet and under a form are pressable figures, and past 24h is the act row's Show, drawn
-    // only while someone here is past 24 hours.
-    const figures = within(screen.getByRole("group", { name: "Highlight people on the board" })).getAllByRole("button");
-    expect(figures).toHaveLength(2);
+    // Page tops (Josh, 9 Nov 2026) made no bed yet and under a form pressable figures; the figures are now
+    // plain counts (only "on the board" opens its breakdown), and the Filter the board chips highlight.
+    const figures = within(screen.getByRole("group", { name: "Highlight people on the board" }));
+    for (const button of figures.queryAllByRole("button")) expect(button).not.toHaveAttribute("aria-pressed", "true");
     const show = screen.queryByTestId("ward-ed-act-show");
-    const chips = show ? [...figures, show] : figures;
-    expect(chips.length).toBeLessThanOrEqual(3);
-    for (const chip of chips) expect(chip).toHaveAttribute("aria-pressed", "false");
+    if (show) expect(show).not.toHaveAttribute("aria-pressed", "true");
+    expect(
+      within(screen.getByRole("group", { name: "Filter the board" })).getByRole("button", { name: "Everyone" }),
+    ).toHaveAttribute("aria-pressed", "true");
   });
 
   it("keeps every row when a board filter is pressed and dims the rows it does not match", () => {
@@ -46,8 +46,9 @@ describe("ED page — hero chips and board filters highlight, never hide", () =>
     );
     expect(rows()).toHaveLength(total);
     const solid = rows().filter((row) => row.getAttribute("data-dim") !== "true").length;
-    // Handover build (Josh, 1 Nov 2026): the count beside the title reads "N of M" while filtered.
-    expect(screen.getByText(new RegExp(`^${solid} of ${total}$`, "u"))).toBeInTheDocument();
+    // The pressed chip says it is on, and the rows it does not match are the dimmed ones.
+    expect(solid).toBeLessThanOrEqual(total);
+    expect(rows().filter((row) => row.getAttribute("data-dim") === "true")).toHaveLength(total - solid);
   });
 
   it("keeps every row when a search matches nothing", () => {
@@ -60,17 +61,16 @@ describe("ED page — hero chips and board filters highlight, never hide", () =>
     for (const row of rows()) expect(row).toHaveAttribute("data-dim", "true");
   });
 
-  it("dims rows a hero chip does not match and clears from the note", () => {
+  it("dims rows a board chip does not match and clears from Everyone", () => {
     renderEd();
     const total = rows().length;
-    const chip = within(screen.getByRole("group", { name: "Highlight people on the board" })).getByRole("button", {
-      name: /under a form/iu,
-    });
+    const filter = within(screen.getByRole("group", { name: "Filter the board" }));
+    const chip = filter.getByRole("button", { name: /under a form/iu });
     fireEvent.click(chip);
     expect(chip).toHaveAttribute("aria-pressed", "true");
     expect(rows()).toHaveLength(total);
-    expect(screen.getByTestId("ward-ed-highlight-note")).toHaveTextContent("everyone stays on the board");
-    fireEvent.click(within(screen.getByTestId("ward-ed-highlight-note")).getByRole("button", { name: "Clear" }));
+    fireEvent.click(filter.getByRole("button", { name: "Everyone" }));
+    expect(chip).toHaveAttribute("aria-pressed", "false");
     expect(rows().filter((row) => row.getAttribute("data-dim") === "true")).toHaveLength(0);
   });
 });

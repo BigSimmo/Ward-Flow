@@ -84,7 +84,7 @@ describe("the Command screen's changes since the last review (Activity panel)", 
     await openActivity();
     expect(within(activityPanel()).getByRole("tab", { name: /Changes/u, selected: true })).toBeInTheDocument();
     expect(activityPanel()).toHaveTextContent("Since last night at 11:00 pm");
-    expect(within(activityPanel()).getByRole("button", { name: /^Mark these \d+ reviewed$/u })).toBeInTheDocument();
+    expect(within(activityPanel()).getByRole("button", { name: /^Mark these \d+ seen$/u })).toBeInTheDocument();
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
     fireEvent(window, new Event("pagehide"));
     unmount();
@@ -97,7 +97,7 @@ describe("the Command screen's changes since the last review (Activity panel)", 
     const { unmount } = renderCommand();
     // A review made in the session is swept when the session ends, and nothing writes it back.
     await openActivity();
-    fireEvent.click(within(activityPanel()).getByRole("button", { name: /^Mark these \d+ reviewed$/u }));
+    fireEvent.click(within(activityPanel()).getByRole("button", { name: /^Mark these \d+ seen$/u }));
     expect(parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY))).toBeDefined();
     endWardFlowBrowserSession();
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
@@ -120,7 +120,7 @@ describe("the Command screen's changes since the last review (Activity panel)", 
     );
     const view = render(<Command value={account} />);
     await openActivity();
-    fireEvent.click(within(activityPanel()).getByRole("button", { name: /^Mark these \d+ reviewed$/u }));
+    fireEvent.click(within(activityPanel()).getByRole("button", { name: /^Mark these \d+ seen$/u }));
     expect(parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY))?.userId).toBe(
       "synthetic-account-one",
     );
@@ -140,7 +140,7 @@ describe("the Command screen's changes since the last review (Activity panel)", 
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
     render(<Command value={{ ...account }} />);
     await openActivity();
-    fireEvent.click(within(activityPanel()).getByRole("button", { name: /^Mark these \d+ reviewed$/u }));
+    fireEvent.click(within(activityPanel()).getByRole("button", { name: /^Mark these \d+ seen$/u }));
     expect(parseLastLookSnapshot(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY))?.userId).toBe(
       "synthetic-account-one",
     );
@@ -167,7 +167,7 @@ describe("the Command screen's changes since the last review (Activity panel)", 
     await openActivity();
     const panel = within(activityPanel());
     expect(panel.getByRole("tab", { name: /Changes/u, selected: true })).toBeInTheDocument();
-    expect(activityPanel()).toHaveTextContent("Since your review at 9:42 am");
+    expect(activityPanel()).toHaveTextContent("Since you marked seen at 9:42 am");
     expect(panel.getByRole("region", { name: /Referrals/u })).toHaveTextContent(/new referral from /u);
     const beds = panel.getByRole("region", { name: /Beds/u });
     const before = snapshot.readyByUnit[unitId]! - 1;
@@ -177,7 +177,7 @@ describe("the Command screen's changes since the last review (Activity panel)", 
     expect(panel.getByRole("region", { name: /Absent without leave/u })).toHaveTextContent(
       /absent without leave from /u,
     );
-    fireEvent.click(panel.getByRole("button", { name: "Mark these 3 reviewed" }));
+    fireEvent.click(panel.getByRole("button", { name: "Mark these 3 seen" }));
     expect(panel.queryByRole("region", { name: /Referrals|Beds|Absent/u })).toBeNull();
     expect(activityPanel()).toHaveTextContent("Nothing new since 10:42");
   });
@@ -282,7 +282,7 @@ describe("scoped Ward and ED last-look sheets", () => {
     fireEvent.click(trigger);
     expect(trigger).toHaveTextContent("0 updates");
     expect(ed.getByRole("button")).toHaveTextContent("1 update");
-    expect(screen.getByRole("dialog", { name: "Since you last looked" })).toHaveTextContent("1 movement updated");
+    expect(screen.getByRole("dialog", { name: /^Since / })).toHaveTextContent("1 movement updated");
     fireEvent.click(screen.getByText("Synthetic arrival"));
     expect(trigger).toHaveTextContent("1 update");
     expect(screen.getByRole("dialog")).toHaveTextContent("1 movement updated");
@@ -301,9 +301,9 @@ describe("scoped Ward and ED last-look sheets", () => {
       </WardFlowProvider>,
     );
     // Page tops (9 Nov 2026): on the Ward header the tracker is the hero's Updates chip.
-    expect(screen.getByTestId("ward-updates")).toHaveTextContent("Updates");
+    expect(screen.getByTestId("ward-updates")).toHaveTextContent("Since you looked");
     fireEvent.click(screen.getByTestId("ward-updates"));
-    expect(screen.getByRole("dialog", { name: "Since you last looked" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: /^Since / })).toBeInTheDocument();
     fireEvent.keyDown(document, { key: "Escape" });
     ward.unmount();
     render(
@@ -313,9 +313,9 @@ describe("scoped Ward and ED last-look sheets", () => {
     );
     // Page tops (QA, 10 Nov 2026): on the ED header the tracker is the hero's Updates chip.
     const edUpdates = screen.getByTestId("ward-ed-updates");
-    expect(edUpdates).toHaveTextContent("Updates");
+    expect(edUpdates).toHaveTextContent("Since you looked");
     fireEvent.click(edUpdates);
-    expect(screen.getByRole("dialog", { name: "Since you last looked" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: /^Since / })).toBeInTheDocument();
   });
 });
 
@@ -445,8 +445,8 @@ describe("scoped review persistence", () => {
     const trigger = within(screen.getByTestId(`since-last-look-ward:${unitId}`)).getByRole("button");
     expect(trigger).toHaveTextContent("since 11:50 pm yesterday");
     fireEvent.click(trigger);
-    expect(screen.getByRole("dialog")).toHaveAccessibleDescription(
-      "Updates since 11:50 pm yesterday · 15-minute window",
+    expect(screen.getByRole("dialog", { name: "Since 11:50 pm yesterday" })).toHaveAccessibleDescription(
+      "15-minute window",
     );
   });
 

@@ -14,7 +14,7 @@ import type { WardFlowRole } from "../ward-flow-roles";
 export const BED_MEETING_ACTION_KINDS = [
   { id: "chase_ndis", label: "Chase NDIS" },
   { id: "call_guardianship", label: "Call guardianship" },
-  { id: "book_transport", label: "Book transport" },
+  { id: "book_transport", label: "Record transport booking" },
   { id: "review_step_down", label: "Review for step-down" },
   // Diagnosed issues B1 (Josh, 3 Nov 2026): the common asks the meeting makes, still picked from a
   // list so nothing typed is stored.

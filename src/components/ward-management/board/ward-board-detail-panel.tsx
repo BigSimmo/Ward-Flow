@@ -316,7 +316,7 @@ export function WardBoardDetailPanel({
               });
             }}
           >
-            Record that they have left
+            Record discharge
           </button>
         ) : null}
         <DrawerFootRow className={redesign.footRow}>

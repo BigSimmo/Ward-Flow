@@ -3,116 +3,19 @@
 // The patient search page's sections: people, results with their Show facets and rows, and the
 // access record. Moved out of `patient-search.tsx` to keep it under the line cap.
 import Link from "next/link";
-import { Lock } from "lucide-react";
 import { useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { type PatientSearchResult } from "@/components/ward-management/ward-derivations";
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { formatDateOfBirth, patientListName, type Patient } from "@/components/ward-management/ward-patients";
+import { type Patient } from "@/components/ward-management/ward-patients";
 import { WardPanel } from "@/components/ward-management/ward-panel";
-import { WARD_ADD_PERSON_HREF } from "@/components/ward-management/ward-nav";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { type AccessEntry } from "./access-record";
-import { handOffTypedPatientQuery, isNewTabClick } from "./patient-query-handoff";
 import { buildMovementSummary, buildReferralSummary } from "./record-preview";
 import styles from "./search.module.css";
 import { isCommunityReferral } from "./community-referral";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
-import { ACCESS_RECORD_EMPTY, SHOW_FACETS, getPatientPresence, type ShowFacetKey } from "./patient-search-model";
+import { SHOW_FACETS, type ShowFacetKey } from "./patient-search-model";
 import { LegalMismatchBadge } from "@/components/ward-management/legal-mismatch-badge";
-
-export function PeopleSection({
-  people,
-  query,
-  otherMatches,
-  onPreview,
-  selectedPatientId,
-  referrals,
-  movements,
-}: {
-  people: readonly Patient[];
-  query: string;
-  otherMatches: number;
-  onPreview: (patient: Patient) => void;
-  selectedPatientId?: string | null;
-  referrals: readonly Referral[];
-  movements: readonly Movement[];
-}) {
-  return (
-    <WardPanel
-      title={people.length === 0 ? "No people" : people.length === 1 ? "1 person" : `${people.length} people`}
-      testId="ward-patient-search-people"
-    >
-      {query.length === 0 ? (
-        <p className={styles.peopleIdleNote} data-testid="ward-patient-search-people-idle">
-          Enter a name or UMRN above.
-        </p>
-      ) : people.length === 0 ? (
-        <div className={styles.peopleEmptyNote} data-testid="ward-patient-search-people-empty">
-          <p>
-            {otherMatches > 0
-              ? "No matching person."
-              : "No matches. Check the spelling or UMRN before adding a patient."}
-          </p>
-          <Link
-            className={styles.addPersonLink}
-            href={WARD_ADD_PERSON_HREF}
-            data-testid="ward-patient-search-people-empty-add"
-            onClick={(event) => {
-              if (isNewTabClick(event)) {
-                handOffTypedPatientQuery("", "carried");
-                return;
-              }
-              handOffTypedPatientQuery(query, "carried");
-            }}
-          >
-            Add patient
-          </Link>
-        </div>
-      ) : (
-        <ul className={styles.peopleList} data-testid="ward-patient-search-people-list">
-          {people.map((patient) => {
-            const presence = getPatientPresence(patient, referrals, movements);
-            const isSelected = selectedPatientId === patient.id;
-            return (
-              <li
-                key={patient.id}
-                className={`${styles.peopleRow} ${isSelected ? styles.selectedRow : ""}`.trim()}
-                data-testid={`ward-patient-search-person-${patient.id}`}
-              >
-                <div className={styles.personHeaderCluster}>
-                  <span className={`${styles.presenceTag} ${styles[presence.key]}`}>
-                    {presence.key === "live" ? "On this board" : presence.key === "community" ? "Not in Hosp" : "Past"}
-                  </span>
-                  <span className={styles.personUmrn}>{patient.umrn}</span>
-                  <span className={styles.personName}>{patientListName(patient)}</span>
-                  <span className={styles.personDob}>DOB {formatDateOfBirth(patient.dateOfBirth)}</span>
-                  {(patient as { confidential?: boolean }).confidential && (
-                    <span className={styles.confidentialBadge} data-testid={`ward-patient-confidential-${patient.id}`}>
-                      <Lock size={14} strokeWidth={1.75} aria-hidden="true" /> Restricted
-                    </span>
-                  )}
-                </div>
-                {onPreview ? (
-                  <button
-                    type="button"
-                    className={styles.previewButton}
-                    data-testid={`ward-patient-search-person-preview-${patient.id}`}
-                    aria-label={`Preview ${patientListName(patient)}`}
-                    onClick={() => onPreview(patient)}
-                  >
-                    Preview
-                  </button>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </WardPanel>
-  );
-}
 
 export function ResultsSection({
   results,
@@ -373,35 +276,5 @@ function ResultRow({
         </Link>
       </td>
     </tr>
-  );
-}
-
-export function AccessRecordPanel({ entries, now }: { entries: readonly AccessEntry[]; now: number }) {
-  return (
-    <WardPanel
-      title="Access record"
-      count={entries.length === 1 ? "1 search" : `${entries.length} searches`}
-      blurb="Search terms and times. Kept for this session only."
-      testId="ward-patient-search-access-record"
-    >
-      {entries.length === 0 ? (
-        <p className={styles.accessRecordEmpty} data-testid="ward-patient-search-access-record-empty">
-          {ACCESS_RECORD_EMPTY}
-        </p>
-      ) : (
-        <ol className={styles.accessRecordList} data-testid="ward-patient-search-access-record-list">
-          {entries.map((entry, index) => (
-            <li
-              key={`${entry.words}-${entry.at}-${index}`}
-              className={styles.accessRecordItem}
-              data-testid={`ward-patient-search-access-record-row-${index}`}
-            >
-              <span className={styles.accessRecordWords}>“{entry.words}”</span>
-              <span className={styles.accessRecordMeta}>searched at {formatInstantWithDay(entry.at, now)}</span>
-            </li>
-          ))}
-        </ol>
-      )}
-    </WardPanel>
   );
 }

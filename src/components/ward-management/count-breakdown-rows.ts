@@ -85,3 +85,22 @@ export function releaseStays(releases: readonly BedRelease[]) {
 export function leaveStays(leave: readonly LeaveBed[]) {
   return leave.map((bed) => ({ key: bed.id, admissionId: bed.admissionId }));
 }
+
+/**
+ * One fact line above a breakdown's list: a part of the figure and how many it holds. Not a row of
+ * the list, so the list still adds up to the figure on its own.
+ */
+export type BreakdownFact = { id: string; label: string; value: number };
+
+/**
+ * Audit two #91 (T11, P65): the split a first figure used to carry on the screen ("45 Waiting,
+ * 8 In transit" on Home's ED band, "8 waiting, 1 in transit" on the ED board) moves into that
+ * figure's breakdown, as two fact lines above its movement list. The counts are the caller's own;
+ * nothing here counts again. Both lines always show, so the split reads the same at zero.
+ */
+export function waitingTransitFacts(counts: { waiting: number; inTransit: number }): BreakdownFact[] {
+  return [
+    { id: "waiting", label: "Waiting", value: counts.waiting },
+    { id: "in-transit", label: "In transit", value: counts.inTransit },
+  ];
+}

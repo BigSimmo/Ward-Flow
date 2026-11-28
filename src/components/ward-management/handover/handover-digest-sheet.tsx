@@ -7,7 +7,7 @@ import { ChevronRight, ClipboardCopy } from "lucide-react";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
-import { Button, Icon, Sheet, StatusGlyph, useOptionalToast } from "@/components/wf";
+import { Button, Icon, Sheet, StateLine, StatusGlyph, useOptionalToast } from "@/components/wf";
 
 import {
   buildHandoverDigest,
@@ -54,45 +54,44 @@ export function HandoverDigestSheet({
     );
   };
 
-  const lines = (items: readonly HandoverDigestLine[], testId: string) =>
-    items.length === 0 ? (
-      <p className={styles.none}>None</p>
-    ) : (
-      <ul className={styles.list} data-testid={testId}>
-        {items.map((line) => {
-          const body = (
-            <>
-              <span className={styles.figure}>
-                {line.tone === "danger" || line.tone === "warning" ? <StatusGlyph tone={line.tone} size={8} /> : null}
-                {line.value === null ? null : <b className={styles.num}>{line.value}</b>}
+  const allClear = digest.changed.length === 0 && digest.pending.length === 0 && digest.promises.length === 0;
+
+  const lines = (items: readonly HandoverDigestLine[], testId: string) => (
+    <ul className={styles.list} data-testid={testId}>
+      {items.map((line) => {
+        const body = (
+          <>
+            <span className={styles.figure}>
+              {line.tone === "danger" || line.tone === "warning" ? <StatusGlyph tone={line.tone} size={8} /> : null}
+              {line.value === null ? null : <b className={styles.num}>{line.value}</b>}
+            </span>
+            <span className={styles.text}>
+              {line.value === null ? <LongestText text={line.text} /> : line.text}
+              {line.detail ? <span className={styles.detail}>{line.detail}</span> : null}
+            </span>
+            {line.action ? (
+              <span className={styles.go}>
+                {line.action.kind === "replies" ? "Show replies" : line.action.kind === "patient" ? "Open" : "Show"}
+                <Icon icon={ChevronRight} size={14} />
               </span>
-              <span className={styles.text}>
-                {line.value === null ? <LongestText text={line.text} /> : line.text}
-                {line.detail ? <span className={styles.detail}>{line.detail}</span> : null}
-              </span>
-              {line.action ? (
-                <span className={styles.go}>
-                  {line.action.kind === "replies" ? "Show replies" : line.action.kind === "patient" ? "Open" : "Show"}
-                  <Icon icon={ChevronRight} size={14} />
-                </span>
-              ) : null}
-            </>
-          );
-          const action = line.action;
-          return (
-            <li key={line.id} data-testid={`ward-handover-digest-${line.id}`}>
-              {action ? (
-                <button type="button" className={styles.row} onClick={() => onAction(action)}>
-                  {body}
-                </button>
-              ) : (
-                <div className={styles.row}>{body}</div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    );
+            ) : null}
+          </>
+        );
+        const action = line.action;
+        return (
+          <li key={line.id} data-testid={`ward-handover-digest-${line.id}`}>
+            {action ? (
+              <button type="button" className={styles.row} onClick={() => onAction(action)}>
+                {body}
+              </button>
+            ) : (
+              <div className={styles.row}>{body}</div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
 
   return (
     <Sheet
@@ -101,6 +100,7 @@ export function HandoverDigestSheet({
       title="Shift digest"
       description={`${digest.shiftLabel}, ${digest.shiftClock} · ${digest.scopeLabel}`}
       testId="ward-handover-digest"
+      footerClassName={styles.foot}
       footer={
         <Button variant="pri" icon={ClipboardCopy} onClick={copy} data-testid="ward-handover-digest-copy">
           Copy digest
@@ -108,26 +108,32 @@ export function HandoverDigestSheet({
       }
     >
       <div className={styles.digest}>
-        <section aria-labelledby={`${baseId}-changed`}>
-          <h3 id={`${baseId}-changed`} className={styles.head}>
-            What changed since <span className={styles.clock}>{digest.sinceClock}</span>
-          </h3>
-          {lines(digest.changed, "ward-handover-digest-changed")}
-        </section>
-        <section aria-labelledby={`${baseId}-pending`}>
-          <h3 id={`${baseId}-pending`} className={styles.head}>
-            Still pending
-          </h3>
-          {lines(digest.pending, "ward-handover-digest-pending")}
-        </section>
-        <section aria-labelledby={`${baseId}-promises`}>
-          <h3 id={`${baseId}-promises`} className={styles.head}>
-            Promises due by <span className={styles.clock}>{digest.dueClock}</span>
-          </h3>
-          {digest.promises.length === 0 ? (
-            <p className={styles.none}>None</p>
-          ) : (
-            <ul className={styles.list} data-testid="ward-handover-digest-promises">
+        {/* Audit two (B22): an empty group hides its head; when all three are clear, one line says so. */}
+        {allClear ? (
+          <StateLine kind="clear" title="Nothing changed, pending or due" data-testid="ward-handover-digest-clear" />
+        ) : null}
+        {digest.changed.length > 0 ? (
+          <section aria-labelledby={`${baseId}-changed`}>
+            <h3 id={`${baseId}-changed`} className={styles.head}>
+              What changed since <span className={styles.clock}>{digest.sinceClock}</span>
+            </h3>
+            {lines(digest.changed, "ward-handover-digest-changed")}
+          </section>
+        ) : null}
+        {digest.pending.length > 0 ? (
+          <section aria-labelledby={`${baseId}-pending`}>
+            <h3 id={`${baseId}-pending`} className={styles.head}>
+              Still pending
+            </h3>
+            {lines(digest.pending, "ward-handover-digest-pending")}
+          </section>
+        ) : null}
+        {digest.promises.length > 0 ? (
+          <section aria-labelledby={`${baseId}-promises`}>
+            <h3 id={`${baseId}-promises`} className={styles.head}>
+              Promises due by <span className={styles.clock}>{digest.dueClock}</span>
+            </h3>
+            <ul className={`${styles.list} ${styles.promiseList}`} data-testid="ward-handover-digest-promises">
               {digest.promises.map((promise) => (
                 <li key={promise.id}>
                   <Link href={referralBoardHref(promise.referralId)} className={styles.row} onClick={onClose}>
@@ -154,8 +160,8 @@ export function HandoverDigestSheet({
                 </li>
               ) : null}
             </ul>
-          )}
-        </section>
+          </section>
+        ) : null}
         <p className={styles.note}>Copied text leaves out patient names and record numbers.</p>
       </div>
     </Sheet>

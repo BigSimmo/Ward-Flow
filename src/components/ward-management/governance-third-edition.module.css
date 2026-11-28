@@ -1,3 +1,6 @@
+/* Audit two B21: every table cell rule here starts with `html`, one element more than the kit's
+   `.table td` and `.table th`, so the page's own cell rules win in the production build as in dev,
+   whatever order the two style sheets load in. Order among this file's own rules is unchanged. */
 /* Governance, v6: hero with the register track, the register beside the detail panel, then the
    events captured this session. Tokens only; colour sits in glyphs, never in fills. */
 
@@ -96,19 +99,19 @@
   table-layout: fixed;
 }
 
-.govTable th:nth-child(1) {
+html .govTable th:nth-child(1) {
   width: 19%;
 }
 
-.govTable th:nth-child(2) {
+html .govTable th:nth-child(2) {
   width: 24%;
 }
 
-.govTable th:nth-child(3) {
+html .govTable th:nth-child(3) {
   width: 24%;
 }
 
-.govTable th:nth-child(4) {
+html .govTable th:nth-child(4) {
   width: 14%;
 }
 
@@ -116,7 +119,7 @@
   cursor: pointer;
 }
 
-.govTable tbody tr:hover > td {
+html .govTable tbody tr:hover > td {
   background: var(--wf-hover);
 }
 
@@ -199,11 +202,14 @@
 }
 
 /* The event drawer's body (drawer review, 6 Nov 2026): one column on the drawer's own inset. */
+/* States B review: the drawer body takes the kit drawer's side padding (16px, as its head and foot),
+   so the facts, record views and review no longer start on the drawer's edge. */
 .drawerBody {
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
   min-width: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
 }
 
 /* The review history: a plain hairline section under the facts, not a card in the drawer. */
@@ -323,15 +329,15 @@
 }
 
 /* Record views: When and Where size to their text; Desk and Record share the rest. */
-.viewTable td {
+html .viewTable td {
   vertical-align: top;
   --wf-cell-pad-y: var(--wf-s-2);
 }
 
-.viewTable th:first-child,
-.viewTable td:first-child,
-.viewTable th:last-child,
-.viewTable td:last-child {
+html .viewTable th:first-child,
+html .viewTable td:first-child,
+html .viewTable th:last-child,
+html .viewTable td:last-child {
   width: 1%;
   max-width: none;
   overflow: visible;
@@ -690,14 +696,14 @@
   min-width: 0;
 }
 
-.gapTable th,
-.gapTable td {
+html .gapTable th,
+html .gapTable td {
   white-space: nowrap;
 }
 
 /* Requirement columns size to their pill; the site column takes the rest. */
-.gapTable th:not(:first-child),
-.gapTable td:not(:first-child) {
+html .gapTable th:not(:first-child),
+html .gapTable td:not(:first-child) {
   width: 1%;
   max-width: none;
   overflow: visible;
@@ -784,29 +790,6 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.previewCard {
-  border-style: dashed;
-}
-
-.previewLines {
-  display: grid;
-  gap: var(--wf-s-1);
-}
-
-.previewLines > span {
-  height: 0.5rem;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-surface-2);
-}
-
-.previewLines > span:nth-child(2) {
-  width: 80%;
-}
-
-.previewLines > span:nth-child(3) {
-  width: 60%;
-}
-
 @media (max-width: 62.5625rem) {
   .previewGrid,
   .previewGrid[data-columns="2"] {
@@ -827,8 +810,8 @@
 /* Desktop: at the 12px floor the requirement headers grow and squeeze the site column until
  * "Emergency department" cuts mid word; the rail tiles cut "Time written" by a pixel. */
 @media (min-width: 62.5625rem) {
-  .gapTable th:not(:first-child),
-  .gapTable td:not(:first-child) {
+  html .gapTable th:not(:first-child),
+  html .gapTable td:not(:first-child) {
     padding-left: var(--wf-s-2);
   }
 
@@ -852,7 +835,7 @@
 
 @media (forced-colors: active) {
   .eventRow[aria-pressed="true"],
-  .govTable tr[class] > td {
+  html .govTable tr[class] > td {
     outline: 2px solid CanvasText;
   }
 

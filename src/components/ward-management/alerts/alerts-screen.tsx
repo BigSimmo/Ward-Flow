@@ -27,7 +27,8 @@ import { ACCESS_ROLE_LABELS } from "@/components/ward-management/ward-role-acces
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { ESCALATION_CONTACTS, type ReleasePullReason } from "@/components/ward-management/ward-change-reasons";
+import { ESCALATION_CONTACTS } from "@/components/ward-management/ward-change-reasons";
+import { HomeReleaseSheet } from "@/components/ward-management/coordinator/home-release-sheet";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { useOptionalSearchParams } from "@/components/ward-management/ward/ward-screen-helpers";
 import { usePageLive } from "@/components/ward-management/ward-page-live";
@@ -71,15 +72,7 @@ import {
   type AlertKind,
   alertsNowFigures,
 } from "./alerts-model";
-import {
-  AlertCard,
-  AlertPhoneRow,
-  AlertRow,
-  GroupHead,
-  ownerShort,
-  type QueueEntry,
-  type QueueHandlers,
-} from "./alerts-queue";
+import { AlertPhoneRow, AlertRow, GroupHead, ownerShort, type QueueEntry, type QueueHandlers } from "./alerts-queue";
 import { groupLinkedAlerts, type LinkedQueueItem } from "./alert-linked-groups";
 import { LinkedAlertItem } from "./alert-linked-group";
 import { AlertDetail, type AlertDetailHandlers } from "./alert-detail";
@@ -117,7 +110,6 @@ import {
   type AlertsTab,
 } from "./alerts-log-filters";
 import { useForecastAlerts } from "@/components/ward-management/forecast/use-forecast-model";
-import log from "./alerts-log.module.css";
 import { BroadcastComposer } from "./broadcast-composer";
 import { QUICK_STARTS } from "./broadcast-audience";
 import { liveBedCallFor, useBroadcastAudience } from "./use-broadcast-audience";
@@ -131,7 +123,6 @@ import {
   StatusGlyph,
   TabPanel,
   useIsPhone,
-  type WfTone,
   useIsTabletPortrait,
   useModalFocus,
 } from "@/components/wf";
@@ -277,10 +268,9 @@ function AlertsWorkspace() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [phoneChecks, setPhoneChecks] = useState(false);
   const [phoneToday, setPhoneToday] = useState(false);
-  // A request to focus the release reason once the panel or sheet has drawn it.
-  const [releaseRequest, setReleaseRequest] = useState(0);
-  const releaseHandled = useRef(0);
-  const releaseRef = useRef<HTMLSelectElement | null>(null);
+  // Simplification R1 (mock-up, 26 Nov 2026): the alert whose pulled bed is being released, in the
+  // one shared "Release pulled bed" sheet (the same sheet Home opens).
+  const [releaseForId, setReleaseForId] = useState<string | undefined>(undefined);
   const [notifyOn] = useActNowNotificationPreference();
 
   const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
@@ -589,25 +579,26 @@ function AlertsWorkspace() {
   const lens = useOpenFilter(quietWard, {
     act: actCount,
     wait: waitEntries.length,
-    forecast: forecastDesk ? forecastCount : undefined,
-    reminders: dueReminders,
     notices: unreadNotices.length,
-    snoozed: snoozedEntries.length,
     // The Yours chip counts every row its filter shows: running and snoozed rows and beds to pull too.
     yours: coordDesk ? allEntries.filter((entry) => entry.mine).length + toPull.length : undefined,
   });
 
-  // "Next alert": act now before waiting, yours first, unacknowledged only, oldest first.
+  // "Next alert": act now before waiting, yours first, unacknowledged only, oldest first. Act now is
+  // listed in this same order, so Next is always its top row.
+  const nextRule = useCallback(
+    (a: QueueEntry, b: QueueEntry) =>
+      (a.group === "act" ? 0 : 1) - (b.group === "act" ? 0 : 1) ||
+      (a.mine ? 0 : 1) - (b.mine ? 0 : 1) ||
+      (a.seen ? 1 : 0) - (b.seen ? 1 : 0) ||
+      byOldest({ at: a.raised }, { at: b.raised }),
+    [],
+  );
   const nextQueue = useMemo(() => {
     const open = countedActive.filter((entry) => !entry.seen);
-    const ranked = [...open].sort(
-      (a, b) =>
-        (a.group === "act" ? 0 : 1) - (b.group === "act" ? 0 : 1) ||
-        (a.mine ? 0 : 1) - (b.mine ? 0 : 1) ||
-        byOldest({ at: a.raised }, { at: b.raised }),
-    );
+    const ranked = [...open].sort(nextRule);
     return ranked.length > 0 ? ranked : countedActive;
-  }, [countedActive]);
+  }, [countedActive, nextRule]);
 
   // Drawer review (6 Nov 2026): the chosen alert opens in the kit right drawer at every width, so the
   // queue keeps the full width and the page's one scroll. Nothing opens until a row is chosen.
@@ -630,10 +621,13 @@ function AlertsWorkspace() {
   const select = useCallback(
     (entry: QueueEntry, options: { release?: boolean } = {}) => {
       setChosenId(entry.item.id);
-      setSheetOpen(true);
-      if (options.release) setReleaseRequest((count) => count + 1);
+      // Release opens the shared release sheet on its own, never stacked over the alert drawer.
+      if (options.release) {
+        setSheetOpen(false);
+        setReleaseForId(entry.item.id);
+      } else setSheetOpen(true);
     },
-    [setSheetOpen],
+    [setSheetOpen, setChosenId, setReleaseForId],
   );
 
   // Change 7 (D-77): `?alert=<id>&release=1` chooses the alert and focuses its release reason. Read
@@ -647,11 +641,7 @@ function AlertsWorkspace() {
     if (entry) select(entry, { release: query.get("release") === "1" });
   }
 
-  useEffect(() => {
-    if (releaseRequest === releaseHandled.current || !releaseRef.current) return;
-    releaseRef.current.focus();
-    releaseHandled.current = releaseRequest;
-  }, [releaseRequest, selected, sheetOpen]);
+  const releaseEntry = releaseForId ? allEntries.find((entry) => entry.item.id === releaseForId) : undefined;
 
   const handleNext = () => {
     if (nextQueue.length === 0) {
@@ -736,18 +726,10 @@ function AlertsWorkspace() {
         () => dispatch({ type: "UNSNOOZE_INBOX_ITEM", role: "coordinator", now: clockNow, inboxItemId: item.id }),
       );
     },
-    onRelease: (item, reason: ReleasePullReason) => {
-      if (actionDisabledReason) return;
-      if (!item.movementId) return;
-      track(
-        {
-          type: "RELEASE_PULL",
-          ok: `Bed released for ${nameOf(item)}. The ward has a notice.`,
-          refused: "Release was not accepted. The bed is still pulled.",
-        },
-        () =>
-          dispatch({ type: "RELEASE_PULL", role: "coordinator", now: clockNow, movementId: item.movementId, reason }),
-      );
+    onRelease: (item) => {
+      if (actionDisabledReason || !item.movementId) return;
+      setSheetOpen(false);
+      setReleaseForId(item.id);
     },
     onEscalate: (item) => {
       if (actionDisabledReason) return;
@@ -993,7 +975,8 @@ function AlertsWorkspace() {
     head: ReactNode,
     empty?: string,
     linked?: { items: LinkedQueueItem<QueueEntry>[]; shownEarlier: number; sectionLabels: readonly string[] },
-    lead?: ReactNode,
+    /** Audit three fix 2: rows that follow the alerts (beds to pull), so the top row is Next's alert. */
+    trail?: ReactNode,
   ) => (
     <section
       key={key}
@@ -1002,9 +985,8 @@ function AlertsWorkspace() {
       data-testid={key === "snoozed" ? "ward-alerts-snoozed" : undefined}
     >
       {head}
-      {lead}
       {list.length === 0 ? (
-        lead ? null : (
+        trail ? null : (
           <p className={styles.groupEmpty}>{empty}</p>
         )
       ) : linked ? (
@@ -1018,6 +1000,7 @@ function AlertsWorkspace() {
           [label],
         )
       )}
+      {trail}
     </section>
   );
   const nothingNeedsYou = (
@@ -1036,7 +1019,7 @@ function AlertsWorkspace() {
   const urgencyLabels = ["Act now", "Waiting", "Targets running"] as const;
   const snoozedAct = snoozedEntries.filter((entry) => entry.group === "act");
   const filtered = lens.filter !== "all";
-  const actListed = lens.pick([...actEntries, ...snoozedAct]);
+  const actListed = [...lens.pick(actEntries)].sort(nextRule).concat(lens.pick(snoozedAct));
   const [waitShown, runningShown, snoozedShown] = [waitEntries, runningEntries, snoozedEntries].map(lens.pick);
   const pullShown = lens.shows("act") ? toPull.length : 0;
   // Kept pulled rows show in Act now but are not counted: the pull is done (ruling item 3).
@@ -1124,68 +1107,6 @@ function AlertsWorkspace() {
         : null}
     </>
   );
-  const laneLists: [string, string, WfTone, QueueEntry[]][] = [
-    ["act", "Act now", "danger", actListed],
-    ["wait", "Waiting", "warning", [...waitShown, ...runningShown]],
-    ["snoozed", "Snoozed", "neutral", snoozedShown],
-  ];
-  // Snoozed alerts are set aside on purpose, so only Act now and Waiting are grouped.
-  const laneLinked = groupLinkedAlerts([actListed, [...waitShown, ...runningShown]]);
-  const cardFor = (entry: QueueEntry) => (
-    <AlertCard key={entry.item.id} entry={entry} now={now} maxAge={maxAge} handlers={queueHandlers} />
-  );
-  // Lanes (Alerts redesign): the third lane holds Forecast, then Snoozed under it.
-  const forecastLane =
-    forecastDesk && !filtered ? (
-      <ForecastAlertsGroup
-        now={now}
-        readOnly={access.role === "bed_manager"}
-        head={(count) => (
-          <GroupHead tone="warning" label="Expected from recorded dates" count={count} aside="tomorrow" />
-        )}
-      />
-    ) : null;
-  const lanesView = (
-    <div className={filtered ? `${styles.lanes} ${log.lanesFiltered}` : styles.lanes}>
-      {laneLists.map(([key, label, tone, list], lane) =>
-        filtered && !showsGroup(key, list.length + (key === "act" ? pullShown : 0)) ? null : (
-          // Forecast sits above Snoozed in the third lane as its own region, never inside Snoozed.
-          <div key={key} className={styles.lane}>
-            {key === "snoozed" ? forecastLane : null}
-            <section
-              className={parts.laneSection}
-              aria-label={label}
-              data-testid={key === "snoozed" && list.length > 0 ? "ward-alerts-snoozed" : undefined}
-            >
-              <GroupHead
-                tone={tone}
-                label={label}
-                count={key === "act" ? actHead : list.length}
-                aside={key === "act" ? "most urgent first" : key === "wait" ? "oldest first" : undefined}
-              />
-              {key === "act" && pullShown + keptShown > 0 ? pullRows : null}
-              {list.length > 0 ? (
-                <>
-                  <ul className={styles.cards}>
-                    {lane < 2
-                      ? linkedItems(laneLinked.sections[lane] ?? [], styles.cards, ["Act now", "Waiting"], cardFor)
-                      : list.map(cardFor)}
-                  </ul>
-                  {lane < 2 ? linkedNote(laneLinked.shownEarlier[lane] ?? 0) : null}
-                </>
-              ) : key === "act" && pullRows ? null : (
-                <p className={styles.groupEmpty}>
-                  {key === "snoozed"
-                    ? "A snoozed alert waits here and returns at its time. A snoozed act-now alert also stays listed in Act now."
-                    : "None now"}
-                </p>
-              )}
-            </section>
-          </div>
-        ),
-      )}
-    </div>
-  );
   const ownerView = owners.map((owner) => {
     // Safety rule 3: act now first inside each owner, then the rest in their recorded order.
     const list = lens
@@ -1213,7 +1134,7 @@ function AlertsWorkspace() {
     );
   });
   // Forecast, reminders and notices are not in Lanes or Owner, so their filters show the Urgency list.
-  const view: ArrangeBy = isPhone || ["forecast", "reminders", "notices"].includes(lens.filter) ? "urgency" : arrangeBy;
+  const view: ArrangeBy = isPhone || lens.filter === "notices" ? "urgency" : arrangeBy;
 
   const liveBroadcasts = (
     <AlertsLiveBroadcasts
@@ -1275,7 +1196,20 @@ function AlertsWorkspace() {
         configuration={configuration}
         handlers={detailHandlers}
         actionDisabledReason={actionDisabledReason}
-        releaseRef={releaseRef}
+        // Audit four #31: the kit pager steps through the open alerts in the queue's own order.
+        pager={(() => {
+          const list = [...countedActive].sort(nextRule);
+          return {
+            index: list.findIndex((entry) => entry.item.id === selected.item.id),
+            total: list.length,
+            noun: "alert",
+            onStep: (delta: -1 | 1) => {
+              const at = list.findIndex((entry) => entry.item.id === selected.item.id);
+              const next = list[(at + delta + list.length) % list.length];
+              if (next) setChosenId(next.item.id);
+            },
+          };
+        })()}
       />
     </>
   ) : null;
@@ -1364,7 +1298,7 @@ function AlertsWorkspace() {
           lens={quietWard ? undefined : lens}
           end={
             <span className={parts.tabsEnd}>
-              {!isPhone && shownTab === "now" && wardName === undefined ? (
+              {!isPhone && shownTab === "now" && wardName === undefined && namedOwners.length > 0 ? (
                 <ArrangeSwitch value={arrangeBy} onChange={setArrangeBy} withOwner={namedOwners.length > 0} />
               ) : null}
               <AlertsToolsMenu
@@ -1396,13 +1330,9 @@ function AlertsWorkspace() {
             <Card as="section" className={styles.queueCard} aria-label="Alerts">
               {shownTab === "now" ? (
                 <TabPanel idPrefix="alerts" id="now">
-                  {/* Page tops: a phone keeps its filters here, less the top's Act now and Yours. */}
+                  {/* #48: a phone keeps all its filters here (All, Act now, Waiting, Notices, Yours). */}
                   {quietWard || !isPhone ? null : (
-                    <OpenFilters
-                      lens={lens}
-                      omit={["act", "yours"]}
-                      end={wardName === undefined ? phoneOwner : undefined}
-                    />
+                    <OpenFilters lens={lens} end={wardName === undefined ? phoneOwner : undefined} />
                   )}
                   {/* Nurse in charge: one ward needs no arrange-by or owner lens (Josh, 31 Oct 2026, answer 17). */}
                   {wardName !== undefined || !anyHighlight ? null : (
@@ -1418,15 +1348,7 @@ function AlertsWorkspace() {
                     </>
                   ) : (
                     <>
-                      {filteredNothing ? (
-                        <FilteredEmpty lens={lens} />
-                      ) : view === "lanes" ? (
-                        lanesView
-                      ) : view === "owner" ? (
-                        ownerView
-                      ) : (
-                        urgencyView
-                      )}
+                      {filteredNothing ? <FilteredEmpty lens={lens} /> : view === "owner" ? ownerView : urgencyView}
                       {filteredNothing ? null : noticesGroup}
                       {quietWard && view === "urgency" ? null : (
                         <p className={styles.orderNote} data-testid="ward-alerts-order-note">
@@ -1486,6 +1408,11 @@ function AlertsWorkspace() {
         </div>
 
         {selectedPanel}
+        <HomeReleaseSheet
+          entry={releaseEntry}
+          onClose={() => setReleaseForId(undefined)}
+          testId="alerts-release-sheet"
+        />
 
         {/* Broadcast composer sheet */}
         {isBroadcastModalOpen && (
@@ -1532,8 +1459,9 @@ function AlertsWorkspace() {
             onSend={handleDispatchBroadcast}
           />
         )}
+        {/* Audit four #90: inside the page margins, the standard card footer, as on every other page. */}
+        <WardPrototypeFooter testId="ward-alerts-governance" />
       </main>
-      <WardPrototypeFooter testId="ward-alerts-governance" />
     </div>
   );
 }

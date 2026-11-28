@@ -196,25 +196,23 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
   });
 
   // Wave 4: the Grid and Rows switch is gone; the same map is on the Overview and the Wards tab.
-  it.each([/^Overview/u, /^Wards/u])(
-    "keeps occupied separate from pulled on the %s tab's card and ward drawer",
-    (tab) => {
-      const ward = seededWards.find((entry) => entry.pulled > 0)!;
-      expect(ward, "a pulled bed is needed to distinguish occupied from beds in use").toBeDefined();
-      renderScreen();
-      fireEvent.click(
-        within(screen.getByRole("radiogroup", { name: "Capacity view" })).getByRole("radio", { name: tab }),
-      );
-      const card = bedMapRegion().querySelector<HTMLButtonElement>(`button[data-unit-id="${ward.unit.id}"]`)!;
-      expect(card).toHaveTextContent(`${ward.pulled} pulled`);
-      expect(bedSquaresOf(card, "used")).toHaveLength(ward.occupied + ward.pulled);
-      fireEvent.click(card);
-      const beds = within(screen.getByTestId("ward-capacity-ward-drawer")).getByRole("region", { name: "Beds now" });
-      expect(beds).toHaveTextContent(`${ward.occupied} occupied`);
-      expect(beds).toHaveTextContent(`${ward.pulled} pulled`);
-      expect(bedSquaresOf(beds, "used")).toHaveLength(ward.occupied + ward.pulled);
-    },
-  );
+  // Simplification (26 Nov 2026): off the phone the Wards tab is gone, so only Overview carries the map.
+  it.each([/^Overview/u])("keeps occupied separate from pulled on the %s tab's card and ward drawer", (tab) => {
+    const ward = seededWards.find((entry) => entry.pulled > 0)!;
+    expect(ward, "a pulled bed is needed to distinguish occupied from beds in use").toBeDefined();
+    renderScreen();
+    fireEvent.click(
+      within(screen.getByRole("radiogroup", { name: "Capacity view" })).getByRole("radio", { name: tab }),
+    );
+    const card = bedMapRegion().querySelector<HTMLButtonElement>(`button[data-unit-id="${ward.unit.id}"]`)!;
+    expect(card).toHaveTextContent(`${ward.pulled} pulled`);
+    expect(bedSquaresOf(card, "used")).toHaveLength(ward.occupied + ward.pulled);
+    fireEvent.click(card);
+    const beds = within(screen.getByTestId("ward-capacity-ward-drawer")).getByRole("region", { name: "Beds now" });
+    expect(beds).toHaveTextContent(`${ward.occupied} occupied`);
+    expect(beds).toHaveTextContent(`${ward.pulled} pulled`);
+    expect(bedSquaresOf(beds, "used")).toHaveLength(ward.occupied + ward.pulled);
+  });
 
   /**
    * Capacity issue 5 (Josh, 3 Nov 2026): the bed map shows a zero ready count as the digit 0, the
@@ -254,7 +252,7 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
     card.focus();
     await user.keyboard("{Enter}");
     const drawer = screen.getByTestId("ward-capacity-ward-drawer");
-    expect(within(drawer).getByRole("link", { name: "Open ward" })).toHaveAttribute(
+    expect(within(drawer).getByRole("link", { name: `Open ${ward.unit.name}` })).toHaveAttribute(
       "href",
       `/bedchart/ward/${ward.unit.id}`,
     );

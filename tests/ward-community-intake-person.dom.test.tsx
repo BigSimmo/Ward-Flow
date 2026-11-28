@@ -61,7 +61,7 @@ function sendBlockedReason() {
   fireEvent.click(
     within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", { name: "Wards" }),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
+  fireEvent.click(screen.getByRole("button", { name: "Review and send" }));
   return screen.getByRole("alert");
 }
 

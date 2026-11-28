@@ -98,11 +98,15 @@ describe("Coming and going (wave 4)", () => {
   it("lists each group once with its count and window, names every row, and keeps one filled button", () => {
     const props = renderPart();
     const part = screen.getByTestId("ward-coming-and-going");
-    expect(within(part).getByRole("heading", { name: /2 Arrivals\s*today/u })).toHaveTextContent("+ 1 back from leave");
+    expect(within(part).getByRole("heading", { name: /2 Arrivals\s*today/u })).toBeInTheDocument();
+    // Gate r10: Back from leave is its own group, a peer of Arrivals, so Arrivals counts arrivals only.
+    expect(within(part).getByRole("heading", { name: /1 Back from leave\s*today/u })).toBeInTheDocument();
     expect(within(part).getByRole("heading", { name: /1 Referrals\s*now/u })).toHaveTextContent("3 answered today");
     expect(within(part).getByRole("heading", { name: /1 Needs a look\s*now/u })).toHaveTextContent(/now\s*1 held up$/u);
-    expect(within(part).getByRole("heading", { name: /0 Expected to leave\s*today/u })).toBeInTheDocument();
-    expect(part).toHaveTextContent("None still due today. Bed 07 freed 07:42.");
+    // Audit three #23: a group at zero goes, as the hero and tabs already say it.
+    expect(within(part).queryByRole("heading", { name: /Expected to leave/u })).toBeNull();
+    expect(part).toHaveTextContent("Bed 07 freed 07:42.");
+    expect(part).not.toHaveTextContent("None still due today.");
     expect(screen.getByTestId("ward-tomorrow-line")).toHaveTextContent(
       "Tomorrow 1 short · range 1 short to 2 free · From ward dates",
     );
@@ -256,7 +260,7 @@ describe("Referrals tab headings (wave 4 mock-up, review FS-12)", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <ToastProvider>
-          <WardScreenReferralsTab active unit={unit} waiting={1} bedRequests={0} onOpenBedRequests={() => undefined} />
+          <WardScreenReferralsTab active unit={unit} waiting={1} bedRequests={0} />
         </ToastProvider>
       </WardFlowProvider>,
     );

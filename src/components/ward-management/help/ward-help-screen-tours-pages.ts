@@ -119,13 +119,8 @@ export const MORE_PAGES: readonly Around[] = [
         body: "Everyone collected and moving to a ward, with where to and when due. Open a name for their record.",
       },
       {
-        target: id("night-intake-windows"),
-        title: "Intake windows",
-        body: "Says Not recorded until wards record their overnight intake windows.",
-      },
-      {
         target: id("night-on-call"),
-        title: "On call now",
+        title: "On-call now",
         body: "The state desk, each service's bed flow and the crisis line, with who answers now and until when. Numbers are synthetic.",
       },
     ],
@@ -152,8 +147,8 @@ export const MORE_PAGES: readonly Around[] = [
       },
       {
         target: [named("Patient actions", "ul"), id("ward-patient-pin")],
-        title: "Copy, Pin and Forms",
-        body: "Copy handover or Copy summary copies a short summary. Pin keeps the record on Home. Forms opens their legal forms.",
+        title: "Copy and Pin",
+        body: "Copy for handover copies a short summary. Pin keeps the record on Home.",
       },
       {
         target: id("ward-patient-care-journey"),
@@ -219,7 +214,7 @@ export const MORE_PAGES: readonly Around[] = [
     },
     steps: [
       {
-        target: [id("ward-add-patient-draft-pill"), id("ward-add-patient-phone-hero")],
+        target: [id("ward-add-patient-phone-hero"), id("ward-add-patient-cancel")],
         title: "A draft until added",
         body: "Nothing is saved until you add the patient. Cancel goes back to patient search without adding anyone.",
       },
@@ -320,8 +315,8 @@ export const MORE_PAGES: readonly Around[] = [
         body: "All beds, Needs a look, Ready or No discharge due.",
       },
       {
-        target: named("Order the beds"),
-        title: "Order the beds",
+        target: named("Sort beds"),
+        title: "Sort beds",
         body: "Longest stay, Soonest to leave or Bed order.",
       },
       {
@@ -428,10 +423,10 @@ export const MORE_PAGES: readonly Around[] = [
   {
     screen: "catchments",
     name: "Catchments",
-    keywords: "catchment suburb postcode community team lookup read alike",
+    keywords: "catchment suburb postcode community team lookup similar names",
     page: {
       purpose:
-        "Which community team covers a suburb, every community team from A to Z, and team names that read alike.",
+        "Which community team covers a suburb, every community team from A to Z, and Similar names, team names that look alike.",
       path: /^\/bedchart\/hub\/catchments$/u,
       needs: "community",
     },
@@ -439,7 +434,7 @@ export const MORE_PAGES: readonly Around[] = [
       {
         target: [named("Catchment figures", '[role="group"]'), HERO],
         title: "Catchments at a glance",
-        body: "How many community teams, suburbs mapped and team names that read alike.",
+        body: "How many community teams, suburbs mapped and teams with Similar names.",
       },
       {
         target: named("Suburb or postcode", "input"),
@@ -468,7 +463,7 @@ export const MORE_PAGES: readonly Around[] = [
         device: "phone",
         target: named("Show", '[role="radiogroup"]'),
         title: "One list at a time",
-        body: "Suburb, A to Z, Read alike or Services. Choose one to read that list.",
+        body: "Suburb, A to Z, Similar names or Services. Choose one to read that list.",
       },
       {
         target: id("suburb-lookup-card"),
@@ -484,13 +479,13 @@ export const MORE_PAGES: readonly Around[] = [
       {
         device: "desk",
         target: [starts("community-gateway-reads-alike"), id("community-index-teams")],
-        title: "Reads like others",
+        title: "Similar names",
         body: "A team name close to another one. Press it to set them side by side and check you have the right team.",
       },
       {
         device: "desk",
         target: [id("community-gateway-family-panel"), id("community-index-side")],
-        title: "Read alike",
+        title: "Similar names",
         body: "Team names that look similar, side by side. Choose a group, then open the right team.",
       },
       {
@@ -617,9 +612,9 @@ export const MORE_PAGES: readonly Around[] = [
         body: "Type what you want to change, such as theme or alerts, and choose it to go straight there.",
       },
       {
-        target: [id("ward-settings-alerts-act"), id("ward-settings-phone-area-alerts")],
+        target: [id("ward-settings-jump-alerts"), id("ward-settings-phone-area-alerts")],
         title: "Alerts on this device",
-        body: "Says whether alerts reach this device. Open alerts shows how to turn them on.",
+        body: "A warning mark on the Alerts tab, or Off on a phone, means alerts do not reach this device. Open Alerts to turn them on.",
       },
       {
         device: "desk",
@@ -635,9 +630,9 @@ export const MORE_PAGES: readonly Around[] = [
       },
       {
         device: "desk",
-        target: [{ sel: '[data-setting="changed-only"]' }, id("ward-settings-section-tabs")],
+        target: { sel: '[data-setting="changed-only"]' },
         title: "Changed from default",
-        body: "Shows only the rules that differ from the default.",
+        body: "Shows only the rules that differ from the default. It appears once a rule has changed.",
       },
       {
         device: "desk",
@@ -779,11 +774,6 @@ export const MORE_PAGES: readonly Around[] = [
         body: "Opens a search to find anyone to discuss by name or UMRN.",
       },
       {
-        target: id("agenda-referrals-chip"),
-        title: "Referrals",
-        body: "Shows only referrals awaiting a decision. Press again to show every list.",
-      },
-      {
         acts: ["RECORD_BED_MEETING_ACTION"],
         target: id("bed-meeting-run-start"),
         title: "Run meeting",
@@ -821,7 +811,7 @@ export const MORE_PAGES: readonly Around[] = [
         body: "Action on a row records what was agreed for that person, with an owner and when it is due.",
       },
       {
-        target: [id("bed-meeting-agenda-referrals"), id("agenda-referrals-chip")],
+        target: id("bed-meeting-agenda-referrals"),
         title: "Referrals awaiting decision",
         body: "Referrals still waiting for a decision. Copy puts the list on the clipboard.",
       },
@@ -856,7 +846,7 @@ export const MORE_PAGES: readonly Around[] = [
       {
         target: id("ward-chronology-start-patient"),
         title: "Open a chronology",
-        body: "Choose a person to open their events in time order, with Print and CSV.",
+        body: "Choose a person to open their events in time order. Share holds Copy rows, Export CSV and Print.",
       },
       {
         target: [{ sel: '#main-content [aria-labelledby$="-holds"]' }, id("ward-chronology-start-patient")],
@@ -883,15 +873,15 @@ export const MORE_PAGES: readonly Around[] = [
       statisticsViews,
       {
         device: "desk",
-        target: id("ward-statistics-compare-tool-open-unit"),
-        title: "Open a unit",
+        target: id("ward-statistics-browse"),
+        title: "Browse",
         body: "Find one ward or ED and open its own statistics.",
       },
       {
         device: "desk",
         target: id("statistics-compare-ward-chart"),
         title: "Ward comparison",
-        body: "Every ward against the network mean. Chart or Data switches the view, and CSV downloads the figures.",
+        body: "Every ward against the network mean. Graph or Table switches the view, and the Share menu downloads the figures.",
       },
       {
         device: "phone",

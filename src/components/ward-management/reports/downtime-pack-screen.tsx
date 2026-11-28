@@ -404,11 +404,11 @@ export function DowntimePackScreen() {
     : `Frozen at ${frozenAt}`;
   const day = reportDay(pack.generatedAt, dayZero);
   const twins = before && !taking && twinFor === pack;
-  const allTabItems: Array<{ id: Section; label: string; short: string; count: number }> = [
-    { id: "beds", label: "Beds by ward", short: "Beds", count: totals.ready },
-    { id: "ed", label: "ED queue", short: "ED", count: totals.ed },
-    { id: "moves", label: "Pending movements", short: "Moves", count: totals.moves },
-    { id: "forms", label: "Legal forms", short: "Forms", count: totals.forms },
+  const allTabItems: Array<{ id: Section; label: string; short: string }> = [
+    { id: "beds", label: "Beds by ward", short: "Beds" },
+    { id: "ed", label: "ED queue", short: "ED" },
+    { id: "moves", label: "Pending movements", short: "Moves" },
+    { id: "forms", label: "Legal forms", short: "Forms" },
   ];
   const tabItems = allTabItems.filter((item) => !(noBeds && item.id === "beds"));
   const twinKey: Record<Section, keyof PackTotals> = { beds: "ready", ed: "ed", moves: "moves", forms: "forms" };
@@ -454,7 +454,7 @@ export function DowntimePackScreen() {
       }
       aside={
         <span data-page-top-pill="" data-print-hide>
-          <HeroPill text={isPhone ? day : "Synthetic data"} />
+          <HeroPill text={isPhone ? day : "Demo"} />
         </span>
       }
     >
@@ -877,7 +877,7 @@ export function DowntimePackScreen() {
                 label="Downtime pack section"
                 value={shownSection}
                 onChange={setSection}
-                items={tabItems.map((item) => ({ id: item.id, label: item.short, count: item.count }))}
+                items={tabItems.map((item) => ({ id: item.id, label: item.short }))}
               />
             </FolderTabs>
             {recordOutage}
@@ -1058,7 +1058,7 @@ export function DowntimePackScreen() {
             value={shownSection}
             onChange={setSection}
             className={folderTabClasses.switch}
-            items={tabItems.map((item) => ({ id: item.id, label: item.label, count: item.count }))}
+            items={tabItems.map((item) => ({ id: item.id, label: item.label }))}
           />
         </FolderTabs>
         {recordOutage}

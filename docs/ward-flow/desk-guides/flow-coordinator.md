@@ -37,13 +37,13 @@ Source: [Home queue order](../../../src/components/ward-management/ward-priority
 
 ## Jobs you do most
 
-1. **Decide a referral.** Press **Decide** on a referral. Read it, then **Accept referral** or
+1. **Decide a referral.** Press **Decide** on a referral. Read it, then **Accept** or
    **Decline referral**. A decline needs a reason from the one decline list.
 2. **Ask more wards.** Use **Ask more wards** and tick wards from the list. Wards are listed in a
    fixed order. The app never ranks or suggests a ward. The screen shows how many may wait at once.
 3. **Pull the bed.** Once a ward accepts, press **Pull the bed**. The bed is kept for that patient
    until arrival or release, within the pull time limit set in Settings.
-4. **Book transport.** Press **Book transport**, or record that none is needed. Use
+4. **Book transport.** Press **Record transport booking**, or record that none is needed. Use
    **Cancel transport** before **Release the pulled bed** if plans change.
 5. **Log a call.** On a referral, use **Log a call** so the next person can see who was rung.
 6. **Hand over.** Open **Handover** to see what the next shift needs, then **Sign off**.

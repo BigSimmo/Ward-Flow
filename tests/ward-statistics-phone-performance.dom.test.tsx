@@ -145,7 +145,10 @@ describe("Statistics phone computation work", () => {
     const result = render(<Tree />);
     const initialFigures = phoneFigures();
     setPhone(false);
-    for (const count of Object.values(counts)) expect(count).toBeGreaterThan(0);
+    // The unit finder (and its sort) went in the 26 Nov 2026 simplification, so that count stays 0.
+    const { finderSort: finderSorts, ...desktopCounts } = counts;
+    expect(finderSorts).toBe(0);
+    for (const count of Object.values(desktopCounts)) expect(count).toBeGreaterThan(0);
     // The ward table's typed filter went (D-91, Josh, 30 Oct 2026); its sort is the state it keeps.
     const wardHead = () =>
       within(screen.getByTestId("ward-statistics-pressure")).getByRole("columnheader", { name: "Ward" });
@@ -178,7 +181,10 @@ describe("Statistics phone computation work", () => {
     expect(wardHead()).toHaveAttribute("aria-sort", "ascending");
     expect(result.container.querySelector("#wardPressureTable tbody tr th")?.textContent).toBe(firstWard);
     expect(result.container.querySelectorAll("#wardPressureTable tbody tr").length).toBeGreaterThan(0);
-    for (const count of Object.values(counts)) expect(count).toBeGreaterThan(0);
+    // The unit finder (and its sort) went in the 26 Nov 2026 simplification, so that count stays 0.
+    const { finderSort: finderSortsAfter, ...desktopCountsAfter } = counts;
+    expect(finderSortsAfter).toBe(0);
+    for (const count of Object.values(desktopCountsAfter)) expect(count).toBeGreaterThan(0);
     const chart = screen.getByText("Pull to arrival, admissions by band").closest("figure");
     expect(chart).not.toBeNull();
     const bands = within(chart as HTMLElement).getAllByRole("listitem");
@@ -186,7 +192,11 @@ describe("Statistics phone computation work", () => {
     expect(bands.reduce((total, band) => total + Number(band.textContent?.split(": ").at(-1)), 0)).toBe(
       (changedFigures.moreFigures as PhoneMoreFigures).arrivals.measured,
     );
-    expect(result.container.querySelectorAll("#edPressureTable tbody tr").length).toBeGreaterThan(0);
+    // 26 Nov 2026: the ED table is the Browse card's EDs segment now.
+    fireEvent.click(within(screen.getByTestId("ward-statistics-browse")).getByRole("radio", { name: /^EDs/ }));
+    expect(
+      result.container.querySelectorAll('[data-testid="ward-statistics-eds-table"] tbody tr').length,
+    ).toBeGreaterThan(0);
     setPhone(true);
     expect(phoneFigures()).toEqual(changedFigures);
   });

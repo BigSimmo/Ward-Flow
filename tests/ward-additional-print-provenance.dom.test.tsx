@@ -57,9 +57,8 @@ describe("saved print provenance", () => {
 
   it("adds the same provider moment and synthetic notice to the community catchment counts print", () => {
     render(wrap(<CommunityScreen teamId="albany" />));
-    // Catchment counts sits under More since the locked design (1 Nov 2026).
-    fireEvent.click(screen.getByRole("button", { name: /^More$/ }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "Catchment counts" }));
+    // Catchment counts is a plain button in the row since #19 (audit two, 27 Nov 2026).
+    fireEvent.click(screen.getByRole("button", { name: "Catchment counts" }));
     const text = document.querySelector('[id="handoverModal"]')?.textContent;
     expect(text).toContain(stamp);
     expect(text).toContain("Synthetic figures, not a record of any real day");

@@ -422,42 +422,62 @@
   display: grid;
   gap: var(--wf-s-4);
 }
+/* Audit four #98: the Referral sheet's wait strip, one hero band. The tier tile, then "Waiting" over
+   the wait figure and the due words under it; overdue shows the triangle in danger ink. The name and
+   UMRN are in the kit drawer head. */
 .sumHead {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-2) var(--wf-s-3);
+  gap: var(--wf-s-3);
   padding: var(--wf-s-3);
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
   background: var(--wf-surface-2);
 }
-.sumWho {
-  display: grid;
-  flex: 1 1 12rem;
-  min-width: 0;
-}
-.sumWho b {
-  font-size: var(--wf-fs-16);
-  overflow-wrap: anywhere;
-}
-.sumWho > span {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
 .sumWait {
   display: grid;
-  justify-items: end;
+  gap: 2px;
+  min-width: 0;
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+.sumWaitLabel {
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
 }
 .sumWait b {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-16);
+  font-weight: 700;
+  line-height: var(--wf-lh-16);
 }
 .sumWaitOver,
 .sumWaitOver b {
   color: var(--wf-danger-ink);
+}
+/* The kit drawer's scroll carries no padding of its own; the sheet's body sits 16px in. */
+.sumBody {
+  padding: var(--wf-s-4);
+}
+/* Foot line one: Copy for handover, filled, full width. Line two: the quiet record links. */
+.sheetMain.sheetMain {
+  width: 100%;
+  justify-content: center;
+}
+.sheetRow > * {
+  flex: 1 1 0;
+  min-width: max-content;
+}
+@media (max-width: 46.4375rem) {
+  .sheetMain.sheetMain,
+  .sheetRow > * {
+    min-height: 44px;
+  }
 }
 .factGrid {
   display: grid;
@@ -471,6 +491,8 @@
 }
 .factGrid > div {
   display: grid;
+  /* 26 Nov 2026: values sit directly under their labels, level across a row. */
+  align-content: start;
   gap: 2px;
   padding: var(--wf-s-2) var(--wf-s-3);
   background: var(--wf-surface);
@@ -560,6 +582,11 @@
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-14);
   line-height: 1.55;
+}
+/* ISBAR moved onto Full referral (26 Nov 2026): its rows keep their own spacing there. */
+.full .isbar p {
+  margin: 2px 0 0;
+  line-height: 1.5;
 }
 
 /* ─── Decided referral ───────────────────────────────────────────────────────────────────── */

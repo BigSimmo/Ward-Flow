@@ -119,9 +119,13 @@ describe("F-49 (D-187): an Undo toast stays open for the 5 minutes it promises",
         </ToastProvider>
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Arrived at ward" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record arrival" }));
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Mark arrived" }));
+      fireEvent.click(
+        within(screen.getByRole("group", { name: "Record arrival at the ward?" })).getByRole("button", {
+          name: "Record arrival",
+        }),
+      );
     });
     expect(theToast()).toHaveTextContent("Synthetic patient arrived at");
     await expectOpenForTheWholeWindow();

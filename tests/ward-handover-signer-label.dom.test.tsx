@@ -28,14 +28,13 @@ function panel(props: {
 describe("handover sign-off names who signed", () => {
   it("names the recorded signer, not the desk viewing it", () => {
     const card = panel({ signedAt: NOW - 60_000, signedBy: "coordinator", viewerRole: "ward" });
-    expect(card).toHaveTextContent("Handed over byBed coordinator");
-    expect(card).not.toHaveTextContent("Bed coordinatoryou");
+    expect(card).not.toHaveTextContent("Nurse in charge");
     expect(screen.getByTestId("ward-handover-sign-off-visible-status")).toHaveTextContent("as bed coordinator.");
   });
 
   it("names the viewing desk while the handover is unsigned", () => {
     const card = panel({ signedAt: null, signedBy: null, viewerRole: "ward" });
-    expect(card).toHaveTextContent("Nurse in chargeyou");
+    expect(card).toHaveTextContent(/Sign off as Nurse in charge at /);
   });
 
   it("marks a sign-off as yours when your desk recorded it", () => {

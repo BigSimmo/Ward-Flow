@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+
+import { useIsActiveRailEntry } from "@/components/ward-management/hub/find-active-tab";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Sheet } from "@/components/wf/sheet";
 import { Tooltip } from "@/components/wf/tooltip";
@@ -53,11 +55,9 @@ import {
 } from "@/components/ward-management/shell/ward-rail-helpers";
 import { Dot, Kbd, SrOnly, durMinutes, useIsPhone } from "@/components/wf";
 import {
-  APPEARANCE_CHOICES,
   AppearanceRadioGroup,
   CHECKED_APPEARANCE_SELECTOR,
   appearanceChoice,
-  chooseAppearance,
 } from "@/components/ward-management/shell/ward-appearance-choices";
 import {
   closeWardDrawer,
@@ -77,7 +77,6 @@ import {
   useWardDocumentPreferences,
 } from "@/components/ward-management/shell/ward-rail-preferences";
 import {
-  isActiveRailEntry,
   isRoleMenuAction,
   type RailEntry,
   railEntries,
@@ -163,7 +162,7 @@ export const TABLET_LANDSCAPE_RAIL_QUERY = "(min-width: 62.5625rem) and (max-wid
 // Visual abbreviations for the tablet row. Full registry names and live counts remain on the
 // accessible link and its hover card; these never define destinations.
 const COMPACT_LABELS: Record<string, string> = {
-  hub: "Places",
+  hub: "Find",
   ed: "ED",
   wards: "Wards",
   community: "Community",
@@ -247,6 +246,8 @@ const NO_BED_ALERTS: ServiceBedAlertsSummary = {
 export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const network = useWardNetwork();
   const pathname = usePathname() ?? "";
+  // Find's EDs and Wards tabs light All EDs and All wards, as their old pages did.
+  const isActiveRailEntry = useIsActiveRailEntry();
   const { units, bedReleases, movements, configuration, admissions, referrals } = useWardFlowSelect(
     "units",
     "bedReleases",
@@ -1256,25 +1257,6 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 setDeskModalOpen(true);
               }}
             />
-            <div className={styles.moreFootActions}>
-              <button
-                type="button"
-                className={styles.sheetUtilityLink}
-                data-testid="ward-rail-sheet-appearance"
-                onClick={() => {
-                  const order = APPEARANCE_CHOICES.map((choice) => choice.id);
-                  chooseAppearance(order[(order.indexOf(appearance) + 1) % order.length] ?? "auto");
-                }}
-              >
-                <SunMoon aria-hidden="true" strokeWidth={1.75} />
-                <span>
-                  Appearance{" "}
-                  <span className={styles.moreFootValue}>
-                    {APPEARANCE_CHOICES.find((choice) => choice.id === appearance)?.label ?? "Auto"}
-                  </span>
-                </span>
-              </button>
-            </div>
             <div className={styles.moreFootLine}>
               {/* A7 (overall review, 20 Oct 2026): the policy version moved to Settings, Data and about. */}
               <span>Synthetic prototype</span>

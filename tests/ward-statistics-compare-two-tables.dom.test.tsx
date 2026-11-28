@@ -52,7 +52,7 @@ import { allEmergencyDepartments, allUnits } from "@/components/ward-management/
  * Each table opens on its first eight rows, so Show all is pressed to read every unit.
  */
 function showData() {
-  for (const radio of screen.getAllByRole("radio", { name: "Data" })) fireEvent.click(radio);
+  for (const radio of screen.getAllByRole("radio", { name: "Table" })) fireEvent.click(radio);
   for (const more of screen.queryAllByRole("button", { name: /^Show all/ })) fireEvent.click(more);
 }
 

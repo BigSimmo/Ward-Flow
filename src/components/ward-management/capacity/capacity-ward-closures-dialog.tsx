@@ -69,11 +69,104 @@ export function WardClosuresDialog({
       ...(close && why ? { reason: why } : {}),
       ...(close && reviewAt !== undefined ? { reviewAt } : {}),
     });
+  const bedStep = (
+    <section aria-labelledby="closures-bed" className={styles.popSection}>
+      <h3 id="closures-bed" className={styles.popHead}>
+        Close one bed <span className={styles.popCount}>{empty.length} empty</span>
+      </h3>
+      {empty.length === 0 ? (
+        <p className={styles.popEmpty}>No empty bed to close on this ward.</p>
+      ) : (
+        <>
+          <span className={styles.popLabel}>Which bed</span>
+          <ChipGroup label="Empty beds" className={styles.popChips}>
+            {empty.map((number) => (
+              <FilterChip
+                key={number}
+                pressed={bed === number}
+                onPressedChange={(pressed) => setBed(pressed ? number : null)}
+              >
+                {`Bed ${number}`}
+              </FilterChip>
+            ))}
+          </ChipGroup>
+          <span className={styles.popLabel}>Why</span>
+          <ChipGroup label="Reason" className={styles.popChips}>
+            {WARD_CLOSURE_REASONS.map((entry) => (
+              <FilterChip
+                key={entry.id}
+                pressed={reason === entry.id}
+                onPressedChange={(pressed) => setReason(pressed ? entry.id : null)}
+              >
+                {entry.label}
+              </FilterChip>
+            ))}
+          </ChipGroup>
+          <ClosureChoice
+            label="Review in"
+            testId="capacity-close-bed-review"
+            value={reviewAfter}
+            items={REVIEW_AFTER_CHOICES}
+            onChange={setReviewAfter}
+          />
+          <div className={styles.popFoot}>
+            <Button
+              size="sm"
+              variant="sec"
+              disabled={bed === null || reason === null}
+              onClick={() => {
+                if (bed === null || reason === null) return;
+                setBedClosed(bed, true, reason, reviewAtFrom(reviewAfter, now));
+                setBed(null);
+                setReason(null);
+                setReviewAfter("");
+              }}
+            >
+              {bed === null ? "Choose a bed" : `Close bed ${bed}`}
+            </Button>
+          </div>
+        </>
+      )}
+      {closed.length > 0 ? (
+        <ul className={styles.popList}>
+          {closed.map((mark) => (
+            <li key={mark.bedNumber} className={styles.popRowWrap}>
+              <span className={styles.popRow}>
+                <StatusGlyph tone="neutral" size={8} />
+                <span className={styles.popMain}>
+                  <span className={styles.popName}>Bed {mark.bedNumber} closed</span>
+                  <span className={styles.mutedXs}>
+                    {[
+                      "reason" in mark && mark.reason ? wardClosureReasonLabel(mark.reason) : "Reason not recorded",
+                      bedReviewLine(mark, now),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </span>
+              </span>
+              <Button size="sm" variant="ghost" onClick={() => setBedClosed(mark.bedNumber, false)}>
+                Reopen
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  );
+  const wardStep = (
+    <section aria-labelledby="closures-ward" className={styles.popSection}>
+      <h3 id="closures-ward" className={styles.popHead}>
+        {unit.isClosed ? "Reopen the ward to admissions" : "Close the whole ward to admissions"}
+      </h3>
+      <WardClosurePanel unit={unit} now={now} actor={actor} onFootAction={setCloseWard} />
+    </section>
+  );
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      title={`Closures, ${unit.name}`}
+      title={unit.isClosed ? `Reopen ward, ${unit.name}` : `Close a bed or ward, ${unit.name}`}
       description="A last resort. A closed bed or ward is not offered until someone reopens it."
       size="md"
       data-testid="capacity-ward-closures"
@@ -82,95 +175,10 @@ export function WardClosuresDialog({
       primary={closeWard ?? { label: "Done", onAction: onClose }}
     >
       <div className={styles.popBody}>
-        <section aria-labelledby="closures-bed" className={styles.popSection}>
-          <h3 id="closures-bed" className={styles.popHead}>
-            Close one bed <span className={styles.popCount}>{empty.length} empty</span>
-          </h3>
-          {empty.length === 0 ? (
-            <p className={styles.popEmpty}>No empty bed to close on this ward.</p>
-          ) : (
-            <>
-              <span className={styles.popLabel}>Which bed</span>
-              <ChipGroup label="Empty beds" className={styles.popChips}>
-                {empty.map((number) => (
-                  <FilterChip
-                    key={number}
-                    pressed={bed === number}
-                    onPressedChange={(pressed) => setBed(pressed ? number : null)}
-                  >
-                    {`Bed ${number}`}
-                  </FilterChip>
-                ))}
-              </ChipGroup>
-              <span className={styles.popLabel}>Why</span>
-              <ChipGroup label="Reason" className={styles.popChips}>
-                {WARD_CLOSURE_REASONS.map((entry) => (
-                  <FilterChip
-                    key={entry.id}
-                    pressed={reason === entry.id}
-                    onPressedChange={(pressed) => setReason(pressed ? entry.id : null)}
-                  >
-                    {entry.label}
-                  </FilterChip>
-                ))}
-              </ChipGroup>
-              <ClosureChoice
-                label="Review in"
-                testId="capacity-close-bed-review"
-                value={reviewAfter}
-                items={REVIEW_AFTER_CHOICES}
-                onChange={setReviewAfter}
-              />
-              <div className={styles.popFoot}>
-                <Button
-                  size="sm"
-                  variant="sec"
-                  disabled={bed === null || reason === null}
-                  onClick={() => {
-                    if (bed === null || reason === null) return;
-                    setBedClosed(bed, true, reason, reviewAtFrom(reviewAfter, now));
-                    setBed(null);
-                    setReason(null);
-                    setReviewAfter("");
-                  }}
-                >
-                  {bed === null ? "Choose a bed" : `Close bed ${bed}`}
-                </Button>
-              </div>
-            </>
-          )}
-          {closed.length > 0 ? (
-            <ul className={styles.popList}>
-              {closed.map((mark) => (
-                <li key={mark.bedNumber} className={styles.popRowWrap}>
-                  <span className={styles.popRow}>
-                    <StatusGlyph tone="neutral" size={8} />
-                    <span className={styles.popMain}>
-                      <span className={styles.popName}>Bed {mark.bedNumber} closed</span>
-                      <span className={styles.mutedXs}>
-                        {[
-                          "reason" in mark && mark.reason ? wardClosureReasonLabel(mark.reason) : "Reason not recorded",
-                          bedReviewLine(mark, now),
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </span>
-                    </span>
-                  </span>
-                  <Button size="sm" variant="ghost" onClick={() => setBedClosed(mark.bedNumber, false)}>
-                    Reopen
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </section>
-        <section aria-labelledby="closures-ward" className={styles.popSection}>
-          <h3 id="closures-ward" className={styles.popHead}>
-            Close the whole ward to admissions
-          </h3>
-          <WardClosurePanel unit={unit} now={now} actor={actor} onFootAction={setCloseWard} />
-        </section>
+        {/* Audit four item 40: a closed ward opens on its reopen step, the bed step after it. */}
+        {unit.isClosed ? wardStep : null}
+        {bedStep}
+        {unit.isClosed ? null : wardStep}
       </div>
     </Dialog>
   );

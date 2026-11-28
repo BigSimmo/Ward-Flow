@@ -118,6 +118,8 @@ export type BedAction = {
   describedBy?: string;
   expanded?: boolean;
   testId?: string;
+  /** One bed record (batch 3, A): kept out of More beside the main step ("Mark them back" while away). */
+  out?: boolean;
 };
 
 /**
@@ -149,18 +151,24 @@ export function BedActions({
   mainId,
   phone = false,
   band = false,
+  link,
 }: {
   actions: BedAction[];
   mainId: BedAction["id"] | null;
   phone?: boolean;
+  /** Audit four #31: the record's quiet Patient page link, on the band's second line before More. */
+  link?: ReactNode;
   /** WH1: in the drawer's foot band, the filled step full width above the others (light kit foot, 6 Nov 2026). */
   band?: boolean;
 }) {
   const router = useOptionalRouter();
   const main = actions.find((action) => action.id === mainId);
   const rest = actions.filter((action) => action !== main);
-  const second = rest.find((action) => !action.href);
-  const more = rest.filter((action) => action !== second);
+  // One bed record (batch 3, A): the plain step is "Record hold-up" whenever the stay has one, so the
+  // row reads main step, hold-up, More; a step marked `out` ("Mark them back") also stays in the row.
+  const second = rest.find((action) => action.id === "blocker") ?? rest.find((action) => !action.href);
+  const outs = rest.filter((action) => action !== second && action.out === true && !action.href);
+  const more = rest.filter((action) => action !== second && !outs.includes(action));
   const size = band ? "md" : "lg";
   const plain = "sec";
   const draw = (action: BedAction, variant: "pri" | "sec" | "onHero", className?: string) =>
@@ -216,9 +224,13 @@ export function BedActions({
     return (
       <div className={styles.bandActions} data-testid="bed-record-actions">
         {main ? draw(main, "pri", styles.bandMain) : null}
-        {second || menu ? (
+        {second || menu || link ? (
           <div className={styles.bandRow}>
-            {second ? draw(second, plain) : null}
+            {/* Gate r10 (2 upgrade 8): with no filled step above, the hold-up step leads the row and
+                takes the spare width. */}
+            {second ? draw(second, plain, main ? undefined : styles.bandLead) : null}
+            {outs.map((action) => draw(action, plain))}
+            {link}
             {menu}
           </div>
         ) : null}
@@ -229,6 +241,7 @@ export function BedActions({
     <div className={cx(styles.actions, phone && styles.actionsPhone)} data-testid="bed-record-actions">
       {main ? draw(main, "pri") : null}
       {second ? draw(second, plain) : null}
+      {outs.map((action) => draw(action, plain))}
       {menu}
     </div>
   );

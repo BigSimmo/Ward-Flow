@@ -20,3 +20,15 @@ export function placeDisplayName(id: string | undefined, units: readonly Pick<Un
     PLACE_NOT_RECORDED
   );
 }
+
+/**
+ * Item 24 (audit four): a ward's short code for a tight button ("BTY"), read from the name. The
+ * leading capitals of the name when it opens with a code, else the ward's site code ("BUN" for a
+ * name with no code prefix), else the name. No `code` field on Unit: that would change the saved
+ * model for one tablet button.
+ */
+export function placeShortCode(id: string, units: readonly Pick<Unit, "id" | "name" | "siteCode">[] = []): string {
+  const name = placeDisplayName(id, units).split(" — ")[0]!;
+  const siteCode = (units.find((unit) => unit.id === id) ?? activeWardNetwork().unitById(id))?.siteCode;
+  return name.match(/^[A-Z]{2,5}(?=\s)/)?.[0] ?? (siteCode || name);
+}

@@ -5,8 +5,8 @@
 // is made by phone; Ward Flow logs it (owner's third ruling, 17 Sep 2026), so the button never says
 // "Book transport". Only a desk that may raise `BOOK_TRANSPORT` sees the list.
 
-import { useState, type RefObject } from "react";
-import { Phone, X } from "lucide-react";
+import { useState } from "react";
+import { Phone } from "lucide-react";
 
 import { Button, Card, CardBody, CardHead, Icon, ShowMoreRow, StatusGlyph } from "@/components/wf";
 import {
@@ -39,6 +39,7 @@ import { crewLimitFor } from "./officer-crew-only";
 import { useOfficerPanelHeight } from "./officer-job-panel";
 import { OfficerBookingContacts } from "./officer-booking-contacts";
 import { Sheet } from "@/components/wf/sheet";
+import { PhoneSheet } from "@/components/wf/phone";
 
 export { crewLimitFor };
 import styles from "./officer.module.css";
@@ -151,6 +152,8 @@ type NeedsTransportProps = {
   /** The live wards, so the paperwork notice reads the destination's site (D-186 item 6). */
   units: TransportSiteUnits;
   onLog: (movementId: string) => void;
+  /** The hero's "need transport" figure is pressed: the card is lit, as a highlight lights job rows. */
+  highlighted?: boolean;
 };
 
 export function NeedsTransportCard({
@@ -164,13 +167,19 @@ export function NeedsTransportCard({
   destinationLabelFor,
   units,
   onLog,
+  highlighted = false,
 }: NeedsTransportProps) {
   const [showAll, setShowAll] = useState(false);
   if (needing.length === 0) return null;
   const first = isPhone ? 2 : 4;
   const shown = showAll ? needing : needing.slice(0, first);
   return (
-    <Card className={styles.needCard} aria-labelledby="ward-officer-need-heading" data-testid="ward-officer-need">
+    <Card
+      className={styles.needCard}
+      aria-labelledby="ward-officer-need-heading"
+      data-testid="ward-officer-need"
+      data-highlight={highlighted ? "true" : undefined}
+    >
       <CardHead
         id="ward-officer-need-heading"
         title="Needs transport"
@@ -205,7 +214,7 @@ export function NeedsTransportCard({
               >
                 <span className={styles.needWho}>
                   <b>{nameFor(movement)}</b>
-                  <span>
+                  <span className={isPhone ? styles.needMeta : undefined}>
                     {umrn ? <span className={styles.mono}>{umrn}</span> : null}
                     {umrn ? " · " : null}
                     <span className={styles.needTier} data-tier={movement.urgency}>
@@ -213,10 +222,18 @@ export function NeedsTransportCard({
                     </span>
                     {isPhone ? (
                       <>
-                        {" · "}
+                        {" "}
                         {/* The row is a flex line, so a plain space would collapse ("6h 50mwaiting"). */}
-                        <span className={styles.mono}>{clock.figure}</span>
-                        {`\u00a0${clock.label}`}
+                        {/* Final r10 F5: the wait and its word drop to the next line whole.
+                            fix-5: its dot travels with it, and is clipped when the wait starts line two,
+                            so line one never ends on a hanging "·". */}
+                        <span className={styles.needWaitInline}>
+                          <span className={styles.needWaitDot} aria-hidden="true">
+                            ·
+                          </span>
+                          <span className={styles.mono}>{clock.figure}</span>
+                          {`\u00a0${clock.label}`}
+                        </span>
                       </>
                     ) : null}
                   </span>
@@ -248,7 +265,7 @@ export function NeedsTransportCard({
                   data-testid={`ward-officer-log-booking-${movement.id}`}
                   onClick={() => onLog(movement.id)}
                 >
-                  Log booking
+                  Record booking
                 </Button>
               </li>
             );
@@ -258,9 +275,7 @@ export function NeedsTransportCard({
           // TR3 (4 Nov 2026): the kit's one Show more row, so it sits in the card foot under its own
           // line rather than a pill laid across the list's last rule.
           <ShowMoreRow onClick={() => setShowAll((open) => !open)} expanded={showAll} controls="ward-officer-need-list">
-            {showAll
-              ? "Show fewer"
-              : `${isPhone ? "See all" : `Show ${needing.length - first} more`}${isPhone ? ` ${needing.length}` : ""}`}
+            {showAll ? "Show fewer" : `Show all ${needing.length}`}
           </ShowMoreRow>
         ) : null}
       </CardBody>
@@ -289,7 +304,6 @@ export function returnPlanBooking(record: RepatriationRecord | undefined, now: I
 }
 
 type BookingPanelProps = {
-  sideRef: RefObject<HTMLDivElement | null>;
   movement: Movement;
   name: string;
   umrn: string | undefined;
@@ -304,7 +318,6 @@ type BookingPanelProps = {
 
 /** The side panel (a sheet on phone) that logs a booking already made by phone. */
 export function OfficerBookingPanel({
-  sideRef,
   movement,
   name,
   umrn,
@@ -350,6 +363,7 @@ export function OfficerBookingPanel({
       patientName={name}
       now={now}
       testIds={{ prefix: "ward-officer", suffix: movement.id }}
+      providerPickedBeside
       pending={save.pending}
       error={save.error}
       onSubmit={(booking) =>
@@ -368,7 +382,7 @@ export function OfficerBookingPanel({
       <Sheet
         open
         onClose={onClose}
-        title={`Log booking for ${name}`}
+        title={`Record transport booking for ${name}`}
         description={`${umrn ? `${umrn} · ` : ""}${route}`}
         closeLabel="Close booking"
         contentClassName={styles.bookingDialog}
@@ -383,56 +397,32 @@ export function OfficerBookingPanel({
           <OfficerBookingContacts
             selected={answers.provider}
             onPick={(provider) => setAnswers((current) => ({ ...current, provider }))}
+            everyProvider
           />
         </div>
       </Sheet>
     );
   }
+  // Audit two #38 (O35): a phone's booking is the kit phone sheet, as the other phone sheets are. Its
+  // callout shows only when a return plan filled the form; otherwise the providers' numbers lead.
   return (
-    <div ref={sideRef} className={styles.side} data-panel="booking">
-      <div className={styles.scrim} aria-hidden="true" onClick={onClose} />
-      <Card
-        className={`${styles.detail} ${styles.bookingCard}`}
-        role="dialog"
-        aria-modal
-        aria-labelledby="ward-officer-booking-heading"
-        data-testid="ward-officer-booking"
-      >
-        <span className={styles.grab} aria-hidden="true" />
-        <CardHead
-          id="ward-officer-booking-heading"
-          className={styles.detailHead}
-          title={
-            <span className={styles.detailTitle}>
-              {name}
-              <span className={styles.detailTag} data-tone="warning">
-                Needs transport
-              </span>
-            </span>
-          }
-          meta={
-            <>
-              {umrn ? <span className={styles.mono}>{umrn}</span> : null}
-              {umrn ? " · " : null}
-              {route}
-            </>
-          }
-          aside={<Button variant="ghost" size="sm" iconOnly icon={X} onClick={onClose} aria-label="Close booking" />}
-        />
-        <div className={cxBody(styles.detailScroll, styles.bookingBody)}>
-          {plan ? callout : null}
-          {/* TR4: on a phone the officer calls first, so the numbers (which say what to do) replace the callout. */}
-          <OfficerBookingContacts
-            selected={answers.provider}
-            onPick={(provider) => setAnswers((current) => ({ ...current, provider }))}
-          />
-          {form}
-        </div>
-      </Card>
-    </div>
+    <PhoneSheet
+      open
+      onClose={onClose}
+      title={`Record transport booking for ${name}`}
+      description={`${umrn ? `${umrn} · ` : ""}${route}`}
+      closeLabel="Close booking"
+      height="tall"
+      data-testid="ward-officer-booking"
+    >
+      {plan ? callout : null}
+      {/* TR4: on a phone the officer calls first, so the numbers (which say what to do) replace the callout. */}
+      <OfficerBookingContacts
+        selected={answers.provider}
+        onPick={(provider) => setAnswers((current) => ({ ...current, provider }))}
+        everyProvider
+      />
+      {form}
+    </PhoneSheet>
   );
-}
-
-function cxBody(...names: (string | undefined)[]) {
-  return names.filter(Boolean).join(" ");
 }

@@ -27,6 +27,20 @@ import {
   plainUndoRefusal,
 } from "./ward-undo-journey-toasts";
 
+/**
+ * Audit two #16 (O31, D-192 item 3): one wording per step. An Undo toast reads "<Step> for <person>"
+ * with no full stop (the kit adds " · Undo until HH:MM"); a step that names nobody is the step alone.
+ */
+export function stepToastTitle(step: string, who?: string): string {
+  const bare = untilToastTitle(step.trim());
+  return who && !bare.includes(who) ? `${bare} for ${who}` : bare;
+}
+
+/** Every accepted undo: "Undone: <step> for <person>", no full stop. */
+export function undoneToastTitle(step: string, who?: string): string {
+  return `Undone: ${stepToastTitle(step, who)}`;
+}
+
 /** The part of a toast API this hook needs: a page passes its own, or the layout's is used. */
 export type UndoToastApi = { push: (toast: ToastInput) => string };
 
@@ -102,7 +116,10 @@ export type UndoableStep = {
   success: string;
   /** The undo event, built with the clock as it is when Undo is pressed. */
   undo?: (now: Instant) => WardFlowEvent;
-  /** The toast's title once the undo is accepted. Defaults to "Undone. Back as it was." */
+  /**
+   * The toast's title once the undo is accepted. Defaults to "Undone: <step> for <person>" (audit two
+   * #16), built from `success` and `who`.
+   */
   undone?: string;
   /**
    * The page already says a refusal beside the control that raised it (from `rejections`), so the
@@ -292,11 +309,15 @@ export function useUndoableStep({
               // Audit 24-7 (CT-10): the engine refuses Undo after its window, even while the toast is
               // still on screen (its countdown pauses on hover), so the toast says the limit. D-192
               // (shared design parts item 4): as one clock time, "Bed pulled · Undo until 14:47".
-              title: untilToastTitle(pending.success),
+              // Audit four #10: every Undo toast names its person, "<Act> for <person>".
+              title: stepToastTitle(pending.success, pending.who),
               undo: {
                 until: undoWindowUntil(nowRef.current),
                 durationMs: pending.undoToastMs ?? UNDO_WINDOW_TOAST_MS,
-                onUndo: () => takeBack(pending, build, watch, { success: pending.undone ?? "Undone. Back as it was." }),
+                onUndo: () =>
+                  takeBack(pending, build, watch, {
+                    success: pending.undone ?? undoneToastTitle(pending.success, pending.who),
+                  }),
               },
               ...(pending.choices ? { choices: toastChoices(pending, pending.choices, build, watch) } : {}),
             }),

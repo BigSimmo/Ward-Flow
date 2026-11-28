@@ -49,8 +49,7 @@ describe("WCAG 2.5.3 labels, sequential heading hierarchy, and clinical input hy
         <HomeEdPressure
           now={NOW_ANCHOR}
           movements={wardMovements}
-          selectedEdId={undefined}
-          onSelectEd={() => {}}
+          edHref={(edId) => `/bedchart/waiting?ed=${edId}`}
           service={null}
         />
       </WardFlowProvider>,

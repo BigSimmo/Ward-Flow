@@ -13,7 +13,6 @@ import { sortDueFirst, type DueSortMode } from "@/components/ward-management/war
 import type { BedRelease } from "@/components/ward-management/ward-model";
 import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import { useIsPhone, useOptionalToast, type WfTone } from "@/components/wf";
-import { demoReadyTicks, type ReadyToLeaveItemId, type ReadyToLeaveUndo } from "./discharge-ready-to-leave";
 import pageStyles from "./discharges-third-edition.module.css";
 import {
   type GroupKey,
@@ -267,17 +266,6 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
   // Highlights dim the rest; every row stays.
   const dimmed = (lit: boolean) => (highlight !== null && !lit ? "true" : undefined);
   const statusHighlight = highlight?.kind === "status" ? highlight.status : null;
-  const [readyTicks, setReadyTicks] = useState<Record<string, ReadyToLeaveItemId[]>>({});
-  const [readyChange, setReadyChange] = useState<(ReadyToLeaveUndo & { releaseId: string }) | null>(null);
-  const ticksFor = (id: string) => readyTicks[id] ?? demoReadyTicks(id);
-  const setTick = (id: string, itemId: ReadyToLeaveItemId, on: boolean) =>
-    setReadyTicks((current) => {
-      const list = current[id] ?? demoReadyTicks(id);
-      return {
-        ...current,
-        [id]: on ? [...list.filter((item) => item !== itemId), itemId] : list.filter((item) => item !== itemId),
-      };
-    });
   const litFirst = <T,>(list: T[], lit: (item: T) => boolean) =>
     highlight === null ? list : [...list.filter(lit), ...list.filter((item) => !lit(item))];
   const workOrderedRecords = scopedRecords
@@ -344,6 +332,15 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
   const releaseOnCto =
     releasePatientId !== null &&
     activeCommunityTreatmentOrder(patients.find((patient) => patient.id === releasePatientId)) !== undefined;
+  // S-29 moved (Josh, 27 Nov 2026): Ready to leave is gone, so the hero counts open releases whose
+  // person is on a CTO; each needs the community team or GP told. It warns and never blocks.
+  const openOnCto = scopedReleases.filter((release) => {
+    if (release.state === "discharged") return false;
+    const record = records.find((r) => r.admissionId === release.admissionId);
+    if (record?.identity.kind !== "linked") return false;
+    const patientId = record.identity.patient.id;
+    return activeCommunityTreatmentOrder(patients.find((patient) => patient.id === patientId)) !== undefined;
+  }).length;
   const selectedUnitId = activeRecord?.unitId ?? detailRelease?.unitId;
   const releaseActor = recordActorFor(detailRelease?.unitId);
   // D-80: the site bed manager clears a release blocker in its own name. The departure stays with
@@ -680,12 +677,6 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
     releaseLit,
     dimmed,
     statusHighlight,
-    readyTicks,
-    setReadyTicks,
-    readyChange,
-    setReadyChange,
-    ticksFor,
-    setTick,
     litFirst,
     workOrderedRecords,
     visibleRecords,
@@ -698,6 +689,7 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
     linkedReleaseRecord,
     releasePatientId,
     releaseOnCto,
+    openOnCto,
     selectedUnitId,
     canRecordDeparture,
     departureDestination,

@@ -483,8 +483,8 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
       bodyClassName={styles.body}
       footer={
         <p className={styles.keys} aria-hidden="true" data-kbd-hint="">
-          {/* Overall review (20 Oct 2026): plain words, not "Enter Preview · Double click Open". */}
-          <Kbd>Enter</Kbd> shows what a desk does · <Kbd>Double click</Kbd> goes to it · <Kbd>Esc</Kbd> closes
+          {/* Audit four #19 (28 Nov 2026): what happens now. Rows keep their preview (A3-41 skipped). */}
+          Click a card to go. A row opens its preview, then Open. <Kbd>Esc</Kbd> closes.
         </p>
       }
       footerClassName={styles.foot}

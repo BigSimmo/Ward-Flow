@@ -8,6 +8,9 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { CountBreakdown } from "@/components/ward-management/count-breakdown";
+import type { BreakdownRow } from "@/components/ward-management/count-breakdown-model";
+import { waitingTransitFacts } from "@/components/ward-management/count-breakdown-rows";
 import { useSinceLastLookReview } from "@/components/ward-management/since-last-look-pill";
 
 import {
@@ -49,8 +52,17 @@ type Props = {
   departments: EdOverviewDepartment[];
   /** People on this department's psychiatry board: the first figure. */
   onBoard: number;
-  /** How the board splits: "22 waiting", then the other parts ("1 in transit"). */
-  onBoardParts?: readonly string[];
+  /**
+   * Audit two #91: the board's split ("8 waiting, 1 in transit") reads in the first figure's
+   * breakdown, over the same people the figure counts, not under the act row.
+   */
+  onBoardBreakdown?: {
+    rows: () => readonly BreakdownRow[];
+    waiting: number;
+    inTransit: number;
+  };
+  /** Audit two #115: the act button opens the longest-waiting person over the access target. */
+  onOpenNext?: () => void;
   chips: EdOverviewChip[];
   /** The pressed chip, or null when nothing is highlighted. */
   highlight: string | null;
@@ -81,7 +93,8 @@ export function EdOverview({
   departmentId,
   departments,
   onBoard,
-  onBoardParts = [],
+  onBoardBreakdown,
+  onOpenNext,
   chips,
   highlight,
   onHighlight,
@@ -113,9 +126,6 @@ export function EdOverview({
   const noBed = chipOf("no_bed");
   const underForm = chipOf("under_form");
   const longest = checks.find((check) => check.id === "longest")?.value ?? "—";
-  // "22 waiting, 1 in transit": the board counts more than the waiting (count labels, Josh 1 Nov 2026).
-  const boardSplit =
-    onBoardParts.length > 1 ? <span data-testid="ward-ed-board-split">{onBoardParts.join(", ")}</span> : undefined;
   const tvHref = bedMeetingTvHref({ ed: departmentId });
   const addPatientHref = "/bedchart/people/new";
   const waitingEds = departments
@@ -150,7 +160,34 @@ export function EdOverview({
             <HeroFigures
               label="Highlight people on the board"
               items={[
-                { id: "on-board", value: onBoard, label: "on the board", testId: "ward-ed-figure-on-board" },
+                {
+                  id: "on-board",
+                  value: onBoard,
+                  label: "on the board",
+                  testId: "ward-ed-figure-on-board",
+                  renderPress: onBoardBreakdown
+                    ? (press) => (
+                        <CountBreakdown
+                          value={onBoard}
+                          noun={onBoard === 1 ? "person on the board" : "people on the board"}
+                          countedAt={now}
+                          rows={onBoardBreakdown.rows}
+                          facts={() =>
+                            waitingTransitFacts({
+                              waiting: onBoardBreakdown.waiting,
+                              inTransit: onBoardBreakdown.inTransit,
+                            })
+                          }
+                          className={press.className}
+                          id={press.id}
+                          labelledBy={press.labelledBy}
+                          testId="ward-ed-figure-on-board-breakdown"
+                        >
+                          {press.children}
+                        </CountBreakdown>
+                      )
+                    : undefined,
+                },
                 { id: "longest", value: longest, label: "longest here", testId: "ward-ed-figure-longest" },
                 ...[noBed, ...(isPhone ? [] : [underForm])]
                   .filter((chip) => chip !== undefined)
@@ -158,8 +195,6 @@ export function EdOverview({
                     id: chip.id,
                     value: chip.value,
                     label: chip.label.toLowerCase(),
-                    pressed: highlight === chip.id,
-                    onClick: () => onHighlight(highlight === chip.id ? null : chip.id),
                     testId: `ward-ed-figure-${chip.id}`,
                   })),
               ]}
@@ -170,21 +205,15 @@ export function EdOverview({
               <HeroAct
                 tone="danger"
                 title={`${past.value} ${past.word ?? past.label.toLowerCase()} in ED`}
-                sub={boardSplit}
-                action={{
-                  label: highlight === "past" ? "Show everyone" : "Show",
-                  phoneLabel: highlight === "past" ? "All" : "Show",
-                  pressed: highlight === "past",
-                  onClick: () => onHighlight(highlight === "past" ? null : "past"),
-                  testId: "ward-ed-act-show",
-                }}
+                action={
+                  onOpenNext ? { label: "Open next", onClick: onOpenNext, testId: "ward-ed-act-show" } : undefined
+                }
                 testId="ward-ed-act"
               />
             ) : (
               <HeroAct
                 tone="calm"
-                title={`Nobody ${past?.word ?? "past the access target"} in ED`}
-                sub={boardSplit}
+                title={`Nobody ${past?.word ?? "over the access target"} in ED`}
                 testId="ward-ed-act"
               />
             )
@@ -199,7 +228,7 @@ export function EdOverview({
                   ? [
                       {
                         id: "updates",
-                        label: isPhone ? "Updates" : `Updates since ${formatInstantWithDay(updates.since, now)}`,
+                        label: "Since you looked",
                         icon: <Zap {...ICON} />,
                         count: updates.count,
                         countLabel: `${updates.count === 1 ? "update" : "updates"}${isPhone ? ` since ${formatInstantWithDay(updates.since, now)}` : ""}`,
@@ -236,7 +265,7 @@ export function EdOverview({
                   : []),
                 // This department's own TV screen, behind the `bed-meeting-tv` flag.
                 ...(!isPhone && tvViewsOn && canOpen(tvHref)
-                  ? [{ id: "tv", label: "On TV", icon: <Tv {...ICON} />, href: tvHref, testId: "ward-ed-open-tv" }]
+                  ? [{ id: "tv", label: "Open on TV", icon: <Tv {...ICON} />, href: tvHref, testId: "ward-ed-open-tv" }]
                   : []),
               ]}
             />

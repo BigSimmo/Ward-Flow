@@ -7,6 +7,7 @@ import type { CSSProperties } from "react";
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { usePathname } from "next/navigation";
+import { StateLine } from "@/components/wf";
 import { preloadWhenIdle } from "../preload-when-idle";
 import { wardRouteUnitId } from "../ward-chrome-role";
 import { useWardFlowSelect } from "../ward-flow-provider";
@@ -55,7 +56,7 @@ const WardAnswerView = dynamic(
     loading: () => (
       <main id="main-content" data-testid="ward-answer-screen">
         <h1>Ward answer</h1>
-        <p role="status">Loading ward answer…</p>
+        <StateLine kind="loading" title="Loading ward answer" />
       </main>
     ),
   },
@@ -137,6 +138,16 @@ export const WardOutageCatchUpCard = dynamic(
   },
 );
 preloadWhenIdle(loadOutageCatchUp);
+// Phone budget (PR #1742): Since yesterday draws only inside the Updates chip's sheet, so it stays off
+// the ward's first load and is fetched when the browser is idle.
+const loadSinceYesterday = () => import("./ward-since-yesterday");
+export const WardSinceYesterday = dynamic(
+  withLoadRetry(() => loadSinceYesterday().then((m) => m.WardSinceYesterday)),
+  {
+    ssr: false,
+  },
+);
+preloadWhenIdle(loadSinceYesterday);
 // Shown only after a confirmed discharge, so it loads when first needed.
 export const WardDischargeNotices = dynamic(
   withLoadRetry(() => import("./ward-discharge-notices").then((m) => m.WardDischargeNotices)),
@@ -152,8 +163,27 @@ export const WardBedBoard = dynamic(
   },
 );
 
+/** The embedded answer's loading state: the kit's quiet state line (glyph and one sentence), held to
+ * about the height of a request card so the cards below do not jump when it arrives. */
+function WardAnswerLoading() {
+  return (
+    <div aria-busy="true" data-testid="ward-answer-loading" style={{ minBlockSize: "8rem" }}>
+      <StateLine kind="loading" title="Loading bed requests" />
+    </div>
+  );
+}
+
 /** Notices option A (22 Oct 2026): a Notices row names its request in `?movement=`, so the Answer view
  * opens on that patient, not the oldest. Read on the ward page, which already reads its query. */
+/** Simplification 26 Nov 2026 (area 3, item 2): the same answer, drawn in the Referrals tab. */
+const WardAnswerEmbedded = dynamic(
+  withLoadRetry(() => import("./ward-answer-view").then((m) => m.WardAnswerView)),
+  { ssr: false, loading: () => <WardAnswerLoading /> },
+);
+export function WardAnswerInReferrals({ unitId, movementId }: { unitId: string; movementId?: string }) {
+  return <WardAnswerEmbedded unitId={unitId} initialMovementId={movementId} embedded />;
+}
+
 export function WardAnswerFromLink({ unitId }: { unitId: string }) {
   const named = recordIdFromParam(useOptionalSearchParams()?.get("movement"));
   return <WardAnswerView unitId={unitId} initialMovementId={named ?? undefined} />;
@@ -161,5 +191,15 @@ export function WardAnswerFromLink({ unitId }: { unitId: string }) {
 
 export const WardPlannedAdmissionsPanel = dynamic(
   withLoadRetry(() => import("../capacity/planned-admissions-panel").then((m) => m.PlannedAdmissionsPanel)),
-  { loading: () => <p role="status">Loading planned admissions…</p> },
+  { loading: () => <StateLine kind="loading" compact title="Loading planned admissions" /> },
+);
+// Fold the Bed board into Ward (Josh's approved version, item 13; design plan 26 Nov 2026): the
+// board's Worth a look prompts and Before handover band, in Decisions, loaded when first opened.
+export const WardBoardPart = dynamic(
+  withLoadRetry(() => import("@/components/ward-management/board/ward-board").then((m) => m.WardBoard)),
+  {
+    ssr: false,
+    // Review fix: a quiet kit state line while the part loads, never an empty gap that then jumps.
+    loading: () => <StateLine kind="loading" compact title="Loading" reason="Long stays and Before handover" />,
+  },
 );

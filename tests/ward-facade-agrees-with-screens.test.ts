@@ -421,17 +421,17 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
       // between The day's opening tag and the next panel so a second count anywhere in it still fails.
       // The title is also the "Open" day figure (#113 browser journey): its DOM reads label then
       // number ("Open movements" then <strong>70</strong>) and CSS draws "70 open movements".
+      // r10 (28 Nov 2026): the day band is no longer followed by a "Today’s traffic" section; the next
+      // sibling is the "Transport right now" card. The hero figure is now "<b>N</b> <span>Open
+      // movements</span>", so the count is read between those two sections.
       const headers = [
         ...markup.matchAll(
-          /<section\b[^>]*\baria-label="The day"[^>]*>([\s\S]*?)<section\b[^>]*\baria-label="Today’s traffic"/gu,
+          /<section\b[^>]*\baria-label="The day"[^>]*>([\s\S]*?)<section\b[^>]*\baria-label="Transport right now"/gu,
         ),
       ];
       expect(headers, "Movements must render exactly one day panel header").toHaveLength(1);
       const counts = [
-        ...headers[0][1].matchAll(
-          // Page tops (9 Nov 2026): the count is the hero's "N open movements" figure.
-          /<b\b[^>]*>(\d+)<\/b>(?:<!-- -->| )*<span\b[^>]*>open movements<\/span>/gu,
-        ),
+        ...headers[0][1].matchAll(/<b\b[^>]*>(\d+)<\/b>(?:<!-- -->| )*<span\b[^>]*>Open movements<\/span>/gu),
       ];
       expect(counts, "The day panel header must render exactly one own open-movement count").toHaveLength(1);
       return Number(counts[0][1]);
@@ -452,18 +452,20 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
     component: DelaysScreen,
     read: (markup) => {
       const document = new JSDOM(markup).window.document;
-      const tab = document.querySelector<HTMLElement>("#delays-tab-attention");
-      expect(tab, "the Waiting screen rendered no Attention register tab").not.toBeNull();
-      const label = (tab!.textContent ?? "").replace(/\s+/gu, " ").trim();
-      const match = /^(\d+) ?Attention$/u.exec(label);
-      expect(match, `the Attention tab must read its count then its name, and reads "${label}"`).not.toBeNull();
+      // r10 (28 Nov 2026): the Attention tab is gone; the "Needs attention" group heading carries the
+      // whole figure ("Needs attention, 2, form due soon or no suitable bed, act first").
+      const group = document.querySelector<HTMLElement>("[data-testid='delays-attention-group']");
+      expect(group, "the Waiting screen rendered no Needs attention group").not.toBeNull();
+      const label = (group!.getAttribute("aria-label") ?? "").replace(/\s+/gu, " ").trim();
+      const match = /^Needs attention, (\d+),/u.exec(label);
+      expect(match, `the Needs attention group must read its name then its count, and reads "${label}"`).not.toBeNull();
       const count = Number(match![1]);
       const visibleSevere = [...document.querySelectorAll<HTMLElement>("tr[data-severe='true']")].filter((row) =>
         row.querySelector("[data-testid^='delays-select-']"),
       ).length;
       expect(
         visibleSevere,
-        "the table shows more severe rows than the Attention tab counts, so the two disagree on the page itself",
+        "the table shows more severe rows than the Needs attention group counts, so the two disagree on the page itself",
       ).toBeLessThanOrEqual(count);
       return count;
     },
@@ -523,7 +525,9 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
       Number(
         oneNumber(
           markup,
-          /<strong[^>]*>\d+<\/strong> of (\d+) <span class="sr-only">invented <\/span>alerts/gu,
+          // r10 (28 Nov 2026): the "N of M alerts" status shows only while a filter narrows the list;
+          // the figure the drawer always prints is its header count, "<span>N</span> open".
+          /data-testid="ward-tasks-drawer-count"[^>]*><span\b[^>]*>(\d+)<\/span> open</gu,
           "the Tasks drawer's total count",
         ),
       ),
@@ -574,11 +578,13 @@ describe("the shell facade agrees with the screens that own its figures", () => 
   it("the tasks noun matches the words the tasks drawer renders beside its count", () => {
     const state = seed();
     const markup = markupOf(state, READERS.tasks.component);
+    // r10 (28 Nov 2026): beside its count the drawer prints "<n> open" under the heading "Alerts"
+    // (the coordinator's drawer reads as Alerts), so the noun is the heading's word.
     const match = markup.match(
-      /<strong[^>]*>\d+<\/strong> of \d+ <span class="sr-only">invented <\/span>([^<]+)<\/span>/u,
+      /<h2\b[^>]*>([^<]+)<\/h2>[\s\S]*?data-testid="ward-tasks-drawer-count"[^>]*><span\b[^>]*>\d+<\/span> open</u,
     );
     expect(match, "the Tasks drawer status markup did not match the expected shape at all").not.toBeNull();
-    const renderedNoun = match![1].trim();
+    const renderedNoun = match![1].trim().toLowerCase();
     const figure = facadeFigures(state).tasks;
     expect(figure.value).toBeGreaterThan(1);
     expect(
@@ -658,7 +664,7 @@ const BUILDER_ROUTES: readonly {
 }[] = [
   { name: "patientHref", href: patientHref("WF-001"), route: "people/[patientId]" },
   { name: "unitHref", href: unitHref("rph-adult-secure"), route: "ward/[unitId]" },
-  { name: "wardBoardHref", href: wardBoardHref("rph-adult-secure"), route: "board/[unitId]" },
+  { name: "wardBoardHref", href: wardBoardHref("rph-adult-secure"), route: "ward/[unitId]" },
   { name: "teamHref", href: teamHref("armadale-adult"), route: "community/[teamId]" },
   {
     name: "communityTeamHref",
@@ -782,7 +788,7 @@ const EXPECTED_BUILDER_LINES: readonly { readonly name: string; readonly line: s
     line: "return `/bedchart/people/${encodeURIComponent(encodeRecordAddress(patientId))}`;",
   },
   { name: "unitHref", line: "return `/bedchart/ward/${encodeURIComponent(unitId)}`;" },
-  { name: "wardBoardHref", line: "return `/bedchart/board/${encodeURIComponent(unitId)}`;" },
+  { name: "wardBoardHref", line: "return `/bedchart/ward/${encodeURIComponent(unitId)}?view=grid`;" },
   { name: "teamHref", line: "return `/bedchart/community/${encodeURIComponent(teamId)}`;" },
   { name: "edHref", line: "return `/bedchart/ed/${encodeURIComponent(edId)}`;" },
   {

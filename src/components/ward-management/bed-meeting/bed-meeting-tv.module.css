@@ -826,6 +826,19 @@
   list-style: none;
 }
 
+/* States B review: on the ED wall the trend grew only to its fixed height and left a hole of about
+   250px under it; its panel is a column and the chart fills the rest of the card's height. */
+.panel:has(> .trend) {
+  display: flex;
+  flex-direction: column;
+}
+
+.panel > .trend {
+  flex: 1 1 auto;
+  block-size: auto;
+  min-block-size: clamp(10rem, 15vw, 20rem);
+}
+
 .trend li {
   display: grid;
   grid-template-rows: auto 1fr auto;

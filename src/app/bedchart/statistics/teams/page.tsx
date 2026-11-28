@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { StatisticsTeamsIndexScreen } from "@/components/ward-management/statistics/statistics-teams-index";
+import { StatisticsIndexRoute } from "@/components/ward-management/statistics/statistics-index-route";
 
 export const metadata: Metadata = {
   title: "Community teams — Statistics — BedChart",
@@ -12,5 +12,5 @@ export const metadata: Metadata = {
  * statistics page. It has no params and supplies nothing.
  */
 export default function WardStatisticsTeamsPage() {
-  return <StatisticsTeamsIndexScreen />;
+  return <StatisticsIndexRoute segment="teams" />;
 }

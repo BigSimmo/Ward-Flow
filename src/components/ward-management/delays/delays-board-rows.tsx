@@ -23,6 +23,7 @@ import { legalStatusFull, legalStatusShort } from "@/components/ward-management/
 import { movementOriginLabel, originName } from "@/components/ward-management/ward-movement-origin";
 import { type WfTone } from "@/components/wf";
 import { Tooltip } from "@/components/wf/tooltip";
+import { agoText } from "@/components/ward-management/ward-ago-text";
 import { Glyph } from "./delays-board-parts";
 import { OVER_24H, OVER_8H, rowEvents, type BoardRow } from "./delays-board-model";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
@@ -41,8 +42,9 @@ export function originLabel(movement: Movement): string {
   return originName(movement) ?? `This movement names ${movementOriginLabel(movement, undefined)}`;
 }
 
+/** Audit two #23: the one shared ago helper. */
 export function ago(minutes: number): string {
-  return minutes < 1 ? "just now" : `${splitDuration(minutes)} ago`;
+  return agoText(minutes);
 }
 
 /**

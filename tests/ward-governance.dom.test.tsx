@@ -160,9 +160,8 @@ describe("GovernanceView", () => {
     const eventFacts = screen.getByRole("region", { name: "Event facts" });
     expect(eventFacts).toHaveTextContent("10:42");
     expect(eventFacts).toHaveTextContent("Bed coordinator");
-    expect(screen.getByRole("region", { name: "Review history" })).toHaveTextContent(
-      "No review recorded for this event.",
-    );
+    // Audit three #11: with no review yet the history is one plain line, not a region.
+    expect(screen.getByTestId("ward-governance-override-detail")).toHaveTextContent("Your review: none recorded yet.");
 
     // v10 (governance mockup): the review choice reads "Reviewed" / "Follow-up".
     const reviewPanel = screen.getByTestId("ward-governance-decision-record");
@@ -170,7 +169,9 @@ describe("GovernanceView", () => {
 
     expect(within(reviewPanel).getByRole("status")).toHaveTextContent("Reviewed recorded.");
     // Drawer review (6 Nov 2026): Reviewed and Follow-up sit in the drawer's foot; the count and
-    // the history sit in its body.
+    // the history sit in its body. A recorded review moves the drawer on to the next waiting event,
+    // so the reviewed row is chosen again to read its history.
+    fireEvent.click(overrideEvent);
     const detail = screen.getByTestId("ward-governance-override-detail");
     expect(detail).toHaveTextContent("1 recorded review · role recorded");
     expect(overrideEvent).toHaveTextContent("Reviewed");
@@ -184,15 +185,16 @@ describe("GovernanceView", () => {
     expect(reviewEvent).toHaveTextContent("Review attempt");
     fireEvent.click(reviewEvent);
 
-    expect(screen.getByRole("region", { name: "Review history" })).toHaveTextContent(
+    expect(screen.getByTestId("ward-governance-override-detail")).toHaveTextContent(
       "Review attempts cannot be reviewed.",
     );
     // Greyed with a reason (site review B3): aria-disabled keeps the tab stop and names why.
-    expect(within(reviewPanel).getByRole("button", { name: "Reviewed" })).toHaveAttribute("aria-disabled", "true");
-    expect(within(reviewPanel).getByRole("button", { name: "Reviewed" })).toHaveAccessibleDescription();
+    const attemptPanel = screen.getByTestId("ward-governance-decision-record");
+    expect(within(attemptPanel).getByRole("button", { name: "Reviewed" })).toHaveAttribute("aria-disabled", "true");
+    expect(within(attemptPanel).getByRole("button", { name: "Reviewed" })).toHaveAccessibleDescription();
     // Greyed with a reason (site review B3): aria-disabled keeps the tab stop and names why.
-    expect(within(reviewPanel).getByRole("button", { name: "Follow-up" })).toHaveAttribute("aria-disabled", "true");
-    expect(within(reviewPanel).getByRole("button", { name: "Follow-up" })).toHaveAccessibleDescription();
+    expect(within(attemptPanel).getByRole("button", { name: "Follow-up" })).toHaveAttribute("aria-disabled", "true");
+    expect(within(attemptPanel).getByRole("button", { name: "Follow-up" })).toHaveAccessibleDescription();
   });
 
   it("seeds synthetic review events on a fresh session so Review has work (pass 2 engine)", () => {
@@ -216,9 +218,7 @@ describe("GovernanceView", () => {
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
 
     expect(overrideEvent).toHaveTextContent("Unreviewed");
-    expect(screen.getByRole("region", { name: "Review history" })).toHaveTextContent(
-      "No review recorded for this event.",
-    );
+    expect(screen.getByTestId("ward-governance-override-detail")).toHaveTextContent("Your review: none recorded yet.");
     expect(screen.getByTestId("governance-override-rejections")).toHaveTextContent("0");
   });
 
@@ -249,9 +249,7 @@ describe("GovernanceView", () => {
     expect(pressed[0]?.getAttribute("data-audit-row")).toMatch(/^audit-seed/);
     expect(screen.queryByTestId("ward-governance-override-detail")).not.toBeInTheDocument();
     fireEvent.click(pressed[0]!);
-    expect(screen.getByTestId("ward-governance-override-detail")).toHaveTextContent(
-      "No review recorded for this event.",
-    );
+    expect(screen.getByTestId("ward-governance-override-detail")).toHaveTextContent("Your review: none recorded yet.");
   });
 
   it("does not offer a legacy facts tab or a change-audit panel", () => {

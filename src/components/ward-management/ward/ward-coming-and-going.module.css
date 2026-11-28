@@ -257,3 +257,24 @@ button.rowName:focus-visible {
   display: inline-flex;
   align-items: center;
 }
+
+/* Fold the Bed board into Ward (item 13): the arrivals' row groups, "Pulled, not arrived" first. */
+.subHead {
+  margin: var(--wf-s-2) 0 0 20px;
+  display: flex;
+  align-items: baseline;
+  gap: 0 6px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+
+.subHead:first-of-type {
+  margin-top: var(--wf-s-1);
+}
+
+.subHead .n {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}

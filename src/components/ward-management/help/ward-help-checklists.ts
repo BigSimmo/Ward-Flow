@@ -227,7 +227,7 @@ const SHIFT_CHECKLISTS: readonly Checklist[] = [
       { text: "Chase the overdue ward promises first." },
       { text: "Check the Before you sign list." },
       { text: "Choose Sign off.", showMe: "sign-off-handover" },
-      { text: "Print handover and Present are under More." },
+      { text: "Print handover is under Share. Open on TV shows the sheet on a big screen." },
     ],
   },
   {

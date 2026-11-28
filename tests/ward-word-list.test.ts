@@ -120,6 +120,9 @@ const KNOWN_LEFTOVERS: Readonly<Record<string, Readonly<Record<string, number>>>
   // Mock-up viewer copies (D-91): approved drawings, kept as drawn; never edited or moved from here.
   "src/app/mockups/ward-flow-redesign/_preview/build-notes.ts": { "Tasks, for Alerts": 1, "demo night": 1 },
   "src/app/mockups/ward-flow-redesign/_preview/screens.ts": { "Stays and discharges": 1 },
+  // r10 build (approved 2026-11-28): the board and ward-home tile say "Due out today".
+  "src/components/ward-management/board/ward-board-model.ts": { "due out": 1 },
+  "src/components/ward-management/ward/ward-home-tab.tsx": { "due out": 1 },
   "src/components/ward-redesign/pop-alerts/alerts-drawer.tsx": { "mock numbers": 2 },
   "src/components/ward-redesign/pop-menu/menu-sheets.tsx": { "Open, close or hold": 1 },
   "src/components/ward-redesign/pop-shortcuts/shortcuts-sheet.tsx": { "Tasks, for Alerts": 1 },

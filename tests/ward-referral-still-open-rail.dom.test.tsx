@@ -124,7 +124,7 @@ describe("Still open in the Ready to send rail", () => {
         .getAllByRole("listitem")
         .map((item) => item.textContent),
     ).toEqual(["Medical clearance not recorded (since 9:12 am)", "Ward asked for: legal form copy"]);
-    const send = screen.getByRole("button", { name: "Send referral" });
+    const send = screen.getByRole("button", { name: "Review and send" });
     expect(send).toBeEnabled();
     expect(send).not.toHaveAttribute("aria-disabled");
   });

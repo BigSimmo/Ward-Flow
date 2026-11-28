@@ -51,7 +51,7 @@ import { ChipGroup, FilterChip, StateLine, StatusGlyph, buttonClass, RowUndo } f
 import { undoWindowEnds } from "../ward-undo-until";
 import { useUndoableStep } from "../use-undoable-step";
 import { referToUnitsUndoStep } from "../coordinator/shortlist-release-undo";
-import { BED_PULL_UNDONE, bedPullUndoEvent } from "../ward-bed-pull-undo";
+import { bedPullUndoEvent } from "../ward-bed-pull-undo";
 import { BED_PULL_UNDO_TOAST_MS } from "../ward-operational-defaults";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import {
@@ -114,9 +114,12 @@ export function PatientTransitOperations({
   movement,
   showMetrics = true,
   bare = false,
+  hideIdentity = false,
 }: {
   movement: Movement;
   showMetrics?: boolean;
+  /** The peek sheet's own title already names the person, so the deck leaves the name line out. */
+  hideIdentity?: boolean;
   /** Inside a sheet that already names it (the Patient Now mockups): no section heading. */
   bare?: boolean;
 }) {
@@ -773,13 +776,13 @@ export function PatientTransitOperations({
                       },
                       {
                         success: "Bed pulled",
+                        who: patientName,
                         undo: (at) =>
                           bedPullUndoEvent(routeRole, at, {
                             movementId: movement.id,
                             ...expectedPull,
                             ...(routeRole === "ward" ? { actingUnitId: destination.id } : {}),
                           }),
-                        undone: BED_PULL_UNDONE,
                         // A9-02: the Undo stays offered for the whole Undo window, or until dismissed.
                         undoToastMs: BED_PULL_UNDO_TOAST_MS,
                       },
@@ -864,7 +867,7 @@ export function PatientTransitOperations({
                     stageIndex: rowUndoPull.stageIndex,
                     ...(routeRole === "ward" ? { actingUnitId: rowUndoPull.unitId } : {}),
                   }),
-                  { success: BED_PULL_UNDONE, who: patientName },
+                  { success: "Undone: Bed pulled", who: patientName },
                 )
               }
             />
@@ -1097,7 +1100,7 @@ export function PatientTransitOperations({
                 <TransportExceptionDialog
                   open={arriveCheck}
                   who={identity}
-                  action="Confirm arrival"
+                  action="Record arrival"
                   gaps={arrivalGaps(movement)}
                   onClose={() => setArriveCheck(false)}
                   onConfirm={(reason) => {
@@ -1161,8 +1164,8 @@ export function PatientTransitOperations({
                     runStep(
                       { type: "CANCEL_TRANSPORT", role: routeRole, now, movementId: movement.id, reason: cancelReason },
                       {
-                        success: `Transport cancelled for ${patientName}.`,
-                        undone: "Undone. The transport is booked again.",
+                        success: "Transport cancelled",
+                        who: patientName,
                         undo: (at) => ({
                           type: "UNDO_RELEASE_STEP",
                           role: routeRole,
@@ -1363,7 +1366,7 @@ export function PatientTransitOperations({
       </header>
       {/* Audit 24-1 (B-05): the sheet that hosts this deck covers the page header on a phone, so the
           deck names the patient and UMRN at its top. Ask wards and Withdraw referral act on them. */}
-      {bare ? (
+      {bare && !hideIdentity ? (
         <p className={styles.deckHint} data-testid="ward-transit-patient">
           <strong>{identity}</strong>
         </p>

@@ -35,10 +35,11 @@ describe("CoordinatorScreen", () => {
       </WardFlowProvider>,
     );
     // Sticky header redesign (Josh, 9 Nov 2026): the hero title is "Bed flow right now"; open ED
-    // movements are its first figure, and the ED strip says who is in ED and who is in transit.
+    // movements are its first figure. Audit two #91 (T11, r10): the Waiting / In transit split moved
+    // into that figure's breakdown, so the ED strip head keeps its title and the link to All EDs.
     expect(screen.getByRole("heading", { name: "Bed flow right now" })).toBeInTheDocument();
-    expect(screen.getByTestId("home-figure-ed")).toHaveTextContent(/^\d+ Open movements$/);
-    expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(/^\d+ Waiting · \d+ In transit$/);
+    expect(screen.getByTestId("home-figure-ed")).toHaveTextContent(/^\d+ Open ED movements$/);
+    expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(/^Open All EDs$/);
   });
   it("renders the prototype footer with coordinator governance disclosure", () => {
     render(
@@ -71,15 +72,19 @@ describe("CoordinatorScreen", () => {
     // 3 Nov 2026): the registers open from Registers in the "More for this list" menu above the list.
     // Plan 2i (Josh, 4 Nov 2026, question 2): when the next step is Act now, its "Show act now"
     // button stands in for the Act now chip, so either way the hero offers Act now.
-    expect(screen.getAllByRole("button", { name: /act now/i }).length).toBeGreaterThan(0);
+    // r10: the hero carries no Act now button; Act now is the first group of the Needs you list.
+    expect(screen.getByRole("region", { name: "Act now" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^\d+\s*Alerts$/ })).not.toBeInTheDocument();
-    const homeLists = screen.getByRole("navigation", { name: "Home lists" });
+    // Desktop holds one list, so "Needs you" is a heading with More at its right (no tab bar).
+    const homeLists = screen.getByTestId("home-lists");
     expect(within(homeLists).queryByRole("button", { name: "Registers" })).not.toBeInTheDocument();
     fireEvent.click(within(homeLists).getByRole("button", { name: "More for this list" }));
     // Home notes 4, issue 4 (Josh, 9 Nov 2026): Today's review replaced Registers.
     expect(screen.getByRole("menuitem", { name: "Today's review" })).toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: "Registers" })).not.toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "Alerts history" })).toBeInTheDocument();
+    // r10 (simplification area 2 item 6): "Alerts history" is cut; Alerts is one tap from the bell.
+    expect(screen.queryByRole("menuitem", { name: "Alerts history" })).not.toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Night view" })).toBeInTheDocument();
     expect(dueWindowLabel(60)).toBe("1h");
     expect(dueWindowLabel(240)).toBe("4h");
   });
@@ -96,6 +101,7 @@ describe("CoordinatorScreen", () => {
     expect(screen.queryByRole("link", { name: "Start handover" })).not.toBeInTheDocument();
     // Plan 2i (Josh, 4 Nov 2026, question 2): when the next step is Act now, its "Show act now"
     // button stands in for the Act now chip, so either way the hero offers Act now.
-    expect(screen.getAllByRole("button", { name: /act now/i }).length).toBeGreaterThan(0);
+    // r10: the hero carries no Act now button; Act now is the first group of the Needs you list.
+    expect(screen.getByRole("region", { name: "Act now" })).toBeInTheDocument();
   });
 });

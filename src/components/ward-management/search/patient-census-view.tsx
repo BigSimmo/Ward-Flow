@@ -1,8 +1,6 @@
 "use client";
 
-import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import Link from "next/link";
-import { waitingHref } from "@/components/ward-management/delays/waiting-href";
 import {
   memo,
   useDeferredValue,
@@ -13,21 +11,35 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
+  type Ref,
 } from "react";
-import { CalendarDays, ChevronDown, ChevronLeft, Clock, Copy, Search, SearchX, UserPlus, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  Clock,
+  Copy,
+  Download,
+  Printer,
+  Search,
+  SearchCheck,
+  SearchX,
+  Share2,
+  UserPlus,
+  X,
+} from "lucide-react";
 
-import { ListExportButton } from "@/components/ward-management/ward-list-export-button";
-import { ListPrintMenu, type ListPrintChoice } from "@/components/ward-management/ward-list-print-menu";
+import { type ListPrintChoice } from "@/components/ward-management/ward-list-print-menu";
+import { DownloadRefusedError } from "@/components/ward-management/ward-download";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
-import { usePrinting } from "@/components/ward-management/use-printing";
+import { printPage, usePrinting } from "@/components/ward-management/use-printing";
 import {
   Avatar,
   Button,
-  DateField,
   DrawerFootRow,
   FactGrid,
   FilterChip,
   Icon,
+  Menu,
   PanelDrawer,
   PhoneSheet,
   Segmented,
@@ -38,8 +50,10 @@ import {
   buttonClass,
   tableClasses,
   cx,
-  phoneRows,
   SrOnly,
+  heroChipClassName,
+  type DrawerPagerProps,
+  type MenuItem,
   type WfTone,
 } from "@/components/wf";
 import {
@@ -75,6 +89,10 @@ import {
 import styles from "./census.module.css";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
+import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
+
+/** The census step a drawer can take itself (audit three #12): `patient-census.ts` names it. */
+const FIND_A_BED = "Find a bed";
 
 const TONE: Record<Exclude<CensusGlyph, "off">, WfTone> = {
   act: "danger",
@@ -122,59 +140,6 @@ function Marked({ text, needle }: { text: string; needle: string }) {
 
 /* ───────────────────────── search bar 1 ───────────────────────── */
 
-/**
- * D-91 ("Every page search box has one look"): the census search is the kit's one page search field
- * (`SearchField`), so the date of birth switch and box sit beside it rather than inside a hand-made
- * pill. The switch.
- */
-export function DobToggle({ dobOn, onDobToggle }: { dobOn: boolean; onDobToggle: () => void }) {
-  return (
-    <button
-      type="button"
-      className={styles.dobToggle}
-      aria-pressed={dobOn}
-      onClick={onDobToggle}
-      title={dobOn ? "Remove the date of birth" : "Add a date of birth"}
-    >
-      <Icon icon={CalendarDays} size={14} />
-      DOB
-    </button>
-  );
-}
-
-/**
- * The date of birth box: beside the search on a laptop, a row of its own under it on a phone. The
- * kit's typed DD/MM/YYYY box, so `dob` is YYYY-MM-DD once a real day is typed and "" until then
- * (`parseDob` reads both). Clear also empties a half-typed date, which the box keeps to itself.
- */
-export function DobField({
-  dob,
-  onDob,
-  phone = false,
-}: {
-  dob: string;
-  onDob: (next: string) => void;
-  phone?: boolean;
-}) {
-  const [fresh, setFresh] = useState(0);
-  return (
-    <DateField
-      key={fresh}
-      icon={CalendarDays}
-      boxClassName={phone ? styles.phoneDobField : styles.dobField}
-      value={dob}
-      onValueChange={onDob}
-      onClear={() => {
-        onDob("");
-        setFresh((count) => count + 1);
-      }}
-      placeholder={phone ? "Date of birth, DD/MM/YYYY" : "DD/MM/YYYY"}
-      aria-label="Date of birth"
-      enterKeyHint="search"
-    />
-  );
-}
-
 /* ───────────────────────── the census table ───────────────────────── */
 
 export type CensusScrollPosition = { identity: string; top: number; left: number };
@@ -217,6 +182,116 @@ export type CensusTableProps = {
   copyNote: string | null;
   empty: ReactNode;
   notice?: ReactNode;
+};
+
+/**
+ * #28 (audit two, 27 Nov 2026): the list's outputs under one Share menu (Chronology's part): Copy
+ * list, Export (the spreadsheet) and the print choices under their own heading. `look="chip"` draws
+ * the trigger as a hero quick chip (the phone top). Export's refusal or failure is a status line.
+ */
+export function CensusShareMenu({
+  onCopyList,
+  onExportList,
+  exportDisabled,
+  printChoices,
+  look = "button",
+  testId,
+}: {
+  onCopyList: () => void;
+  onExportList?: () => Promise<void>;
+  exportDisabled?: boolean;
+  printChoices?: readonly ListPrintChoice[];
+  look?: "button" | "chip";
+  testId?: string;
+}) {
+  const [note, setNote] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const runExport = () => {
+    if (!onExportList || pending) return;
+    setNote(null);
+    setPending(true);
+    onExportList()
+      .catch((error: unknown) => {
+        if (error instanceof DownloadRefusedError) {
+          setNote("Export is not available in this browser");
+          return;
+        }
+        console.error("List export failed", error);
+        setNote("Export failed. Try again.");
+      })
+      .finally(() => setPending(false));
+  };
+  const items: MenuItem[] = [
+    {
+      id: "copy",
+      label: <span data-testid="ward-census-copy-list">Copy list</span>,
+      icon: Copy,
+      onSelect: onCopyList,
+    },
+    ...(onExportList
+      ? [
+          {
+            id: "export",
+            label: <span data-testid="ward-census-export">Export list</span>,
+            icon: Download,
+            disabled: exportDisabled || pending,
+            onSelect: runExport,
+          },
+        ]
+      : []),
+    ...(printChoices && printChoices.length > 0
+      ? [
+          { kind: "heading" as const, id: "print-heading", label: "Print" },
+          ...printChoices.map((choice) => ({
+            id: `print-${choice.id}`,
+            label: choice.label,
+            icon: Printer,
+            meta: choice.meta,
+            disabled: choice.disabled,
+            onSelect: () => printPage(choice.scope ?? null),
+          })),
+        ]
+      : []),
+  ];
+  return (
+    <>
+      <Menu
+        label="Share"
+        align="end"
+        items={items}
+        trigger={(triggerProps) =>
+          look === "chip" ? (
+            <button {...triggerProps} type="button" className={heroChipClassName} data-print-hide data-testid={testId}>
+              <Icon icon={Share2} size={16} />
+              <span>Share</span>
+            </button>
+          ) : (
+            <button
+              {...triggerProps}
+              type="button"
+              className={buttonClass({ variant: "ghost", size: "sm" })}
+              data-print-hide
+              data-testid={testId}
+            >
+              <Share2 size={16} strokeWidth={1.75} aria-hidden="true" />
+              Share
+            </button>
+          )
+        }
+      />
+      {/* Always present, so a screen reader hears the note; hidden while empty so it takes no gap. */}
+      <span role="status" className={note ? undefined : "sr-only"}>
+        {note}
+      </span>
+    </>
+  );
+}
+
+/** #86: the hover text of the Highlight chips whose rows left the This shift card. */
+const HIGHLIGHT_HINT: Partial<Record<CensusHighlight, string>> = {
+  long: "Your default",
+  edd: "On a ward, date passed",
+  aed: "Bed kept on the ward",
 };
 
 export const countPeople = (rows: readonly CensusRow[]) =>
@@ -319,26 +394,15 @@ export function CensusTable(props: CensusTableProps) {
               value={props.sort}
               onChange={props.onSort}
             />
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={Copy}
-              onClick={props.onCopyList}
-              title="Copies the highlighted rows, or every open row, as plain text"
-            >
-              Copy list
-            </Button>
-            {props.onExportList ? (
-              <ListExportButton
-                load={props.onExportList}
-                variant="ghost"
-                disabled={rows.length === 0}
-                testId="ward-census-export"
-              />
-            ) : null}
-            {props.printChoices ? (
-              <ListPrintMenu variant="ghost" choices={props.printChoices} testId="ward-census-print" />
-            ) : null}
+            {/* #28 (audit two, 27 Nov 2026): Copy list, Export and Print are one Share menu at the
+                right end of the list head, as on Chronology and Statistics. */}
+            <CensusShareMenu
+              onCopyList={props.onCopyList}
+              onExportList={props.onExportList}
+              exportDisabled={rows.length === 0}
+              printChoices={props.printChoices}
+              testId="ward-census-share"
+            />
           </>
         ) : null}
       </div>
@@ -346,15 +410,17 @@ export function CensusTable(props: CensusTableProps) {
         <div className={styles.chipBar} role="group" aria-label="Highlight">
           <span className={styles.chipLead}>Highlight</span>
           {CENSUS_HIGHLIGHTS.map((chip) => (
-            <FilterChip
-              key={chip.id}
-              pressed={highlight === chip.id}
-              onPressedChange={(pressed) => props.onHighlight(pressed ? chip.id : null)}
-              count={props.highlightCounts[chip.id]}
-              tone={chip.glyph ? TONE[chip.glyph] : undefined}
-            >
-              {chip.label}
-            </FilterChip>
+            // #86 (audit two): the words the This shift rows carried for these chips are their hover text.
+            <span key={chip.id} className={styles.chipHint} title={HIGHLIGHT_HINT[chip.id]}>
+              <FilterChip
+                pressed={highlight === chip.id}
+                onPressedChange={(pressed) => props.onHighlight(pressed ? chip.id : null)}
+                count={props.highlightCounts[chip.id]}
+                tone={chip.glyph ? TONE[chip.glyph] : undefined}
+              >
+                {chip.label}
+              </FilterChip>
+            </span>
           ))}
           {props.copyNote ? (
             <span className={styles.copyNote} role="status" aria-live="polite">
@@ -548,7 +614,7 @@ const CensusTableRow = memo(function CensusTableRow({
             onSelect(row, event.currentTarget.closest("tr") ?? event.currentTarget);
           }}
         >
-          Open details for {row.name}
+          Open {row.name}
         </button>
         <span className={styles.two}>
           <b className={styles.name}>
@@ -642,7 +708,9 @@ export function ShiftSummary(props: ShiftSummaryProps) {
       null,
     );
   const dues = rows.filter((row) => row.formDueAt !== null).sort((a, b) => (a.formDueAt ?? 0) - (b.formDueAt ?? 0));
-  const arrived = props.closedToday.filter((row) => row.outcome === "Arrived").length;
+  // #86 (audit two, 27 Nov 2026): three tiles on equal thirds. Over 24h, Past expected date and
+  // Away at ED repeat the Highlight chips (their words are the chips' hover text); Arrived today is
+  // the hero's Today band, which opens History; the foot line goes.
   type Item = {
     id: string;
     glyph: CensusGlyph;
@@ -670,44 +738,12 @@ export function ShiftSummary(props: ShiftSummaryProps) {
       onPress: longest ? () => props.onSelect(longest) : undefined,
     },
     {
-      id: "long",
-      glyph: "risk",
-      title: `Over ${LONG_WAIT_MINUTES / 60}h`,
-      sub: "Your default",
-      value: props.highlightCounts.long,
-      chip: "long",
-    },
-    {
       id: "form",
       glyph: "wait",
       title: "Forms with a due time",
       sub: dues[0] ? `Next ${typedClock(dues[0].formDueAt ?? now, now, props.dayZero)} · ${dues[0].name}` : "None",
       value: dues.length,
       chip: "form",
-    },
-    {
-      id: "edd",
-      glyph: "risk",
-      title: "Past expected date",
-      sub: "On a ward, date passed",
-      value: props.highlightCounts.edd,
-      chip: "edd",
-    },
-    {
-      id: "aed",
-      glyph: "move",
-      title: "Away at ED",
-      sub: "Bed kept on the ward",
-      value: props.highlightCounts.aed,
-      chip: "aed",
-    },
-    {
-      id: "arrived",
-      glyph: "done",
-      title: "Arrived today",
-      sub: "Closed movements go to History",
-      value: arrived,
-      onPress: props.onHistory,
     },
   ];
   return (
@@ -742,13 +778,6 @@ export function ShiftSummary(props: ShiftSummaryProps) {
           );
         })}
       </ul>
-      <div className={styles.summaryFoot}>
-        <p>Choose a row to open the patient</p>
-        {/* B4: everyone waiting, with why, is the Delays list. */}
-        <Link href={waitingHref()} className={buttonClass({ variant: "ghost", size: "sm" })}>
-          Waiting list
-        </Link>
-      </div>
     </div>
   );
 }
@@ -842,28 +871,44 @@ function hasCensusRecordLink(row: CensusRow): boolean {
 }
 
 /** The row's own record: its movement, referral, ward bed, or a new referral for a quiet record. */
+/** The words of the row's own record link, the same on the drawer and the phone sheet (#45). */
+function censusRecordLabel(row: CensusRow): string | null {
+  if (row.kind === "movement") return "Movement";
+  if (row.kind === "referral") return "Referral";
+  if (row.kind === "admission" && row.unitId && row.bedNumber !== undefined) return "Ward bed";
+  if (row.group === "off") return "New referral";
+  return null;
+}
+
 function CensusRecordLink({
   row,
   onNavigate,
   variant,
   size,
+  linkRef,
+  hidden = false,
 }: {
   row: CensusRow;
   onNavigate?: () => void;
   variant?: "pri" | "sec";
   size?: "sm";
+  /** The phone sheet's footer button follows this link (#45), as Patient page follows its own. */
+  linkRef?: Ref<HTMLAnchorElement>;
+  /** Drawn for the footer button to follow only: out of sight, the Tab order and the tree. */
+  hidden?: boolean;
 }) {
-  const className = buttonClass({ variant, size });
+  const className = hidden ? "sr-only" : buttonClass({ variant, size });
+  const hide = hidden ? { ref: linkRef, tabIndex: -1, "aria-hidden": true as const } : { ref: linkRef };
   if (row.kind === "movement") {
     return (
-      <Link className={className} href={movementHref(row.key)}>
+      <Link {...hide} className={className} href={movementHref(row.key)}>
         Movement
       </Link>
     );
   }
   if (row.kind === "referral") {
     return (
-      <Link className={className} href={referralBoardHref(row.key)}>
+      <Link {...hide} className={className} href={referralBoardHref(row.key)}>
         Referral
       </Link>
     );
@@ -871,6 +916,7 @@ function CensusRecordLink({
   if (row.kind === "admission" && row.unitId && row.bedNumber !== undefined) {
     return (
       <Link
+        {...hide}
         className={className}
         data-census-bed-link={row.key}
         href={`/bedchart/ward/${encodeURIComponent(row.unitId)}?bed=${row.bedNumber}`}
@@ -887,7 +933,7 @@ function CensusRecordLink({
   }
   if (row.group === "off") {
     return (
-      <Link className={className} href="/bedchart/referrals/new">
+      <Link {...hide} className={className} href="/bedchart/referrals/new">
         New referral
       </Link>
     );
@@ -896,15 +942,28 @@ function CensusRecordLink({
 }
 
 /** What happens next, the facts and the latest entries: shared by the card and the drawer. */
-function CensusDetailFacts({ row, now, neutral = false }: { row: CensusRow; now: Instant; neutral?: boolean }) {
+function CensusDetailFacts({
+  row,
+  now,
+  neutral = false,
+  stepInFoot = false,
+}: {
+  row: CensusRow;
+  now: Instant;
+  neutral?: boolean;
+  /** Audit three #12: the step is the drawer's filled foot button, so the body does not say it again. */
+  stepInFoot?: boolean;
+}) {
   const quiet = row.group === "off";
   return (
     <>
       <div className={cx(neutral ? styles.drawerStatus : styles.statusCard, !neutral && quiet && styles.statusQuiet)}>
-        <span className={styles.statusLine}>
-          <CensusGlyphMark glyph={row.glyph} />
-          {row.next}
-        </span>
+        {stepInFoot ? null : (
+          <span className={styles.statusLine}>
+            <CensusGlyphMark glyph={row.glyph} />
+            {row.next}
+          </span>
+        )}
         <span className={styles.statusSub}>
           {row.nextWho ? `${row.nextWho} · ` : ""}
           {row.timeText ? (
@@ -978,8 +1037,8 @@ export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }
           size="sm"
           icon={Copy}
           iconOnly
-          aria-label="Copy summary"
-          title="Copy summary"
+          aria-label="Copy to notes"
+          title="Copy to notes"
           onClick={() => onCopy(row)}
         />
         {copyNote ? (
@@ -991,7 +1050,7 @@ export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }
         <CensusRecordLink row={row} onNavigate={onNavigate} size="sm" />
         {row.patientRecordId ? (
           <Link className={buttonClass({ variant: "pri", size: "sm" })} href={patientHref(row.patientRecordId)}>
-            Open patient
+            Patient page
           </Link>
         ) : null}
       </div>
@@ -1008,6 +1067,8 @@ export type CensusDetailDrawerProps = {
   onCopy: (row: CensusRow) => void;
   copyNote: string | null;
   testId?: string;
+  /** Audit three #34: the list pager in the drawer head. */
+  pager?: DrawerPagerProps;
 };
 
 /**
@@ -1024,11 +1085,15 @@ export function CensusDetailDrawer({
   onCopy,
   copyNote,
   testId,
+  pager,
 }: CensusDetailDrawerProps) {
   if (row === null) return null;
   const group = CENSUS_GROUPS.find((entry) => entry.id === row.group);
-  // One filled action: Open patient when there is a person record, otherwise the row's own record.
-  const recordLeads = !row.patientRecordId;
+  // Audit three #12 (Josh, 28 Nov 2026): where the row names a step this drawer can take (Find a
+  // bed), that step is the one filled button and Patient page goes quiet. Otherwise one filled
+  // action: Patient page when there is a person record, else the row's own record.
+  const findBed = row.next === FIND_A_BED;
+  const recordLeads = !findBed && !row.patientRecordId;
   return (
     <PanelDrawer
       open={open}
@@ -1054,6 +1119,7 @@ export function CensusDetailDrawer({
       }
       closeLabel="Close patient details"
       testId={testId}
+      pager={pager}
       bodyClassName={styles.drawerBody}
       foot={
         <>
@@ -1062,12 +1128,26 @@ export function CensusDetailDrawer({
               {copyNote}
             </span>
           ) : null}
-          {row.patientRecordId ? (
+          {findBed ? (
+            <Button
+              variant="pri"
+              icon={SearchCheck}
+              onClick={(event) => requestToolsTool("bed-finder", event.currentTarget)}
+              data-testid="census-drawer-find-bed"
+            >
+              Find a bed
+            </Button>
+          ) : row.patientRecordId ? (
             <Link className={buttonClass({ variant: "pri" })} href={patientHref(row.patientRecordId)}>
-              Open patient
+              Patient page
             </Link>
           ) : null}
           <DrawerFootRow className={styles.drawerTools}>
+            {findBed && row.patientRecordId ? (
+              <Link className={buttonClass({ variant: "sec" })} href={patientHref(row.patientRecordId)}>
+                Patient page
+              </Link>
+            ) : null}
             {hasCensusRecordLink(row) ? (
               <CensusRecordLink row={row} onNavigate={onNavigate} variant={recordLeads ? "pri" : "sec"} />
             ) : null}
@@ -1078,14 +1158,14 @@ export function CensusDetailDrawer({
         </>
       }
     >
-      <CensusDrawerBody row={row} now={now} />
+      <CensusDrawerBody row={row} now={now} stepInFoot={findBed} />
     </PanelDrawer>
   );
 }
 
-function CensusDrawerBody({ row, now }: { row: CensusRow; now: Instant }) {
+function CensusDrawerBody({ row, now, stepInFoot }: { row: CensusRow; now: Instant; stepInFoot: boolean }) {
   useCensusBedLinkReturn(row.key);
-  return <CensusDetailFacts row={row} now={now} neutral />;
+  return <CensusDetailFacts row={row} now={now} neutral stepInFoot={stepInFoot} />;
 }
 
 /* ───────────────────────── history ───────────────────────── */
@@ -1241,8 +1321,10 @@ export function PhoneCensus(props: PhoneCensusProps) {
   // A2-20: initials plus UMRN when Discreet names on phone is on.
   const nameFor = usePatientNameDisplay();
   const openLink = useRef<HTMLAnchorElement>(null);
+  const recordLink = useRef<HTMLAnchorElement>(null);
   const { rows, searching, highlight } = props;
   const open = props.expandedKey === null ? null : (rows.find((row) => row.key === props.expandedKey) ?? null);
+  const phoneRecordLabel = open ? censusRecordLabel(open) : null;
   const [offShown, setOffShown] = useState(false);
   // PS1: people followed by a community team list as their own section; only those with no team wait.
   const offCount = rows.filter((row) => row.group === "off" && row.communityTeam === null).length;
@@ -1256,23 +1338,48 @@ export function PhoneCensus(props: PhoneCensusProps) {
     <section className={styles.phone} data-testid="ward-patient-search-results-console" aria-label="Patients">
       {/* PS1 (3 Nov 2026): the state switch replaces the six group jump buttons. */}
       {props.stateSwitch ? <div className={styles.phoneStates}>{props.stateSwitch}</div> : null}
-      <div className={cx(styles.phoneChips, phoneRows.chipRow)} role="group" aria-label="Highlight">
-        {CENSUS_HIGHLIGHTS.map((chip) => (
-          <FilterChip
-            key={chip.id}
-            className={cx(styles.phoneChip, phoneRows.chip, props.highlightCounts[chip.id] === 0 && phoneRows.zero)}
-            pressed={highlight === chip.id}
-            onPressedChange={() => {
+      {/* Audit four #107: on a phone the five highlight chips are one Highlight menu, counts in the menu. */}
+      <div className={styles.phoneHighlight}>
+        <Menu
+          label="Highlight"
+          align="start"
+          items={CENSUS_HIGHLIGHTS.map((chip) => ({
+            id: chip.id,
+            label: chip.label,
+            checked: highlight === chip.id,
+            meta: props.highlightCounts[chip.id],
+            onSelect: () => {
               props.onTab("now");
               props.onHighlight(highlight === chip.id ? null : chip.id);
-            }}
-          >
-            {chip.glyph ? <CensusGlyphMark glyph={chip.glyph} size={8} /> : null}
-            {/* D-91 (Josh, 31 Oct 2026): the count comes first, as Home's and Referrals' chips. */}
-            <b className={styles.phoneChipCount}>{props.highlightCounts[chip.id]}</b>
-            {chip.label}
-          </FilterChip>
-        ))}
+            },
+          }))}
+          trigger={(triggerProps) => (
+            <button
+              {...triggerProps}
+              type="button"
+              className={buttonClass({ variant: "sec", size: "md" })}
+              data-active={highlight !== null ? "true" : undefined}
+            >
+              Highlight
+              {highlight !== null ? (
+                <b className={styles.phoneChipCount}>
+                  {CENSUS_HIGHLIGHTS.find((chip) => chip.id === highlight)?.label}
+                </b>
+              ) : null}
+              <ChevronDown size={14} aria-hidden="true" />
+            </button>
+          )}
+        />
+        {/* Gate r10 look upgrade 1: the people count ends the Highlight line, as on desktop, so the
+            button is not left alone on its row. */}
+        {props.tab === "history" ? null : (
+          <span className={styles.phoneHighlightCount}>
+            {(() => {
+              const n = countPeople(rows);
+              return n === 1 ? "1 person" : `${n} people`;
+            })()}
+          </span>
+        )}
       </div>
       {/* PS1 (3 Nov 2026): no Now or History switch under the state switch. History is one link at
           the foot of the list, and a Back button here while it is open. */}
@@ -1388,16 +1495,47 @@ export function PhoneCensus(props: PhoneCensusProps) {
             </span>
           ) : undefined
         }
-        primary={
-          open?.patientRecordId
-            ? {
-                label: "Open patient",
-                // A real link does the navigation, so it stays client side and keeps the session.
-                onAction: () => openLink.current?.click(),
-              }
+        // #45 (audit two, 27 Nov 2026): the drawer's labels and its three actions. Patient page leads
+        // when there is a person record, else the row's own record; Copy summary beside it; the other
+        // record link (when both exist) closes the body.
+        // Audit three review: where the next step is Find a bed, it is the filled action and Patient page
+        // goes outlined beside it, as on the desktop drawer; Copy to notes moves into the body.
+        pager={
+          open
+            ? (() => {
+                const index = rows.findIndex((row) => row.key === open.key);
+                return {
+                  index,
+                  total: rows.length,
+                  noun: "person",
+                  onStep: (delta: -1 | 1) => {
+                    const next = rows[(Math.max(index, 0) + delta + rows.length) % rows.length];
+                    if (next && next.key !== open.key) props.onExpand(next);
+                  },
+                };
+              })()
             : undefined
         }
-        secondary={open ? { label: "Copy", onAction: () => props.onCopy(open) } : undefined}
+        primary={
+          open?.next === FIND_A_BED
+            ? { label: FIND_A_BED, onAction: () => requestToolsTool("bed-finder") }
+            : open?.patientRecordId
+              ? {
+                  label: "Patient page",
+                  // A real link does the navigation, so it stays client side and keeps the session.
+                  onAction: () => openLink.current?.click(),
+                }
+              : open && phoneRecordLabel
+                ? { label: phoneRecordLabel, onAction: () => recordLink.current?.click() }
+                : undefined
+        }
+        secondary={
+          open?.next === FIND_A_BED && open.patientRecordId
+            ? { label: "Patient page", onAction: () => openLink.current?.click() }
+            : open
+              ? { label: "Copy to notes", onAction: () => props.onCopy(open) }
+              : undefined
+        }
         data-testid="ward-patient-search-phone-sheet"
       >
         {open ? (
@@ -1445,7 +1583,22 @@ export function PhoneCensus(props: PhoneCensusProps) {
                 {props.copyNote}
               </span>
             ) : null}
+            {(open.patientRecordId || open.next === FIND_A_BED) && phoneRecordLabel ? (
+              <div className={styles.phoneSheetRecord}>
+                <CensusRecordLink row={open} variant="sec" />
+              </div>
+            ) : null}
+            {open.next === FIND_A_BED && open.patientRecordId ? (
+              <div className={styles.phoneSheetRecord}>
+                <Button variant="sec" onClick={() => props.onCopy(open)}>
+                  Copy to notes
+                </Button>
+              </div>
+            ) : null}
             <p className={styles.phoneSheetNote}>Names are invented. Identity is the UMRN.</p>
+            {!open.patientRecordId && open.next !== FIND_A_BED && phoneRecordLabel ? (
+              <CensusRecordLink row={open} linkRef={recordLink} hidden />
+            ) : null}
             {open.patientRecordId ? (
               <Link
                 ref={openLink}

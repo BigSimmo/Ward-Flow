@@ -139,8 +139,8 @@ describe("Track C Referral Matching fixes", () => {
 
     // Initial button exists
     const initialButton = screen.getByTestId("ward-referral-match-accept-emergency_department");
-    // v10 (10 Oct 2026): the panel's one primary reads "Accept presentation".
-    expect(initialButton).toHaveTextContent(/Accept presentation/i);
+    // r10 (28 Nov 2026): the ED controls' primary reads "Accept" (the confirm step still follows).
+    expect(initialButton).toHaveTextContent(/^Accept$/);
 
     // Clicking opens confirmation
     fireEvent.click(initialButton);
@@ -202,7 +202,7 @@ describe("Track C Referral Matching fixes", () => {
     // D-77: the ward's reasons open behind Decline; Back returns to the list with the ED controls.
     fireEvent.click(screen.getByTestId("ward-referral-match-decline-open"));
     fireEvent.click(screen.getByTestId("ward-referral-match-phone-decline-no_suitable_bed"));
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(
       (screen.getByTestId("ward-referral-match-decline-reason-emergency_department") as HTMLSelectElement).value,
     ).toBe("");
@@ -266,8 +266,8 @@ describe("Track C ED screen fixes", () => {
     const row = screen.getAllByTestId(/^ward-ed-patient-WF-/u)[0];
     const name = row.querySelector<HTMLButtonElement>('button[title^="View patient details"]');
     expect(name).not.toBeNull();
-    // Patient, In ED, Bay (ED handover table, 1 Nov 2026): no movement records an ED bay.
-    expect(row.children[2]?.textContent).toBe("Not recorded");
+    // r10 (28 Nov 2026): the ED handover table has no Bay column on the row (the bay stays in the
+    // person sheet's Facts, below); the row must still never invent one.
     expect(row.textContent).not.toMatch(/Bay \d/u);
     expect(within(row).getByText("UMRN")).toBeInTheDocument();
     fireEvent.click(name!);

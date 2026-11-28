@@ -1,5 +1,6 @@
 "use client";
 
+import { useReportSettingsSection } from "@/components/ward-management/hub/find-active-tab";
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { useWardFormSave } from "../use-ward-form-save";
@@ -78,7 +79,6 @@ import {
   useOptionalToast,
   type ToastInput,
   FolderTabs,
-  HeroAct,
   folderTabClasses,
 } from "@/components/wf";
 
@@ -244,6 +244,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const sectionContext: SectionContext = { editsRules, sections };
   // Desktop: the section last jumped to, marked in the tabs that stay in view above the page.
   const [activeSection, setActiveSection] = useState<SettingsSection>(sections[0]!);
+  useReportSettingsSection(activeSection);
   const shownSection = sections.includes(activeSection) ? activeSection : sections[0]!;
   // On a phone the access admin's requests and roles sit open on the page, with no Access row.
   const accessInline = role === "admin";
@@ -251,6 +252,8 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const isPhone = useIsPhone();
   const [phoneSheet, setPhoneSheet] = useState<SettingsSection | null>(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  // Audit two #44: Display restores this browser only; the Rules tab restores the rules.
+  const [restoreBrowserOnly, setRestoreBrowserOnly] = useState(false);
   const [isOperatorModalOpen, setIsOperatorModalOpen] = useState(false);
   // "Try another desk (demo)": the demo's desk switcher, which Find a setting still opens. Hidden once
   // real sign-in is on; the account menu on the person button is its everyday home (DK1).
@@ -335,7 +338,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     setActiveSection(section);
     holdTab();
     window.requestAnimationFrame(() => {
-      document.getElementById(`settings-section-${section}`)?.scrollIntoView?.({ block: "start" });
+      // A link to the Access log lands on the log itself, not the top of Access.
+      const target = window.location.hash === "#access-log" ? document.getElementById("access-log") : null;
+      (target ?? document.getElementById(`settings-section-${section}`))?.scrollIntoView?.({ block: "start" });
     });
   };
   const openFromHash = useEffectEvent(() => {
@@ -683,7 +688,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       setCharacterShortcuts(before.characterShortcuts);
     };
     // A desk that cannot change the rules restores only its own browser.
-    if (!configurationGate.allowed || !operational) {
+    if (scope === "browser" || !configurationGate.allowed || !operational) {
       restoreBrowser();
       setIsResetModalOpen(false);
       toast?.push({
@@ -741,13 +746,17 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const results = findRedesignSettings(query, sections, 7, editsRules).filter(
     // The access rows exist only while Role access shows them (under You on a desk without Access).
     (entry) =>
-      (entry.id !== "go-to-desk" || switchLogin !== undefined) &&
+      // One door to Go to a desk (A27, 26 Nov 2026): the person button holds it, so Find a setting
+      // no longer offers a second one.
+      entry.id !== "go-to-desk" &&
       (entry.tab !== "access" || accessOn) &&
       // Cover is offered only where its card shows: Your desk or Staff access, never the access
       // admin's or an Executive desk's Settings, nor any desk while Role access is off.
       (entry.id !== "cover" || (accessOn && role !== "admin")) &&
       // A phone's Display sheet leaves out the keyboard shortcuts row.
-      !(isPhone && entry.id === "character-shortcuts"),
+      !(isPhone && entry.id === "character-shortcuts") &&
+      // Audit two #68: the changed-only switch shows only once a rule differs, so Find offers it only then.
+      (entry.id !== "changed-only" || awayFromDefault > 0 || changedOnly),
   );
 
   useEffect(() => {
@@ -892,16 +901,26 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     </div>
   );
 
+  const openRestore = (browserOnly: boolean) => {
+    // On a phone the sheet closes first, so the restore dialog is the only layer.
+    setPhoneSheet(null);
+    setRestoreBrowserOnly(browserOnly);
+    setIsResetModalOpen(true);
+  };
+
   // The rule editor is the coordinator's. A coordinator who is not the statewide one sees it read
   // only, with one line saying why, and no save bar. Every other desk reads "Rules that affect you".
   const readOnlyWords = configurationBlockReason ?? null;
 
   // The rule editor, then the rules file and the reference tables that go with it.
+  const restoresRules = editsRules && configurationBlockReason === undefined;
   const rulesContent = editsRules ? (
     <>
       {/* UX review (D-270): the filter of the rules sits with the rules, not in the tab row. On a phone
           the rules pane's own top line already carries it, so it shows once (D-276). */}
-      {isPhone ? null : (
+      {/* Audit two #68: the switch shows only once a rule differs from its default. States B review:
+          with Restore defaults moved to the tab row, the head is drawn only when it holds the switch. */}
+      {isPhone || !restoresRules || !(awayFromDefault > 0 || changedOnly) ? null : (
         <div className={rx.rulesFilter} data-setting="changed-only">
           <ChangedOnlySwitch checked={changedOnly} onChange={setChangedOnly} awayFromDefault={awayFromDefault} />
         </div>
@@ -920,6 +939,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
         changedOnly={changedOnly}
         onChangedOnly={setChangedOnly}
         statusInHero={!isPhone}
+        onRestore={isPhone && restoresRules ? () => openRestore(false) : undefined}
       />
       <SettingsFold
         title="Rules file and reference tables"
@@ -969,23 +989,12 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     />
   );
 
-  const openRestore = () => {
-    // On a phone the sheet closes first, so the restore dialog is the only layer.
-    setPhoneSheet(null);
-    setIsResetModalOpen(true);
-  };
   const displayContent = (phoneQuick: boolean) => (
     <SettingsDisplayPane
       phoneQuick={phoneQuick}
-      onRestore={openRestore}
-      restoresRules={editsRules && configurationBlockReason === undefined}
+      onRestore={() => openRestore(true)}
       theme={theme}
       onThemeChange={chooseTheme}
-      railOpen={railOpen}
-      onRailChange={(open) => {
-        setRailOpenPreference(open);
-        showToast(open ? "Sidebar set to Full." : "Sidebar set to Compact.");
-      }}
       reducedMotion={reducedMotion}
       onReducedMotionChange={(next) => {
         setReducedMotion(next);
@@ -1076,6 +1085,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
         onConfirm={handleConfirmReset}
         pending={saving}
         rulesUnavailable={configurationBlockReason}
+        onlyBrowser={restoreBrowserOnly}
       />
       <SettingsReviewDialog
         open={review !== null}
@@ -1096,8 +1106,8 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
         testId="ward-settings-governance"
         note={
           sharedEnabled
-            ? "Synthetic records · Not approved for clinical use · Coordination rules are saved to the shared workspace. Appearance preferences apply to this browser."
-            : "Synthetic records · Not approved for clinical use · Coordination rules stay in this device's demo workspace. Appearance preferences apply to this browser."
+            ? "Synthetic data · Not approved for clinical use · Coordination rules are saved to the shared workspace. Appearance preferences apply to this browser."
+            : "Synthetic data · Not approved for clinical use · Coordination rules stay in this device's demo workspace. Appearance preferences apply to this browser."
         }
       />
     </>
@@ -1119,7 +1129,6 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   /* Page tops (Josh, 9 Nov 2026): one calm line says whether this phone or desk alerts at all, the
      same on/off the Alerts row reads, with a way straight to Alerts. */
   const alertsOn = actNowNotifications || phonePushRow(phonePush).checked;
-  const alertsTitle = alertsOn ? "Alerts are on" : "Alerts are off";
   if (isPhone) {
     const areaSummary: Record<SettingsSection, string> = {
       // Simplify Settings (Josh, 8 Nov 2026): each line says what is inside, in plain words.
@@ -1361,13 +1370,16 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                 : `${deskProfile.role} · ${deskProfile.location}`}
             </span>
           }
+          // Audit two #123: Find a setting sits on the title row's right; the Alerts-off warning moved to the Alerts tab.
+          aside={findSetting}
           footKind="actions"
           foot={
             editsRules ? (
               <dl className={rx.heroStrip} data-testid="ward-settings-status-strip">
                 <div className={rx.heroCell}>
                   <dt>Rules</dt>
-                  <dd>
+                  {/* The Help tour's "Save rule changes" step points here while nothing is unsaved. */}
+                  <dd data-testid="ward-settings-save-bar">
                     <StatusGlyph tone={hasUnsavedRules ? "info" : "success"} size={8} />
                     {hasUnsavedRules
                       ? `${unsavedCount} unsaved`
@@ -1383,44 +1395,31 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                     <RuleLastSave ruleChanges={ruleChanges} now={now} />
                   </dd>
                 </div>
-                <div className={rx.heroCell}>
-                  <dt>Saving</dt>
-                  {/* The Help tour's "Save rule changes" step points here while nothing is unsaved. */}
-                  <dd data-testid="ward-settings-save-bar">
-                    {readOnlyWords !== null ? (
-                      "Read only on this desk"
-                    ) : (
-                      <>
-                        <strong>Changes wait for Save.</strong> Each save is audited.
-                      </>
-                    )}
-                  </dd>
-                </div>
               </dl>
             ) : undefined
           }
-        >
-          <div className={rx.heroTopRow}>
-            {findSetting}
-            <HeroAct
-              tone="calm"
-              testId="ward-settings-alerts-act"
-              title={alertsTitle}
-              action={{
-                label: "Open alerts",
-                phoneLabel: "Open",
-                onClick: () => showSection("alerts"),
-                testId: "ward-settings-open-alerts",
-              }}
-            />
-          </div>
-        </Hero>
+        />
 
         <FolderTabs
           label="Settings sections"
           value={shownSection}
           className={rx.folderRow}
           testId="ward-settings-section-tabs"
+          // Audit two #44, States B review: on the Rules tab, Restore defaults sits at the right end of
+          // the tab row rather than alone in a band of its own above the rules.
+          more={
+            !isPhone && restoresRules && shownSection === "rules" ? (
+              <Button
+                variant="sec"
+                size="sm"
+                onClick={() => openRestore(false)}
+                aria-haspopup="dialog"
+                data-testid="btn-restore-rules"
+              >
+                Restore defaults…
+              </Button>
+            ) : undefined
+          }
         >
           <div className={cx(rx.folderSwitch, folderTabClasses.switch)}>
             {sections.map((section) => {
@@ -1433,7 +1432,11 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                   onClick={() => showSection(section)}
                   data-testid={`ward-settings-jump-${section}`}
                 >
+                  {section === "alerts" && !alertsOn ? (
+                    <StatusGlyph tone="warning" size={10} className={rx.tabGlyph} />
+                  ) : null}
                   {SECTION_LABELS[section]}
+                  {section === "alerts" && !alertsOn ? <SrOnly>, off</SrOnly> : null}
                   {section === "rules" && hasUnsavedRules ? <CountCircle n={unsavedCount} label="unsaved" /> : null}
                 </button>
               );

@@ -5,8 +5,8 @@
  * (Card, Segmented, FilterChip, Button, StatusGlyph). Nothing here is pre-selected: a choice with no
  * answer shows no option chosen, and a second press on the chosen option clears it.
  */
-import { BookOpen, Check, ChevronDown } from "lucide-react";
-import { useId, useState, type ReactNode, type RefObject } from "react";
+import { BookOpen, Check } from "lucide-react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import {
   Button,
@@ -16,7 +16,6 @@ import {
   ListPicker,
   PanelBoundary,
   Segmented,
-  Sheet,
   SrOnly,
   StatusGlyph,
   TextInput,
@@ -28,6 +27,7 @@ import {
 import type { GuideGroup, SectionId } from "./triage-risk-data";
 import type { SectionStatus, Target, TextKey, TriageState } from "./triage-risk-state";
 import { headingFilled, guideHeadings } from "./triage-risk-text";
+import { useTriageGuides, type GuideId } from "./triage-guide-context";
 import styles from "./triage-risk-form.module.css";
 
 /** What each section needs from the form: the state and the ways to change it. */
@@ -452,47 +452,26 @@ export function useDisclosure(initial = false) {
   };
 }
 
-/**
- * "What to cover": the toggle with its count, and the headings that add one when tapped. On a
- * tablet or desktop the headings open in place under the toggle; on a phone (Josh, 8 Nov 2026) they
- * open in a bottom sheet, so the long list never pushes the note down the page. Tapping a heading
- * there adds it, closes the sheet and puts the cursor under the new heading.
- */
-export function GuideBox({
+/** The headings of one guide, each adding itself to the note when tapped. Shown in the How to drawer. */
+export function GuideList({
   groups,
   text,
   onHeading,
   columns = 3,
-  extra,
-  textRef,
 }: {
   groups: readonly GuideGroup[];
   text: string;
   onHeading: (heading: string) => void;
   columns?: 2 | 3;
-  extra?: ReactNode;
-  /** The note the headings go into: focus lands there when the phone sheet closes. */
-  textRef?: RefObject<HTMLTextAreaElement | null>;
 }) {
-  const guide = useDisclosure(false);
   const isPhone = useIsPhone();
-  const all = guideHeadings(groups);
-  const covered = all.filter((h) => headingFilled(text, h)).length;
-  const list = (
-    <div id={guide.panelId} className={styles.guidePanel} data-columns={isPhone ? 1 : columns}>
+  return (
+    <div className={styles.guidePanel} data-columns={isPhone ? 1 : columns}>
       {groups.map(([title, items]) => (
         <div key={title}>
           <h3 className={styles.guideHead}>{title}</h3>
           {items.map(([heading, cover]) => (
-            <button
-              key={heading}
-              type="button"
-              className={styles.guideItem}
-              onClick={() => {
-                if (isPhone) guide.close();
-                onHeading(heading);
-              }}
-            >
+            <button key={heading} type="button" className={styles.guideItem} onClick={() => onHeading(heading)}>
               <StatusGlyph tone={headingFilled(text, heading) ? "success" : "neutral"} size={10} />
               <span>
                 <span className={styles.guideTitle}>{heading}</span>
@@ -504,40 +483,49 @@ export function GuideBox({
       ))}
     </div>
   );
+}
+
+/**
+ * "What to cover": the button with its count. It opens the How to drawer on its first tab, where the
+ * headings add one when tapped (one help panel, not an inline list plus a phone sheet).
+ */
+export function GuideBox({
+  id,
+  groups,
+  text,
+  onHeading,
+  extra,
+}: {
+  id: GuideId;
+  groups: readonly GuideGroup[];
+  text: string;
+  onHeading: (heading: string) => void;
+  extra?: ReactNode;
+}) {
+  const guides = useTriageGuides();
+  const all = guideHeadings(groups);
+  const covered = all.filter((h) => headingFilled(text, h)).length;
+  const onHeadingRef = useRef(onHeading);
+  useEffect(() => {
+    onHeadingRef.current = onHeading;
+  });
+  useEffect(() => guides?.register(id, (heading) => onHeadingRef.current(heading)), [guides, id]);
   return (
-    <>
-      <div className={styles.guideBar}>
-        <Button
-          size="sm"
-          icon={BookOpen}
-          iconEnd={isPhone ? undefined : ChevronDown}
-          className={phoneRows.chip}
-          onClick={guide.toggle}
-          {...(isPhone ? { "aria-haspopup": "dialog" as const, "aria-expanded": guide.open } : guide.buttonProps)}
-        >
-          What to cover{" "}
-          <span className={styles.mono}>
-            {covered} of {all.length}
-          </span>
-        </Button>
-        {extra}
-      </div>
-      {isPhone ? (
-        <Sheet
-          open={guide.open}
-          onClose={guide.close}
-          title="What to cover"
-          description={`${covered} of ${all.length} covered. Tap a heading to add it to the note.`}
-          mobileSize="content"
-          returnFocusRef={textRef}
-          testId="triage-guide-sheet"
-        >
-          {list}
-        </Sheet>
-      ) : guide.open ? (
-        list
-      ) : null}
-    </>
+    <div className={styles.guideBar}>
+      <Button
+        size="sm"
+        icon={BookOpen}
+        className={phoneRows.chip}
+        onClick={() => guides?.open(id)}
+        aria-haspopup="dialog"
+      >
+        What to cover{" "}
+        <span className={styles.mono}>
+          {covered} of {all.length}
+        </span>
+      </Button>
+      {extra}
+    </div>
   );
 }
 

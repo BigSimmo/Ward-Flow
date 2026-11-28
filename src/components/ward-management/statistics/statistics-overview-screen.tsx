@@ -8,7 +8,7 @@ import {
   BarList,
   CardBody,
   FilterChip,
-  HeroStat,
+  HeroFigures,
   OccupancyRing,
   PhoneListRow,
   ScrollRow,
@@ -178,33 +178,37 @@ export function StatisticsOverviewScreen() {
         title: `${occupancy.inUse} of ${totalBeds} in use`,
         sub: `${preparingCount} being made ready`,
         stats: (
-          <>
-            <HeroStat value={capacity.ready} label="Ready now" />
-            <HeroStat
-              value={wardsOverLine}
-              label={`Over ${BED_ALERT_THRESHOLD_PERCENT}%`}
-              tone={wardsOverLine > 0 ? "warning" : undefined}
-            />
-            <HeroStat value={small(blockedTotal)} label={HELD_UP_ANY_DATE_LABEL} />
-          </>
+          <HeroFigures
+            label="Network figures"
+            items={[
+              { id: "ready", value: capacity.ready, label: "ready now" },
+              {
+                id: "over",
+                value: wardsOverLine,
+                label: `over ${BED_ALERT_THRESHOLD_PERCENT}%`,
+                tone: wardsOverLine > 0 ? "warning" : undefined,
+              },
+              { id: "held-up", value: small(blockedTotal), label: HELD_UP_ANY_DATE_LABEL.toLowerCase() },
+            ]}
+          />
         ),
       }}
       stats={
-        <>
-          <HeroStat value={totalBeds} label="Inpatient beds" />
-          <HeroStat value={occupancy.inUse} label={`${Math.round(occupiedShare)}% in use`} />
-          <HeroStat value={capacity.ready} label="Ready now" />
-          <HeroStat value={preparingCount} label="Being made ready" />
-          <HeroStat
-            value={wardsOverLine}
-            label={
-              <span className={styles.flagged}>
-                {wardsOverLine > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                {`Wards at or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
-              </span>
-            }
-          />
-        </>
+        <HeroFigures
+          label="Network figures"
+          items={[
+            { id: "beds", value: totalBeds, label: "inpatient beds" },
+            { id: "in-use", value: occupancy.inUse, label: `${Math.round(occupiedShare)}% in use` },
+            { id: "ready", value: capacity.ready, label: "ready now" },
+            { id: "preparing", value: preparingCount, label: "being made ready" },
+            {
+              id: "over",
+              value: wardsOverLine,
+              label: `wards at or over ${BED_ALERT_THRESHOLD_PERCENT}%`,
+              tone: wardsOverLine > 0 ? "warning" : undefined,
+            },
+          ]}
+        />
       }
     >
       {isPhone ? (

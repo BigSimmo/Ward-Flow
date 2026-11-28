@@ -99,7 +99,7 @@ describe("Features at this site", () => {
     expect(within(card).queryByText("Absent without leave bed hold review")).not.toBeInTheDocument();
     expect(within(card).queryByText("Ward closure")).not.toBeInTheDocument();
     expect(
-      within(card).getByText("Always on, so not listed: safety notices, legal times and ruling guards."),
+      within(card).getByText(/Safety notices, legal times and ruling guards\s+are always on\./),
     ).toBeInTheDocument();
   });
 

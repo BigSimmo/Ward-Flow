@@ -103,7 +103,9 @@ it("CT-12: the chronology CSV and printed copy name the filter, never the typed 
   );
   fireEvent.change(screen.getByRole("searchbox", { name: "Find in events" }), { target: { value: "qqsynthetic" } });
   expect(screen.getAllByTestId("ward-chronology-print-filter")[0]).toHaveTextContent("Search applied");
-  const csv = await captureCsv(() => fireEvent.click(screen.getAllByTestId("ward-chronology-csv")[0]));
+  // Share menu (D-91): the CSV is one of its items.
+  fireEvent.click(screen.getAllByTestId("ward-chronology-share")[0]);
+  const csv = await captureCsv(() => fireEvent.click(screen.getByRole("menuitem", { name: "Export CSV" })));
   const lines = csv.split("\r\n");
   const scopeAt = lines.findIndex((line) => line.startsWith('"Scope",'));
   expect(scopeAt).toBeGreaterThan(0);

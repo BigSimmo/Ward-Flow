@@ -96,7 +96,7 @@ export function EscalateNoReply({
           owner: "ward",
           unitId,
           dueAt: now + 60,
-          success: `Escalated ${wait.place}.`,
+          success: `Escalated ${wait.place}`,
         });
       }}
     >

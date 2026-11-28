@@ -12,7 +12,17 @@ import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import type { AuditEvent, AuditReview } from "./ward-audit";
 import { deskRoleLabel } from "./settings/workstation-desks";
 import { movementHref, unitHref } from "./shell/ward-facade";
-import { Badge, Button, DrawerFootRow, PanelDrawer, StatusGlyph, StatusPill, buttonClass, cx } from "@/components/wf";
+import {
+  Badge,
+  Button,
+  DrawerFootRow,
+  PanelDrawer,
+  StatusGlyph,
+  StatusPill,
+  buttonClass,
+  cx,
+  type DrawerPagerProps,
+} from "@/components/wf";
 import {
   PATTERN_HOURS,
   PATTERN_LIMIT,
@@ -24,6 +34,14 @@ import {
 import thirdEdition from "./governance-third-edition.module.css";
 import local from "./governance-event-list.module.css";
 import { EventFacts, FactList } from "./governance-event-facts";
+import { allEmergencyDepartments, edShortName, siteDirectory } from "./ward-sites";
+
+/** Audit four #95 (r10): an ED or hospital named in full reads as its short code; anything else stays. */
+function shortPlaceLabel(place: string): string {
+  const ed = allEmergencyDepartments().find((entry) => entry.name === place);
+  if (ed) return edShortName(ed);
+  return siteDirectory.find((site) => site.name === place)?.code ?? place;
+}
 import {
   OUTCOME_TONE,
   actionLabels,
@@ -50,6 +68,7 @@ export function EventTable({
   empty,
   allowed = true,
   isDim,
+  hideReview = false,
 }: {
   isDim?: (event: AuditEvent) => boolean;
   label: string;
@@ -62,6 +81,8 @@ export function EventTable({
   onKey: (event: ReactKeyboardEvent<HTMLDivElement>) => void;
   empty: ReactNode;
   allowed?: boolean;
+  /** Audit four #100: the Review tab's rows are all unreviewed, so the column goes; an exception is a tag. */
+  hideReview?: boolean;
 }) {
   // WF-46 (5 Nov 2026): with no rows the column heads stood over an empty note and the scroll edge
   // ran half way down it, so the list read as half-drawn. Heads and edge show only with rows.
@@ -69,13 +90,13 @@ export function EventTable({
   return (
     <div className={cx(thirdEdition.capturedList, local.list)} data-empty={hasRows ? undefined : "true"}>
       {hasRows ? (
-        <div className={thirdEdition.eventHeader} aria-hidden="true">
+        <div className={cx(thirdEdition.eventHeader, hideReview && local.noReview)} aria-hidden="true">
           <span>When</span>
           <span>What</span>
           <span>Record</span>
           <span>By</span>
           <span>Outcome</span>
-          <span>Review</span>
+          {hideReview ? null : <span>Review</span>}
         </div>
       ) : null}
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
@@ -109,13 +130,23 @@ export function EventTable({
                 key={`${event.generation}-${event.id}`}
                 data-audit-row={event.id}
                 data-dim={isDim?.(event) ? "true" : undefined}
-                className={cx(thirdEdition.eventRow, local.eventRow)}
+                className={cx(thirdEdition.eventRow, local.eventRow, hideReview && local.noReview)}
                 aria-pressed={selected?.id === event.id}
                 onClick={() => onChoose(event)}
               >
                 <span className={thirdEdition.eventTime}>{when(event.at, now)}</span>
                 <span className={thirdEdition.stack}>
-                  <strong className={local.wrap}>{actionLabels[event.action]}</strong>
+                  <strong className={local.wrap}>
+                    {actionLabels[event.action]}
+                    {hideReview && state === "follow-up-required" ? (
+                      <>
+                        {" "}
+                        <Badge tone="warning" size="sm">
+                          Follow-up required
+                        </Badge>
+                      </>
+                    ) : null}
+                  </strong>
                   <span className={cx(thirdEdition.quietText, local.wrap)}>
                     {glass
                       ? reasonLabel(glass.reason)
@@ -135,7 +166,11 @@ export function EventTable({
                 {giver?.desk ? (
                   <span className={thirdEdition.stack}>
                     <span className={local.wrap}>{shortDeskLabel(giver.desk)}</span>
-                    <span className={cx(thirdEdition.quietText, local.wrap)}>{giver.place}</span>
+                    {/* Audit four #95 (r10): at tablet width the place is its short code ("SCGH ED"). */}
+                    <span className={cx(thirdEdition.quietText, local.wrap, local.placeFull)}>{giver.place}</span>
+                    <span className={cx(thirdEdition.quietText, local.wrap, local.placeCode)}>
+                      {shortPlaceLabel(giver.place)}
+                    </span>
                   </span>
                 ) : (
                   <span className={local.wrap}>
@@ -156,17 +191,19 @@ export function EventTable({
                       : outcomeLabels[event.outcome]}
                   </span>
                 )}
-                <span className={thirdEdition.statusText}>
-                  <StatusGlyph
-                    tone={state === "reviewed" ? "success" : state === "follow-up-required" ? "warning" : "neutral"}
-                    size={9}
-                  />
-                  {state === "Review attempt"
-                    ? "Review attempt"
-                    : state === "unreviewed"
-                      ? "Unreviewed"
-                      : reviewLabels[state]}
-                </span>
+                {hideReview ? null : (
+                  <span className={thirdEdition.statusText}>
+                    <StatusGlyph
+                      tone={state === "reviewed" ? "success" : state === "follow-up-required" ? "warning" : "neutral"}
+                      size={9}
+                    />
+                    {state === "Review attempt"
+                      ? "Review attempt"
+                      : state === "unreviewed"
+                        ? "Unreviewed"
+                        : reviewLabels[state]}
+                  </span>
+                )}
               </button>
             );
           })
@@ -218,7 +255,10 @@ export function EventDetail({
   feedback,
   roleReason,
   recordViews,
+  pager,
 }: {
+  /** Audit three #34: the list pager in the drawer head. */
+  pager?: DrawerPagerProps;
   /** D-80 item 14: who opened the chosen row's record in the last 7 days, when it has one. */
   recordViews?: ReactNode;
   roleReason?: string;
@@ -266,20 +306,27 @@ export function EventDetail({
       title={glass ? subjectLabel(glass, patientOf) : actionLabels[selected.action]}
       titleId="inspectorHeading"
       subtitle={
-        glass ? (
-          <>
-            {glassPerson ? (
-              <>
-                <span className={thirdEdition.umrn}>{glassPerson.umrn}</span> ·{" "}
-              </>
-            ) : null}
-            Break glass · <span className={thirdEdition.umrn}>{when(glass.at, now)}</span>
-          </>
-        ) : (
-          <>
-            {categoryLabels[selected.category]} · <span className={thirdEdition.umrn}>{when(selected.at, now)}</span>
-          </>
-        )
+        // Final r10 F3: each part is its own item, so the drawer draws the dot before it.
+        glass
+          ? [
+              ...(glassPerson
+                ? [
+                    <span key="umrn" className={thirdEdition.umrn}>
+                      {glassPerson.umrn}
+                    </span>,
+                  ]
+                : []),
+              "Break glass",
+              <span key="at" className={thirdEdition.umrn}>
+                {when(glass.at, now)}
+              </span>,
+            ]
+          : [
+              categoryLabels[selected.category],
+              <span key="at" className={thirdEdition.umrn}>
+                {when(selected.at, now)}
+              </span>,
+            ]
       }
       tag={
         <StatusPill tone={state === "reviewed" ? "success" : state === "follow-up-required" ? "warning" : "neutral"}>
@@ -289,6 +336,7 @@ export function EventDetail({
       closeLabel="Close event"
       bodyLabel="Event facts"
       testId="ward-governance-override-detail"
+      pager={pager}
       footProps={{ "data-testid": "ward-governance-decision-record" }}
       foot={
         <>
@@ -373,40 +421,43 @@ export function EventDetail({
           </>
         )}
 
-        {/* The review history: a plain hairline section, not a card in the drawer. */}
+        {/* The review history: a plain hairline section, not a card in the drawer. Audit three #11:
+            with no review yet it is one line, not a head over an empty state. */}
         <section className={thirdEdition.reviewSection} aria-labelledby="governance-event-review-title">
-          <div className={thirdEdition.stack}>
-            <h3 className={thirdEdition.blockTitle} id="governance-event-review-title">
-              Your review
-            </h3>
-            <span className={thirdEdition.quietText}>
-              {`${history.length} recorded ${history.length === 1 ? "review" : "reviews"} · role recorded`}
-            </span>
-          </div>
-          <div className={thirdEdition.reviewBody} role="region" aria-label="Review history">
-            {history.length ? (
-              <ol className={thirdEdition.timeline}>
-                {[...history].reverse().map((review) => (
-                  <li key={review.id}>
-                    <StatusGlyph tone={review.decision === "reviewed" ? "success" : "warning"} size={9} />
-                    <span className={thirdEdition.stack}>
-                      <strong>{reviewLabels[review.decision]}</strong>
-                      <span className={thirdEdition.quietText}>
-                        <span className={thirdEdition.umrn}>{when(review.at, now)}</span> ·{" "}
-                        {deskRoleLabel(review.byRole)}
+          {history.length ? (
+            <>
+              <div className={thirdEdition.stack}>
+                <h3 className={thirdEdition.blockTitle} id="governance-event-review-title">
+                  Your review
+                </h3>
+                <span className={thirdEdition.quietText}>
+                  {`${history.length} recorded ${history.length === 1 ? "review" : "reviews"} · role recorded`}
+                </span>
+              </div>
+              <div className={thirdEdition.reviewBody} role="region" aria-label="Review history">
+                <ol className={thirdEdition.timeline}>
+                  {[...history].reverse().map((review) => (
+                    <li key={review.id}>
+                      <StatusGlyph tone={review.decision === "reviewed" ? "success" : "warning"} size={9} />
+                      <span className={thirdEdition.stack}>
+                        <strong>{reviewLabels[review.decision]}</strong>
+                        <span className={thirdEdition.quietText}>
+                          <span className={thirdEdition.umrn}>{when(review.at, now)}</span> ·{" "}
+                          {deskRoleLabel(review.byRole)}
+                        </span>
                       </span>
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className={thirdEdition.quiet}>
-                {selected.category === "review"
-                  ? "Review attempts cannot be reviewed."
-                  : "No review recorded for this event."}
-              </p>
-            )}
-          </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </>
+          ) : (
+            <p className={thirdEdition.quiet} id="governance-event-review-title">
+              {selected.category === "review"
+                ? "Review attempts cannot be reviewed."
+                : "Your review: none recorded yet."}
+            </p>
+          )}
         </section>
       </div>
     </PanelDrawer>

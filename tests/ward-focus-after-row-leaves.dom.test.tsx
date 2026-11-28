@@ -35,7 +35,7 @@ function recordTwoActions() {
     const toggle = within(waits).getAllByTestId("bed-meeting-add-action")[index]!;
     press(toggle);
     fireEvent.click(
-      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Book transport" }),
+      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Record transport booking" }),
     );
     press(screen.getByTestId("bed-meeting-action-record"));
     // The form closes with its Record button; focus goes back to the row's Add action.
@@ -132,7 +132,8 @@ describe("focus after a row's own button closes it", () => {
     press(screen.getByTestId(`ward-accept-${movement.id}`));
     expect(screen.queryByTestId(`ward-accept-${movement.id}`)).toBeNull();
     expect(document.activeElement).not.toBe(document.body);
-    const awaiting = screen.getByRole("region", { name: "Awaiting your answer" });
-    expect(awaiting.contains(document.activeElement)).toBe(true);
+    // With nothing left to answer the panel is not drawn (audit four 106), so focus is on the
+    // page's own main area, which still holds the ward's screen.
+    expect(screen.getByTestId("ward-unit-screen").contains(document.activeElement)).toBe(true);
   });
 });

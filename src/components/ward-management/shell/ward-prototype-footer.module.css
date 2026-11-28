@@ -76,29 +76,12 @@
   max-width: 100%;
 }
 
-.authorityPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.15rem 0.55rem;
-  border-radius: var(--wf-r-tag);
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  color: var(--ink-soft);
-  font-family: var(--body, system-ui, sans-serif);
+/* Audit three #49: the clock the board runs on, quiet, at the right end. */
+.footerClock {
+  color: var(--muted);
+  font-family: var(--mono, ui-monospace, monospace);
   font-size: var(--t-0);
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 3%, transparent);
-}
-
-.authorityIcon {
-  width: 12px;
-  height: 12px;
-  color: var(--accent);
-  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /*
@@ -200,7 +183,7 @@
     white-space: nowrap;
   }
   .footerNote,
-  .authorityPill {
+  .footerClock {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -219,8 +202,7 @@
     border-top: 1px solid CanvasText;
     color: CanvasText;
   }
-  .prototypeBadge,
-  .authorityPill {
+  .prototypeBadge {
     border-color: CanvasText;
     color: CanvasText;
     background: transparent;
@@ -229,5 +211,19 @@
     border: 1px solid CanvasText;
     background: transparent;
     box-shadow: none;
+  }
+}
+
+/* Audit four #90 (28 Nov 2026): a footer drawn outside a padded page column (Ward answer) keeps the
+   page margins, so it reads as the rounded card every other page draws, never an edge-to-edge band. */
+.inset {
+  width: auto;
+  margin-inline: var(--wf-s-4);
+  margin-block-end: var(--wf-s-4);
+}
+
+@media (min-width: 64rem) {
+  .inset {
+    margin-inline: var(--wf-s-6, 24px);
   }
 }

@@ -92,7 +92,7 @@ describe("parseHandoverScope / handoverScopeValue round-trip", () => {
 
 describe("handoverScopeLabel", () => {
   it("names the whole network", () => {
-    expect(handoverScopeLabel({ kind: "network" }, units)).toBe("Whole network");
+    expect(handoverScopeLabel({ kind: "network" }, units)).toBe("Statewide");
   });
 
   it("names a real ward, ED, service and community team", () => {

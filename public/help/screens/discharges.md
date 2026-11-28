@@ -8,7 +8,7 @@ Planned discharges, held-up discharges first.
 
 1. Discharges today. How many to work now out of all open, dates overdue, and bed days past the ward's date.
 2. What to do next. The next job, such as chasing held-up discharges. Show narrows the list to them.
-3. Discharge actions. Ask wards about dates that have passed, Copy counts and Print list. On a phone, Per day and Filter sit here too.
+3. Discharge actions. Ask wards about dates that have passed. Share holds Copy counts, Export list and Print list. On a phone, Per day and Filter sit here too.
 4. Held up by reason. What is holding discharges up, counted by reason. Press a reason to highlight its discharges.
 5. Now and History. Now lists the discharges still open. History lists those already recorded.
 6. Highlight by stage. Held up, confirmed and expected. Press one to highlight those rows; nobody is hidden.

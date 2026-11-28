@@ -7,7 +7,6 @@ import { describe, expect, it } from "vitest";
 import {
   statisticsSectionById,
   STATISTICS_COMMUNITY_CHOOSER_HREF,
-  STATISTICS_COMMUNITY_CHOOSER_ID,
   STATISTICS_COMPARE_HREF,
   STATISTICS_HOME_HREF,
   STATISTICS_OVERVIEW_HREF,
@@ -177,7 +176,7 @@ describe("the section hrefs resolve to routes that exist", () => {
     const perService = statisticsSectionById("service");
     // A literal, not `${STATISTICS_HOME_HREF}#${STATISTICS_SERVICE_CHOOSER_ID}` — an expectation
     // rebuilt from the same constants the source composes agrees with any value they produce.
-    expect(perService?.href).toBe("/bedchart/statistics#choose-a-health-service");
+    expect(perService?.href).toBe("/bedchart/statistics/services#browse");
     expect(perService?.href).toBe(STATISTICS_SERVICE_CHOOSER_HREF);
     expect(STATISTICS_SERVICE_CHOOSER_ID).toBe("choose-a-health-service");
     expect(existsSync(routeFile(STATISTICS_HOME_HREF))).toBe(true);
@@ -193,7 +192,7 @@ describe("the section hrefs resolve to routes that exist", () => {
     const perUnit = statisticsSectionById("units");
     // A literal, not `${STATISTICS_HOME_HREF}#${STATISTICS_UNIT_CHOOSER_ID}` — an expectation
     // rebuilt from the same constants the source composes agrees with any value they produce.
-    expect(perUnit?.href).toBe("/bedchart/statistics#choose-a-unit");
+    expect(perUnit?.href).toBe("/bedchart/statistics/wards#browse");
     expect(perUnit?.href).toBe(STATISTICS_UNIT_CHOOSER_HREF);
     expect(STATISTICS_UNIT_CHOOSER_ID).toBe("choose-a-unit");
     expect(existsSync(routeFile(STATISTICS_HOME_HREF))).toBe(true);
@@ -276,7 +275,8 @@ describe("the per-unit route paths are written as literals, for the route scan",
    * working either way.
    */
   it("points the community chooser at the anchor, not at the top of the hub", () => {
-    expect(STATISTICS_COMMUNITY_CHOOSER_HREF.endsWith(`#${STATISTICS_COMMUNITY_CHOOSER_ID}`)).toBe(true);
+    // Audit two (#118): each chooser link opens Network's Browse card on its own segment.
+    expect(STATISTICS_COMMUNITY_CHOOSER_HREF).toBe("/bedchart/statistics/teams#browse");
     expect(STATISTICS_COMMUNITY_CHOOSER_HREF).not.toBe(STATISTICS_HOME_HREF);
   });
 
@@ -480,12 +480,14 @@ describe("every statistics route path is written as a literal, where the scan ca
     // `STATISTICS_HOME_HREF`, unlike the dynamic-route builders above. Their whole point is to sit on
     // the hub page itself, so composing from that same constant is the correct form here, not the composition
     // the two `not.toContain` checks below forbid for the routes that must be visible to the scan.
-    expect(SECTIONS_SOURCE).toContain("`${STATISTICS_HOME_HREF}#${STATISTICS_UNIT_CHOOSER_ID}`");
-    expect(SECTIONS_SOURCE).toContain("`${STATISTICS_HOME_HREF}#${STATISTICS_SERVICE_CHOOSER_ID}`");
+    // Audit two (#118): they now sit on each index address's Browse segment instead.
+    expect(SECTIONS_SOURCE).toContain("`${STATISTICS_WARDS_HREF}#${STATISTICS_BROWSE_ID}`");
+    expect(SECTIONS_SOURCE).toContain("`${STATISTICS_SERVICES_HREF}#${STATISTICS_BROWSE_ID}`");
 
     // And the composition that hid two of them may not come back.
     expect(SECTIONS_SOURCE).not.toContain("${STATISTICS_HOME_HREF}/");
-    expect(SECTIONS_SOURCE).not.toContain("${STATISTICS_COMPARE_HREF}");
+    // The one composition on Compare is the #eds fragment of the same page, not a sub-route.
+    expect(SECTIONS_SOURCE).not.toMatch(/\$\{STATISTICS_COMPARE_HREF\}(?!#)/);
     // Stronger than the sections form, and it can be stronger because the facade has no business
     // with this module's constants at all: it may not so much as name `STATISTICS_HOME_HREF`. A
     // builder that starts composing from it becomes invisible to the reachability scan on the same
@@ -787,7 +789,9 @@ describe("the statistics route page's prop-passing prohibition names every overr
     const screenSource = readFileSync(SCREEN_FILE, "utf8");
     // StatisticsScreen takes its overrides as one named prop type (the executive split hands the
     // same props on to the operational screen), so the count is read from that type.
-    expect(screenSource).toContain("export function StatisticsScreen(props: StatisticsInputs = {}) {");
+    expect(screenSource).toContain(
+      "export function StatisticsScreen({ browse, ...props }: StatisticsInputs & { browse?: BrowseSegment } = {}) {",
+    );
     const typeStart = screenSource.indexOf("type StatisticsInputs = {");
     expect(typeStart, "StatisticsInputs type not found").toBeGreaterThan(-1);
     const propType = screenSource.slice(typeStart, screenSource.indexOf("};", typeStart) + 2);

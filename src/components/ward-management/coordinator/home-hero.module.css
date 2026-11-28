@@ -118,6 +118,7 @@
   color: var(--wf-hero-ink);
   font: inherit;
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -297,6 +298,20 @@
   .edStrip::-webkit-scrollbar {
     display: none;
   }
+
+  .edStrip {
+    -webkit-mask-image: linear-gradient(90deg, black calc(100% - 32px), transparent);
+    mask-image: linear-gradient(90deg, black calc(100% - 32px), transparent);
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .edStrip {
+      -webkit-mask-image: linear-gradient(90deg, black calc(100% - var(--wf-strip-fade)), transparent);
+      mask-image: linear-gradient(90deg, black calc(100% - var(--wf-strip-fade)), transparent);
+      animation: stripFadeEnd 1ms linear both;
+      animation-timeline: scroll(self inline);
+    }
+  }
 }
 
 /* Page tops v6 (Josh, 9 Nov 2026): the strip reads as one slim band; desktop cells breathe a little. */
@@ -349,5 +364,26 @@
   .heroTop > div:has(> [data-wf-hero-next]) {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--wf-s-3);
+  }
+}
+
+/* Audit four #97 (28 Nov 2026): the edge fade the phone chip rows have, so a strip cut at the right
+   edge shows that it scrolls. The fade lifts once the strip reaches its end (scroll-driven), and a
+   strip that fits keeps a full face: the fade only covers the last 32px of an overflowing row. */
+/* r10: the resting value is the fade itself, so where motion is reduced (the scroll-driven animation
+   is switched off) the cut strip still fades rather than ending hard mid-word. */
+@property --wf-strip-fade {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 32px;
+}
+
+@keyframes stripFadeEnd {
+  0%,
+  92% {
+    --wf-strip-fade: 32px;
+  }
+  100% {
+    --wf-strip-fade: 0px;
   }
 }

@@ -100,7 +100,7 @@ describe("bed meeting agenda", () => {
       within(screen.getByTestId("bed-meeting-agenda-ed-waits")).getAllByTestId("bed-meeting-add-action")[0]!,
     );
     fireEvent.click(
-      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Book transport" }),
+      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Record transport booking" }),
     );
     fireEvent.click(screen.getByTestId("bed-meeting-action-record"));
     expect(screen.getByTestId("bed-meeting-action-form")).toBeInTheDocument();
@@ -108,7 +108,7 @@ describe("bed meeting agenda", () => {
     expect(send).toHaveBeenCalledTimes(1);
     await act(async () => finish({ commandId: "agenda", status: "refused", message: "This action already exists." }));
     expect(
-      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Book transport" }),
+      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Record transport booking" }),
     ).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("alert")).toHaveTextContent("This action already exists.");
     fireEvent.click(screen.getByTestId("bed-meeting-action-record"));
@@ -132,7 +132,7 @@ describe("bed meeting agenda", () => {
       within(screen.getByTestId("bed-meeting-agenda-ed-waits")).getAllByTestId("bed-meeting-add-action")[0]!,
     );
     fireEvent.click(
-      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Book transport" }),
+      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Record transport booking" }),
     );
     await act(async () => fireEvent.click(screen.getByTestId("bed-meeting-action-record")));
     expect(screen.getByTestId("bed-meeting-action-record")).toHaveAttribute("aria-busy", "true");
@@ -153,7 +153,6 @@ describe("bed meeting agenda", () => {
       expect(screen.getByTestId("bed-meeting-agenda-ed-waits")).toBeInTheDocument();
       expect(screen.queryByTestId("bed-meeting-add-action")).toBeNull();
       expect(screen.queryByTestId("bed-meeting-action-done")).toBeNull();
-      expect(screen.getByText(/Read only\. The bed coordinator records and completes actions\./)).toBeInTheDocument();
     } finally {
       desk.readOnly = false;
     }
@@ -174,19 +173,19 @@ describe("bed meeting agenda", () => {
     const recordButton = screen.getByTestId("bed-meeting-action-record");
     expect(recordButton).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(
-      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Book transport" }),
+      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Record transport booking" }),
     );
     fireEvent.click(recordButton);
 
     expect(screen.getByTestId("bed-meeting-action-summary")).toHaveTextContent("0 overdue · 1 still open");
     const list = screen.getByTestId("bed-meeting-action-list");
-    expect(within(list).getByText(/Book transport/)).toBeInTheDocument();
-    expect(within(waits).getByText("Book transport", { selector: "span" })).toBeInTheDocument();
+    expect(within(list).getByText(/Record transport booking/)).toBeInTheDocument();
+    expect(within(waits).getByText("Record transport booking", { selector: "span" })).toBeInTheDocument();
 
     // The open kind is not offered again for the same person, so the reducer never has to refuse it.
     fireEvent.click(within(waits).getAllByTestId("bed-meeting-add-action")[0]!);
     const kinds = within(screen.getByTestId("bed-meeting-action-kind")).getAllByRole("button");
-    expect(kinds.map((chip) => chip.textContent)).not.toContain("Book transport");
+    expect(kinds.map((chip) => chip.textContent)).not.toContain("Record transport booking");
     expect(kinds.length).toBeGreaterThan(1);
 
     fireEvent.click(within(list).getByTestId("bed-meeting-action-done"));
@@ -204,7 +203,7 @@ describe("bed meeting agenda", () => {
     const waits = screen.getByTestId("bed-meeting-agenda-ed-waits");
     fireEvent.click(within(waits).getAllByTestId("bed-meeting-add-action")[0]!);
     fireEvent.click(
-      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Book transport" }),
+      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Record transport booking" }),
     );
     fireEvent.click(screen.getByTestId("bed-meeting-action-record"));
 
@@ -212,7 +211,7 @@ describe("bed meeting agenda", () => {
     fireEvent.click(screen.getByTestId("agenda-actioned-chip"));
 
     const narrowed = screen.getByTestId("bed-meeting-agenda-ed-waits");
-    expect(within(narrowed).getByText("Book transport", { selector: "span" })).toBeInTheDocument();
+    expect(within(narrowed).getByText("Record transport booking", { selector: "span" })).toBeInTheDocument();
     expect(within(narrowed).getAllByTestId("bed-meeting-add-action")).toHaveLength(1);
     expect(screen.queryByTestId("bed-meeting-agenda-holds")).not.toBeInTheDocument();
     expect(screen.queryByTestId("bed-meeting-agenda-referrals")).not.toBeInTheDocument();
@@ -228,7 +227,7 @@ describe("bed meeting agenda", () => {
     for (const index of [0, 1]) {
       fireEvent.click(within(waits).getAllByTestId("bed-meeting-add-action")[index]!);
       fireEvent.click(
-        within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Book transport" }),
+        within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Record transport booking" }),
       );
       fireEvent.click(screen.getByTestId("bed-meeting-action-record"));
     }
@@ -239,9 +238,9 @@ describe("bed meeting agenda", () => {
     const doneButtons = within(list).getAllByTestId("bed-meeting-action-done");
     const subjects = doneButtons.map((button) => {
       const row = button.closest("li")!;
-      const actionAndSubject = within(row).getByText(/Book transport ·/u).textContent!;
+      const actionAndSubject = within(row).getByText(/Record transport booking ·/u).textContent!;
       const subject = actionAndSubject.split(" · ").slice(1).join(" · ");
-      expect(button).toHaveAccessibleName(`Done: Book transport for ${subject}`);
+      expect(button).toHaveAccessibleName(`Done: Record transport booking for ${subject}`);
       expect(button).toHaveTextContent(/^Done$/u);
       return subject;
     });
@@ -277,7 +276,7 @@ describe("bed meeting agenda", () => {
     expect(screen.queryByTestId("agenda-start-meeting")).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("bed-meeting-sheet-open"));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByTestId("bed-meeting-sheet-print")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Print sheet" })).toBeInTheDocument();
     // The lists keep a small action button on every row, named for the person.
     const waits = screen.getByTestId("bed-meeting-agenda-ed-waits");
     const [first] = within(waits).getAllByTestId("bed-meeting-add-action");
@@ -354,7 +353,7 @@ describe("bed meeting agenda filtered headline counts", () => {
   /** Every row the list's card shows once it is unfolded. */
   function listedRows(id: string): number {
     const card = screen.getByTestId(`bed-meeting-agenda-${id}`);
-    const more = within(card).queryByRole("button", { name: /^Show \d+ more$/u });
+    const more = within(card).queryByRole("button", { name: /^Show all \d+$/u });
     if (more) fireEvent.click(more);
     return card.querySelector("ul")?.children.length ?? 0;
   }

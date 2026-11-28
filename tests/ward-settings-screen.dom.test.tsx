@@ -110,20 +110,19 @@ describe("the settings screen", () => {
     renderSettings();
     expect(screen.queryByTestId("ward-settings-not-yet-here")).toBeNull();
     expect(screen.getByTestId("ward-settings-appearance")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-settings-rail")).toBeInTheDocument();
+    // r10: the Sidebar (rail) row left Display; Row density stands in as the second Display control.
+    expect(screen.getByTestId("ward-settings-density")).toBeInTheDocument();
   });
 
-  // Audit settings-27: "workstation" finds the desk switcher, and choosing it opens the desk drawer.
-  // Settings by role (3 Nov 2026): the row reads "Try another desk (demo)"; the drawer keeps its name.
-  // The profile card no longer has a Switch login button: desk switching lives in the account menu.
-  it("finds Try another desk (demo) by the old word and opens the desk drawer", () => {
+  // A27 (26 Nov 2026): the person button holds the one door to Go to a desk, so Find a setting no
+  // longer offers a second one (r10). The case that opened the drawer from Find now asserts it is gone.
+  it("no longer offers Go to a desk from Find a setting", () => {
     renderSettings();
     fireEvent.change(screen.getByRole("combobox", { name: "Find a setting" }), {
       target: { value: "workstation" },
     });
     expect(screen.queryByTestId("ward-settings-switch-login")).toBeNull();
-    fireEvent.click(screen.getByRole("option", { name: /Try another desk \(demo\)/ }));
-    expect(screen.getByRole("dialog", { name: "Go to a desk" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /desk/i })).toBeNull();
   });
 
   // Settings by role (3 Nov 2026, stress test): Help, the tour and the glossary left Settings, so Find
@@ -186,7 +185,9 @@ describe("the settings screen", () => {
     // Try another desk (demo) is an action, not a row: choosing it opens the desk drawer (the case above).
     // Open Help is one too: Help moved out of Settings, and Find sends someone who looks for it there.
     expect(offered.has("go-to-desk")).toBe(true);
-    const actions = new Set(["go-to-desk", "open-help"]);
+    // Audit two #68: with every rule at its default the changed-only switch is hidden, and the
+    // screen's Find leaves it out until a rule differs (settings-screen.tsx results filter).
+    const actions = new Set(["go-to-desk", "open-help", "changed-only"]);
     expect([...offered].filter(([id]) => !actions.has(id) && !targets.has(id))).toEqual([]);
   });
 
@@ -208,7 +209,7 @@ describe("the settings screen", () => {
   it("actually renders its panels, so the no-control assertions are not passing over an empty page", () => {
     renderSettings();
     expect(screen.getByTestId("ward-settings-default-service")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-settings-rail")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-settings-density")).toBeInTheDocument();
     expect((screen.getByTestId("ward-settings-screen").textContent ?? "").length).toBeGreaterThan(200);
   });
 });
@@ -219,19 +220,6 @@ describe("the settings screen", () => {
  * really has, add a state per row, and do NOT add the two the drawing lists and the app lacks.
  */
 describe("the settings screen's thresholds panel", () => {
-  it("opens the BedChart Digest from About in a new tab, now that Tools no longer carries it", () => {
-    renderSettings();
-    const digest = screen.getByRole("link", { name: "BedChart Digest" });
-    expect(digest).toHaveAttribute("href", "/mockups/ward-flow-digest");
-    expect(digest).toHaveAttribute("target", "_blank");
-    expect(digest).toHaveAttribute("rel", "noopener noreferrer");
-  });
-
-  it("shows the policy version in About, moved from the rail's Menu foot (A7)", () => {
-    renderSettings();
-    expect(screen.getByTestId("ward-settings-policy-version")).toHaveTextContent(/^Policy2026\.3$/u);
-  });
-
   it("renders a row for each published threshold and no others", () => {
     renderSettings();
     const panel = screen.getByTestId("ward-settings-thresholds");

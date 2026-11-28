@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 
@@ -24,6 +24,11 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * 5. Full-width horizon Enlarge/Normal view toggle.
  * 6. Direct click-to-drawer clinical integration.
  */
+
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+}));
 
 const NOW = NOW_ANCHOR;
 
@@ -281,8 +286,9 @@ describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {
       seed,
     );
     expect(within(drawer).getByRole("heading", { name: `${wf014.formalName} — what is recorded` })).toBeInTheDocument();
-    expect(within(drawer).getByRole("heading", { name: "Person" })).toBeInTheDocument();
-    expect(within(drawer).getByRole("heading", { name: "Movement" })).toBeInTheDocument();
+    // Simplification mock-up: no "Person" section (the head names the person).
+    expect(within(drawer).queryByRole("heading", { name: "Person" })).toBeNull();
+    // A section with nothing recorded is left out, so only the ones WF-014 fills are asserted.
     expect(within(drawer).getByRole("heading", { name: "Transport leg" })).toBeInTheDocument();
   });
 

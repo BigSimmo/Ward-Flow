@@ -155,14 +155,7 @@ describe("closing a bed with a review time (item 6)", () => {
       within(menu)
         .getAllByRole("menuitem")
         .map((item) => item.textContent),
-    ).toEqual([
-      "Infection outbreak",
-      "Staffing",
-      "Building or maintenance",
-      "Other operational reason",
-      "Not given",
-      "Cancel",
-    ]);
+    ).toEqual(["Infection outbreak", "Staffing", "Building or maintenance", "Other operational reason", "Not given"]);
     // Nothing is closed until a reason (or Not given) is pressed.
     expect(flow!.units.find((unit) => unit.id === UNIT)!.closedBeds?.length ?? 0).toBe(before);
     const reviewAt = flow!.now + 240;
@@ -176,7 +169,7 @@ describe("closing a bed with a review time (item 6)", () => {
     expect(within(toast).queryByTestId("toast-choices")).toBeNull();
   });
 
-  it("backs out on Escape or Cancel with nothing changed, focus back on Close this bed", () => {
+  it("backs out on Escape with nothing changed, focus back on Close this bed", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <ToastProvider>
@@ -197,8 +190,10 @@ describe("closing a bed with a review time (item 6)", () => {
     expect(trigger).toHaveFocus();
     // The drawer is still open on the same bed.
     expect(screen.getByTestId("ward-drawer-close-bed")).toBeInTheDocument();
+    // r10: the kit menu has no Cancel item; Escape is the way out.
     fireEvent.click(trigger);
-    fireEvent.click(screen.getByRole("menuitem", { name: "Cancel" }));
+    expect(screen.queryByRole("menuitem", { name: "Cancel" })).toBeNull();
+    fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
     expect(screen.queryByRole("menu")).toBeNull();
     expect(trigger).toHaveFocus();
     expect(flow!.units.find((unit) => unit.id === UNIT)!.closedBeds?.length ?? 0).toBe(before);

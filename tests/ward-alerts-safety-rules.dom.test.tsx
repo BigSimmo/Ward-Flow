@@ -83,7 +83,7 @@ describe("Alerts redesign safety rules", () => {
 
   it("lists act now first inside each owner in the Owner view", () => {
     renderScreen();
-    const arrange = screen.getByRole("radiogroup", { name: "Arrange by" });
+    const arrange = screen.getByRole("radiogroup", { name: "Group by" });
     fireEvent.click(within(arrange).getByRole("radio", { name: /Owner/u }));
     // Each owner's own section: one holding rows and no further section. The page's Alerts section
     // holds every owner in turn, and since D-221 more than one owner has act-now rows, so "act now

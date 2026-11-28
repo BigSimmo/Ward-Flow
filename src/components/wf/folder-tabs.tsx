@@ -227,20 +227,6 @@ function FolderShape({ navRef, value }: { navRef: RefObject<HTMLElement | null>;
   );
 }
 
-/**
- * Class names a page puts on its own parts of a folder tab row: `switch` on the primary tab control
- * (PillTabs or Segmented), `hero` on the `Hero` just above the row (it makes room for the folder and
- * steps the band's lip aside on phone and tablet), `rule` on an optional divider before filters, and
- * `more` on a More button.
- */
-export const folderTabClasses = {
-  switch: styles.switch,
-  hero: styles.hero,
-  rule: styles.rule,
-  filters: styles.filters,
-  more: styles.more,
-} as const;
-
 export type FolderTabsProps = {
   /** The row's accessible name ("Home lists"). */
   label: string;

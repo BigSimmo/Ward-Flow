@@ -128,14 +128,24 @@ export function PullNowButton({ movement }: { movement: Movement }) {
   return useOptionalWardFlowSelect() ? <PullNowControl movement={movement} /> : null;
 }
 
+/**
+ * Sends Pull now for a movement as the coordinator. The one place that raises it, shared by the button
+ * here and by the More menus (Alerts drawer, phone movement sheet), so the role is typed once.
+ */
+export function useSendPullNow(movement: Movement) {
+  const dispatch = useWardFlowSelect("dispatch").dispatch;
+  const now = useWardFlowClock();
+  return () => dispatch({ type: "RAISE_PULL_NOW", role: "coordinator", now, movementId: movement.id });
+}
+
 function PullNowControl({ movement }: { movement: Movement }) {
-  const { broadcastAlerts, movements, dispatch, rejections, units } = useWardFlowSelect(
+  const { broadcastAlerts, movements, rejections, units } = useWardFlowSelect(
     "broadcastAlerts",
     "movements",
-    "dispatch",
     "rejections",
     "units",
   );
+  const sendPullNow = useSendPullNow(movement);
   const now = useWardFlowClock();
   const [refusalFrom, setRefusalFrom] = useState<number | null>(null);
   // Greyed with a reason on any other desk, never hidden (role limits, PR #206).
@@ -176,7 +186,7 @@ function PullNowControl({ movement }: { movement: Movement }) {
         onClick={() => {
           if (!isCoordinatorDesk) return;
           setRefusalFrom(rejections.length);
-          dispatch({ type: "RAISE_PULL_NOW", role: "coordinator", now, movementId: movement.id });
+          sendPullNow();
         }}
       >
         Pull now

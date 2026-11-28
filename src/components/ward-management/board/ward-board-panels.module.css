@@ -5,7 +5,9 @@
   .zones.zones {
     grid-template-columns: minmax(0, 1fr) 19rem;
   }
-  .beds.beds {
+  /* Tripled (final look, 26 Nov 2026): board.module.css's `.screen .beds` (9.5rem) has the same weight
+     as a doubled class, so the doubled rule only won while this file loaded after it. */
+  .beds.beds.beds {
     grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
   }
 }

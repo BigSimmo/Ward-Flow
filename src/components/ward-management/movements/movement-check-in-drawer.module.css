@@ -1,11 +1,25 @@
 /* Check in drawer on Movements (Josh's Note 7, approved mock-up 8 Nov 2026). Neutral borders only. */
 .body {
   display: grid;
+  flex: 1 1 auto;
   grid-template-columns: minmax(0, 1fr);
+  /* Gate r10 look upgrade 8: the next step sits directly above the foot's button, so the eye lands
+     on one group; the free space falls between the facts and that step, not under it. */
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: var(--wf-s-4);
-  align-content: start;
   min-width: 0;
   padding: var(--wf-s-4);
+}
+
+.body > .next {
+  align-self: end;
+}
+
+.note {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
 }
 
 /* The facts sit inside the padded body, so the kit's own band padding and rule are dropped. */

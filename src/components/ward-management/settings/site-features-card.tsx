@@ -144,8 +144,10 @@ export function SiteFeaturesCard() {
           </SettingRow>
         );
       })}
-      <p className={styles.cardNote}>Switching off hides it for everyone at this site straight away. No new release.</p>
-      <p className={styles.cardNote}>Always on, so not listed: safety notices, legal times and ruling guards.</p>
+      <p className={styles.cardNote}>
+        Switching off hides it for everyone at this site straight away. Safety notices, legal times and ruling guards
+        are always on.
+      </p>
     </Card>
   );
 }

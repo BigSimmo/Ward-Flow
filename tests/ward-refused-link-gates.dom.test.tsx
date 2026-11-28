@@ -68,7 +68,7 @@ describe("a Home alert step the desk cannot open (INV-CM)", () => {
     desk.canOpen = (href) => href !== FORMS;
     renderCard();
     expect(screen.queryByRole("link", { name: /^Open forms for / })).toBeNull();
-    expect(screen.getByRole("link", { name: "Open patient for Synthetic, Person" })).toHaveAttribute("href", PATIENT);
+    expect(screen.getByRole("link", { name: "Patient page for Synthetic, Person" })).toHaveAttribute("href", PATIENT);
   });
 
   it("offers no step when the desk can open neither page", () => {

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Clock, Download, ListOrdered, Scale } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, ChevronRight, Clock, Download } from "lucide-react";
 
 import {
   HeroAct,
@@ -20,7 +20,6 @@ import { unitHref, wardStatisticsHref } from "@/components/ward-management/shell
 import { medianDays } from "@/components/ward-management/ward-statistics";
 import type { StatisticsHeroTop } from "./statistics-hero";
 import { NO_BEDS_TEXT } from "./statistics-occupancy";
-import { STATISTICS_COMPARE_HREF, STATISTICS_WARDS_HREF } from "./statistics-sections";
 import { statisticsCountText, type StatisticsCount } from "./statistics-small-numbers";
 import { setStatisticsSamples } from "./statistics-samples";
 import { ChangeWard } from "./statistics-ward-change-ward";
@@ -117,8 +116,8 @@ function wardSteps(model: WardDetailModel): HeroChipItem[] {
 
 /**
  * The ward page's top (Josh, 9 Nov 2026): the ward's name with its hospital and kind, three or four
- * figures it already derives, the pulled beds not yet arrived as a calm act row with Open the ward,
- * the ward stepper and tools as chips, and on a phone the Length of stay strip.
+ * figures it already derives, the pulled beds not yet arrived as a calm act row, the ward stepper,
+ * Open ward and tools as chips, and on a phone the Length of stay strip.
  */
 export function wardStatisticsTop({
   model,
@@ -129,6 +128,7 @@ export function wardStatisticsTop({
   dueThisWeekText,
   stayStrip,
   samples,
+  shareHosted = false,
 }: {
   model: WardDetailModel;
   isPhone: boolean;
@@ -139,8 +139,10 @@ export function wardStatisticsTop({
   stayStrip?: WardStayStrip;
   /** Example history on or off (`useStatisticsSamples`). */
   samples: boolean;
+  /** The tabs row draws the Share menu (`useShareMenuHosted`), which carries Example history. */
+  shareHosted?: boolean;
 }): StatisticsHeroTop {
-  const { unit, wardOccupancy, occupancyPct, capacity, statistics, oldestPulled, canOpen, countsOnly } = model;
+  const { unit, wardOccupancy, occupancyPct, capacity, statistics, oldestPulled, countsOnly } = model;
   const averageStay = statistics.averageCompletedStayDays;
   const inUse: HeroFigureItem = {
     id: "in-use",
@@ -175,7 +177,19 @@ export function wardStatisticsTop({
       : [inUse, readyFigure, ...(stayFigure ? [stayFigure] : []), dueFigure];
   const pulled = wardOccupancy.pulled;
   // A counts-only desk (executive) cannot open the ward's board.
-  const openWard = countsOnly ? undefined : { label: "Open the ward", phoneLabel: "Open", href: unitHref(unit.id) };
+  // Audit three #22 (Josh, 28 Nov 2026): Open ward is a chip beside Change ward, not the action of
+  // the unrelated pulled-beds line, which stays a plain line.
+  const openWard: HeroChipItem[] = countsOnly
+    ? []
+    : [
+        {
+          id: "open-ward",
+          label: "Open ward",
+          icon: <ArrowUpRight strokeWidth={1.75} aria-hidden="true" />,
+          href: unitHref(unit.id),
+          testId: "ward-statistics-ward-open",
+        },
+      ];
   const chips = (exportFigures?: () => void): HeroChipItem[] => {
     const exportChip: HeroChipItem[] = exportFigures
       ? [
@@ -188,29 +202,9 @@ export function wardStatisticsTop({
           },
         ]
       : [];
-    const compare: HeroChipItem[] = canOpen(STATISTICS_COMPARE_HREF)
-      ? [
-          {
-            id: "compare",
-            label: "Compare",
-            icon: <Scale strokeWidth={1.75} aria-hidden="true" />,
-            href: STATISTICS_COMPARE_HREF,
-            testId: "ward-statistics-ward-compare",
-          },
-        ]
-      : [];
-    const allWards: HeroChipItem[] = canOpen(STATISTICS_WARDS_HREF)
-      ? [
-          {
-            id: "all-wards",
-            label: "All wards",
-            icon: <ListOrdered strokeWidth={1.75} aria-hidden="true" />,
-            href: STATISTICS_WARDS_HREF,
-            testId: "ward-statistics-ward-all-wards",
-          },
-        ]
-      : [];
-    // The ward page kept its Example history switch in the old hero, so it stays, last.
+    // Audit two (#65): no Compare or All wards chips; both are tabs in the row below the hero.
+    // Example history is a ticked item of the Share menu (audit two #97); the chip stays only on a
+    // desk with no tabs row, last.
     const history: HeroChipItem = {
       id: "history",
       label: "Example history",
@@ -219,11 +213,7 @@ export function wardStatisticsTop({
       pressed: samples,
       testId: "ward-statistics-example-history",
     };
-    return [
-      ...wardSteps(model),
-      ...(isPhone ? [...exportChip, ...compare] : [...allWards, ...compare, ...exportChip]),
-      history,
-    ];
+    return [...wardSteps(model), ...openWard, ...exportChip, ...(shareHosted ? [] : [history])];
   };
   return {
     title: unit.name,
@@ -247,10 +237,13 @@ export function wardStatisticsTop({
                 : "No pulled beds waiting to arrive"
             }
             sub={wardDesk && pulled > 0 && oldestPulled !== null ? `oldest ${durMinutes(oldestPulled)}` : undefined}
-            action={openWard ? { ...openWard, testId: "ward-statistics-ward-open" } : undefined}
           />
         }
-        chips={<HeroQuickChips label="Ward tools" items={chips(exportFigures)} />}
+        chips={
+          chips(exportFigures).length > 0 ? (
+            <HeroQuickChips label="Ward tools" items={chips(exportFigures)} />
+          ) : undefined
+        }
         band={isPhone && stayStrip ? <WardStayBand strip={stayStrip} /> : undefined}
       />
     ),

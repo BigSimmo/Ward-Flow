@@ -141,7 +141,7 @@ describe("Community team on a phone", () => {
     const row = within(list).getAllByRole("button")[0]!;
     fireEvent.click(row);
     const sheet = screen.getByTestId("ward-community-phone-referral");
-    expect(within(sheet).getByRole("button", { name: "Accept referral" })).toBeInTheDocument();
+    expect(within(sheet).getByRole("button", { name: "Accept" })).toBeInTheDocument();
 
     fireEvent.click(within(sheet).getByRole("button", { name: "Decline" }));
     const decline = () => within(sheet).getByRole("button", { name: /Decline referral/ });

@@ -16,6 +16,15 @@
   --sq-gap: 3px;
   --sq-h: 12px;
 }
+/* Find Wards table (Josh, 28 Nov 2026): one square size at any bed count, never shrunk to fit
+   the cell; a ward over 20 beds draws on two rows (the strip's column count halves). */
+.fixed {
+  --sq-max: 6px;
+}
+html .fixed .strip {
+  grid-template-columns: repeat(var(--sq-n, 1), var(--sq-max));
+  max-width: none;
+}
 
 .head {
   display: flex;

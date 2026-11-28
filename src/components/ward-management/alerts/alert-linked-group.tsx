@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { Link2 } from "lucide-react";
 
-import type { QueueEntry } from "./alerts-queue";
+import { LinkedRecordGroupContext, type QueueEntry } from "./alerts-queue";
 import type { LinkedQueueItem } from "./alert-linked-groups";
 import styles from "./alert-linked-group.module.css";
 
@@ -42,7 +42,9 @@ export function LinkedAlertItem({
         ) : null}
       </p>
       <ul className={listClassName} aria-labelledby={headId}>
-        {item.entries.map((entry) => renderEntry(entry))}
+        <LinkedRecordGroupContext.Provider value={true}>
+          {item.entries.map((entry) => renderEntry(entry))}
+        </LinkedRecordGroupContext.Provider>
       </ul>
     </li>
   );

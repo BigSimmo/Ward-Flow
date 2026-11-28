@@ -58,11 +58,11 @@ describe("Escape closes the box straight after it opens", () => {
     if (fold && fold.getAttribute("aria-expanded") !== "true") fireEvent.click(fold);
     fireEvent.click(
       within(screen.getByTestId("ward-ed-unavailable-handover-WF-011")).getByRole("button", {
-        name: "Log transport booking",
+        name: "Record transport booking",
       }),
     );
     const box = await screen.findByTestId("ward-ed-book-transport-WF-011");
-    const heading = within(box).getByRole("heading", { name: "Log transport booking" });
+    const heading = within(box).getByRole("heading", { name: "Record transport booking" });
     await waitFor(() => expect(document.activeElement).toBe(heading));
     expect(document.activeElement?.tagName).not.toBe("SELECT");
 

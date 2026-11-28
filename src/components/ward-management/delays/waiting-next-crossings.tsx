@@ -157,7 +157,7 @@ export function NextCrossings({
       )}
       {list.length > LIMIT ? (
         <ShowMoreRow onClick={() => setAll((current) => !current)} expanded={all}>
-          {all ? "Show fewer" : `Show ${list.length - LIMIT} more`}
+          {all ? "Show fewer" : `Show all ${list.length}`}
         </ShowMoreRow>
       ) : null}
     </div>

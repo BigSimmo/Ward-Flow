@@ -221,7 +221,7 @@ describe("URE-05: call log", () => {
     const said = screen.getByRole("combobox", { name: "What they said" }) as HTMLSelectElement;
     fireEvent.change(who, { target: { value: `ward:${WARD.id}` } });
     fireEvent.change(said, { target: { value: "said_yes" } });
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Log a call" })));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Record a call" })));
     expect(dispatch).toHaveBeenCalledTimes(1);
     expect(who.value).toBe(`ward:${WARD.id}`);
     expect(said.value).toBe("said_yes");

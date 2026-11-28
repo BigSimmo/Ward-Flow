@@ -12,6 +12,11 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 // listener on every movements change. It now adds one for the page's life and still reads the
 // latest movements when Back fires. Synthetic seed data only.
 
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+}));
+
 const openMovement = seedWardFlowState().movements.find(isOpen)!;
 
 let dispatchRef: ReturnType<typeof useWardFlow>["dispatch"] | undefined;

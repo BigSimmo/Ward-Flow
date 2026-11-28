@@ -95,6 +95,8 @@ export function sectionForEntry(
 }
 
 const FROM_OLD_NAME: Record<string, SettingsSection> = {
+  // The Access log link from Governance (controls document, 26 Nov 2026) opens Access at the log.
+  "access-log": "access",
   rules: "rules",
   alerts: "alerts",
   display: "display",

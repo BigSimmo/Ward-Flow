@@ -50,7 +50,7 @@ describe("unfinished journey editor dismissal", () => {
         <OfficerScreen />
       </WardFlowProvider>,
     );
-    const open = screen.getAllByRole("button", { name: "Log booking" })[0];
+    const open = screen.getAllByRole("button", { name: "Record booking" })[0];
     fireEvent.click(open);
     const inputs = screen.getAllByRole("textbox");
     const editable =

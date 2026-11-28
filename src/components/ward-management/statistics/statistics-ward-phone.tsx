@@ -169,7 +169,7 @@ export function WardPhone({
           )}
           {shown.length > ROSTER_FIRST_ROWS ? (
             <ShowMoreRow expanded={expanded} onClick={() => setExpanded((open) => !open)}>
-              {expanded ? "Show fewer" : `Show ${shown.length - ROSTER_FIRST_ROWS} more`}
+              {expanded ? "Show fewer" : `Show all ${shown.length}`}
             </ShowMoreRow>
           ) : null}
         </>

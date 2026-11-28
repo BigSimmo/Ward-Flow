@@ -2,7 +2,6 @@ import { expect, test, type Page } from "playwright/test";
 
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { movementPath } from "./helpers/ward-record-url";
-import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 const routes = [
   ["ED overview", "/ed"],
@@ -261,97 +260,8 @@ test.describe("@mockup Ward responsive containment", () => {
   }
 });
 
-test("@mockup approved overdue queue treatment fits phone, tablet and desktop", async ({ page }, testInfo) => {
-  test.setTimeout(120_000);
-  await page.goto("/bedchart", { waitUntil: "domcontentloaded" });
-  await showEveryoneWaitingOn(page);
-  const overdueRows = page.locator('[data-testid^="ward-queue-row-"][data-overdue="true"]:visible');
-  await expect(overdueRows.first()).toBeVisible();
-
-  for (const colorScheme of ["light", "dark"] as const) {
-    await page.emulateMedia({ colorScheme });
-    for (const width of [320, 820, 1440]) {
-      await page.setViewportSize({ width, height: 900 });
-      await expect
-        .poll(() => page.evaluate(() => document.documentElement.scrollWidth - innerWidth))
-        .toBeLessThanOrEqual(1);
-      const row = overdueRows.first();
-      await row.scrollIntoViewIfNeeded();
-      // Keep the pointer off the row so the hover fill cannot stand in for the overdue tint.
-      await page.mouse.move(0, 0);
-      // No side edges (Josh, 31 Oct 2026; `home.module.css`): the overdue row is the act-now tint
-      // with the danger glyph and the spoken word "overdue" beside the wait. The old inset coral
-      // marker (`::before`, 3px) is gone, and nothing draws a coloured edge on one side.
-      const treatment = await row.evaluate((element) => {
-        const style = getComputedStyle(element);
-        const marker = getComputedStyle(element, "::before");
-        const wait = element.querySelector('[role="timer"]')!.parentElement!.parentElement!;
-        const bounds = element.getBoundingClientRect();
-        const waitBounds = wait.getBoundingClientRect();
-        // The act-now tint as this row's own custom properties resolve it, in this colour scheme.
-        const probe = document.createElement("span");
-        probe.style.position = "absolute";
-        probe.style.backgroundColor = "var(--wf-act-tint)";
-        element.appendChild(probe);
-        const actTint = getComputedStyle(probe).backgroundColor;
-        probe.remove();
-        return {
-          markerContent: marker.content,
-          background: style.backgroundColor,
-          actTint,
-          borderStart: style.borderLeftWidth,
-          borderEnd: style.borderRightWidth,
-          shadow: style.boxShadow,
-          outline: style.outlineStyle,
-          waitFits: waitBounds.right <= bounds.right && waitBounds.left >= bounds.left,
-          label: wait.textContent,
-          glyphs: wait.querySelectorAll("svg").length,
-        };
-      });
-      expect(treatment.markerContent).toBe("none");
-      expect(treatment.actTint).not.toBe("rgba(0, 0, 0, 0)");
-      expect(treatment.background).toBe(treatment.actTint);
-      expect(treatment.borderStart).toBe(treatment.borderEnd);
-      expect(treatment.shadow).toBe("none");
-      expect(treatment.waitFits).toBe(true);
-      expect(treatment.label).toContain("overdue");
-      expect(treatment.glyphs).toBe(1);
-      if (colorScheme === "dark") {
-        await testInfo.attach(`overdue-${width}-${colorScheme}`, {
-          body: await page.screenshot(),
-          contentType: "image/png",
-        });
-      }
-    }
-  }
-
-  const row = overdueRows.first();
-  await row.click();
-  await expect(row).toHaveAttribute("aria-pressed", "true");
-  await page.keyboard.press("Tab");
-  await row.focus();
-  await expect(row).toBeFocused();
-  await expect
-    .poll(() => row.evaluate((element) => parseFloat(getComputedStyle(element).outlineWidth)))
-    .toBeGreaterThanOrEqual(2);
-  // Forced colours drop the tint, so the cue that must survive is the glyph and its spoken word,
-  // never a stripe; selection keeps its Highlight outline.
-  await page.emulateMedia({ forcedColors: "active" });
-  await expect.poll(() => row.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe("solid");
-  const forcedCue = await row.evaluate((element) => {
-    const wait = element.querySelector('[role="timer"]')!.parentElement!.parentElement!;
-    const glyph = wait.querySelector("svg");
-    const glyphBounds = glyph?.getBoundingClientRect();
-    return {
-      label: wait.textContent,
-      glyphVisible: glyphBounds !== undefined && glyphBounds.width > 0 && glyphBounds.height > 0,
-      markerContent: getComputedStyle(element, "::before").content,
-    };
-  });
-  expect(forcedCue.label).toContain("overdue");
-  expect(forcedCue.glyphVisible).toBe(true);
-  expect(forcedCue.markerContent).toBe("none");
-});
+// The "@mockup approved overdue queue treatment" case went with Home's Flow list: r10 (simplification
+// area 2 item 1) folded Flow into Waiting, so no Home queue row carries the overdue tint to measure.
 
 test("@mockup movement status stays inside phone, tablet and desktop viewports", async ({ page }) => {
   test.setTimeout(120_000);
@@ -427,17 +337,12 @@ test.describe("@mockup Ward scroll geometry", () => {
     await page.setViewportSize({ width: 1440, height: 844 });
     await page.goto("/bedchart/handover", { waitUntil: "networkidle" });
     await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
-    // 1 Nov 2026 redesign: Present sits in the toolbar's More handover actions. The item reads
-    // "Exit present" once presentation mode is on, which is the page's own record of the mode.
-    const more = page.getByRole("button", { name: "More handover actions" });
-    await more.click();
-    await page.getByRole("button", { name: "Present on a screen", exact: true }).click();
-    const exit = page.getByRole("button", { name: "Exit present", exact: true });
-    if (!(await exit.isVisible())) await more.click();
+    // Audit four item 6 (r10): the one-item More menu became the toolbar's own "Open on TV" button.
+    // It reads "Close TV view", pressed, once presentation mode is on: the page's record of the mode.
+    await page.getByTestId("ward-handover-open-tv").click();
+    const exit = page.getByRole("button", { name: "Close TV view", exact: true });
     await expect(exit).toBeVisible();
-    // Close the menu with its trigger: Escape would also leave presentation mode.
-    await more.click();
-    await expect(exit).toHaveCount(0);
+    await expect(exit).toHaveAttribute("aria-pressed", "true");
     const position = () =>
       page.evaluate(() => ({
         page: document.querySelector<HTMLElement>("[data-wf-scroller]")!.scrollTop,
@@ -678,8 +583,8 @@ test.describe("@mockup phone navigation follows the stable header", () => {
       await page.goto(`/bedchart${route}`, { waitUntil: "networkidle" });
       const bar = page.getByTestId("ward-bar");
       await expect(bar).toHaveAttribute("data-band", /ink|light/);
-      // Home flow (Josh, 3 Nov 2026): the "Home lists" nav pins under the header; check it on Flow.
-      if (label === "Home") await showEveryoneWaitingOn(page);
+      // Home flow (Josh, 3 Nov 2026): the "Home lists" nav pins under the header (r10: Needs you and
+      // Later today; Flow folded into Waiting), so Home is checked as it opens.
       const strip = page.locator(`[class*="${classPrefix}"]`);
       await expect(strip).toBeVisible();
       for (const offset of [0, 12, 80, 500]) {

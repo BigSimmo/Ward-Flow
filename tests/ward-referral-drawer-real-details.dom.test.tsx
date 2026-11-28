@@ -101,8 +101,7 @@ describe("the referral drawer shows only what the record holds", () => {
     fireEvent.click(screen.getByRole("button", { name: "Change patient" }));
     expect(screen.getAllByRole("combobox", { name: "Find a patient" })).toHaveLength(1);
     expect(screen.queryByText("Live Database Search")).not.toBeInTheDocument();
-    // v6: the clinical acuity cell reads "Diagnosis not recorded".
-    expect(document.body.textContent).toMatch(/Diagnosis not recorded/);
+    // The summary pillar and its "Diagnosis not recorded" cell are gone; the free-text fields stay empty.
     expect(screen.queryByText("Code Black")).not.toBeInTheDocument();
   });
 
@@ -160,7 +159,8 @@ describe("the referral drawer shows only what the record holds", () => {
     const picker = within(screen.getByRole("group", { name: "Urgency" }));
     for (const label of ["Tier 1 · most urgent", "Tier 2 · urgent", "Tier 3 · least urgent"] as const) {
       fireEvent.click(picker.getByRole("radio", { name: label }));
-      expect(document.body.textContent).toContain(label);
+      // The summary pillar is gone; the picker itself shows the chosen tier.
+      expect(picker.getByRole("radio", { name: label })).toBeChecked();
       expect(document.body.textContent).not.toMatch(/< ?\d+h \(/);
     }
   });

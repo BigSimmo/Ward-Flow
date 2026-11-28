@@ -112,6 +112,9 @@ export const UNDO_STEP_ACTIONS = {
   UNDO_RELEASE_STEP: [
     "RELEASE_PULL",
     "RELEASE_HELD_BED",
+    // Mock-up (simplification R1, 26 Nov 2026): a diverted move's bed release comes back from Undo
+    // too, so every "Release pulled bed" has the same safety model.
+    "RELEASE_DIVERTED_BED",
     "CANCEL_TRANSPORT",
     "WITHDRAW_WARD_REQUEST",
     "CANCEL_PLANNED_ADMISSION",

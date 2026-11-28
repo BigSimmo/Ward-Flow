@@ -64,14 +64,14 @@ describe("discharges board patient detail and navigation bridge", () => {
       .flatMap((row) => within(row).queryAllByRole("button").slice(0, 1));
     const linked = openers.find((opener) => {
       fireEvent.click(opener);
-      return screen.queryByRole("button", { name: /^Discharge record/ }) !== null;
+      return screen.queryByRole("button", { name: /^Discharge summary/ }) !== null;
     });
     expect(linked, "no release row opens with a linked discharge record").toBeDefined();
 
     // Detail drawer opens with release info; its foot carries the Discharge record bridge
     expect(screen.getByTestId("ward-discharge-detail")).toBeInTheDocument();
 
-    const bridgeButton = screen.getByRole("button", { name: /^Discharge record/ });
+    const bridgeButton = screen.getByRole("button", { name: /^Discharge summary/ });
     expect(bridgeButton).toBeInTheDocument();
 
     // Click the bridge button to navigate to the full admission record

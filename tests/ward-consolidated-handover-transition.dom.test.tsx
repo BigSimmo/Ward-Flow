@@ -72,7 +72,7 @@ it.each(["desktop", "phone", "portrait"])(
               .find((row) => row.hasAttribute("data-row-id"))!;
     fireEvent.click(row);
     if (layout !== "phone") {
-      expect(screen.getByRole("link", { name: "Movements" })).toHaveAttribute("href", movementHref(selectedId));
+      expect(screen.getByRole("link", { name: "Movement" })).toHaveAttribute("href", movementHref(selectedId));
     }
     await act(async () => remove(selectedId));
     const notice = screen.getByText(/This journey is no longer open in Handover/);

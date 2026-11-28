@@ -1,5 +1,6 @@
 "use client";
 
+import { UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-undo";
 import { plural } from "../ward-plural";
 import { confirmLeavingShell } from "../shell/ward-leave-guard";
 
@@ -11,7 +12,7 @@ import { useOfficerDiversionSave } from "./use-officer-diversion-save";
 import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/return-early-alerts";
 import { useTransportCommandFeedback } from "./use-transport-command-feedback";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Circle, ClipboardList, ListChecks, Lock, MapPin, Search, ShieldCheck, Ambulance, X } from "lucide-react";
+import { Circle, ClipboardList, Lock, MapPin, Search, ShieldCheck, X } from "lucide-react";
 
 import {
   Button,
@@ -44,8 +45,6 @@ import {
   requestConfirm,
   tableClasses,
   useIsPhone,
-  useModalFocus,
-  type HeroChipItem,
 } from "@/components/wf";
 import { agoMinutes } from "@/components/ward-management/ward-ago-text";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
@@ -64,7 +63,6 @@ import {
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import { usePageLive } from "@/components/ward-management/ward-page-live";
-import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { TRANSPORT_PROVIDERS, type Movement, type Unit } from "@/components/ward-management/ward-model";
@@ -165,6 +163,7 @@ const CHIP_ICON = { size: 16, strokeWidth: 1.75, "aria-hidden": true } as const;
  */
 export function OfficerScreen() {
   const { movements, units, rejections, patients, referrals, admissions, dayZero, notices } = useWardFlowSelect(
+    "notices",
     "movements",
     "admissions",
     "units",
@@ -172,7 +171,6 @@ export function OfficerScreen() {
     "patients",
     "referrals",
     "dayZero",
-    "notices",
   );
   // Release gate (layout shift 0.144 on a phone, 31 Oct 2026): the kit's hook reads the server's
   // phone guess on first paint, so the phone hero is drawn at once instead of after the code runs.
@@ -236,7 +234,6 @@ export function OfficerScreen() {
       return next;
     });
   const jobs = movements.filter(isOfficerJob);
-  const cancellations = officerCancellationNotices(notices ?? [], now);
   const collectCheck = collectCheckId ? movements.find((movement) => movement.id === collectCheckId) : undefined;
   const unitFor = (movement: Movement): Unit | undefined =>
     movement.acceptedUnitId ? units.find((unit) => unit.id === movement.acceptedUnitId) : undefined;
@@ -258,13 +255,14 @@ export function OfficerScreen() {
   // here hides a job, so the officer never loses a job behind a filter they forgot was on.
   const [searchQuery, setSearchQuery] = useState("");
   const [pill, setPill] = useState<HighlightPill | null>(null);
+  // Audit two #72: the "need transport" figure lights the Needs transport card, as the others light job rows.
+  const [needsHighlight, setNeedsHighlight] = useState(false);
   const [providerHighlight, setProviderHighlight] = useState<string | null>(null);
   const [escortHighlight, setEscortHighlight] = useState(false);
   const [involuntaryHighlight, setInvoluntaryHighlight] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("next");
   const [jobsTab, setJobsTab] = useState<JobsTab>("jobs");
   const [historyTab, setHistoryTab] = useState<HistoryTab>("delivered");
-
   const late = (movement: Movement) => pastWardEta(movement, now);
   // Audit round 2, S-14: "To accept" holds only jobs the officer can accept now. A job whose bed is
   // not yet at handover is waiting on the sending team, not on the officer.
@@ -311,6 +309,7 @@ export function OfficerScreen() {
   const clearHighlights = () => {
     setSearchQuery("");
     setPill(null);
+    setNeedsHighlight(false);
     setProviderHighlight(null);
     setEscortHighlight(false);
     setInvoluntaryHighlight(false);
@@ -387,7 +386,6 @@ export function OfficerScreen() {
     });
   };
   const lastTriggerRef = useRef<HTMLElement | null>(null);
-  const formModalRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   // The job panel's tab (Details for each new job) and the pulled bed whose booking is being logged.
   const [detailTab, setDetailTab] = useState<OfficerDetailTab>("details");
@@ -424,29 +422,14 @@ export function OfficerScreen() {
   };
   const bookingMovement = bookingId === undefined ? undefined : needing.find((movement) => movement.id === bookingId);
 
-  // The phone booking sheet's ref; a chosen job opens in the kit drawer, which owns its own focus.
-  const sideRef = useRef<HTMLDivElement>(null);
-  // Phone: the panel is a modal bottom sheet (takes focus, traps Tab, isolates the page, hands focus
-  // back); wider screens keep it non-modal. isPhone is declared above officerPatientName, which reads it.
-  // The form check opens over the phone job sheet, so it joins the shared modal contract: the
-  // sheet and page behind are inert, focus starts on the first control, Tab wraps inside, Escape
-  // closes only this dialog (handled first, before this screen's own Escape shortcut), and focus
-  // returns to the trigger once the stack has released it.
-  useModalFocus({
-    open: formModalJob !== null,
-    onClose: () => setFormModalJob(null),
-    panelRef: formModalRef,
-    returnFocusRef: lastTriggerRef,
-    focusOnOpen: "immediate",
-    keyPhase: "capture",
-  });
+  // The form check is the kit `Dialog`, which holds focus and hands it back to the opener (audit two #38).
 
   // Newest first: `rejections` is appended in raise order
   const officerRefusals = [...rejections]
     .reverse()
     .filter((rejection) => OFFICER_ACTION_REJECTION_LABELS[rejection.attempted] !== undefined);
 
-  const cancelledTransports = movements.flatMap((m) =>
+  const unwoundCancellations = movements.flatMap((m) =>
     (m.unwinds ?? [])
       .filter((u) => u.kind === "transport_cancelled")
       .map((u) => ({
@@ -459,8 +442,25 @@ export function OfficerScreen() {
         note:
           (u.reason ? (changeReasonLabels[u.reason as keyof typeof changeReasonLabels] ?? u.reason) : undefined) ??
           "Cancelled transport / stand-down",
+        sentence: undefined as string | undefined,
       })),
   );
+  // Owner ruling 2026-10-13 (PR #279): a withdrawal that cancels a booked job closes the movement and
+  // records no unwind, so its officer notice still says why the job went. One line per movement.
+  const unwoundIds = new Set(unwoundCancellations.map((item) => item.movementId));
+  const cancelledTransports = [
+    ...unwoundCancellations,
+    ...officerCancellationNotices(notices ?? [], now)
+      .filter((notice) => !notice.about.movementId || !unwoundIds.has(notice.about.movementId))
+      .map((notice) => ({
+        movementId: notice.about.movementId ?? notice.id,
+        patientName: "",
+        cadNumber: "",
+        at: notice.raisedAt,
+        note: "",
+        sentence: notice.sentence as string | undefined,
+      })),
+  ];
 
   const deliveredToday = deliveredSinceStartOfDay(movements, now);
 
@@ -513,7 +513,7 @@ export function OfficerScreen() {
     reportOutcome(
       movementId,
       () => raise("UNDO_TRANSPORT_STEP", { movementId }),
-      "Undone. Back as it was.",
+      "Undone: Back as it was",
       "Undo",
       false,
     );
@@ -558,7 +558,7 @@ export function OfficerScreen() {
   const runDelivered = async (movement: Movement) => {
     const confirmed = await requestConfirm({
       title: "Record arrival at the ward?",
-      message: `Record that ${officerPatientName(movement)} has arrived at the ward. You can undo it for a few seconds after.`,
+      message: `Record that ${officerPatientName(movement)} has arrived at the ward. You can undo it for ${UNDO_WINDOW_MINUTES} minutes after.`,
       confirmLabel: "Record arrival",
       cancelLabel: "Not yet",
     });
@@ -704,20 +704,12 @@ export function OfficerScreen() {
 
   const topJob = sortedJobs[0];
 
-  /** Inspect form and Divert: the panel foot on desktop, the end of the sheet body on phone. */
+  /** Divert: the panel foot on desktop, the end of the sheet body on phone. */
   function detailExtraActions(job: Movement) {
     if (!job.transport) return null;
     return (
       <>
-        <Button
-          variant="sec"
-          size="sm"
-          icon={ListChecks}
-          data-testid={`ward-officer-inspect-form-${job.id}`}
-          onClick={(e) => openFormModal(job, e)}
-        >
-          Inspect form
-        </Button>
+        {/* Audit three #9: Inspect form moved to the Forms tab, beside the form facts. */}
         {!booking.crewLimit &&
         !job.closure &&
         job.transport.collectedAt !== undefined &&
@@ -767,6 +759,7 @@ export function OfficerScreen() {
     toggleIdentityChecked,
     unitFor,
     zone,
+    openFormChecks: openFormModal,
   };
 
   const needCard = (
@@ -781,6 +774,7 @@ export function OfficerScreen() {
       destinationLabelFor={destinationLabelFor}
       units={units}
       onLog={openBooking}
+      highlighted={needsHighlight}
     />
   );
   // Page tops (Josh, 9 Nov 2026): one slate top as on Home. Three figures, the most urgent pulled bed
@@ -789,21 +783,22 @@ export function OfficerScreen() {
   const togglePill = (which: HighlightPill) => setPill((current) => (current === which ? null : which));
   const firstNeed = needing[0];
   const firstHeld = firstNeed ? heldClock(firstNeed, now) : undefined;
-  const providerChips: HeroChipItem[] =
-    isPhone || !showProviders
-      ? []
-      : activeProviders.map((provider) => ({
-          id: provider,
-          label: provider.replace(/ service$/, ""),
-          icon: <Ambulance {...CHIP_ICON} />,
-          count: jobs.filter((movement) => movement.transport?.provider === provider).length,
-          countTone: "quiet" as const,
-          countLabel: "jobs",
-          pressed: providerHighlight === provider,
-          onClick: () => setProviderHighlight((prev) => (prev === provider ? null : provider)),
-        }));
   const escortCount = jobs.filter((job) => job.transport?.escortRequired).length;
   const involuntaryCount = jobs.filter(jobIsInvoluntary).length;
+  // Audit two #108: the provider highlights join Escort and Involuntary in the tab row.
+  const providerFilterChips =
+    isPhone || !showProviders
+      ? null
+      : activeProviders.map((provider) => (
+          <FilterChip
+            key={provider}
+            pressed={providerHighlight === provider}
+            onPressedChange={(pressed) => setProviderHighlight(pressed ? provider : null)}
+            count={jobs.filter((movement) => movement.transport?.provider === provider).length}
+          >
+            {provider.replace(/ service$/, "")}
+          </FilterChip>
+        ));
   const highlightChips = (
     <>
       {delayed.chip}
@@ -813,6 +808,7 @@ export function OfficerScreen() {
       <FilterChip pressed={involuntaryHighlight} onPressedChange={setInvoluntaryHighlight} count={involuntaryCount}>
         Involuntary
       </FilterChip>
+      {providerFilterChips}
     </>
   );
   const heroTop = (
@@ -825,7 +821,14 @@ export function OfficerScreen() {
               id: "need",
               value: needing.length,
               label: "need transport",
-              onClick: needing.length > 0 ? scrollToNeedsTransport : undefined,
+              onClick:
+                needing.length > 0
+                  ? () => {
+                      setNeedsHighlight((on) => !on);
+                      if (!needsHighlight) scrollToNeedsTransport();
+                    }
+                  : undefined,
+              pressed: needsHighlight,
               testId: "ward-officer-figure-need",
             },
             {
@@ -854,7 +857,8 @@ export function OfficerScreen() {
             // The list is most urgent tier first, so its first row is not always the longest wait.
             title={`Most urgent · ${firstHeld.figure} ${firstHeld.label}`}
             action={{
-              label: "Log booking",
+              // Audit four item 71 (gate r10 FIX 7): one name for the step everywhere.
+              label: "Record booking",
               phoneLabel: "Log",
               onClick: () => openBooking(firstNeed.id),
               testId: "ward-officer-hero-log-booking",
@@ -870,12 +874,11 @@ export function OfficerScreen() {
           items={[
             {
               id: "copy",
-              label: "Copy handover",
+              label: "Copy for handover",
               icon: <ClipboardList {...CHIP_ICON} />,
               onClick: copyHandover,
               testId: "ward-officer-copy-handover",
             },
-            ...providerChips,
           ]}
         />
       }
@@ -914,7 +917,7 @@ export function OfficerScreen() {
   // times) says nothing; the hero's "Jobs need forms" and the job sheet still carry the count.
   const formsVary =
     jobs.length < 2 || new Set(jobs.map((movement) => (packRequired(movement) ? packCount(movement) : -1))).size > 1;
-  useWardModalFocus(isPhone && panelOpen, sideRef, closeJob);
+  // The phone booking is the kit phone sheet, which holds its own focus (audit two #38).
 
   return (
     <div className={styles.screen} data-testid="ward-officer-screen" data-ward-design="v8">
@@ -968,20 +971,31 @@ export function OfficerScreen() {
           )}
         </FolderTabs>
 
-        {cancellations.length > 0 ? (
+        {/* Audit two B20: the card and History's Cancelled tab read the one list (`cancelledTransports`, the
+            movements' own records), so their counts cannot differ. The card's look is as before (D-277). */}
+        {cancelledTransports.length > 0 ? (
           // Redesign (31 Oct 2026): the page's own card and heading, at every width. The phone-only
           // Next action card style used to hide these notices on wider screens.
           <Card aria-labelledby="officer-cancellation-heading" data-testid="officer-cancellation-notices">
             <CardHead
               id="officer-cancellation-heading"
               title="Cancelled transport"
-              meta={`${cancellations.length} ${cancellations.length === 1 ? "notice" : "notices"}`}
+              meta={`${cancelledTransports.length} ${cancelledTransports.length === 1 ? "notice" : "notices"}`}
             />
             <CardBody>
               <ul className={styles.notices}>
-                {cancellations.map((notice) => (
-                  <li key={notice.id}>{notice.sentence}</li>
-                ))}
+                {[...cancelledTransports]
+                  .sort((x, y) => y.at - x.at)
+                  .map((item, idx) => (
+                    <li key={`${item.movementId}-${idx}`}>
+                      {item.sentence ?? (
+                        <>
+                          Transport for {item.patientName} was cancelled ({item.note}). CAD (dispatch) number:{" "}
+                          {item.cadNumber}.
+                        </>
+                      )}
+                    </li>
+                  ))}
               </ul>
             </CardBody>
           </Card>
@@ -1064,11 +1078,6 @@ export function OfficerScreen() {
             {isPhone ? null : needCard}
             <Card className={styles.jobsPanel} aria-label="Jobs">
               {/* ROLE BRANCH (officer): no "Choose a patient" hint over a list that says it already. */}
-              {panelOpen || officerDesk ? null : (
-                <div className={styles.tabsRow}>
-                  <span className={styles.headNote}>Choose a patient to open their job</span>
-                </div>
-              )}
 
               <TabPanel idPrefix="ward-officer-jobs" id="jobs" hidden={jobsTab !== "jobs"}>
                 <div className={styles.toolbar} role="search" aria-label="Find transport jobs">
@@ -1080,7 +1089,7 @@ export function OfficerScreen() {
                     boxClassName={styles.searchBox}
                     id="officer-transfer-search"
                     name="transferSearch"
-                    placeholder="Patient, UMRN, ED, ward or CAD"
+                    placeholder="Name, UMRN, ED, ward or CAD"
                     aria-label="Highlight transport jobs"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -1268,8 +1277,12 @@ export function OfficerScreen() {
                         })}
                       </tbody>
                     </table>
-                    {listedJobs.length < sortedJobs.length ? (
-                      <ShowMoreRow onClick={() => setShowAllJobs(true)}>Show all {sortedJobs.length} jobs</ShowMoreRow>
+                    {listedJobs.length < sortedJobs.length || (showAllJobs && sortedJobs.length > OFFICER_JOB_ROWS) ? (
+                      <ShowMoreRow
+                        onClick={() => setShowAllJobs((open) => !open)}
+                        expanded={showAllJobs}
+                        total={sortedJobs.length}
+                      />
                     ) : null}
                   </div>
                 )}
@@ -1277,7 +1290,6 @@ export function OfficerScreen() {
 
               <TabPanel idPrefix="ward-officer-jobs" id="history" hidden={jobsTab !== "history"}>
                 <div className={styles.historyHead}>
-                  <span className={styles.muted}>Today, closed records</span>
                   <Tabs
                     label="History lists"
                     idPrefix="ward-officer-history"
@@ -1328,7 +1340,6 @@ export function OfficerScreen() {
                           ))}
                         </ul>
                       </div>
-                      <p className={styles.panelNote}>This session only.</p>
                     </section>
                   ) : (
                     <div className={styles.filterEmpty}>
@@ -1348,16 +1359,19 @@ export function OfficerScreen() {
                           {cancelledTransports.map((item, idx) => (
                             <li key={`${item.movementId}-${idx}`} className={styles.plainItem}>
                               <StatusGlyph tone="closed" size={9} />
-                              <span>
-                                {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                                <strong>{item.patientName}</strong> &mdash; stand-down, CAD (dispatch) number:{" "}
-                                <code>{item.cadNumber}</code> <span className={styles.muted}>({item.note})</span>
-                              </span>
+                              {item.sentence ? (
+                                <span>{item.sentence}</span>
+                              ) : (
+                                <span>
+                                  {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
+                                  <strong>{item.patientName}</strong> &mdash; stand-down, CAD (dispatch) number:{" "}
+                                  <code>{item.cadNumber}</code> <span className={styles.muted}>({item.note})</span>
+                                </span>
+                              )}
                             </li>
                           ))}
                         </ul>
                       </div>
-                      <p className={styles.panelNote}>This session only.</p>
                     </section>
                   ) : (
                     <div className={styles.filterEmpty}>
@@ -1386,7 +1400,6 @@ export function OfficerScreen() {
           {bookingMovement ? (
             <OfficerBookingPanel
               key={bookingMovement.id}
-              sideRef={sideRef}
               movement={bookingMovement}
               name={officerListPatientName(bookingMovement)}
               umrn={umrnFor(bookingMovement)}
@@ -1396,7 +1409,7 @@ export function OfficerScreen() {
               raise={booking.raise}
               acting={booking.acting.get(bookingMovement.id) ?? {}}
               onClose={closeJob}
-              onSaved={(name) => (clearJob(), showToast(`Transport booking logged for ${name}.`))}
+              onSaved={(name) => (clearJob(), showToast(`Transport booking recorded for ${name}`))}
             />
           ) : null}
           {!bookingMovement && selectedJob && selectedJob.transport ? (
@@ -1408,6 +1421,17 @@ export function OfficerScreen() {
               context={detailContext}
               tools={<>{detailExtraActions(selectedJob)}</>}
               onClose={closeJob}
+              // Audit four #31: step through the jobs in the list's own order.
+              pager={{
+                index: sortedJobs.findIndex((job) => job.id === selectedJob.id),
+                total: sortedJobs.length,
+                noun: "job",
+                onStep: (delta) => {
+                  const at = sortedJobs.findIndex((job) => job.id === selectedJob.id);
+                  const next = sortedJobs[(at + delta + sortedJobs.length) % sortedJobs.length];
+                  if (next) setSelectedId(next.id);
+                },
+              }}
             />
           ) : null}
         </div>
@@ -1425,7 +1449,7 @@ export function OfficerScreen() {
           umrn={umrnFor(formModalJob)}
           patientName={officerPatientName(formModalJob)}
           verifiedChecks={verifiedChecks}
-          dialogRef={formModalRef}
+          returnFocusRef={lastTriggerRef}
           onToggleCheck={toggleCheck}
           onClose={closeFormModal}
         />

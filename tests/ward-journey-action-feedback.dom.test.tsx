@@ -399,8 +399,8 @@ describe("role restrictions and record actors", () => {
     fireEvent.click(take);
     expect(dispatch).not.toHaveBeenCalled();
     expect(screen.getAllByText("Only the coordinator can change alerts.").length).toBeGreaterThan(0);
-    fireEvent.click(screen.getByText("More actions"));
-    expect(screen.getByRole("button", { name: /^Acknowledge / })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("button", { name: /^Snooze / })).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(screen.getByTestId("alerts-more-actions"));
+    expect(screen.getByRole("menuitem", { name: /^Acknowledge/ })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("menuitem", { name: /^Snooze/ })).toHaveAttribute("aria-disabled", "true");
   });
 });

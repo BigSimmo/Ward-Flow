@@ -1,23 +1,23 @@
 {
   "format": "wardflow-help-guides-v1",
   "files": {
-    "coordinator.md": "056d535151e023aa216acb2f7f5d182ce908df42587a40b4247e397d1aaa2827",
-    "coordinator.html": "d1e7c868630b93b34538fe0d74445d402567137e02613bd8ddad2f5940718f57",
-    "bed_manager.md": "df7f4892c0e8ed5e51f1058567a4c967d38b84c40ea490fae30de0069ad9aa5d",
-    "bed_manager.html": "8c1edd5d3f3f2f3e01f75b527ecdffe25817eedc4ce6c919d6f7da858d4ed73d",
-    "ward.md": "8b0873eb05a9ff3691c5b1e5c29f957ab8046ce5afbea84692e12b268e5c5676",
-    "ward.html": "bca88ca2a4f95ffff874a38eda4142e9a60fc932acf2c1a1302c43fe3595efba",
+    "coordinator.md": "4edfc7e955b4bcab1f7586df6e75eb077cf42e803a0f6cf837e4e82dcbf29776",
+    "coordinator.html": "1f79da067dfd3aee4359dde80cfd94ab907510bc717fd5c198aa80f591abf309",
+    "bed_manager.md": "4352312df34114d66f5a398dfad3dbb3caa9ff3b4a2e9d4f19a38e1caf9756e4",
+    "bed_manager.html": "f278998d54efceb043f565e5a532bd050e3e2b31d4deee6a2b2a9fd5adacc9e2",
+    "ward.md": "757b6c6de11b7def0b32b436d28de09166fde462066400e7b9f255ebd69f9715",
+    "ward.html": "09eb7704329cc6e2db9036d07950ab0dec69746c43f3e87bc6c40332a387cdd5",
     "ed.md": "12a55dba4acc534b1b74f84e6251bd0211d45f2532192fe1516bcfc7de18c2ad",
     "ed.html": "e635cdc0ea5c759a4e881be79ac344c294af2b1c069468b01822e45eb632312e",
-    "community.md": "4985a78e6deda8e41411160e0e252b2b3c7e7347260ec184bfb065155ea90736",
-    "community.html": "3444616db0118fceb514822277354e3cbefefb5c52bc6914e49df4bd3e9d4c38",
+    "community.md": "dba36b055b90cb4421cd320ca4883340ebcf6a39ee91db92a948d8dfb45ceb56",
+    "community.html": "b0ba70c14684bbd269406fcf33a1d8be16f17cb35b0d71d78796826566892587",
     "officer.md": "19589d0a89e76ec4415cf75553f2265c0286b48bc74c4d8dbe1ab99fee957668",
     "officer.html": "0e15024c25d08d5ef079f4200492103d4f9fe30f0e67588de95bd999622e3566",
-    "executive.md": "3a97f6377be9242e849d3746cad4a9cee4ca96cff66ee2743cbd3f96b0e6e440",
-    "executive.html": "a8031371b607b5841e59a6ac2d5e4dac153fdd792a485ed1814300d5470aa18f",
+    "executive.md": "1652602728cfaecd15c1f2dc2206097f0f8682fe38e846632ea48a920d4e9e9e",
+    "executive.html": "81ff30abf8413dc5bbbfabad4e759b407fbb472470ee3afc1cc1062f0fb58834",
     "admin.md": "35f9871f3f4c027f0d314720ae9972909b405d985cab14ca566d7def74d161db",
     "admin.html": "993eb409ae66306229786a316e8983e0b8b605c11e1d58513e2e9b5c99b9342f",
-    "tv.md": "474890392e4c32893d5e3a189c57fd698da8e93b7f0d9d8408a182084a6fb1d7",
-    "tv.html": "906258be0f6089bd853c819ef6d83a719bcf4c3a2519201c1eade5a2c535f473"
+    "tv.md": "dc82e6264325d28d22016afd8dd439a99d4c0aac357370e5bad2928deb61e009",
+    "tv.html": "21dfb3db8a074092a41e429374e4eb5b20a7fc9718679b29d24f4708b4a6f348"
   }
 }

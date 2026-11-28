@@ -1,6 +1,13 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { useEffect } from "react";
+// r10: the handover page reads the router (to open a patient), so the screen needs one mounted.
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/bedchart/handover",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { handoverSignedAt } from "@/components/ward-management/handover/handover-model";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
@@ -33,7 +40,7 @@ describe("handover sign-off selection integrity", () => {
     fireEvent.click(screen.getByTestId("ward-handover-shift"));
     fireEvent.click(screen.getByRole("menuitemradio", { name: new RegExp(time) }));
     fireEvent.click(screen.getByTestId("ward-handover-hero-sign-off"));
-    const button = screen.queryByTestId("ward-handover-sign-off-button");
+    const button = screen.queryByRole("button", { name: /^Sign off as .+ at / });
     if (!allowed) {
       expect(
         button === null || button.hasAttribute("disabled") || button.getAttribute("aria-disabled") === "true",

@@ -85,7 +85,7 @@ describe("referral step recovery and keyboard focus", () => {
     chooseSampleReferralPerson("UM100005");
     fireEvent.change(screen.getByLabelText("Age band"), { target: { value: "" } });
     fireEvent.click(section(action === "next" ? "Clearance" : "Wards"));
-    fireEvent.click(screen.getByRole("button", { name: action === "next" ? "Next, wards" : "Send referral" }));
+    fireEvent.click(screen.getByRole("button", { name: action === "next" ? "Next, wards" : "Review and send" }));
     expect(section("Patient")).toHaveAttribute("aria-pressed", "true");
     const ageBand = screen.getByLabelText("Age band");
     expect(ageBand).toHaveAttribute("aria-invalid", "true");
@@ -102,7 +102,7 @@ describe("referral step recovery and keyboard focus", () => {
   it("leaves focus in a close guard opened before the recovery frame runs", async () => {
     await setupDrawer();
     fireEvent.click(section("Wards"));
-    fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
+    fireEvent.click(screen.getByRole("button", { name: "Review and send" }));
     fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
     const keepEditing = screen.getByRole("button", { name: "Keep editing" });
     await act(async () => {

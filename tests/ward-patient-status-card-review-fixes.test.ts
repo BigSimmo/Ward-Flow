@@ -98,12 +98,12 @@ describe("gate board status card review fixes", () => {
     expect(ready.verdict).not.toBe("Cannot move");
   });
 
-  it("offers Log booking only at the stages the engine accepts a booking", () => {
+  it("offers Record booking only at the stages the engine accepts a booking", () => {
     const booking = (stage: Movement["stage"], mode: "held" | "transit") =>
       buildPatientStatus(mode, ctx({ ...base, stage, transport: undefined, transportNeed: undefined })).cells.find(
         (cell) => cell.key === (mode === "held" ? "transport" : "collected"),
       )?.action?.kind;
-    // UX review 24 Oct 2026: before the bed is pulled, Log booking is greyed with its reason. The
+    // UX review 24 Oct 2026: before the bed is pulled, Record booking is greyed with its reason. The
     // Bed cell holds the step needed first, so this cell no longer repeats it.
     expect(booking("accepted_awaiting_bed", "held")).toBe("unavailable");
     expect(booking("pulled", "held")).toBe("button");
@@ -113,10 +113,10 @@ describe("gate board status card review fixes", () => {
       "held",
       ctx({ ...base, stage: "accepted_awaiting_bed", transport: undefined, transportNeed: undefined }),
     ).cells.find((cell) => cell.key === "transport");
-    // Design parts item 6: the reason is drawn once, as the lock line under Log booking ("not yet",
+    // Design parts item 6: the reason is drawn once, as the lock line under Record booking ("not yet",
     // so no `never`), and the row's own line keeps its hint.
     expect(waiting?.sub).toBe("Book by phone, then log it");
-    expect(waiting?.action).toEqual({ kind: "unavailable", label: "Log booking", reason: "Needs the bed pulled" });
+    expect(waiting?.action).toEqual({ kind: "unavailable", label: "Record booking", reason: "Needs the bed pulled" });
   });
 
   it("links the Bed and Transport values to the ward and the movement (decision 2)", () => {

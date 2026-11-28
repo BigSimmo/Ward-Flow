@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { journeyStages } from "@/components/ward-management/movements/movements-derivations";
@@ -36,6 +36,11 @@ import { WAIT_BANDS, waitBand } from "@/components/ward-management/delays/delays
  * service is chosen — the "identical with and without a service" test below pins that behaviourally
  * (byte-identical rendered text), without touching the gantt component itself.
  */
+
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+}));
 
 const NOW = NOW_ANCHOR;
 const units = allUnits();
@@ -83,6 +88,9 @@ afterEach(() => {
   resetWardLiveRegionForTests();
 });
 
+// r10: the Open tab lists open movements, and Arrived ones sit on Resolved today.
+const onWorklist = (movement: (typeof wardMovements)[number]) => isOpen(movement) && movement.stage !== "arrived";
+
 describe("Movements — service scoping (build plan D2, item 44)", () => {
   it("the chosen service has members and non-members over the real seed, or the tests below are vacuous", () => {
     const shown = wardMovements.filter((movement) => movementBelongsToService(movement, CHOSEN_SERVICE, units));
@@ -104,7 +112,9 @@ describe("Movements — service scoping (build plan D2, item 44)", () => {
       ).toBeNull();
     }
 
-    const members = wardMovements.filter((movement) => movementBelongsToService(movement, CHOSEN_SERVICE, units));
+    const members = wardMovements.filter(
+      (movement) => onWorklist(movement) && movementBelongsToService(movement, CHOSEN_SERVICE, units),
+    );
     for (const movement of members) {
       expect(
         board.querySelector(`[data-ward-primitive='record-row'][data-record-key='${movement.id}']`),
@@ -116,7 +126,7 @@ describe("Movements — service scoping (build plan D2, item 44)", () => {
   it("with All services (nothing chosen), the worklist is unchanged and no scope bar or sentence renders", () => {
     renderScreen();
     const board = worklistPanel();
-    for (const movement of wardMovements) {
+    for (const movement of wardMovements.filter(onWorklist)) {
       expect(
         board.querySelector(`[data-ward-primitive='record-row'][data-record-key='${movement.id}']`),
       ).toBeInTheDocument();
@@ -125,7 +135,7 @@ describe("Movements — service scoping (build plan D2, item 44)", () => {
     // mutation that renders every real id plus a phantom one would still pass the loop above) — the
     // exact count closes that gap.
     expect(board.querySelectorAll('[data-ward-primitive="record-row"][data-record-key]').length).toBe(
-      ALL_MOVEMENTS.length,
+      ALL_MOVEMENTS.filter(onWorklist).length,
     );
     expect(screen.queryByTestId("ward-service-scope-bar")).not.toBeInTheDocument();
     // D-f: the sentence moved out of the worklist and to the top of the page (see below) — it must
@@ -172,7 +182,9 @@ describe("Movements — service scoping (build plan D2, item 44)", () => {
     expect(within(worklistPanel()).queryByText(/not these figures/u)).not.toBeInTheDocument();
 
     const bar = screen.getByTestId("ward-service-scope-bar");
-    const shown = ALL_MOVEMENTS.filter((movement) => movementBelongsToService(movement, CHOSEN_SERVICE, units)).length;
+    const shown = ALL_MOVEMENTS.filter(
+      (movement) => isOpen(movement) && movementBelongsToService(movement, CHOSEN_SERVICE, units),
+    ).length;
     const total = ALL_MOVEMENTS.length;
     expect(within(bar).getByTestId("ward-service-scope-bar-summary")).toHaveTextContent(
       `Showing ${shown} of ${total} movements, in ${CHOSEN_SERVICE}.`,
@@ -278,6 +290,12 @@ describe("D-d — a jump link to a movement outside the worklist opens its drawe
  * service while one is chosen. Unqualified, an empty one reads as "nothing anywhere" rather than
  * "nothing in {S}". `inServiceSuffix` is the one function all three sentences call.
  */
+// Simplification (26 Nov 2026): the order is one Sort menu on the worklist head.
+function chooseTransportSort() {
+  fireEvent.click(screen.getByTestId("ward-movements-sort"));
+  fireEvent.click(screen.getByRole("menuitemradio", { name: /^Transport/u }));
+}
+
 describe("empty-worklist sentences name the chosen service (R2 item 5)", () => {
   it("inServiceSuffix: empty with no service chosen, ' in {S}' once one is", () => {
     expect(inServiceSuffix(null)).toBe("");
@@ -306,7 +324,7 @@ describe("empty-worklist sentences name the chosen service (R2 item 5)", () => {
 
   it("the transport-group empty sentence names East Metro when scoped, and stays bare when not", () => {
     const withoutService = renderScreen();
-    fireEvent.click(screen.getByRole("radio", { name: /transport/i }));
+    chooseTransportSort();
     expect(
       screen.queryByText("No movement is in this group right now."),
       "precondition: at least one transport group is empty over the real seed, unscoped",
@@ -315,7 +333,7 @@ describe("empty-worklist sentences name the chosen service (R2 item 5)", () => {
 
     setServiceScope(CHOSEN_SERVICE);
     renderScreen();
-    fireEvent.click(screen.getByRole("radio", { name: /transport/i }));
+    chooseTransportSort();
     expect(screen.queryByText(`No movement is in this group right now in ${CHOSEN_SERVICE}.`)).not.toBeNull();
     expect(screen.queryByText("No movement is in this group right now.")).toBeNull();
   });

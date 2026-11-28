@@ -110,7 +110,7 @@ describe("WardScreen & WardIndex audit remediation", () => {
     const moreBtn = screen.getByTestId("ward-tools-more");
     moreBtn.focus();
     fireEvent.click(moreBtn);
-    fireEvent.click(screen.getByRole("menuitem", { name: /^Notices/ }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: /^Notices/ }));
 
     const center = await screen.findByTestId("ward-notification-center");
     // Notices option A (22 Oct 2026): a pressed-button filter, as in the shared Alerts drawer.

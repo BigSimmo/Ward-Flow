@@ -50,20 +50,15 @@ describe("capacity labels say what each figure counts", () => {
     const wards = (count: number) => `${count} ${count === 1 ? "ward" : "wards"}`;
     renderCapacity(false);
     const chips = within(screen.getByRole("group", { name: "Highlight wards" }));
+    // Area 3 item 17 (mock-up, 26 Nov 2026): Locked ready and Open ready are gone; the hero's bed-type
+    // figures carry them. The one ready chip is "Has ready".
     expect(
-      chips.getByRole("button", { name: `Any ready ${wards(rows.filter((r) => r.ready > 0).length)}` }),
+      chips.getByRole("button", { name: `Has ready ${wards(rows.filter((r) => r.ready > 0).length)}` }),
     ).toBeInTheDocument();
-    expect(
-      chips.getByRole("button", { name: `Locked ready ${wards(rows.filter((r) => r.lockedReady > 0).length)}` }),
-    ).toBeInTheDocument();
-    expect(
-      chips.getByRole("button", {
-        name: `Open ready ${wards(rows.filter((r) => r.ready - r.lockedReady > 0).length)}`,
-      }),
-    ).toBeInTheDocument();
+    expect(chips.queryByRole("button", { name: /^(Locked|Open) ready/u })).toBeNull();
     // Every highlight chip names its noun, so none can be read as the hero's bed counts.
     const all = chips.getAllByRole("button");
-    expect(all.length).toBeGreaterThan(2);
+    expect(all.length).toBeGreaterThan(1);
     for (const chip of all) expect(chip.textContent).toMatch(/ \d+ wards?$/u);
     expect(within(screen.getByRole("group", { name: "Bed map key" })).getByText("In use")).toBeInTheDocument();
   });
@@ -81,7 +76,7 @@ describe("capacity labels say what each figure counts", () => {
     // R-STRUCT-42 (Josh, 14 Nov 2026): the 90% and 98% bands are drawn under the figure, with their words.
     // The hidden pulled-beds words come last, so the link's visible words stay in one run in its name.
     expect(screen.getByTestId("capacity-hero-occupancy")).toHaveTextContent(
-      /In use · now(Under|In) the (90|98)% band, including pulled beds$/u,
+      /In use\s+(Under|In) the (90|98)% band\s*, including pulled beds$/u,
     );
     const bands = screen.getByTestId("capacity-occupancy-bands");
     expect(["green", "yellow", "red"]).toContain(bands.dataset.band);

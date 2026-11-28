@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 /**
  * Q36 (Josh, "yes to all", 3 Nov 2026) and DESIGN-SYSTEM.md "Choosing one of a few": every browser
  * drop-down is replaced by a kit choice, a kit Menu of radio choices or the ListPicker. The kit
- * `Select` in `wf/form.tsx` is still the browser's own drop-down, so it counts too.
+ * `Select` in `wf/form-select.tsx` is still the browser's own drop-down, so it counts too.
  *
  * The sweep runs page by page, so this guard is a one-way ratchet. A file not listed below may not
  * gain a drop-down, and a listed file may not gain more than it has. Removing drop-downs never
@@ -34,7 +34,6 @@ const KNOWN_DROPDOWNS: Readonly<Record<string, number>> = {
   "src/components/ward-management/community/team-2026/team-caseload.tsx": 1,
   "src/components/ward-management/community/team-2026/team-referrals.tsx": 2,
   "src/components/ward-management/coordinator/call-sheet.tsx": 1,
-  "src/components/ward-management/coordinator/home-release-sheet.tsx": 1,
   "src/components/ward-management/coordinator/shortlist-panel.tsx": 13,
   "src/components/ward-management/discharges/discharge-care-journey.tsx": 5,
   "src/components/ward-management/discharges/discharge-dependencies-panel.tsx": 4,
@@ -72,6 +71,9 @@ const KNOWN_DROPDOWNS: Readonly<Record<string, number>> = {
   "src/components/ward-management/referrals/ward-referral-drawer-placement-step.tsx": 1,
   "src/components/ward-management/referrals/ward-referral-drawer-referral-step.tsx": 6,
   "src/components/ward-management/referrals/ward-referral-inbox.tsx": 2,
+  // Moved, not added (28 Nov 2026, r10 build): the one Release pulled bed sheet's reason drop-down
+  // replaces the one that lived in coordinator/home-release-sheet.tsx, whose line is gone.
+  "src/components/ward-management/release-pulled-bed-sheet.tsx": 1,
   "src/components/ward-management/reports/patient-chronology-screen.tsx": 1,
   "src/components/ward-management/restrictive-practice/seclusion-screen.tsx": 3,
   "src/components/ward-management/search/patient-search.tsx": 8,
@@ -94,7 +96,7 @@ const KNOWN_DROPDOWNS: Readonly<Record<string, number>> = {
   "src/components/ward-management/wards/ward-index.tsx": 3,
   "src/components/ward-redesign/ed-board/ed-arrival-time-modal.tsx": 2,
   "src/components/ward-redesign/pop-alerts/alerts-drawer.tsx": 2,
-  "src/components/wf/form.tsx": 1,
+  "src/components/wf/form-select.tsx": 1,
 };
 
 const REPOSITORY_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));

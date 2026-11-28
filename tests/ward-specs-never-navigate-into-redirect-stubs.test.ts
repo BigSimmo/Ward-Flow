@@ -128,7 +128,10 @@ function redirectStubs(): Map<string, string> {
       } else if (entry.name === "page.tsx") {
         const source = stripComments(readFileSync(path, "utf8"));
         const target = /\bredirect\(\s*["'`]([^"'`]+)["'`]\s*\)/u.exec(source);
-        if (target) stubs.set(route, target[1]);
+        // A page that also renders a screen only redirects on some addresses (Home forwards an old
+        // `?list=queue` bookmark, r10), so it is not a stub. The same rule as the sibling guard,
+        // ward-links-never-point-at-redirect-stubs.test.ts.
+        if (target && !/<[A-Z][A-Za-z]*[\s/>]/u.test(source)) stubs.set(route, target[1]);
       }
     }
   };

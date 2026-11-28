@@ -8,7 +8,15 @@ import { useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import { FileText } from "lucide-react";
 
-import { DrawerFootRow, Icon, PanelDrawer, StatusGlyph, StatusPill, buttonClass } from "@/components/wf";
+import {
+  DrawerFootRow,
+  Icon,
+  PanelDrawer,
+  type DrawerPagerProps,
+  StatusGlyph,
+  StatusPill,
+  buttonClass,
+} from "@/components/wf";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -61,9 +69,11 @@ type OfficerJobPanelProps = {
   context: OfficerJobDetailContext;
   tools: ReactNode;
   onClose: () => void;
+  /** Audit four #31: the list pager in the drawer head. */
+  pager?: DrawerPagerProps;
 };
 
-export function OfficerJobPanel({ job, name, umrn, dob, context, tools, onClose }: OfficerJobPanelProps) {
+export function OfficerJobPanel({ job, name, umrn, dob, context, tools, onClose, pager }: OfficerJobPanelProps) {
   const transport = job.transport;
   const leg = officerLeg(transport) ?? "Requested";
   const detail = renderDetail(job, context);
@@ -99,6 +109,7 @@ export function OfficerJobPanel({ job, name, umrn, dob, context, tools, onClose 
     <PanelDrawer
       open
       onClose={onClose}
+      pager={pager}
       title={name}
       titleId="ward-officer-detail-heading"
       subtitle={<span className={styles.drawerSubtitle}>{subtitle}</span>}
@@ -123,7 +134,7 @@ export function OfficerJobPanel({ job, name, umrn, dob, context, tools, onClose 
               data-testid={`ward-officer-record-${job.id}`}
             >
               <Icon icon={FileText} size={16} />
-              Movement record
+              Movement
             </Link>
           </DrawerFootRow>
         </>

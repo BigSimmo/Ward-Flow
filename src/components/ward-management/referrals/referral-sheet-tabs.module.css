@@ -1,10 +1,6 @@
 /* RQ9 (Josh, 3 Nov 2026): the Referral sheet's tabs and its "Sent to" list. Neutral borders, one
    spacing step, tone carried by the badge glyph only (no side stripes). */
 
-.tabsBar {
-  padding-inline: var(--wf-s-4);
-}
-
 .sent {
   display: grid;
   gap: var(--wf-s-3);

@@ -84,7 +84,7 @@ describe("ward capacity draft world and unit identity", () => {
       </WardFlowProvider>,
     );
     const generation = Number(screen.getByTestId("capacity-world-generation").textContent);
-    fireEvent.click(screen.getByRole("button", { name: "Confirm numbers" }));
+    fireEvent.click(screen.getByTestId("ward-confirm-numbers"));
     const abandonedInput = await screen.findByTestId("ward-capacity-input");
     fireEvent.change(abandonedInput, { target: { value: "2" } });
 
@@ -96,7 +96,7 @@ describe("ward capacity draft world and unit identity", () => {
     expect(abandonedInput).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-capacity-input")).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Confirm numbers" }));
+    fireEvent.click(screen.getByTestId("ward-confirm-numbers"));
     const freshInput = await screen.findByTestId("ward-capacity-input");
     expect(freshInput).toHaveValue(replacementValue);
     const freshValue = replacementValue === 0 ? 1 : 0;
@@ -122,14 +122,14 @@ describe("ward capacity draft world and unit identity", () => {
     );
     const view = render(viewFor("rph-adult-secure"));
     const generation = Number(screen.getByTestId("capacity-world-generation").textContent);
-    fireEvent.click(screen.getByRole("button", { name: "Confirm numbers" }));
+    fireEvent.click(screen.getByTestId("ward-confirm-numbers"));
     const abandonedInput = await screen.findByTestId("ward-capacity-input");
     fireEvent.change(abandonedInput, { target: { value: "2" } });
 
     view.rerender(viewFor("bty-adult-secure"));
     expect(Number(screen.getByTestId("capacity-world-generation").textContent)).toBe(generation);
     expect(abandonedInput).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Confirm numbers" }));
+    fireEvent.click(screen.getByTestId("ward-confirm-numbers"));
     expect(await screen.findByTestId("ward-capacity-input")).toHaveValue(
       Number(screen.getByTestId("capacity-world-value").textContent),
     );
@@ -147,7 +147,7 @@ describe("ward capacity draft world and unit identity", () => {
           </WardFlowProvider>
         </ToastProvider>,
       );
-      fireEvent.click(screen.getByRole("button", { name: "Confirm numbers" }));
+      fireEvent.click(screen.getByTestId("ward-confirm-numbers"));
       const input = await screen.findByTestId("ward-capacity-input");
       fireEvent.change(input, { target: { value: "2" } });
       fireEvent.click(screen.getByRole("button", { name: "confirm rph-adult-secure capacity at zero", hidden: true }));
@@ -189,7 +189,7 @@ describe("ward capacity draft world and unit identity", () => {
     // desk opened the dialog. The confirm must go through, not be refused as changed meanwhile.
     fireEvent.click(screen.getByRole("button", { name: "confirm rph-adult-secure capacity at zero", hidden: true }));
     const revision = Number(screen.getByTestId("capacity-world-revision").textContent);
-    fireEvent.click(screen.getByRole("button", { name: "Confirm numbers" }));
+    fireEvent.click(screen.getByTestId("ward-confirm-numbers"));
     const input = await screen.findByTestId("ward-capacity-input");
     expect(input).toHaveValue(0);
     expect(screen.queryByRole("button", { name: "Use current count" })).toBeNull();

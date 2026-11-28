@@ -1,3 +1,6 @@
+/* Audit two B21: every table cell rule here starts with `html`, one element more than the kit's
+   `.table td` and `.table th`, so the page's own cell rules win in the production build as in dev,
+   whatever order the two style sheets load in. Order among this file's own rules is unchanged. */
 /* Downtime pack (Josh, 31 Oct 2026): tabs show one table at a time on screen; print keeps all four. */
 
 /* A table that is not the chosen tab: hidden on screen, printed in full. The kit Card sets its own
@@ -11,14 +14,14 @@
 }
 
 /* Service rows read as group headers: a stronger band with a rule above. */
-.groupHead > th,
-.groupHead > td {
+html .groupHead > th,
+html .groupHead > td {
   border-top: 2px solid var(--wf-line-2);
   background: var(--wf-track);
   font-weight: 700;
 }
 
-.groupHead > th {
+html .groupHead > th {
   text-transform: none;
   letter-spacing: 0;
 }

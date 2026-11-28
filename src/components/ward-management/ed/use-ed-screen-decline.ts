@@ -105,7 +105,7 @@ export function useEdInboxDecline({
         {
           success: `Referral declined for ${declined.who}`,
           undo: (at) => ({ type: "UNDO_REFERRAL_DECISION", role: "ed", now: at, referralId: declined.id }),
-          undone: `Decline undone for ${declined.who}`,
+          undone: `Undone: Decline for ${declined.who}`,
         },
         { completion: declined.completion },
       );

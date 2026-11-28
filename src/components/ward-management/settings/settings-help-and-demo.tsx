@@ -8,23 +8,10 @@
 
 import Link from "next/link";
 import { type ChangeEvent, type ReactNode } from "react";
-import {
-  BookOpen,
-  Copy,
-  Database,
-  DoorOpen,
-  Download,
-  Info,
-  RotateCcw,
-  ShieldCheck,
-  Upload,
-  Wrench,
-} from "lucide-react";
+import { Copy, Database, Download, Info, RotateCcw, ShieldCheck, Upload, Wrench } from "lucide-react";
 
-import { digestHref } from "@/components/ward-management/shell/ward-facade";
 import { FeatureFlagsCard } from "@/components/ward-management/settings/feature-flags-card";
 import { requestToolsTool } from "@/components/ward-management/shell/ward-tools-open";
-import { useCanLeaveDemo, useLeaveDemo } from "@/components/ward-management/shell/leave-demo";
 import { Button, Card, CardHead, StateLine, buttonClass } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
@@ -108,7 +95,7 @@ function DiagnosticsRow({ onCopyDiagnostics }: { onCopyDiagnostics: () => void }
   );
 }
 
-/** About: the policy version, how this site signs in, and where rule saves are recorded. */
+/** About: how this site signs in, and where rule saves are recorded. */
 function AboutCard({
   shared,
   auditAvailable,
@@ -124,10 +111,6 @@ function AboutCard({
     <Card aria-labelledby="about-title" data-setting="about">
       <CardHead iconPlain id="about-title" icon={Info} title="About" />
       <dl className={styles.aboutGrid}>
-        <div data-testid="ward-settings-policy-version">
-          <dt>Policy</dt>
-          <dd>2026.3</dd>
-        </div>
         <div>
           <dt>Sign-in</dt>
           <dd>{shared ? "Signed-in shared workspace" : "Local synthetic demo"}</dd>
@@ -145,20 +128,11 @@ function AboutCard({
       {/* F-77 (A15-25): what the demo is, what this browser keeps and sends, how to leave. */}
       <p className={styles.cardNote}>
         <Info size={14} aria-hidden="true" />
-        Invented records, what this browser keeps, how to leave
+        Synthetic data, what this browser keeps, how to leave
         <Link className={styles.inlineLink} href="/bedchart/about" data-testid="settings-about-demo-link">
           About this demo
         </Link>
       </p>
-      {process.env.NODE_ENV !== "production" ? (
-        <p className={styles.cardNote}>
-          <BookOpen size={14} aria-hidden="true" />
-          Product design reference
-          <a className={styles.inlineLink} href={digestHref()} target="_blank" rel="noopener noreferrer">
-            BedChart Digest
-          </a>
-        </p>
-      ) : null}
       {children}
     </Card>
   );
@@ -214,8 +188,6 @@ export function SettingsDemoTools({
   onCopyDiagnostics?: () => void;
   about?: AboutProps;
 }) {
-  const canLeave = useCanLeaveDemo();
-  const leave = useLeaveDemo();
   return (
     <div className={styles.demoStack} data-setting="demo-tools" data-testid="ward-settings-demo-tools">
       <div className={styles.demoStack}>
@@ -254,20 +226,6 @@ export function SettingsDemoTools({
               </button>
             </SettingRow>
             {onCopyDiagnostics ? <DiagnosticsRow onCopyDiagnostics={onCopyDiagnostics} /> : null}
-            {/* Live audit item 22 (11 Nov 2026): the public demo's way out. */}
-            {canLeave ? (
-              <SettingRow setting="leave-demo" title="Leave the demo" sub="Clears this demo and ends the demo code">
-                <button
-                  type="button"
-                  className={buttonClass({ variant: "ghost", className: styles.pill })}
-                  onClick={leave}
-                  data-testid="btn-leave-demo"
-                >
-                  <DoorOpen size={14} aria-hidden="true" />
-                  Leave
-                </button>
-              </SettingRow>
-            ) : null}
           </Card>
         </div>
         {about ? (

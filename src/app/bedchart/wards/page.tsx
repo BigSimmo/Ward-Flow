@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { RedirectToFind } from "@/components/ward-management/hub/find-redirect";
 import { WardIndex } from "@/components/ward-management/wards/ward-index";
 
 export const metadata: Metadata = {
@@ -9,5 +10,9 @@ export const metadata: Metadata = {
 };
 
 export default function WardIndexPage() {
-  return <WardIndex />;
+  return (
+    <RedirectToFind tab="wards">
+      <WardIndex />
+    </RedirectToFind>
+  );
 }

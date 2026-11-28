@@ -6,7 +6,8 @@
 
 import { CAD_TO_FOLLOW, cadNumberToFollow, providerNeedsCadNumber } from "@/components/ward-management/ward-cad-number";
 import { TransportCadToFollow } from "@/components/ward-management/transport/transport-cad-to-follow";
-import { Check, Lock } from "lucide-react";
+import type { ReactNode } from "react";
+import { Check, ListChecks, Lock } from "lucide-react";
 
 import { Button, Icon, Select, StatusGlyph, Timeline, type TimelineItem } from "@/components/wf";
 import { formatInstantWithDay, type ClockZoneLabel, type Instant } from "@/components/ward-management/ward-clock";
@@ -35,7 +36,8 @@ import {
 import { formatClockAmPmWithDay } from "@/components/ward-management/ward-clock-am-pm";
 
 import { FormsPack, PACK_SLOTS, packCount, packRequired } from "./officer-forms-pack";
-import { OfficerOnly } from "./officer-crew-only";
+import { OfficerOnly, crewLimitFor } from "./officer-crew-only";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { ProviderNumber } from "./officer-booking-contacts";
 import styles from "./officer.module.css";
 import {
@@ -101,6 +103,8 @@ export type OfficerJobDetailContext = {
   unitFor: (movement: Movement) => Unit | undefined;
   /** The board's clock words (`useClockZoneLabel`, F-113). */
   zone: ClockZoneLabel;
+  /** Audit three #9: the paperwork checks, opened from the Forms tab (no longer a foot button). */
+  openFormChecks?: (movement: Movement, event: React.MouseEvent<HTMLElement>) => void;
 };
 
 /** R-MOVE-3: said in place of the main control once a diversion is recorded. */
@@ -292,10 +296,13 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
         <p className={styles.routeMeta}>
           {transport.provider}
           {roadRoute ? ` · about ${roadRoute.min} min by road` : ""}
-          {" · "}
-          {eta !== undefined ? (
+          {/* Audit three #9: when late, the late notice below carries the ETA, so it is said once. */}
+          {lateWords ? null : " · "}
+          {lateWords ? null : eta !== undefined ? (
             <>
-              ETA <b className={styles.mono}>{formatInstantWithDay(eta, now)}</b> {transportEtaRemainingLabel(eta, now)}
+              {/* States B review: " · " between the clock time and how late it is. */}
+              ETA <b className={styles.mono}>{formatInstantWithDay(eta, now)}</b>
+              {` · ${transportEtaRemainingLabel(eta, now)}`}
             </>
           ) : (
             "No ETA yet"
@@ -463,6 +470,40 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
     { id: "activity" as const, label: "Activity", count: activity.length > 0 ? activity.length : undefined },
   ];
 
+  const statusClash = transportStatusClashes(movement, transport.transportLegalStatus);
+  const transportLoggedRow = (
+    <div data-testid={`ward-officer-transport-legal-status-${movement.id}`}>
+      <dt>Transport logged as</dt>
+      <dd className={transportLoggedRecorded ? undefined : styles.factMuted}>
+        {statusClash ? <StatusGlyph tone="warning" size={9} /> : null}
+        {transportLegalStatusLabel(transport)}
+        {statusClash ? `, Legal now ${legalNowText(movement)}` : null}
+      </dd>
+    </div>
+  );
+  const formFacts = (
+    <>
+      <dl className={styles.factList}>
+        <div>
+          <dt>Form named at booking</dt>
+          <dd>{formRequiredLabel(transport)}</dd>
+        </div>
+        {statusClash ? null : transportLoggedRow}
+      </dl>
+      {ctx.openFormChecks ? (
+        <Button
+          variant="sec"
+          size="sm"
+          icon={ListChecks}
+          data-testid={`ward-officer-inspect-form-${movement.id}`}
+          onClick={(event) => ctx.openFormChecks?.(movement, event)}
+        >
+          Inspect form
+        </Button>
+      ) : null}
+    </>
+  );
+
   const details = (
     <section className={styles.detailTab} aria-label="Booking">
       {packOpen > 0 ? (
@@ -495,20 +536,22 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
             <ProviderNumber provider={transport.provider} />
           </dd>
         </div>
-        <div data-testid={`ward-officer-cad-number-${movement.id}`}>
-          <dt>CAD number</dt>
-          <dd className={styles.glyphLine}>
-            {/* Drawer review: the warning shows once, on the add-a-number field below. */}
-            {cadNumberToFollow(transport) ? (
-              <span className={styles.factMuted}>{CAD_TO_FOLLOW}</span>
-            ) : (
-              <span className={styles.mono}>
-                {transport.cadNumber ??
-                  (providerNeedsCadNumber(transport.provider) ? cadNumberLabel(transport) : "Not needed")}
-              </span>
-            )}
-          </dd>
-        </div>
+        {/* Audit three #9: while the crew can add a CAD to follow, the field below is the one CAD line. */}
+        <CadFactRow fieldShown={cadNumberToFollow(transport) && !movement.closure}>
+          <div data-testid={`ward-officer-cad-number-${movement.id}`}>
+            <dt>CAD number</dt>
+            <dd className={styles.glyphLine}>
+              {cadNumberToFollow(transport) ? (
+                <span className={styles.factMuted}>{CAD_TO_FOLLOW}</span>
+              ) : (
+                <span className={styles.mono}>
+                  {transport.cadNumber ??
+                    (providerNeedsCadNumber(transport.provider) ? cadNumberLabel(transport) : "Not needed")}
+                </span>
+              )}
+            </dd>
+          </div>
+        </CadFactRow>
         <div>
           <dt>Escort</dt>
           <dd>{transport.escortRequired ? "Required" : "Not required"}</dd>
@@ -520,28 +563,17 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
             <dd>{movement.collectionRiskFlags.map((flag) => RISK_FLAG_LABELS[flag]).join(", ")}</dd>
           </div>
         ) : null}
-        <div>
-          <dt>Form named at booking</dt>
-          <dd>{formRequiredLabel(transport)}</dd>
-        </div>
-        <div data-testid={`ward-officer-transport-legal-status-${movement.id}`}>
-          <dt>Transport logged as</dt>
-          <dd className={transportLoggedRecorded ? undefined : styles.factMuted}>
-            {transportStatusClashes(movement, transport.transportLegalStatus) ? (
-              <StatusGlyph tone="warning" size={9} />
-            ) : null}
-            {transportLegalStatusLabel(transport)}
-            {transportStatusClashes(movement, transport.transportLegalStatus)
-              ? `, Legal now ${legalNowText(movement)}`
-              : null}
-          </dd>
-        </div>
-        <div data-testid={`ward-officer-estimated-at-${movement.id}`}>
-          <dt>Estimated time</dt>
-          <dd className={transport.estimatedAt === undefined ? styles.factMuted : undefined}>
-            {transport.estimatedAt === undefined ? "Not recorded" : estimatedTimeLabel(transport, now)}
-          </dd>
-        </div>
+        {/* Audit three #9: the form facts sit on the Forms tab; a status that clashes with the legal
+            status now stays here, beside Legal now. */}
+        {statusClash ? transportLoggedRow : null}
+        {lateWords ? null : (
+          <div data-testid={`ward-officer-estimated-at-${movement.id}`}>
+            <dt>Estimated time</dt>
+            <dd className={transport.estimatedAt === undefined ? styles.factMuted : undefined}>
+              {transport.estimatedAt === undefined ? "Not recorded" : estimatedTimeLabel(transport, now)}
+            </dd>
+          </div>
+        )}
         {/* Audit A4-2: the officer sees when the bed hold ends, and whether the ETA is after it. */}
         {movement.pullExpiresAt !== undefined && transport.collectedAt === undefined ? (
           <div data-testid={`ward-officer-hold-ends-${movement.id}`}>
@@ -594,12 +626,17 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
     </section>
   );
 
-  const forms = packRequired(movement) ? (
-    <FormsPack movement={movement} now={now} who={officerPatientName(movement)} />
-  ) : (
-    <section className={styles.section} aria-label="Forms">
-      <span className={styles.muted}>None needed for a voluntary transfer.</span>
-    </section>
+  const forms = (
+    <>
+      {formFacts}
+      {packRequired(movement) ? (
+        <FormsPack movement={movement} now={now} who={officerPatientName(movement)} />
+      ) : (
+        <section className={styles.section} aria-label="Forms">
+          <span className={styles.muted}>None needed for a voluntary transfer.</span>
+        </section>
+      )}
+    </>
   );
 
   const activityPanel =
@@ -622,4 +659,10 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
         panel
       ),
   };
+}
+
+/** Audit three #9: the CAD fact row, left out while the crew's add-a-CAD field below says it. */
+function CadFactRow({ fieldShown, children }: { fieldShown: boolean; children: ReactNode }) {
+  const crewLimit = crewLimitFor(useEffectiveWardAccess());
+  return fieldShown && !crewLimit ? null : <>{children}</>;
 }

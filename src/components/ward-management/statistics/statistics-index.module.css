@@ -1,3 +1,6 @@
+/* Audit two B21: every table cell rule here starts with `html`, one element more than the kit's
+   `.table td` and `.table th`, so the page's own cell rules win in the production build as in dev,
+   whatever order the two style sheets load in. Order among this file's own rules is unchanged. */
 /*
  * The four statistics index pages (Statistics A, 9 Oct 2026): every service, ward, ED and team on
  * one page. Tokens only. Status is carried by StatusGlyph shape and colour, never by a stripe.
@@ -160,7 +163,7 @@
   overscroll-behavior: contain;
 }
 
-.tableScroll thead th {
+html .tableScroll thead th {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -226,7 +229,7 @@
 /* A row the pressed filter chips match stays in full ink; the rest dim by colour (data-dim in
    statistics-v6.module.css), never hidden and never tinted. */
 
-.groupRow th {
+html .groupRow th {
   padding-top: var(--wf-s-3);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.06em;
@@ -282,13 +285,13 @@
 
 /* ── Referral matrix (services) ────────────────────────────────────────────────────────────── */
 
-.matrix td,
-.matrix th {
+html .matrix td,
+html .matrix th {
   padding-inline: 6px;
   text-align: center;
 }
 
-.matrix tbody th {
+html .matrix tbody th {
   text-align: left;
 }
 
@@ -428,7 +431,7 @@
     max-height: none;
   }
 
-  .tableScroll thead th {
+  html .tableScroll thead th {
     position: static;
   }
 

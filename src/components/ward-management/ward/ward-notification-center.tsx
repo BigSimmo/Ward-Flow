@@ -386,7 +386,8 @@ export function WardNotificationCenter({
   // Each row counts once in the badge (ward-clearance-alerts.ts), so a shown row never sits under a zero.
   const { missingClearances, unrecordedClearances } = alerts;
 
-  // Option A: a clearance row opens that patient's request in the ward's Answer view, or the transfer
+  // Option A: a clearance row opens that patient's request in the ward's Referrals tab (simplification
+  // 26 Nov 2026, area 3 item 2), or the transfer
   // once accepted. The request is named in the query, so the Answer view does not land on the oldest one.
   // Redesign: the filled button is kept for Act now rows; a Check row's step is a plain button.
   const transferAction = (m: Movement, filled = true) => {
@@ -397,7 +398,7 @@ export function WardNotificationCenter({
         href={
           accepted
             ? movementHref(m.id)
-            : `/bedchart/ward/${encodeURIComponent(unitId)}/answer?movement=${encodeURIComponent(encodeRecordAddress(m.id))}`
+            : `/bedchart/ward/${encodeURIComponent(unitId)}?tab=referrals&movement=${encodeURIComponent(encodeRecordAddress(m.id))}`
         }
         onClick={() => onClose?.()}
       >

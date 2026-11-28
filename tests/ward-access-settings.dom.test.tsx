@@ -17,6 +17,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
+import { AccessLog } from "@/components/ward-management/settings/access-log";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider } from "@/components/wf";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -55,11 +56,14 @@ afterEach(() => {
   forgetStepUp();
 });
 
-function settings() {
+// Audit two #124 (Josh, 28 Nov 2026): the Access log's one home is Governance, Audit trail; Settings
+// keeps a link card. `withLog` mounts the log card itself, as Governance does, in the same providers.
+function settings(withLog = false) {
   return render(
     <ToastProvider>
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <SettingsScreen />
+        {withLog ? <AccessLog /> : null}
       </WardFlowProvider>
     </ToastProvider>,
   );
@@ -78,7 +82,7 @@ function AdvanceClock() {
   );
 }
 
-function sharedSettings(api: SharedAccessApi, reauthenticate: (password: string) => Promise<void>) {
+function sharedSettings(api: SharedAccessApi, reauthenticate: (password: string) => Promise<void>, withLog = false) {
   return render(
     <ToastProvider>
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -86,6 +90,7 @@ function sharedSettings(api: SharedAccessApi, reauthenticate: (password: string)
         <StepUpReauthContext.Provider value={reauthenticate}>
           <SharedAccessContext.Provider value={{ api, actorId: "9e8d7c6b-5a49-4382-a1b0-c9d8e7f6a5b4" }}>
             <SettingsScreen />
+            {withLog ? <AccessLog /> : null}
           </SharedAccessContext.Provider>
         </StepUpReauthContext.Provider>
       </WardFlowProvider>
@@ -387,12 +392,14 @@ describe("the Access tab", () => {
       setWardFeatureFlagOnDevice("role-access", true);
       setWardAccess({ role: "admin", scope: { kind: "statewide" } });
     });
-    settings();
+    settings(true);
+    // Settings keeps only a link to the log, in Governance.
+    expect(screen.getByTestId("ward-access-log-link")).toHaveTextContent("Open in Governance");
     const log = screen.getByTestId("ward-access-log");
     expect(log).toHaveTextContent("Demo only: made-up openings by the demo staff");
     const rows = within(log).getAllByTestId("ward-access-log-row");
     expect(rows.length).toBeGreaterThan(0);
-    expect(rows[0]).toHaveTextContent("Demo staff A, Nurse in charge, FSH Adult Secure. 12 minutes ago.");
+    expect(rows[0]).toHaveTextContent("Demo staff A, Nurse in charge, FSH Adult Secure. 12 min ago.");
     fireEvent.change(within(log).getByLabelText("Find a record id or account"), { target: { value: "staff b" } });
     const left = within(log).getAllByTestId("ward-access-log-row");
     expect(left.length).toBeGreaterThan(0);
@@ -459,15 +466,16 @@ describe("the Access tab", () => {
     sharedSettings(
       api,
       vi.fn(async () => {}),
+      true,
     );
     const log = screen.getByTestId("ward-access-log");
     const rows = await within(log).findAllByTestId("ward-access-log-row");
     expect(rows).toHaveLength(3);
     expect(rows[0]).toHaveTextContent("PT-1001, Referral detail");
     expect(rows[0]).toHaveTextContent("Account 1a2b3c4d, ED clinician");
-    expect(rows[0]).toHaveTextContent("2 hours ago.");
+    expect(rows[0]).toHaveTextContent("1 h 30 min ago.");
     expect(rows[1]).toHaveTextContent("PT-2002, Patient record");
-    expect(rows[1]).toHaveTextContent("You, Bed coordinator, Statewide. 3 minutes ago.");
+    expect(rows[1]).toHaveTextContent("You, Bed coordinator, Statewide. 3 min ago.");
     // H-0731: a read the server logged itself names no record.
     expect(rows[2]).toHaveTextContent("TV board sent to this desk");
     expect(rows[2]).not.toHaveTextContent("*");
@@ -506,6 +514,7 @@ describe("the Access tab", () => {
     sharedSettings(
       api,
       vi.fn(async () => {}),
+      true,
     );
     const log = screen.getByTestId("ward-access-log");
     expect(await within(log).findByRole("alert")).toHaveTextContent(

@@ -100,7 +100,7 @@ describe("the persistent refusal marker", () => {
     // And the page's lists really are inside `.body`, or the assertion above proves nothing — a
     // non-vacuity check on the population itself, not just the marker.
     expect(
-      body.contains(screen.getByRole("navigation", { name: "Home lists" })),
+      body.contains(screen.getByTestId("home-lists")),
       "the Home lists are not inside the scrollable body — this test's premise is wrong",
     ).toBe(true);
   });

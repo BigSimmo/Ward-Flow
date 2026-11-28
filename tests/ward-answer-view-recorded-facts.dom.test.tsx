@@ -73,7 +73,10 @@ describe("ward answer view: recorded facts only (CS-02)", () => {
       expect(text).not.toContain(invented);
     const assessment = screen.getByTestId("ward-answer-assessment");
     expect(assessment).toHaveTextContent("Medical clearance: Not recorded.");
-    expect(assessment).toHaveTextContent(/\d+ of \d+ checks met; \d+ for information only\./);
+    // Audit two #60 (P60, r10): the assessment no longer repeats the gate count; the gates card
+    // beside it counts the gates, and marks the information-only ones on their own rows.
+    const gates = screen.getByRole("region", { name: "This ward's own gates for this patient" });
+    expect(gates).toHaveTextContent(/\d+ of \d+ pass/);
   });
 
   it.each(["sjgm-adult-open", "fsh-older-adult", "rph-adult-secure"])(

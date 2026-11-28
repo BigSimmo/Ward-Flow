@@ -2,7 +2,6 @@
 
 import {
   AlarmClock,
-  ArrowUpRight,
   BedSingle,
   Bell,
   CircleCheck,
@@ -27,7 +26,6 @@ import { useWardFormSave } from "./use-ward-form-save";
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { acceptedPullReferralId, isAcceptedPullRow } from "@/components/ward-management/ward-alerts-figures";
-import { TasksQuickJumps } from "./ward-tasks-quick-jumps";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { StatusGlyph, buttonClass, durMinutes, useOptionalToast, type WfTone } from "@/components/wf";
@@ -500,6 +498,9 @@ export function WardTasksDrawer({
   // pop-alerts (Josh, 31 Oct 2026): the drawer's one filled button belongs to its most urgent row,
   // the first one shown.
   const urgentId = (filteredFacts[0] ?? filteredCommitments[0])?.id;
+  // Audit two (#49): a section that is the only one showing drops its count; the head pill carries it.
+  const loneSection =
+    [filteredFacts.length, filteredCommitments.length, snoozedItems.length].filter((length) => length > 0).length === 1;
 
   /** pop-alerts: alerts of the same kind share one row ("Transport awaiting departure"), one line per person. */
   function renderRows(rows: readonly InboxItem[]) {
@@ -552,7 +553,18 @@ export function WardTasksDrawer({
       <li key={item.id} className={styles.groupMember} data-testid={`ward-task-member-${item.id}`}>
         <span className={styles.memberText}>
           <span className={styles.memberWho}>
-            <strong>{name}</strong>
+            {/* Audit two (#49): the name is the link, so the row keeps only its step button. */}
+            <button
+              type="button"
+              className={styles.rowTitle}
+              data-testid={`ward-task-${item.id}`}
+              aria-label={`${name}, ${item.plannedAdmission ? "opens the planned admission in Capacity" : "opens the patient"}`}
+              onClick={() => {
+                openItem(item);
+              }}
+            >
+              {name}
+            </button>
             {patient?.patient ? <span className={styles.mono}>{patient.umrn}</span> : null}
           </span>
           <span className={styles.memberWhen}>
@@ -579,21 +591,7 @@ export function WardTasksDrawer({
             </span>
           ) : null}
         </span>
-        <span className={styles.memberActions}>
-          {renderOneAction(item, movement)}
-          <button
-            type="button"
-            className={styles.btn}
-            data-testid={`ward-task-${item.id}`}
-            aria-label={item.plannedAdmission ? "Open planned admission in Capacity" : "Open patient"}
-            onClick={() => {
-              openItem(item);
-            }}
-          >
-            <ArrowUpRight aria-hidden="true" />
-            Open
-          </button>
-        </span>
+        <span className={styles.memberActions}>{renderOneAction(item, movement)}</span>
       </li>
     );
   }
@@ -869,6 +867,7 @@ export function WardTasksDrawer({
               type="button"
               data-testid={`ward-task-${item.id}`}
               className={styles.rowTitle}
+              aria-label={item.plannedAdmission ? `${item.title}, opens the planned admission in Capacity` : undefined}
               onClick={() => {
                 openItem(item);
               }}
@@ -994,17 +993,6 @@ export function WardTasksDrawer({
                 Mark done
               </button>
             )}
-            <button
-              type="button"
-              className={`${styles.btn} ${!oneAction && isExpanded && isFact && latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
-              aria-label={item.plannedAdmission ? "Open planned admission in Capacity" : "Open patient"}
-              onClick={() => {
-                openItem(item);
-              }}
-            >
-              <ArrowUpRight aria-hidden="true" />
-              Open
-            </button>
             {!oneAction &&
             role === "coordinator" &&
             currentInboxOwner(ownership?.[item.id], item.since)?.by !== WARD_FLOW_ROLE_LABELS[role] ? (
@@ -1108,92 +1096,95 @@ export function WardTasksDrawer({
           </button>
         </div>
 
-        <div className={styles.controls}>
-          {/* Ops-22 (13 Oct 2026): on desktop the counts sit in the header and the All filter only;
+        {/* Mock-up: the Alerts bell drops its All / Act now / Waiting / Running bar; the two headed groups carry the counts. */}
+        {alertsQueue ? null : (
+          <div className={styles.controls}>
+            {/* Ops-22 (13 Oct 2026): on desktop the counts sit in the header and the All filter only;
               the stats row repeated them. Phone keeps its one quiet line. */}
 
-          <div className={styles.filterBar}>
-            <div className={styles.segmented} role="group" aria-label={`Filter ${words.plural} by status`}>
-              {(
-                (alertsQueue
-                  ? [
-                      ["all", "All", items.length],
-                      ["critical", words.act, items.filter((item) => alertGroupOf(item) === "act").length],
-                      ["review", words.wait, items.filter((item) => alertGroupOf(item) === "wait").length],
-                      [
-                        "running",
-                        words.running ?? "Running",
-                        items.filter((item) => alertGroupOf(item) === "running").length,
-                      ],
-                    ]
-                  : [
-                      ["all", "All", items.length],
-                      ["critical", words.act, items.filter((item) => item.tone === "danger").length],
-                      ["review", words.wait, items.filter((item) => item.tone !== "danger").length],
-                    ]) as [TaskFilter, string, number][]
-              ).map(([value, label, count]) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={styles.segment}
-                  aria-pressed={taskFilter === value}
-                  onClick={() => {
-                    setTaskFilter(value);
-                  }}
-                >
-                  {label}{" "}
-                  <span className={styles.count} data-zero={count === 0 || undefined}>
-                    {count}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.filterMeta}>
-            {/* pop-alerts: "12 of 12" repeats the All count, so it shows only while a filter narrows the list. */}
-            <span role="status" className={filteredItems.length === items.length ? "sr-only" : styles.filterStatus}>
-              <strong className={styles.mono}>{filteredItems.length}</strong> of {items.length}{" "}
-              <span className="sr-only">invented </span>alerts
-            </span>
-            {oneAction ? null : (
-              <>
-                <label className={styles.selectWrap}>
-                  <Filter aria-hidden="true" />
-                  <select
-                    aria-label={`Filter ${words.plural.slice(0, -1)} state`}
-                    value={ackFilter}
-                    onChange={(event) => setAckFilter(event.target.value as AckFilter)}
-                  >
-                    {(Object.entries(ackFilterLabels(words)) as [AckFilter, string][]).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown aria-hidden="true" />
-                </label>
-                <label className={styles.selectWrap}>
-                  <select
-                    aria-label={`Sort ${words.plural}`}
-                    data-testid="ward-tasks-sort"
-                    value={sortMode}
-                    onChange={(event) => {
-                      setSortMode(event.target.value as DueSortMode);
+            <div className={styles.filterBar}>
+              <div className={styles.segmented} role="group" aria-label={`Filter ${words.plural} by status`}>
+                {(
+                  (alertsQueue
+                    ? [
+                        ["all", "All", items.length],
+                        ["critical", words.act, items.filter((item) => alertGroupOf(item) === "act").length],
+                        ["review", words.wait, items.filter((item) => alertGroupOf(item) === "wait").length],
+                        [
+                          "running",
+                          words.running ?? "Running",
+                          items.filter((item) => alertGroupOf(item) === "running").length,
+                        ],
+                      ]
+                    : [
+                        ["all", "All", items.length],
+                        ["critical", words.act, items.filter((item) => item.tone === "danger").length],
+                        ["review", words.wait, items.filter((item) => item.tone !== "danger").length],
+                      ]) as [TaskFilter, string, number][]
+                ).map(([value, label, count]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={styles.segment}
+                    aria-pressed={taskFilter === value}
+                    onClick={() => {
+                      setTaskFilter(value);
                     }}
                   >
-                    {DUE_SORT_OPTIONS.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown aria-hidden="true" />
-                </label>
-              </>
-            )}
+                    {label}{" "}
+                    <span className={styles.count} data-zero={count === 0 || undefined}>
+                      {count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className={styles.filterMeta}>
+              {/* pop-alerts: "12 of 12" repeats the All count, so it shows only while a filter narrows the list. */}
+              <span role="status" className={filteredItems.length === items.length ? "sr-only" : styles.filterStatus}>
+                <strong className={styles.mono}>{filteredItems.length}</strong> of {items.length}{" "}
+                <span className="sr-only">invented </span>alerts
+              </span>
+              {oneAction ? null : (
+                <>
+                  <label className={styles.selectWrap}>
+                    <Filter aria-hidden="true" />
+                    <select
+                      aria-label={`Filter ${words.plural.slice(0, -1)} state`}
+                      value={ackFilter}
+                      onChange={(event) => setAckFilter(event.target.value as AckFilter)}
+                    >
+                      {(Object.entries(ackFilterLabels(words)) as [AckFilter, string][]).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown aria-hidden="true" />
+                  </label>
+                  <label className={styles.selectWrap}>
+                    <select
+                      aria-label={`Sort ${words.plural}`}
+                      data-testid="ward-tasks-sort"
+                      value={sortMode}
+                      onChange={(event) => {
+                        setSortMode(event.target.value as DueSortMode);
+                      }}
+                    >
+                      {DUE_SORT_OPTIONS.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown aria-hidden="true" />
+                  </label>
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className={styles.drawerBody}>
           {items.length === 0 ? (
@@ -1251,8 +1242,7 @@ export function WardTasksDrawer({
                     <h3 id={`${sectionId}-facts`} className={styles.sectionTitle}>
                       Needs attention
                     </h3>
-                    <span className={styles.count}>{filteredFacts.length}</span>
-                    <span className={styles.sectionNote}>Leaves when no longer true</span>
+                    {loneSection ? null : <span className={styles.count}>{filteredFacts.length}</span>}
                   </div>
                   <ul className={styles.list}>{renderRows(filteredFacts)}</ul>
                 </section>
@@ -1265,7 +1255,7 @@ export function WardTasksDrawer({
                     <h3 id={`${sectionId}-commitments`} className={styles.sectionTitle}>
                       Commitments
                     </h3>
-                    <span className={styles.count}>{filteredCommitments.length}</span>
+                    {loneSection ? null : <span className={styles.count}>{filteredCommitments.length}</span>}
                     <span className={styles.sectionNote}>Leaves when marked done</span>
                   </div>
                   <ul className={styles.list}>{renderRows(filteredCommitments)}</ul>
@@ -1284,7 +1274,7 @@ export function WardTasksDrawer({
                 <h3 id={`${sectionId}-snoozed`} className={styles.sectionTitle}>
                   Snoozed
                 </h3>
-                <span className={styles.count}>{snoozedItems.length}</span>
+                {loneSection ? null : <span className={styles.count}>{snoozedItems.length}</span>}
                 <span className={styles.sectionNote}>Back when due</span>
               </div>
               <ul className={styles.list}>
@@ -1304,7 +1294,18 @@ export function WardTasksDrawer({
                           <AlarmClock aria-hidden="true" />
                         </span>
                         <div className={styles.rowText}>
-                          <span className={styles.rowTitle}>{item.title}</span>
+                          <button
+                            type="button"
+                            className={styles.rowTitle}
+                            data-testid={`ward-task-snoozed-open-${item.id}`}
+                            aria-label={`${item.title}, opens the patient`}
+                            onClick={() => {
+                              // The same routing as an active row: a discharge row opens its stay.
+                              openItem(item);
+                            }}
+                          >
+                            {item.title}
+                          </button>
                           <p className={styles.rowMeta}>
                             <strong>{patient?.formalName ?? "Patient not linked"}</strong>
                             {patient?.patient ? (
@@ -1316,19 +1317,6 @@ export function WardTasksDrawer({
                           </p>
                           {entry ? <p className={styles.rowMeta}>{snoozedLine(entry, now)}</p> : null}
                         </div>
-                        <button
-                          type="button"
-                          className={styles.btn}
-                          aria-label="Open patient"
-                          data-testid={`ward-task-snoozed-open-${item.id}`}
-                          onClick={() => {
-                            // The same routing as an active row: a discharge row opens its stay.
-                            openItem(item);
-                          }}
-                        >
-                          <ArrowUpRight aria-hidden="true" />
-                          Open
-                        </button>
                         {role === "coordinator" ? (
                           <button
                             type="button"
@@ -1351,23 +1339,8 @@ export function WardTasksDrawer({
           ) : null}
         </div>
 
-        {oneAction ? null : (
-          <nav aria-label="Network exception boards" data-testid="ward-tasks-quick-jumps" className={styles.quickJumps}>
-            {/* One Alerts queue: this drawer is the quick look, and the full screen holds the detail,
-              broadcast and history. */}
-            {words === ALERTS_WORDS ? (
-              <Link
-                href={WARD_ALERTS_HREF}
-                onClick={closeFromLink}
-                data-testid="ward-tasks-open-alerts"
-                className={buttonClass({ variant: "pri", size: "sm" })}
-              >
-                Open the Alerts screen
-              </Link>
-            ) : null}
-            <TasksQuickJumps showAlerts={words !== ALERTS_WORDS && alertsScreenOpen} onNavigate={closeFromLink} />
-          </nav>
-        )}
+        {/* Audit two (#17): no quick jumps and no filled button on a desk whose drawer is not the Alerts
+            queue. Its foot carries one quiet Open Alerts link instead. */}
 
         <div className={styles.drawerFoot}>
           {/* Change 7: the one way on from the preview is the Alerts screen itself. */}
@@ -1381,7 +1354,20 @@ export function WardTasksDrawer({
               Open Alerts
             </Link>
           ) : (
-            <span id={`${sectionId}-summary`}>Seen is not resolved</span>
+            <>
+              <span id={`${sectionId}-summary`}>Seen is not resolved</span>
+              {alertsScreenOpen ? (
+                <Link
+                  href={WARD_ALERTS_HREF}
+                  onClick={closeFromLink}
+                  data-testid="ward-tasks-open-alerts"
+                  className={buttonClass({ variant: "ghost", size: "sm" })}
+                  style={{ marginLeft: "auto" }}
+                >
+                  Open Alerts
+                </Link>
+              ) : null}
+            </>
           )}
           <AcknowledgeVisibleButton
             rows={visibleUnacknowledged.map((item) => {

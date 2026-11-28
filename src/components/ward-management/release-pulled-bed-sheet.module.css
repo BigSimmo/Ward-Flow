@@ -1,0 +1,36 @@
+/* Release pulled bed sheet: one 16px rhythm between the context sentence, the person, the reason
+   and the button. Tokens only. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+}
+
+.body > p {
+  margin: 0;
+}
+
+.context {
+  color: var(--wf-ink-2);
+}
+
+.who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.umrn {
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-2);
+}
+
+.action {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--wf-s-2);
+}

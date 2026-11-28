@@ -48,33 +48,33 @@ describe("WardBoard Patient Safety Confirmations", () => {
     fireEvent.click(leaveBtn);
 
     // Modal dialog must appear with accessible role and title
-    const dialog = screen.getByRole("dialog");
+    const dialog = screen.getByRole("alertdialog");
     expect(dialog).toBeInTheDocument();
     expect(dialog).toHaveAttribute("aria-modal", "true");
-    expect(screen.getByText("Confirm discharge")).toBeInTheDocument();
+    expect(within(dialog).getByRole("heading", { name: "Record discharge" })).toBeInTheDocument();
 
     // No departure toast before confirmation
     expect(screen.queryByTestId("ward-board-toast")).not.toBeInTheDocument();
 
     // Cancel closes dialog without dispatching
-    const cancelBtn = screen.getByTestId("ward-board-confirm-cancel");
+    const cancelBtn = within(dialog).getByRole("button", { name: "Cancel" });
     fireEvent.click(cancelBtn);
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-board-toast")).not.toBeInTheDocument();
 
     // Re-open and confirm departure
     fireEvent.click(leaveBtn);
-    const proceedBtn = screen.getByTestId("ward-board-confirm-proceed");
-    expect(proceedBtn).toHaveTextContent("Record discharge");
+    const reopened = screen.getByRole("alertdialog");
+    const proceedBtn = within(reopened).getByRole("button", { name: "Record discharge" });
     // Audit CS3-07: where they went starts blank and must be chosen before the departure records.
-    expect(proceedBtn).toBeDisabled();
+    expect(proceedBtn).toHaveAttribute("aria-disabled", "true");
     fireEvent.change(screen.getByTestId("ward-board-confirm-destination"), {
       target: { value: "discharged-to-the-community" },
     });
-    fireEvent.click(proceedBtn);
+    fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Record discharge" }));
 
     // Dialog closes and toast appears confirming departure
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     const toast = await screen.findByTestId("ward-board-toast");
     expect(toast).toHaveTextContent(/^Recorded discharge: /);
   });
@@ -90,11 +90,11 @@ describe("WardBoard Patient Safety Confirmations", () => {
     if (shiftButtons.length === 0) return;
 
     fireEvent.click(shiftButtons[0]);
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
 
     // Press Escape
     fireEvent.keyDown(window, { key: "Escape" });
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-board-toast")).not.toBeInTheDocument();
   });
 
@@ -118,17 +118,18 @@ describe("WardBoard Patient Safety Confirmations", () => {
     // Modal dialog must appear for ED transfer confirmation
     // Drawer review (6 Nov 2026): the confirmation stacks over the bed record's kit drawer, so it is
     // found by its name among the two dialogs.
-    const dialog = screen.getByRole("dialog", { name: "Confirm emergency department transfer" });
+    const dialog = screen.getByRole("alertdialog", { name: "Confirm emergency department transfer" });
     expect(dialog).toBeInTheDocument();
     expect(screen.getByText("Confirm emergency department transfer")).toBeInTheDocument();
 
     // Confirm transfer
-    const proceedBtn = screen.getByTestId("ward-board-confirm-proceed");
-    expect(proceedBtn).toHaveTextContent("Record ED transfer");
+    const proceedBtn = within(dialog).getByRole("button", { name: "Record ED transfer" });
     fireEvent.click(proceedBtn);
 
     // The confirmation closes (the bed's record stays open under it) and a toast reports the transfer.
-    expect(screen.queryByRole("dialog", { name: "Confirm emergency department transfer" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("alertdialog", { name: "Confirm emergency department transfer" }),
+    ).not.toBeInTheDocument();
     const toast = await screen.findByTestId("ward-board-toast");
     expect(toast).toHaveTextContent(/away at an emergency department/i);
   });
@@ -152,7 +153,7 @@ describe("AddPatientForm Patient Safety & Privacy Defenses", () => {
     expect(event.defaultPrevented).toBe(true);
   });
 
-  it("clicking Reset form with entered patient details opens confirmation modal", () => {
+  it("clicking Reset with entered patient details clears them and offers Undo", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <AddPatientForm />
@@ -169,22 +170,17 @@ describe("AddPatientForm Patient Safety & Privacy Defenses", () => {
     const resetBtn = screen.getByTestId("ward-add-patient-reset");
     fireEvent.click(resetBtn);
 
-    // Confirmation modal opens
-    expect(screen.getByText("Reset patient form?")).toBeInTheDocument();
-    expect(screen.getByText(/You have entered patient details/i)).toBeInTheDocument();
-
-    // Cancel preserves entered details
-    fireEvent.click(screen.getByTestId("ward-add-patient-reset-cancel"));
-    expect(screen.queryByText("Reset patient form?")).not.toBeInTheDocument();
-    expect(givenNameInput).toHaveValue("Jane");
-    expect(familyNameInput).toHaveValue("Invented");
-
-    // Clicking confirm clears fields
+    // r10: Reset no longer asks first. It clears at once and the toast offers Undo, which restores
+    // every entered detail, so a mis-press cannot lose them.
     fireEvent.click(resetBtn);
-    fireEvent.click(screen.getByTestId("ward-add-patient-reset-confirm"));
     expect(screen.queryByText("Reset patient form?")).not.toBeInTheDocument();
+    expect(screen.getByText("Form cleared")).toBeInTheDocument();
     expect(givenNameInput).toHaveValue("");
     expect(familyNameInput).toHaveValue("");
+
+    fireEvent.click(screen.getByRole("button", { name: /^Undo/ }));
+    expect(givenNameInput).toHaveValue("Jane");
+    expect(familyNameInput).toHaveValue("Invented");
   });
 
   it("locks the submit button with isSubmitting while processing", async () => {

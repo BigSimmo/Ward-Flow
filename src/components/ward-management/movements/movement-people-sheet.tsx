@@ -4,7 +4,7 @@
  * The patient list pop-up (Movements M1 to M4, 3 Nov 2026). A hero figure, a stage tile, a
  * "Where they wait" square, a corridor or a transport tile opens the patients behind it here,
  * longest wait first, rather than marking rows somewhere down the worklist. A row opens that
- * patient's usual movement pop-up; "Show in worklist" keeps the old highlight for anyone who wants it.
+ * patient's usual movement pop-up.
  */
 import { PatientPeekLink } from "@/components/ward-management/patients/patient-peek-link";
 import { useId, useState, type ReactNode } from "react";
@@ -27,6 +27,7 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { edById } from "@/components/ward-management/ward-sites";
 import { STAGE_SHORT, transportRouteLabels } from "./movements-screen-helpers";
 import { OVER_24H, WAIT_BANDS, waitBand } from "@/components/ward-management/delays/delays-board-model";
+import { TierKeyTip } from "@/components/ward-management/tier-key";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { isCoordinatorStep, movementNextStep, nextStepTarget } from "./movement-next-step";
 import ps from "./movement-people-sheet.module.css";
@@ -59,7 +60,6 @@ export function MovementPeopleSheet({
   referrals,
   onClose,
   onOpenMovement,
-  onShowInWorklist,
 }: {
   list: MovementPeopleList | null;
   now: Instant;
@@ -68,7 +68,6 @@ export function MovementPeopleSheet({
   referrals: Referral[];
   onClose: () => void;
   onOpenMovement: (movementId: string) => void;
-  onShowInWorklist?: (highlightKey: string) => void;
 }) {
   const isPhone = useIsPhone();
   const titleId = useId();
@@ -88,13 +87,6 @@ export function MovementPeopleSheet({
   const rows = allRows.filter((movement) =>
     filter === "mine" ? isMine(movement) : filter === "overDay" ? isOverDay(movement) : true,
   );
-  const showInWorklist =
-    list.highlightKey && onShowInWorklist
-      ? () => {
-          onShowInWorklist(list.highlightKey!);
-          onClose();
-        }
-      : undefined;
   const mineCount = allRows.filter(isMine).length;
   const longest = allRows[0] ? Math.max(now - allRows[0].openedAt, 0) : undefined;
   const overDay = allRows.filter(isOverDay).length;
@@ -202,11 +194,9 @@ export function MovementPeopleSheet({
   };
 
   const summary = (
+    // Audit three #20 (28 Nov 2026): the Patients cell repeated the figure just tapped, so it goes.
+    // Pressing a pressed filter again, or the note's Show all, returns to everyone.
     <div className={ps.summary} role="group" aria-label="Summary and filters">
-      <button type="button" className={ps.stat} aria-pressed={filter === "all"} onClick={() => setFilter("all")}>
-        <span className={ps.statLabel}>Patients</span>
-        <span className={ps.statValue}>{allRows.length}</span>
-      </button>
       <div className={ps.stat} data-static="true">
         <span className={ps.statLabel}>Longest</span>
         <span className={ps.statValue} data-tone={longest !== undefined ? waitTone(longest) : undefined}>
@@ -280,7 +270,6 @@ export function MovementPeopleSheet({
         title={`${list.title} · ${allRows.length}`}
         height="tall"
         description={list.caption}
-        secondary={showInWorklist ? { label: "Show in worklist", onAction: showInWorklist } : undefined}
         data-testid="movement-people-sheet"
         className={ps.phone}
       >
@@ -300,16 +289,7 @@ export function MovementPeopleSheet({
       bodyClassName={ps.body}
       footerClassName={ps.footer}
       testId="movement-people-sheet"
-      footer={
-        <>
-          <span className={ps.footNote}>Longest wait first. Choose a name to open the patient.</span>
-          {showInWorklist ? (
-            <button type="button" className={buttonClass({ variant: "sec", size: "sm" })} onClick={showInWorklist}>
-              Show in worklist
-            </button>
-          ) : null}
-        </>
-      }
+      footer={<span className={ps.footNote}>Longest wait first.</span>}
     >
       <div className={ps.head}>
         <div className={ps.headText}>
@@ -318,7 +298,9 @@ export function MovementPeopleSheet({
             {list.tone ? <StatusGlyph tone={list.tone} size={10} /> : null}
             {list.title}
           </h2>
-          <p className={ps.caption}>{list.caption}</p>
+          <p className={ps.caption}>
+            {list.caption} {allRows.length > 0 ? <TierKeyTip /> : null}
+          </p>
         </div>
         <button
           type="button"

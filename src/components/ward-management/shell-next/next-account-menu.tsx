@@ -1,11 +1,10 @@
 "use client";
 
 import { useContext, type RefObject } from "react";
-import { ChevronsUpDown, CircleHelp, LogOut, Repeat, Settings } from "lucide-react";
+import { ChevronsUpDown, LogOut, Repeat, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Menu, type MenuItem } from "@/components/wf";
-import { useWardHelpRow } from "@/components/ward-management/help/ward-help-link";
 import { useCanLeaveDemo, useLeaveDemo } from "@/components/ward-management/shell/leave-demo";
 import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 import { settingsHref } from "@/components/ward-management/shell/ward-facade";
@@ -15,8 +14,8 @@ import parts from "@/components/ward-management/shell-next/next-rail.module.css"
 /* ── Account menu (DK1, Josh, 3 Nov 2026) ───────────────────────────────────────────────────── */
 
 /**
- * The rail's person (and the iPad sheet's) opens an account menu: who is signed in, Settings, Help,
- * then Switch desk for an account with more than one membership, or in the local demo "Try another
+ * The rail's person (and the iPad sheet's) opens an account menu: who is signed in, Settings (Help has
+ * its own rail row, header link and phone row), then Switch desk for an account with more than one membership, or in the local demo "Try another
  * desk (demo)", which opens the desk drawer the person used to open. Sign out ends it, signed in only.
  * It replaced "Go to a desk" on the person, which listed every desk and no longer fits signing in.
  */
@@ -43,7 +42,6 @@ export function RailAccountMenu({
 }) {
   const session = useContext(SharedSessionContext);
   const router = useRouter();
-  const help = useWardHelpRow();
   const canLeaveDemo = useCanLeaveDemo();
   const leave = useLeaveDemo();
   const act = (run: () => void) => () => {
@@ -64,7 +62,6 @@ export function RailAccountMenu({
       ),
     },
     { id: "settings", label: "Settings", icon: Settings, onSelect: act(() => router.push(settingsHref())) },
-    { id: "help", label: "Help", icon: CircleHelp, meta: help.isNew ? "New" : undefined, onSelect: act(help.open) },
   ];
   if (session?.switchRole) {
     items.push({ id: "switch-desk", label: "Switch desk", icon: Repeat, onSelect: act(session.switchRole) });
@@ -80,7 +77,18 @@ export function RailAccountMenu({
     // Live audit item 22: the public demo's way out (`shell/leave-demo.ts`).
     items.push(
       { kind: "separator", id: "sep" },
-      { id: "leave-demo", label: "Leave the demo", icon: LogOut, onSelect: act(leave) },
+      {
+        id: "leave-demo",
+        // Audit two (#43): the label says what leaving does, in 12 ink-3 under the label.
+        label: (
+          <span className={parts.accountHead}>
+            <span>Leave the demo</span>
+            <span className={parts.accountRole}>Clears this demo and ends the demo code</span>
+          </span>
+        ),
+        icon: LogOut,
+        onSelect: act(leave),
+      },
     );
   }
   const sheet = variant === "sheet";

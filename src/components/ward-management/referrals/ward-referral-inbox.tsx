@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { usePathname } from "next/navigation";
-import { ChipGroup, DisabledReason, FilterChip } from "@/components/wf";
+import { Button, ChipGroup, FilterChip, ShowMoreRow } from "@/components/wf";
 import { formatInstantWithDay } from "../ward-clock";
 import { GENDER_PLACEMENT_REASONS, GENDER_PLACEMENT_REFUSAL, type GenderPlacementReason } from "../ward-change-reasons";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
@@ -18,7 +18,6 @@ import { WardInformationNeedsPicker, useMarkReferralsOpened } from "./referral-i
 import { WardCommitmentControls } from "./referral-commitments-lazy";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
 import { readyBedsAllPromised, readyBedsPromisedSentence } from "../ward-ready-bed-promises";
-import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useWardFormSave } from "../use-ward-form-save";
 import styles from "./ward-referral-drawer.module.css";
 
@@ -50,7 +49,6 @@ export function WardReferralInbox({ unitId, embedded = false }: { unitId: string
   const now = useWardFlowClock();
   const routeRole = useRouteRole();
   const pathname = usePathname() ?? "";
-  const reasonId = useId();
   const isCoordinator = routeRole === "coordinator";
   const actingUnitId = routeRole === "ward" ? wardRouteUnitId(pathname) : undefined;
   const thisUnit = units.find((unit) => unit.id === unitId);
@@ -131,8 +129,6 @@ export function WardReferralInbox({ unitId, embedded = false }: { unitId: string
         : undefined;
     const genderReason = genderReasons[entry.id] ?? "";
     const genderTicked = genderChecked[entry.id] === true;
-    const acceptReasonId = `${reasonId}-accept-${entry.id}`;
-    const declineReasonId = `${reasonId}-decline-${entry.id}`;
     return (
       <article className={styles.refCard} key={entry.id}>
         <h3 className={styles.refCardTitle}>
@@ -205,16 +201,16 @@ export function WardReferralInbox({ unitId, embedded = false }: { unitId: string
                 </label>
               </>
             ) : null}
-            <button
-              type="button"
-              className={styles.patientChipBtn}
-              aria-disabled={acceptRefusal !== undefined || save.pending ? "true" : undefined}
-              aria-describedby={acceptRefusal ? acceptReasonId : undefined}
-              onClick={(e) => {
-                if (acceptRefusal || save.pending) {
-                  ignoreUnavailableActivation(e);
-                  return;
-                }
+            {/* Simplification 26 Nov 2026 (Referrals plan): the direct one-tap answers are the kit's
+                secondary buttons, each saying why when it is unavailable. */}
+            <Button
+              variant="sec"
+              size="sm"
+              disabledReason={acceptRefusal}
+              aria-disabled={save.pending ? "true" : undefined}
+              data-testid={`ward-referral-inbox-accept-${entry.id}`}
+              onClick={() => {
+                if (save.pending) return;
                 if (isCoordinator && needsGenderPlacement && (genderReason === "" || !genderTicked)) {
                   setLocalNote({ id: entry.id, text: "Choose a placement reason and tick the ward check first." });
                   return;
@@ -231,8 +227,7 @@ export function WardReferralInbox({ unitId, embedded = false }: { unitId: string
               }}
             >
               Accept referral
-            </button>
-            {acceptRefusal ? <DisabledReason id={acceptReasonId}>{acceptRefusal}</DisabledReason> : null}
+            </Button>
             {promised ? (
               <p
                 className={styles.flowError}
@@ -247,16 +242,13 @@ export function WardReferralInbox({ unitId, embedded = false }: { unitId: string
                 {localNote.text}
               </p>
             ) : null}
-            <button
-              type="button"
-              className={styles.patientChipBtn}
-              aria-disabled={roleRefusal !== undefined || save.pending ? "true" : undefined}
-              aria-describedby={roleRefusal ? declineReasonId : undefined}
-              onClick={(e) => {
-                if (roleRefusal || save.pending) {
-                  ignoreUnavailableActivation(e);
-                  return;
-                }
+            <Button
+              variant="sec"
+              size="sm"
+              disabledReason={roleRefusal}
+              aria-disabled={save.pending ? "true" : undefined}
+              onClick={() => {
+                if (save.pending) return;
                 answer(entry.id, "Referral put on the waiting list", {
                   type: "DECLINE_REFERRAL",
                   ...decisionBase,
@@ -267,7 +259,7 @@ export function WardReferralInbox({ unitId, embedded = false }: { unitId: string
               }}
             >
               Waiting list
-            </button>
+            </Button>
             <ChipGroup label="Decline reason" className={styles.flowField}>
               {REFERRAL_DECLINE_REASONS.map((reason) => (
                 <FilterChip
@@ -282,31 +274,25 @@ export function WardReferralInbox({ unitId, embedded = false }: { unitId: string
             {(() => {
               const declineRefusal = roleRefusal ?? (!reasons[entry.id] ? "Choose a decline reason" : undefined);
               return (
-                <>
-                  <button
-                    type="button"
-                    className={styles.patientChipBtn}
-                    aria-disabled={declineRefusal !== undefined || save.pending ? "true" : undefined}
-                    aria-describedby={declineRefusal ? declineReasonId : undefined}
-                    onClick={(e) => {
-                      const reason = reasons[entry.id];
-                      if (!reason || roleRefusal || save.pending) {
-                        ignoreUnavailableActivation(e);
-                        return;
-                      }
-                      // F-109 (A14-18): this ward declined; the referral's other destinations may still be waiting.
-                      answer(entry.id, `${unitName} declined`, {
-                        type: "DECLINE_REFERRAL",
-                        ...decisionBase,
-                        referralId: entry.id,
-                        reason,
-                      });
-                    }}
-                  >
-                    Decline referral
-                  </button>
-                  {declineRefusal ? <DisabledReason id={declineReasonId}>{declineRefusal}</DisabledReason> : null}
-                </>
+                <Button
+                  variant="sec"
+                  size="sm"
+                  disabledReason={declineRefusal}
+                  aria-disabled={save.pending ? "true" : undefined}
+                  onClick={() => {
+                    const reason = reasons[entry.id];
+                    if (!reason || save.pending) return;
+                    // F-109 (A14-18): this ward declined; the referral's other destinations may still be waiting.
+                    answer(entry.id, `${unitName} declined`, {
+                      type: "DECLINE_REFERRAL",
+                      ...decisionBase,
+                      referralId: entry.id,
+                      reason,
+                    });
+                  }}
+                >
+                  Decline referral
+                </Button>
               );
             })()}
           </div>
@@ -323,22 +309,21 @@ export function WardReferralInbox({ unitId, embedded = false }: { unitId: string
   };
   return (
     // `embedded`: the ward page's Referrals tab (WH7) already gives the card and its heading.
-    <section className={embedded ? undefined : styles.refCard} aria-label="Ward referral inbox">
+    <section className={embedded ? styles.inboxList : styles.refCard} aria-label="Ward referral inbox">
       {embedded ? null : <h2 className={styles.refCardTitle}>Referral inbox · {waiting.length} waiting</h2>}
       {waiting.map(renderEntry)}
+      {/* Simplification 26 Nov 2026 (perfection): the kit's one Show more row, not a hand-made chip. */}
       {answered.length > 0 && (
-        <button
-          type="button"
-          className={styles.patientChipBtn}
-          aria-expanded={showAnswered}
-          aria-controls={answeredListId}
+        <ShowMoreRow
+          expanded={showAnswered}
+          controls={answeredListId}
           onClick={() => setShowAnswered((shown) => !shown)}
         >
           {showAnswered ? `Hide ${answered.length} answered` : `Show ${answered.length} answered`}
-        </button>
+        </ShowMoreRow>
       )}
       {answered.length > 0 && (
-        <div id={answeredListId} hidden={!showAnswered}>
+        <div id={answeredListId} className={styles.inboxList} hidden={!showAnswered}>
           {showAnswered ? answered.map(renderEntry) : null}
         </div>
       )}

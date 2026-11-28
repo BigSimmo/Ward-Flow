@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+import { useIsActiveRailEntry } from "@/components/ward-management/hub/find-active-tab";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { Sheet } from "@/components/wf/sheet";
@@ -58,17 +60,9 @@ import {
   setRailOpenPreference,
   useWardDocumentPreferences,
 } from "./ward-rail-preferences";
-import {
-  isActiveRailEntry,
-  isRoleMenuAction,
-  type RailEntry,
-  railEntries,
-  type RoleMenuAction,
-  roleMenu,
-} from "./ward-rail-entries";
+import { isRoleMenuAction, type RailEntry, railEntries, type RoleMenuAction, roleMenu } from "./ward-rail-entries";
 import {
   BedAlertMeter,
-  PinButton,
   countScopeNote,
   countTitle,
   deskCapacityRows,
@@ -76,7 +70,6 @@ import {
   capacityRowsSpoken,
   cardScopeNote,
   overLineLabel,
-  usePinnedPages,
 } from "./ward-rail-parts";
 import { useAccessNavFilter, useCanOpenHref, useDeskHomeHref } from "./ward-access";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
@@ -139,7 +132,7 @@ const TABLET_LANDSCAPE_RAIL_QUERY = "(min-width: 62.5625rem) and (max-width: 75r
 // Visual abbreviations for the tablet row. Full registry names and live counts remain on the
 // accessible link and its hover card; these never define destinations.
 const COMPACT_LABELS: Record<string, string> = {
-  hub: "Places",
+  hub: "Find",
   ed: "ED",
   wards: "Wards",
   community: "Community",
@@ -229,6 +222,8 @@ const NO_BED_ALERTS: ServiceBedAlertsSummary = {
 export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const network = useWardNetwork();
   const pathname = usePathname() ?? "";
+  // Find's EDs and Wards tabs light All EDs and All wards, as their old pages did.
+  const isActiveRailEntry = useIsActiveRailEntry();
   const { units, bedReleases, movements, configuration, admissions, referrals } = useWardFlowSelect(
     "units",
     "bedReleases",
@@ -315,7 +310,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const appearanceRef = useRef<HTMLDivElement>(null);
   const alertsRef = useRef<HTMLDivElement>(null);
   // The new sidebar (Josh, 30-31 Oct 2026): whose figures these are, the bed alert rows for the
-  // desk's own place, and the pages pinned under the role's menu.
+  // desk's own place.
   const countNote = countScopeNote(deskAccess, service);
   const capacityRows = deskCapacityRows(deskAccess, units, admissions ?? [], bedReleases, bedAlerts);
   const overLine = overLineLabel(capacityRows);
@@ -323,7 +318,6 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const capacityRowsLabel = capacityRowsSpoken(capacityRows);
   const readyBeds = counts.capacity?.value ?? bedAlerts.totalFreeBeds;
   const readyLabel = `${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now`;
-  const pinnedIds = usePinnedPages();
   // Josh, 31 Oct 2026: the executive and access admin desks hold no shift, so no shift card.
   const showHandover = role !== "executive" && deskAccess.role !== "admin";
   // The tablet Menu (no rail on screen) shows the capacity card; the rail's own More does not need it.
@@ -452,19 +446,14 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   // The rail's More holds the rest; the sheet also leads with the role's menu when the rail is hidden.
   // Every group in the sheet leaves Handover out under the sheet's countdown, More's groups too
   // (an ED desk keeps Handover under More).
-  // Pinned pages: any page in More the person pinned, under the role's own menu (this tab only).
-  const mainIds = new Set(menu.main.map((item) => item.id));
-  const pinnedEntries = pinnedIds
-    .map((id) => entries.find((entry) => entry.id === id))
-    .filter((entry): entry is RailEntry => entry !== undefined && !mainIds.has(entry.id));
-  // The Menu sheet (no rail on screen) lists the pinned pages after the role's menu, as the rail does.
-  const pinnedGroup = sheetShowsMain && pinnedEntries.length > 0 ? [{ label: "Pinned", entries: pinnedEntries }] : [];
-  const sheetGroups = (
-    sheetShowsMain ? [{ label: menuLabel, entries: menu.main }, ...pinnedGroup, ...menu.more] : menu.more
-  ).map((group: { label: string; entries: readonly (RailEntry | RoleMenuAction)[] }) => ({
-    label: group.label,
-    entries: withoutHandover([...group.entries]),
-  }));
+  // Audit two (#114, K42): the session-only page pins went. People and places are pinned on Find (its
+  // memory strip); the rail and the Menu sheet list the role's menu and More, with no Pinned group.
+  const sheetGroups = (sheetShowsMain ? [{ label: menuLabel, entries: menu.main }, ...menu.more] : menu.more).map(
+    (group: { label: string; entries: readonly (RailEntry | RoleMenuAction)[] }) => ({
+      label: group.label,
+      entries: withoutHandover([...group.entries]),
+    }),
+  );
   const firstSheetId = sheetGroups[0]?.entries[0]?.id;
   const capacityOpen = canOpen(WARD_CAPACITY_HREF);
   const handoverCountdown = (
@@ -605,13 +594,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
         data-countdown-twin={options.countdownTwin ? "true" : undefined}
       >
         {options.sheet ? (
-          <div className={styles.pinRow}>
-            {link}
-            {/* A page already in the role's own menu has nothing to pin. */}
-            {mainIds.has(entry.id) ? null : (
-              <PinButton id={entry.id} label={entry.label} pinned={pinnedIds.includes(entry.id)} />
-            )}
-          </div>
+          <div className={styles.pinRow}>{link}</div>
         ) : (
           <Tooltip
             content={hoverCard}
@@ -994,14 +977,6 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               )}
             </ul>
           </section>
-          {pinnedEntries.length > 0 ? (
-            <section aria-label="Pinned pages" className={styles.railGroup} data-testid="ward-rail-pinned">
-              <div className={`${styles.groupHead} ${styles.pinnedHead}`}>
-                <p className={styles.eyebrow}>Pinned</p>
-              </div>
-              <ul className={styles.railList}>{pinnedEntries.map((entry) => renderItem(entry))}</ul>
-            </section>
-          ) : null}
           {shownOpen ? <WardMyWards variant="rail" /> : null}
           {menu.more.length > 0 ? (
             // B1: everything else is one tap away. One More in every desktop shape (open, strip, tablet).

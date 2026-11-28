@@ -12,6 +12,7 @@ import { BEDS_READY_SCOPED_TITLE } from "@/components/ward-management/ward-share
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
+import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 import Link from "next/link";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import {
@@ -27,7 +28,7 @@ import {
 } from "./accepted-ward-referral";
 import { CopyNotesButton } from "./copy-notes-button";
 import { referralAcceptanceNotesText } from "@/components/ward-management/referral-notes-text";
-import { ChevronLeft, ChevronRight, FileText, ListOrdered, TriangleAlert, UserRound } from "lucide-react";
+import { FileText, TriangleAlert, UserRound } from "lucide-react";
 
 import { formatInstantWithDay, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
@@ -45,13 +46,10 @@ import { OVERDUE_AFTER_MINUTES_BY_TIER } from "@/components/ward-management/ward
 import {
   Button,
   Card,
-  ColumnChart,
-  DrawerFootRow,
   Hero,
   JourneyStrip,
   Kbd,
   LiveChip,
-  PanelDrawer,
   Sheet,
   TabPanel,
   Tabs,
@@ -73,7 +71,6 @@ import { getReferralPriority, referralPriorityLabel } from "./referral-priority"
 import {
   BedsReady,
   REFERRAL_SOURCE_WORDS,
-  SummaryButton,
   askingForShort,
   bedsReadySummary,
   isOverdue,
@@ -107,9 +104,22 @@ import desk from "./referral-desk.module.css";
 import panel from "./referral-panel.module.css";
 import { PatientTab, TimelineTab } from "./referral-panel-tabs";
 import { CommunityTeamLink, useCommunityDesk } from "./referral-community-desk";
-import { HighlightPills, decisionStats, deskHeroWords } from "./referral-board-hero";
+import { HighlightPills, MeetingPill, decisionStats, deskHeroWords } from "./referral-board-hero";
 import { ReferralCoordinatorTop } from "./referral-board-top";
 import { HIGHLIGHT_KEYS, HIGHLIGHT_LABELS, highlightTest, type HighlightKey } from "./referral-highlights";
+
+// Phone script budget (28 Nov 2026): the detail drawer opens only once a referral is chosen, and the
+// Decisions by hour chart sits in the History tab, so their kit code loads on its own and is fetched
+// when the browser is idle. The server still draws either one when it shows.
+const loadDrawer = () => import("@/components/wf/drawer");
+const loadChart = () => import("@/components/wf/chart");
+// Cast back to the generic drawer, which `next/dynamic` loses, so the tab ids keep their own type.
+const PanelDrawer = dynamic(
+  withLoadRetry(() => loadDrawer().then((m) => m.PanelDrawer)),
+) as unknown as typeof import("@/components/wf/drawer").PanelDrawer;
+const DrawerFootRow = dynamic(withLoadRetry(() => loadDrawer().then((m) => m.DrawerFootRow)));
+const ColumnChart = dynamic(withLoadRetry(() => loadChart().then((m) => m.ColumnChart)));
+preloadWhenIdle(loadDrawer, loadChart);
 
 // The bed meeting, ISBAR and shortcut sheets open only on request, so they load after first render.
 const IsbarSheet = dynamic(
@@ -709,10 +719,9 @@ export function ReferralBoard({
           <div>
             <dt>Asking for</dt>
             <dd>{askingForShort(r)}</dd>
-            <dd className={a.stripSub}>
-              {/* "Locked", the word the Needs column uses (F-24), not "Secure". */}
-              {needWords(r).join(", ") || "No bed needs"}
-            </dd>
+            {/* Audit three #8: the request is said once. "No bed needs" went (the ED review card says
+                it); recorded needs stay, in the Needs column's word "Locked" (F-24), not "Secure". */}
+            {needWords(r).length > 0 ? <dd className={a.stripSub}>{needWords(r).join(", ")}</dd> : null}
           </div>
         ) : null}
         {(() => {
@@ -791,8 +800,7 @@ export function ReferralBoard({
           data-testid="ward-referral-board-order-note"
           title="Longest wait first, tier breaks ties"
         >
-          <ListOrdered size={14} aria-hidden="true" />
-          <b>Longest wait first</b>
+          Longest wait first
           <span className={a.orderTie}> · tier breaks ties</span>
         </span>
       ) : null}
@@ -854,10 +862,12 @@ export function ReferralBoard({
               deskHeroWords({
                 queuedCount: queued.length,
                 oldest: oldestClocks ? durMinutes(oldestClocks.sinceReferral) : undefined,
+                oldestAsFigure: !phoneLayout && oldestClocks !== undefined,
                 medianDecision,
                 decidedCount: decisionMinutes.length,
               }),
             )}
+            oldest={oldestClocks ? durMinutes(oldestClocks.sinceReferral) : undefined}
             overdueCount={overdueQueued.length}
             overdueHighlighted={highlight === "overdue"}
             onOverdueFigure={() => setHighlight((current) => (current === "overdue" ? null : "overdue"))}
@@ -875,7 +885,7 @@ export function ReferralBoard({
             chips={(["ward", "ed", "both", "community", "refused"] as const)
               .map((key) => ({
                 key,
-                label: key === "refused" ? "Refused once" : HIGHLIGHT_LABELS.find(([k]) => k === key)![1],
+                label: key === "refused" ? "Declined once" : HIGHLIGHT_LABELS.find(([k]) => k === key)![1],
                 count: queued.filter((r) => highlightTest(key, r, now)).length,
               }))
               // Review fix 3: an empty highlight hides unless it is the one pressed.
@@ -918,13 +928,7 @@ export function ReferralBoard({
               showBeds={!siteManager}
               count={wardAnswerCount}
               oldest={oldestClocks ? durMinutes(oldestClocks.sinceReferral) : undefined}
-              median={
-                medianDecision === undefined ? undefined : (
-                  <>
-                    decided in <b>{durMinutes(medianDecision)}</b> (median)
-                  </>
-                )
-              }
+              median={undefined}
               overdue={overdueQueued.length}
               tier1={queued.filter((r) => highlightTest("tier1", r, now)).length}
               bedsReady={bedsSummary.total}
@@ -946,7 +950,7 @@ export function ReferralBoard({
                 chips={(["ward", "ed", "both", "community", "refused"] as const)
                   .map((key) => ({
                     key,
-                    label: key === "refused" ? "Refused once" : HIGHLIGHT_LABELS.find(([k]) => k === key)![1],
+                    label: key === "refused" ? "Declined once" : HIGHLIGHT_LABELS.find(([k]) => k === key)![1],
                     count: queued.filter((r) => highlightTest(key, r, now)).length,
                   }))
                   // Review fix 3: an empty highlight hides unless it is the one pressed.
@@ -989,9 +993,18 @@ export function ReferralBoard({
               // and meeting list are the same few people, so no pills, Next overdue, meeting list or runway.
               bar={
                 // Community desk: the bed-type highlights sort a coordinator's queue; the team's own list needs none.
-                siteEmpty || community || wardDesk || edQueueEmpty ? undefined : (
+                // ROLE BRANCH (bed_manager): the bed meeting agenda leads the row, even over an empty queue.
+                siteEmpty && siteManager ? (
                   <HighlightPills
-                    pills={[...HIGHLIGHT_LABELS, ["refused", "Refused once"] as const]
+                    pills={[]}
+                    highlight={null}
+                    onToggle={() => {}}
+                    lead={<MeetingPill count={meetingCount} />}
+                  />
+                ) : siteEmpty || community || wardDesk || edQueueEmpty ? undefined : (
+                  <HighlightPills
+                    lead={siteManager ? <MeetingPill count={meetingCount} /> : undefined}
+                    pills={[...HIGHLIGHT_LABELS, ["refused", "Declined once"] as const]
                       // ROLE BRANCH (bed_manager): only Overdue and Tier 1; the type chips sort lines it never holds.
                       .filter(
                         ([key]) => (recipientFiltersAvailable && !siteManager) || key === "overdue" || key === "tier1",
@@ -1015,11 +1028,7 @@ export function ReferralBoard({
                     <EdNextOverdue overdueCount={overdueQueued.length} onNextOverdue={selectNextOverdue} />
                   )
                 ) : (
-                  <HeroTools
-                    overdueCount={overdueQueued.length}
-                    meetingCount={meetingCount}
-                    onNextOverdue={selectNextOverdue}
-                  />
+                  <HeroTools overdueCount={overdueQueued.length} onNextOverdue={selectNextOverdue} />
                 )
               }
               foot={
@@ -1125,6 +1134,11 @@ export function ReferralBoard({
                 />
               </TabPanel>
               <TabPanel idPrefix="ward-referral-view" id="history" className={a.history} hidden={view !== "history"}>
+                {medianDecision === undefined ? null : (
+                  <p className={a.historyMedian} data-testid="ward-referral-history-median">
+                    Decided in <b>{durMinutes(medianDecision)}</b> (median)
+                  </p>
+                )}
                 <DecidedSection
                   decided={decided}
                   decidedTotal={decidedTotal}
@@ -1217,33 +1231,6 @@ export function ReferralBoard({
                     {wardArm(selectedReferral) ? "Accept or decline" : "Decide"}
                   </Button>
                 ) : null);
-              const pager = (
-                <span className={styles.drawerPager} role="group" aria-label="Move through the queue">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    iconOnly
-                    icon={ChevronLeft}
-                    aria-label="Previous referral (K)"
-                    title="Previous (K)"
-                    disabled={queued.length < 2}
-                    onClick={() => selectAt(-1)}
-                  />
-                  <span className={styles.drawerPagerCount}>
-                    {position === -1 ? `${queued.length} in queue` : `${position + 1} of ${queued.length}`}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    iconOnly
-                    icon={ChevronRight}
-                    aria-label="Next referral (J)"
-                    title="Next (J)"
-                    disabled={queued.length < 2}
-                    onClick={() => selectAt(1)}
-                  />
-                </span>
-              );
               return (
                 <PanelDrawer
                   open
@@ -1264,7 +1251,6 @@ export function ReferralBoard({
                         <span aria-hidden="true"> · </span>
                         <span>{personLine(selectedReferral)}</span>
                       </span>
-                      {pager}
                     </span>
                   }
                   tag={
@@ -1282,6 +1268,14 @@ export function ReferralBoard({
                         {referralPriorityLabel(selectedPriority ?? "routine")}
                       </span>
                     </span>
+                  }
+                  // Audit four #31: the kit pager in the head (J and K still step), in place of the
+                  // hand-built one that sat in the subtitle.
+                  pager={
+                    queued.length < 2
+                      ? undefined
+                      : // eslint-disable-next-line react-hooks/refs -- onStep runs on a press, never in render; selecting only records the opener ref
+                        { index: position, total: queued.length, noun: "referral", onStep: selectAt }
                   }
                   closeLabel="Close referral detail (Esc)"
                   tabs={
@@ -1321,10 +1315,6 @@ export function ReferralBoard({
                         <p className={styles.drawerFootNote} data-testid="ward-referral-read-only">
                           Read only. The coordinator and the receiving ward answer this referral.
                         </p>
-                      ) : readOnly ? (
-                        <p className={styles.drawerFootNote} data-testid="ward-referral-read-only-foot">
-                          Read only at this desk
-                        </p>
                       ) : null}
                       {primary ? <div className={styles.drawerPrimary}>{primary}</div> : null}
                       <DrawerFootRow className={styles.drawerFootRow}>
@@ -1351,7 +1341,7 @@ export function ReferralBoard({
                             data-testid="ward-referral-open-patient"
                           >
                             <UserRound size={14} aria-hidden="true" />
-                            Patient
+                            Patient page
                           </PatientPeekLink>
                         ) : null}
                       </DrawerFootRow>
@@ -1447,22 +1437,6 @@ export function ReferralBoard({
                                   readOnly={readOnly}
                                 />
                               ) : null}
-                              <div className={mph.acts}>
-                                <span className={a.spacer} />
-                                <SummaryButton onClick={() => setSheet("summary")} />
-                                {/* Community desk: no Next over an empty queue, where it does nothing. */}
-                                {community && queued.length === 0 ? null : (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    icon={ChevronRight}
-                                    onClick={() => selectAt(1)}
-                                    title="Next referral (J)"
-                                  >
-                                    Next
-                                  </Button>
-                                )}
-                              </div>
                             </>
                           );
                           // D-80: a read-only board shows the timeline and patient details with no decision list.

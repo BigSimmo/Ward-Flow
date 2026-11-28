@@ -1,5 +1,4 @@
 import { WardLoadingRows } from "@/components/ward-management/shell/ward-loading-rows";
-import { SyntheticMark } from "@/components/wf/synthetic-mark";
 
 import styles from "./loading.module.css";
 
@@ -29,7 +28,13 @@ export function WardLoadingStatus({ label = "Loading page" }: { label?: string }
           </button>
         </span>
       </p>
-      <SyntheticMark />
+      {/* Audit four #83 (28 Nov 2026): the synthetic-data mark drawn as the Demo pill, in the place the
+          loaded page shows it, so nothing changes shape when the page lands. Full words on hover and
+          for screen readers, as the SyntheticMark gives. */}
+      <span className={styles.demoPill} title="Synthetic data, not a medical record" data-wf-synthetic-mark="">
+        <span aria-hidden="true">Demo</span>
+        <span className={styles.srOnly}>Synthetic data, not a medical record</span>
+      </span>
     </div>
   );
 }

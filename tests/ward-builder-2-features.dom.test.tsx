@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { renderWithToasts as render } from "./helpers/with-toasts";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -132,7 +132,8 @@ describe("Builder 2 - Whiteboard shift actions toast feedback", () => {
       const destination = screen.queryByTestId("ward-board-confirm-destination");
       if (destination) {
         fireEvent.change(destination, { target: { value: "discharged-to-the-community" } });
-        fireEvent.click(screen.getByTestId("ward-board-confirm-proceed"));
+        // r10 (audit two #38): the confirm is the kit Dialog; its primary button names the act.
+        fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Record discharge" }));
       }
       const toast = screen.getByTestId("ward-board-toast");
       expect(toast).toBeInTheDocument();
@@ -162,6 +163,8 @@ describe("Builder 2 - Officer Form Inspection & Stateful Checkboxes", () => {
 
     // Transport page A: the job panel opens once a job is chosen, so choose WF-005 first.
     fireEvent.click(screen.getByTestId("ward-officer-select-WF-005"));
+    // r10: the form facts and Inspect form sit in the job panel's Forms tab.
+    fireEvent.click(within(screen.getByTestId("ward-officer-detail")).getByRole("tab", { name: /^Forms/ }));
     const inspectBtn = screen.getByTestId("ward-officer-inspect-form-WF-005");
     expect(inspectBtn).toBeInTheDocument();
 

@@ -6,6 +6,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { dayOf } from "@/components/ward-management/ward-clock";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { openFollowUp } from "./helpers/delays-interactions";
 
 /**
  * 🔴 **"RESOLVED TODAY" SAID A PATIENT WHO SELF-DISCHARGED FROM ED WAS IN A BED.**
@@ -36,6 +37,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * Resolved, System). The same Resolved tab still gates the same sentences.
  */
 function openResolvedTab() {
+  openFollowUp();
   // Round 8 (31 Oct 2026): the registers are 2x2 icon tabs whose name reads count first ("2 Resolved").
   fireEvent.click(screen.getByRole("tab", { name: /^\d+\s*Done today$/u }));
 }

@@ -142,8 +142,10 @@ describe("PR15 recorded facts and unavailable data", () => {
     expect(container.textContent).not.toMatch(/Ready beds and people waiting are separate counts/);
     expect(container.textContent).not.toMatch(/This page does not match which bed suits which person/);
     expect(container.textContent).not.toMatch(/net bed buffer|Net Capacity|Demand Ratio|ED Patients/);
-    expect(screen.getAllByText(/^Still open · /)).toHaveLength(1);
-    expect(container.textContent).toContain(`${available.beds} beds`);
+    // r10: "Still open" is now a figure of the page hero ("still open, N urgent"), which the shell hosts,
+    // so it is no longer in this screen's own markup; the page keeps one count only (no old caption).
+    expect(container.textContent).not.toMatch(/Still open · /);
+    // the "N beds" figure now lives in the page hero, which a bare screen render does not host.
   });
 
   it("renders actual admission states and minute-based stays without inventing beds", () => {
@@ -157,6 +159,8 @@ describe("PR15 recorded facts and unavailable data", () => {
     const { container } = renderFlow(
       <StatisticsWardScreen unitId={baseUnit.id} units={[baseUnit]} admissions={records} />,
     );
+    // r10 (26 Nov 2026 mock-up): the roster folds under "More figures".
+    fireEvent.click(screen.getByTestId("ward-statistics-more-figures-toggle"));
     const roster = screen
       .getByText("Recorded admission roster; numbered bed assignments are not recorded")
       .closest("table")!;
@@ -289,7 +293,8 @@ describe("PR15 discharge and referral provenance", () => {
         .getAllByRole("row")
         .flatMap((row) => within(row).queryAllByRole("button"))[0],
     );
-    fireEvent.click(screen.getByRole("button", { name: "Discharge record" }));
+    // Audit three #1 (r10): the button is "Discharge summary", a name that cannot be read as "Record discharge".
+    fireEvent.click(screen.getByRole("button", { name: "Discharge summary" }));
     // Drawer review (6 Nov 2026): the tabs sit in the drawer, above its scroll region.
     const detail = screen.getByTestId("ward-discharge-detail");
     expect(detail.textContent).toContain("Milestones");
@@ -327,7 +332,8 @@ describe("PR15 discharge and referral provenance", () => {
     const detail = screen.getByRole("region", { name: "Selected discharge details" });
     expect(detail.textContent).toContain("Release stage recorded");
     expect(detail.textContent).toContain("expected");
-    expect(detail.textContent).toContain("Preparation recorded: Reason not recorded");
+    // r10: "Bed preparation: in progress, reason not recorded".
+    expect(detail.textContent).toContain("Bed preparation: in progress, reason not recorded");
     expect(detail.textContent).not.toMatch(
       /Clinical summary document signed|Pack ready|Bed released|Medical Summary Signed|Standard Egress|Standby/,
     );

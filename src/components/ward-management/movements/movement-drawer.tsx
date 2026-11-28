@@ -1,13 +1,25 @@
 "use client";
 
 import { PatientPeekLink } from "@/components/ward-management/patients/patient-peek-link";
-import { useId, useRef, useState } from "react";
 import Link from "next/link";
 import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 import { useRouter } from "next/navigation";
-import { BedSingle, ChevronRight, FileText, Flag, Lock, Ambulance, X } from "lucide-react";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client-types";
+import type { Rejection } from "@/components/ward-management/ward-model";
+import {
+  BedSingle,
+  ChevronDown,
+  ChevronRight,
+  Ellipsis,
+  FileText,
+  Flag,
+  Hospital,
+  Lock,
+  Ambulance,
+  X,
+} from "lucide-react";
 
-import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { Sheet } from "@/components/wf/sheet";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { confirmationAge } from "@/components/ward-management/ward-confirmation-age";
@@ -40,23 +52,59 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import { BLOCKERS_MEANING_NOTHING_IS_BLOCKING } from "@/components/ward-management/ward-model";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
-import { Badge, PhoneSheet, StatusGlyph, TierTile, buttonClass, useIsPhone, type WfTone } from "@/components/wf";
+import {
+  Badge,
+  DrawerPager,
+  Menu,
+  PhoneSheet,
+  StatusGlyph,
+  TierTile,
+  buttonClass,
+  useIsPhone,
+  useOptionalToast,
+  type DrawerPagerProps,
+  type WfTone,
+} from "@/components/wf";
 import { CAD_TO_FOLLOW, cadNumberToFollow } from "@/components/ward-management/ward-cad-number";
 
 import { movementNextStep, nextStepTarget } from "./movement-next-step";
 import { declineReasonLabels } from "./movement-workspace-derivations";
 import { PullNowButton } from "@/components/ward-management/alerts/global-alert-panels";
+import { WithPullNowItem } from "@/components/ward-management/alerts/alert-more-menu";
 import d from "./movement-drawer.module.css";
-import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import { edHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
+import { escalationHistory, escalationNextLabel, escalationSentence } from "./escalation-history";
 // Closing the loop, package D (24 Oct 2026): cancelled-move checklist and acceptance conditions.
 import { MovementLoopChecks } from "@/components/ward-management/loop-checks/loop-checks-lazy";
 
-/**
- * Review fix-forward item 10 (2026-09-17): an `aria-disabled` button with no further explanation
- * tells an assistive-technology reader the button exists and nothing about why it does not respond.
- */
-const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent first.";
+/** The desks that may check a leg in are those that may open Transport, as the Movements row. */
+const CHECK_IN_TRANSPORT_HREF = "/bedchart/transport/officer";
+
+/** The urgent flag's two changes, typed once, for the desktop pop-up and the phone sheet's More menu. */
+function flagUrgentEvent(now: Instant, movementId: string, reason: UrgentMarkReason): WardFlowEvent {
+  return { type: "FLAG_MOVEMENT_URGENT", role: "coordinator", now, movementId, reason };
+}
+
+function clearUrgentEvent(now: Instant, movementId: string): WardFlowEvent {
+  return { type: "CLEAR_MOVEMENT_URGENT_FLAG", role: "coordinator", now, movementId };
+}
+
+function flagUrgent(
+  dispatch: (event: WardFlowEvent) => void,
+  now: Instant,
+  movementId: string,
+  reason: UrgentMarkReason,
+) {
+  dispatch(flagUrgentEvent(now, movementId, reason));
+}
+
+const NO_REJECTIONS: readonly Rejection[] = [];
+
+function clearUrgentFlag(dispatch: (event: WardFlowEvent) => void, now: Instant, movementId: string) {
+  dispatch(clearUrgentEvent(now, movementId));
+}
 
 /**
  * **The patient pop-up (Movements overhaul, option A, 9 Oct 2026).** Opened from a worklist row,
@@ -71,8 +119,9 @@ const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent fi
  * ED, the receiving ward or transport, so the pop-up names the owner and offers nothing it is not
  * allowed to record. There is no Call ward desk: the model holds no ward desk number.
  *
- * The record sections below keep the five the drawing ships (Person, Movement, Which wards were
- * asked, Escalation, Transport leg). *Watch and flag* is not built (owner, 1 Nov 2026: the foot
+ * The record sections below keep four of the five the drawing ships (Movement, Which wards were
+ * asked, Escalation, Transport leg); Person went in the simplification mock-up (26 Nov 2026), as the
+ * head already names the person, and each shows only when something is recorded. *Watch and flag* is not built (owner, 1 Nov 2026: the foot
  * no longer explains that; it keeps only the one-line synthetic-data notice).
  */
 
@@ -155,6 +204,25 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+/**
+ * Simplification mock-up (26 Nov 2026): Waiting opens a person in this drawer instead of its own
+ * person panel. The page hands in what only it knows (why the person waits, the wards that could
+ * take them) and its Escalate, which then records here rather than on the coordinator screen.
+ */
+export type MovementDrawerWaiting = {
+  /** Why the person waits: shown under the status band. */
+  lead: React.ReactNode;
+  /** Wards not yet asked that could take the person, under "Wards asked". */
+  wards?: React.ReactNode;
+  /** Records the escalation from the drawer (Waiting's own write). */
+  onEscalate?: () => void;
+  /**
+   * Audit four item 110: Waiting's foot "More" (Find a bed, Open on Home), so a laptop coordinator
+   * reaches Home's Placement for this person as the phone's Waiting sheet does.
+   */
+  more?: React.ReactNode;
+};
+
 export function MovementDrawer({
   movement,
   now,
@@ -165,8 +233,17 @@ export function MovementDrawer({
   dispatch,
   onClose,
   onFocusMovement,
+  onCheckIn,
+  waiting,
+  pager,
 }: {
   movement: Movement | undefined;
+  /** Audit four #31: the kit pager, "2 of 7", when the drawer was opened from a list. */
+  pager?: DrawerPagerProps;
+  /** Movements only (audit four item 11): opens the page's Check in drawer for a moving leg. */
+  onCheckIn?: (movementId: string) => void;
+  /** Set by Waiting: its lead, its candidate wards and its Escalate. */
+  waiting?: MovementDrawerWaiting;
   /** Focuses this movement on the coordinator screen before its link opens (escalation lives there). */
   onFocusMovement?: (movementId: string) => void;
   now: Instant;
@@ -184,24 +261,22 @@ export function MovementDrawer({
    */
   edAccessTargetMinutes: number;
   /** The same store the board behind this pop-up reads from. */
-  dispatch: (event: WardFlowEvent) => void;
+  dispatch: WardCommandDispatch;
   onClose: () => void;
 }) {
-  // Item 37 (2026-09-17): the flag needs a reason chosen from URGENT_MARK_REASONS. Declared before
-  // the early return so hook order never depends on whether `movement` resolves.
-  const [urgentFlagReason, setUrgentFlagReason] = useState<UrgentMarkReason | undefined>(undefined);
-  // Movements redesign (1 Nov 2026): the urgent flag's reason picker opens from the footer's button.
-  const [flagOpen, setFlagOpen] = useState(false);
-  // Set when "Flag urgent" opens the picker, so the reason select takes focus once it mounts.
-  const flagOpenedRef = useRef(false);
-  // Review fix (1 Nov 2026): the picker opens above its toggle, so focus moves to its first control.
-  const focusOnOpen = (node: HTMLElement | null) => {
-    if (node && flagOpenedRef.current) {
-      flagOpenedRef.current = false;
-      node.focus();
-    }
-  };
-  const baseId = useId();
+  // Audit four item 5: the flag is the phone's reason menu on every width; the reason stays
+  // mandatory (item 37, 17 Sep 2026) because the menu is the reason. Undo on the toast removes it.
+  const toast = useOptionalToast();
+  const rejections = useOptionalWardFlowSelect("rejections")?.rejections ?? NO_REJECTIONS;
+  const { run: runUrgentStep } = useUndoableStep({
+    dispatch,
+    requireConfirmation: true,
+    rejections,
+    now,
+    routeRole: "coordinator",
+    toast,
+  });
+  const router = useRouter();
   // Phone only: the tier uses the shared TierTile; desktop keeps its own pill (owner, 2026-10-11).
   const isPhone = useIsPhone();
   // The typed legal time's colour reads the user's own warning settings, as Waiting and Legal forms do.
@@ -210,6 +285,7 @@ export function MovementDrawer({
 
   // INV-CM (14 Nov 2026): "Ward board" shows only when this desk may open that board.
   const canOpen = useCanOpenHref();
+  const escalationGate = useRoleGate()("RECORD_ESCALATION");
   if (movement === undefined) return null;
 
   const open = isOpen(movement);
@@ -221,7 +297,7 @@ export function MovementDrawer({
     movement.acceptedUnitId === undefined
       ? undefined
       : units.find((candidate) => candidate.id === movement.acceptedUnitId);
-  const acceptedBoard = accepted && canOpen(`/bedchart/board/${accepted.id}`) ? accepted : undefined;
+  const acceptedBoard = accepted && canOpen(`/bedchart/ward/${accepted.id}?view=grid`) ? accepted : undefined;
   const acceptedSite = accepted ? siteByCode(accepted.siteCode)?.name : undefined;
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number. D-39: the UMRN.
   const subject = resolveSubjectPatient(movement, { patients, referrals });
@@ -305,16 +381,59 @@ export function MovementDrawer({
         ? `${asked}, all declined`
         : `${asked}, ${declinedIds.size} declined`;
 
+  const escalations = escalationHistory(movement);
+  const unitNameFor = (unitId: string) => wardLabel(unitId, units.find((unit) => unit.id === unitId)?.name);
+  const hasRecord =
+    movement.stageChanges.length > 0 ||
+    askedIds.size > 0 ||
+    waiting?.wards !== undefined ||
+    escalations.length > 0 ||
+    leg !== undefined;
+
   // Only an arrival completes the track. A movement that did not proceed keeps the stage it held.
   const currentStep =
     closure?.outcome === "arrived" || movement.stage === "arrived"
       ? STEPS.length
       : STEPS.findIndex((s) => s.stage === movement.stage);
 
+  // Waiting's Escalate: offered while the person is not yet escalated, to a desk that may record it.
+  const onEscalate = waiting?.onEscalate;
+  const canEscalateHere =
+    onEscalate !== undefined && open && movement.escalation === undefined && !escalationGate.never;
+  const escalateButton = (filled: boolean) => (
+    <button
+      type="button"
+      className={buttonClass({
+        variant: filled && escalationGate.allowed ? "pri" : "sec",
+        size: filled ? "md" : "sm",
+        className: filled ? d.wide : undefined,
+      })}
+      {...escalationGate.buttonProps}
+      onClick={() => {
+        if (!escalationGate.allowed) return;
+        onEscalate?.();
+      }}
+      data-testid={`delays-escalate-${movement.id}`}
+      title="Escalate to State bed coordination desk"
+    >
+      <Flag size={14} aria-hidden="true" />
+      Escalate
+      <span className="sr-only"> to State bed coordination desk</span>
+    </button>
+  );
+  // Simplification mock-up: one filled button in the foot. The next step leads; Escalate is the
+  // filled one only when the next step is escalating or is someone else's to take.
+  let escalateInRow = false;
   let nextAction: React.ReactNode = null;
   if (step && open) {
-    if (step.kind !== "wait") {
+    if (step.kind === "escalate" && canEscalateHere) {
+      nextAction = escalateButton(true);
+    } else if (step.kind !== "wait") {
       const target = nextStepTarget(step, movement.id);
+      escalateInRow = canEscalateHere;
+      // "Open placement" so the next step never reads like the "Patient record" link beside it.
+      const label =
+        step.kind === "escalate" ? `${step.label} on ${target.where}` : `Open placement to ${step.label.toLowerCase()}`;
       nextAction = (
         <PatientPeekLink
           movementId={step.kind === "refer" ? movement.id : undefined}
@@ -322,7 +441,7 @@ export function MovementDrawer({
           href={target.href}
           onClick={step.kind === "escalate" ? () => onFocusMovement?.(movement.id) : undefined}
         >
-          {step.kind === "refer" ? step.label : `${step.label} on ${target.where}`}
+          {label}
           <ChevronRight size={14} aria-hidden="true" />
         </PatientPeekLink>
       );
@@ -335,126 +454,123 @@ export function MovementDrawer({
           </span>
         </p>
       );
+      if (canEscalateHere)
+        nextAction = (
+          <>
+            {nextAction}
+            {escalateButton(true)}
+          </>
+        );
     }
+  } else if (canEscalateHere) {
+    nextAction = escalateButton(true);
   }
+  const edBoard =
+    waiting && movement.originEdId && canOpen(edHref(movement.originEdId)) ? edHref(movement.originEdId) : undefined;
 
   // Movements redesign (1 Nov 2026): the useful buttons sit in one band pinned to the foot of the
   // pop-up, the next step first, so they never scroll away. The urgent flag's picker opens above them.
+  // Simplification item 10: at most four buttons in the row (record, Escalate, Pull now, Flag); the
+  // board links sit under More, or stand alone when only one applies.
+  const moreLinks = [
+    ...(edBoard ? [{ id: "ed-board", label: "ED board", icon: Hospital, href: edBoard }] : []),
+    ...(acceptedBoard
+      ? [
+          {
+            id: "ward-board",
+            label: "Open ward",
+            icon: BedSingle,
+            href: `/bedchart/ward/${acceptedBoard.id}?view=grid`,
+          },
+        ]
+      : []),
+  ];
   const footer = (
     <div className={d.footBand}>
-      {flagOpen && open ? (
-        <div className={d.flagPanel}>
-          <p className={d.urgentLine}>
-            <Flag size={14} aria-hidden="true" />
-            <span>
-              {movement.flaggedUrgent
-                ? "Flagged urgent: leads the queue ahead of every tier."
-                : "Not flagged: ordered by urgency tier, then wait."}
-            </span>
-          </p>
-          {movement.flaggedUrgent ? (
-            <button
-              type="button"
-              className={buttonClass({ variant: "sec", size: "sm" })}
-              data-testid="ward-movement-drawer-urgent-toggle"
-              ref={focusOnOpen}
-              onClick={() =>
-                dispatch({ type: "CLEAR_MOVEMENT_URGENT_FLAG", role: "coordinator", now, movementId: movement.id })
-              }
-            >
-              Remove the urgent flag
-            </button>
-          ) : open ? (
-            <div className={d.urgentPick}>
-              <label className="sr-only" htmlFor="ward-movement-drawer-urgent-reason">
-                Why is this urgent?
-              </label>
-              <select
-                ref={focusOnOpen}
-                id="ward-movement-drawer-urgent-reason"
-                className={d.select}
-                data-testid="ward-movement-drawer-urgent-reason"
-                value={urgentFlagReason ?? ""}
-                onChange={(chosen) => {
-                  const value = chosen.target.value;
-                  setUrgentFlagReason(
-                    URGENT_MARK_REASONS.includes(value as UrgentMarkReason) ? (value as UrgentMarkReason) : undefined,
-                  );
-                }}
-              >
-                <option value="">Choose why this is urgent</option>
-                {URGENT_MARK_REASONS.map((reason) => (
-                  <option key={reason} value={reason}>
-                    {changeReasonLabels[reason]}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                className={buttonClass({ variant: "sec", size: "sm" })}
-                data-testid="ward-movement-drawer-urgent-toggle"
-                aria-disabled={urgentFlagReason === undefined ? "true" : undefined}
-                aria-describedby={
-                  urgentFlagReason === undefined ? `${baseId}-ward-movement-drawer-urgent-blocked` : undefined
-                }
-                title={urgentFlagReason === undefined ? URGENT_FLAG_UNCHOSEN : undefined}
-                onClick={
-                  urgentFlagReason === undefined
-                    ? ignoreUnavailableActivation
-                    : () => {
-                        dispatch({
-                          type: "FLAG_MOVEMENT_URGENT",
-                          role: "coordinator",
-                          now,
-                          movementId: movement.id,
-                          reason: urgentFlagReason,
-                        });
-                        setUrgentFlagReason(undefined);
-                      }
-                }
-              >
-                Flag this patient as urgent
-              </button>
-              {urgentFlagReason === undefined ? (
-                <span id={`${baseId}-ward-movement-drawer-urgent-blocked`} className="sr-only">
-                  {URGENT_FLAG_UNCHOSEN}
-                </span>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
       {nextAction}
+      {canEscalateHere && !escalationGate.allowed ? escalationGate.note : null}
       <div className={d.footRow}>
-        <Link className={buttonClass({ variant: "sec", size: "sm" })} href={recordHref}>
+        <Link className={buttonClass({ variant: "ghost", size: "sm" })} href={recordHref}>
           <FileText size={14} aria-hidden="true" />
-          Patient record
+          Patient page
         </Link>
-        {acceptedBoard ? (
-          <Link
-            href={`/bedchart/board/${acceptedBoard.id}`}
-            className={buttonClass({ variant: "sec", size: "sm" })}
-            title={`Open ${acceptedBoard.name} Bed board`}
-          >
-            <BedSingle size={14} aria-hidden="true" />
-            Ward board
-          </Link>
-        ) : null}
+        {escalateInRow ? escalateButton(false) : null}
+        {waiting?.more ?? null}
         {open ? <PullNowButton movement={movement} /> : null}
         {open ? (
-          <button
-            type="button"
-            className={buttonClass({ variant: "sec", size: "sm" })}
-            aria-expanded={flagOpen}
-            data-flagged={movement.flaggedUrgent ? "true" : undefined}
-            onClick={() => {
-              flagOpenedRef.current = !flagOpen;
-              setFlagOpen((was) => !was);
-            }}
-          >
-            <Flag size={14} aria-hidden="true" />
-            {movement.flaggedUrgent ? "Flagged urgent" : "Flag urgent"}
-          </button>
+          <Menu
+            className={d.footMenu}
+            label={movement.flaggedUrgent ? "Flagged urgent" : "Flag urgent because"}
+            items={
+              movement.flaggedUrgent
+                ? [
+                    { kind: "heading" as const, id: "flagged", label: "Leads the queue ahead of every tier" },
+                    {
+                      id: "unflag",
+                      icon: Flag,
+                      label: "Remove",
+                      onSelect: () => clearUrgentFlag(dispatch, now, movement.id),
+                    },
+                  ]
+                : [
+                    { kind: "heading" as const, id: "flag", label: "Flag urgent because" },
+                    ...URGENT_MARK_REASONS.map((reason) => ({
+                      id: `flag-${reason}`,
+                      icon: Flag,
+                      label: changeReasonLabels[reason],
+                      // Codex review (PR #1742): success and Undo show only once the command is accepted;
+                      // a refused or unconfirmed flag says so instead of claiming the queue moved.
+                      onSelect: () =>
+                        runUrgentStep(flagUrgentEvent(now, movement.id, reason), {
+                          success: `Flagged urgent: ${changeReasonLabels[reason]}`,
+                          undo: (at) => clearUrgentEvent(at, movement.id),
+                          undone: "Urgent flag removed",
+                        }),
+                    })),
+                  ]
+            }
+            trigger={(props) => (
+              <button
+                type="button"
+                {...props}
+                className={buttonClass({ variant: "sec", size: "sm" })}
+                data-flagged={movement.flaggedUrgent ? "true" : undefined}
+                data-testid="ward-movement-drawer-urgent-toggle"
+              >
+                <Flag size={14} aria-hidden="true" />
+                {movement.flaggedUrgent ? "Flagged urgent" : "Flag urgent"}
+                <ChevronDown size={14} aria-hidden="true" />
+              </button>
+            )}
+          />
+        ) : null}
+        {moreLinks.length === 1 ? (
+          <Link className={buttonClass({ variant: "ghost", size: "sm" })} href={moreLinks[0].href}>
+            {moreLinks[0].label}
+          </Link>
+        ) : moreLinks.length > 1 ? (
+          <Menu
+            className={d.footMenu}
+            label="More for this movement"
+            align="end"
+            items={moreLinks.map((link) => ({
+              id: link.id,
+              label: link.label,
+              icon: link.icon,
+              onSelect: () => router.push(link.href),
+            }))}
+            trigger={(props) => (
+              <button
+                type="button"
+                {...props}
+                className={buttonClass({ variant: "ghost", size: "sm" })}
+                data-testid="ward-movement-drawer-more"
+              >
+                More
+                <ChevronDown size={14} aria-hidden="true" />
+              </button>
+            )}
+          />
         ) : null}
       </div>
     </div>
@@ -479,6 +595,9 @@ export function MovementDrawer({
         open={open}
         onClose={onClose}
         onFocusMovement={onFocusMovement}
+        onCheckIn={onCheckIn}
+        dispatch={dispatch}
+        pager={pager}
       />
     );
   }
@@ -510,6 +629,8 @@ export function MovementDrawer({
             ) : null}
           </p>
         </div>
+        {/* Audit four #31: the kit pager sits before the tier and Close, as in every kit drawer head. */}
+        {pager ? <DrawerPager {...pager} /> : null}
         {isPhone ? (
           <TierTile
             tier={movement.urgency}
@@ -571,6 +692,8 @@ export function MovementDrawer({
           </span>
         </div>
       )}
+
+      {waiting ? waiting.lead : null}
 
       <MovementLoopChecks movement={movement} units={units} now={now} />
 
@@ -667,98 +790,99 @@ export function MovementDrawer({
         ) : null}
       </div>
 
-      <div className={d.record}>
-        <Section title="Person">
-          <p className={d.text}>{personLine(movement, referrals, patients)}</p>
-          <p className={d.muted}>
-            Sex recorded as {movement.sex} · {movement.cohort} ·{" "}
-            {movement.security === "Secure" ? "needs a locked bed" : "open ward"} · urgency {movement.urgency} of 3
-          </p>
-        </Section>
-
-        <Section title="Movement">
-          {movement.stageChanges.length === 0 ? (
-            <p className={d.muted}>No stage changes yet.</p>
-          ) : (
-            <ul className={d.list}>
-              {[...movement.stageChanges].reverse().map((change) => (
-                <li key={`${change.at} ${change.to}`}>
-                  <span className={d.mono}>{formatInstantWithDay(change.at, now)}</span>
-                  <span
-                    className={d.trunc}
-                    title={`${change.from === undefined ? "Opened" : stageCopy[change.from].label} to ${stageCopy[change.to].label} · ${change.by}${change.reason === undefined ? "" : ` · ${change.reason}`}`}
-                  >
-                    {change.from === undefined ? "Opened" : stageCopy[change.from].label} to{" "}
-                    {stageCopy[change.to].label}
-                    {` · ${change.by}`}
-                    {change.reason === undefined ? "" : ` · ${change.reason}`}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Section>
-
-        <Section title="Wards asked">
-          {askedIds.size === 0 ? (
-            <p className={d.muted}>None asked yet.</p>
-          ) : (
-            <ul className={d.list}>
-              {[...askedIds].map((unitId) => {
-                const unit = units.find((candidate) => candidate.id === unitId);
-                const decline = movement.declines.findLast((entry) => entry.unitId === unitId);
-                const answer =
-                  movement.acceptedUnitId === unitId
-                    ? "Accepted"
-                    : decline
-                      ? decline.reason
-                        ? `Declined, ${declineReasonLabels[decline.reason] ?? decline.reason}`
-                        : "Declined"
-                      : "No answer yet";
-                return (
-                  <li key={unitId}>
-                    <StatusGlyph
-                      tone={movement.acceptedUnitId === unitId ? "success" : decline ? "closed" : "neutral"}
-                      size={9}
-                    />
-                    <span className={d.trunc} title={`${wardLabel(unitId, unit?.name)} · ${answer}`}>
-                      <strong>{wardLabel(unitId, unit?.name)}</strong> · {answer}
+      {hasRecord ? (
+        <div className={d.record}>
+          {/* Simplification mock-up: no "Person" section (the head already says it), and a section
+              with nothing recorded is left out rather than drawn as "None". */}
+          {movement.stageChanges.length > 0 ? (
+            <Section title="Movement">
+              <ul className={d.list}>
+                {[...movement.stageChanges].reverse().map((change) => (
+                  <li key={`${change.at} ${change.to}`}>
+                    <span className={d.mono}>{formatInstantWithDay(change.at, now)}</span>
+                    <span
+                      className={d.trunc}
+                      title={`${change.from === undefined ? "Opened" : stageCopy[change.from].label} to ${stageCopy[change.to].label} · ${change.by}${change.reason === undefined ? "" : ` · ${change.reason}`}`}
+                    >
+                      {change.from === undefined ? "Opened" : stageCopy[change.from].label} to{" "}
+                      {stageCopy[change.to].label}
+                      {` · ${change.by}`}
+                      {change.reason === undefined ? "" : ` · ${change.reason}`}
                     </span>
                   </li>
-                );
-              })}
-            </ul>
-          )}
-        </Section>
+                ))}
+              </ul>
+            </Section>
+          ) : null}
 
-        <Section title="Escalation">
-          {movement.escalation === undefined ? (
-            <p className={d.muted}>Not escalated.</p>
-          ) : (
-            <p className={d.text}>
-              Escalated to {movement.escalation.contact} on {formatInstantWithDay(movement.escalation.at, now)}, after{" "}
-              {movement.escalation.triedUnitIds.length}{" "}
-              {movement.escalation.triedUnitIds.length === 1 ? "ward was" : "wards were"} tried.
-            </p>
-          )}
-        </Section>
+          {askedIds.size > 0 ? (
+            <Section title="Wards asked">
+              <ul className={d.list}>
+                {[...askedIds].map((unitId) => {
+                  const unit = units.find((candidate) => candidate.id === unitId);
+                  const decline = movement.declines.findLast((entry) => entry.unitId === unitId);
+                  const answer =
+                    movement.acceptedUnitId === unitId
+                      ? "Accepted"
+                      : decline
+                        ? decline.reason
+                          ? `Declined, ${declineReasonLabels[decline.reason] ?? decline.reason}`
+                          : "Declined"
+                        : "No answer yet";
+                  return (
+                    <li key={unitId}>
+                      <StatusGlyph
+                        tone={movement.acceptedUnitId === unitId ? "success" : decline ? "closed" : "neutral"}
+                        size={9}
+                      />
+                      <span className={d.trunc} title={`${wardLabel(unitId, unit?.name)} · ${answer}`}>
+                        <strong>{wardLabel(unitId, unit?.name)}</strong> · {answer}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </Section>
+          ) : null}
 
-        <Section title="Transport leg">
-          {leg === undefined ? (
-            <p className={d.muted}>No transport booked.</p>
-          ) : (
-            <p className={d.text}>
-              {leg.provider}
-              {leg.escortRequired ? " · escort required" : ""}
-              {leg.formRequired ? " · a form is required" : ""}
-              {leg.acceptedAt === undefined ? "" : ` · accepted ${formatInstantWithDay(leg.acceptedAt, now)}`}
-              {/* Closing-the-loop package B (24 Oct 2026): how long ago the transport was confirmed, and who booked it. */}
-              {leg.acceptedAt === undefined ? "" : ` · ${confirmationAge(leg.acceptedAt, now, leg.provider)}`}
-              {leg.bookedBy ? ` · booked by ${WARD_FLOW_ROLE_LABELS[leg.bookedBy.role]}` : ""}
-            </p>
-          )}
-        </Section>
-      </div>
+          {/* From Waiting: the wards not yet asked that could take the person, and its onward links. */}
+          {waiting?.wards ? <Section title="Could take them">{waiting.wards}</Section> : null}
+
+          {escalations.length > 0 ? (
+            <Section title="Escalation">
+              {/* From Waiting: when, to whom, which wards were tried by name, and each earlier one. */}
+              <ul className={d.list} data-testid="ward-movement-drawer-escalations">
+                {[...escalations].reverse().map((entry) => (
+                  <li key={entry.at}>
+                    <span className={d.mono}>{formatInstantWithDay(entry.at, now)}</span>
+                    <span>
+                      {escalationSentence(entry)}
+                      {entry.triedUnitIds.length === 0
+                        ? " · no wards recorded as tried"
+                        : ` · tried ${entry.triedUnitIds.map((unitId) => unitNameFor(unitId)).join(", ")}`}
+                      {` · ${escalationNextLabel(entry.next, unitNameFor, (at) => formatInstantWithDay(at, now)).replace(/^\w/u, (first) => first.toLowerCase())}`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          ) : null}
+
+          {leg !== undefined ? (
+            <Section title="Transport leg">
+              <p className={d.text}>
+                {leg.provider}
+                {leg.escortRequired ? " · escort required" : ""}
+                {leg.formRequired ? " · a form is required" : ""}
+                {leg.acceptedAt === undefined ? "" : ` · accepted ${formatInstantWithDay(leg.acceptedAt, now)}`}
+                {/* Closing-the-loop package B (24 Oct 2026): how long ago the transport was confirmed, and who booked it. */}
+                {leg.acceptedAt === undefined ? "" : ` · ${confirmationAge(leg.acceptedAt, now, leg.provider)}`}
+                {leg.bookedBy ? ` · booked by ${WARD_FLOW_ROLE_LABELS[leg.bookedBy.role]}` : ""}
+              </p>
+            </Section>
+          ) : null}
+        </div>
+      ) : null}
     </Sheet>
   );
 }
@@ -785,9 +909,15 @@ function MovementPhoneSheet({
   open,
   onClose,
   onFocusMovement,
+  onCheckIn,
+  dispatch,
+  pager,
 }: {
+  onCheckIn?: (movementId: string) => void;
+  pager?: DrawerPagerProps;
   movement: Movement;
   now: Instant;
+  dispatch: (event: WardFlowEvent) => void;
   subject: { formalName: string; umrn: string };
   recordHref: string;
   from: string;
@@ -806,16 +936,26 @@ function MovementPhoneSheet({
 }) {
   // INV-CM (14 Nov 2026): "Ward board" shows only when this desk may open that board.
   const canOpen = useCanOpenHref();
-  const acceptedBoard = accepted && canOpen(`/bedchart/board/${accepted.id}`) ? accepted : undefined;
+  const acceptedBoard = accepted && canOpen(`/bedchart/ward/${accepted.id}?view=grid`) ? accepted : undefined;
   const router = useRouter();
   const step = open ? movementNextStep(movement) : undefined;
   const target = step && step.kind !== "wait" ? nextStepTarget(step, movement.id) : undefined;
+  // Audit four item 11 (A3-13): a person whose leg is booked, en route or collected gets Check in in
+  // the foot, for the same desks as the desktop row (those that may open Transport). It opens the
+  // same Check in drawer, which holds Record arrival and its kept confirm; nothing is skipped.
+  const leg = open ? transportLeg(movement.transport) : undefined;
+  const checksIn =
+    onCheckIn !== undefined &&
+    canOpen(CHECK_IN_TRANSPORT_HREF) &&
+    movement.transport?.acceptedAt !== undefined &&
+    (leg === "Accepted" || leg === "En route" || leg === "Collected");
   const closure = movement.closure;
   return (
     <PhoneSheet
       open
       onClose={onClose}
       title={subject.formalName}
+      pager={pager}
       data-testid="ward-movement-phone-sheet"
       description={
         <span className={d.phSub}>
@@ -838,17 +978,19 @@ function MovementPhoneSheet({
           </span>
         </span>
       }
-      secondary={{ label: "Open record", onAction: () => router.push(recordHref) }}
+      secondary={{ label: "Patient page", onAction: () => router.push(recordHref) }}
       primary={
-        step && target
-          ? {
-              label: step.label,
-              onAction: () => {
-                if (step.kind === "escalate") onFocusMovement?.(movement.id);
-                router.push(target.href);
-              },
-            }
-          : undefined
+        checksIn
+          ? { label: "Check in", onAction: () => onCheckIn?.(movement.id) }
+          : step && target
+            ? {
+                label: step.label,
+                onAction: () => {
+                  if (step.kind === "escalate") onFocusMovement?.(movement.id);
+                  router.push(target.href);
+                },
+              }
+            : undefined
       }
     >
       <div className={d.phBody}>
@@ -900,7 +1042,8 @@ function MovementPhoneSheet({
             <p className={d.phMeta}>{stageCopy[movement.stage].label}</p>
           </div>
         ) : null}
-        {step ? (
+        {/* Audit four item 5: the Next step box only when the foot has no filled step saying it. */}
+        {step && (!target || checksIn) ? (
           <div className={d.phBox}>
             <h3 className={d.phLabel}>Next step</h3>
             <p className={d.phLine}>
@@ -911,16 +1054,62 @@ function MovementPhoneSheet({
         ) : null}
         {open || acceptedBoard ? (
           <div className={d.phActions}>
-            {open ? <PullNowButton movement={movement} /> : null}
-            {acceptedBoard ? (
+            {acceptedBoard && !open ? (
               <Link
-                href={`/bedchart/board/${acceptedBoard.id}`}
+                href={`/bedchart/ward/${acceptedBoard.id}?view=grid`}
                 className={buttonClass({ variant: "sec", size: "sm" })}
                 title={`Open ${acceptedBoard.name} Bed board`}
               >
                 <BedSingle size={14} aria-hidden="true" />
-                Ward board
+                Open ward
               </Link>
+            ) : null}
+            {open ? (
+              <WithPullNowItem movement={movement}>
+                {(pull) => (
+                  <Menu
+                    label="More for this movement"
+                    align="end"
+                    className={d.phMore}
+                    items={[
+                      ...(pull ? [pull] : []),
+                      // Audit four item 5: Open ward sits with the other actions, under More.
+                      ...(acceptedBoard
+                        ? [
+                            {
+                              id: "open-ward",
+                              icon: BedSingle,
+                              label: `Open ${acceptedBoard.name}`,
+                              onSelect: () => router.push(`/bedchart/ward/${acceptedBoard.id}?view=grid`),
+                            },
+                          ]
+                        : []),
+                      movement.flaggedUrgent
+                        ? {
+                            id: "unflag",
+                            icon: Flag,
+                            label: "Remove the urgent flag",
+                            onSelect: () => clearUrgentFlag(dispatch, now, movement.id),
+                          }
+                        : { kind: "heading" as const, id: "flag", label: "Flag urgent because" },
+                      ...(movement.flaggedUrgent
+                        ? []
+                        : URGENT_MARK_REASONS.map((reason) => ({
+                            id: `flag-${reason}`,
+                            icon: Flag,
+                            label: changeReasonLabels[reason],
+                            onSelect: () => flagUrgent(dispatch, now, movement.id, reason),
+                          }))),
+                    ]}
+                    trigger={(props) => (
+                      <button type="button" {...props} className={buttonClass({ variant: "ghost", size: "sm" })}>
+                        <Ellipsis size={14} aria-hidden="true" />
+                        More
+                      </button>
+                    )}
+                  />
+                )}
+              </WithPullNowItem>
             ) : null}
           </div>
         ) : null}

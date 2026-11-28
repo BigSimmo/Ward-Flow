@@ -6,6 +6,8 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--wf-s-3);
+  /* Each card is sized to its content: a forced equal height left a tall empty band under the shorter
+     one (adversarial item 15). */
   align-items: start;
   min-width: 0;
 }
@@ -118,4 +120,134 @@
 
 .listHead .quiet {
   flex: none;
+}
+
+/* Simplification 26 Nov 2026 (area 3, item 2): the bed request answered in place, as a raised card,
+   and the folded Recent answers in the answers rail. */
+.answerCard {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 4%, transparent);
+}
+
+.recentFold {
+  border-top: 1px solid var(--wf-line);
+  padding-top: var(--wf-s-3);
+}
+
+.recentFold > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 32px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.recentFold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.recentFold > summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-left: auto;
+  border-right: 1.5px solid var(--wf-ink-3);
+  border-bottom: 1.5px solid var(--wf-ink-3);
+  transform: rotate(45deg);
+}
+
+.recentFold[open] > summary::after {
+  transform: rotate(-135deg);
+}
+
+.recentTitle {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.recentCount {
+  color: var(--wf-ink-3);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+}
+
+.recentEmpty {
+  margin: var(--wf-s-2) 0 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+}
+
+.recentList {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: var(--wf-s-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recentList li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-sm, 8px);
+}
+
+.recentName {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.recentTime {
+  color: var(--wf-ink-3);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.recentLine {
+  grid-column: 1 / -1;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+/* The bed request takes the full reading width above the referrals and the answers rail. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.wrap > .listCard:last-child {
+  flex: 1 1 auto;
+}
+
+/* Audit three #24: one empty state, full width, when the answers rail has nothing to hold. */
+html .layout[data-quiet] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Audit three review: on a narrow phone the ready mark goes under the empty text, on one line. */
+@media (max-width: 30rem) {
+  html .quietEmpty {
+    flex-wrap: wrap;
+  }
+
+  html .quietEmpty > :nth-child(3) {
+    flex-basis: 100%;
+    white-space: nowrap;
+  }
 }
