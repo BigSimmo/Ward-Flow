@@ -51,7 +51,7 @@ describe("consolidated audit verification boundaries", () => {
 
   it.each(["release-gate-desktop", "release-gate-phone"])("requires every applicable checks case on %s", (project) => {
     const cases = releaseGateCases(true, project, "checks");
-    expect(cases).toHaveLength(project === "release-gate-desktop" ? 140 : 126);
+    expect(cases).toHaveLength(project === "release-gate-desktop" ? 138 : 124); // r10 dropped the two page tip card scans (audit two #46).
     const report = {
       config: { projects: [{ name: project }] },
       errors: [],

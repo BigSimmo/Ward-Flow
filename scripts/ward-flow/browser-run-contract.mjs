@@ -185,10 +185,9 @@ export function releaseGateCheckCases(project) {
     ),
     "axe: the header search palette with results open has no serious or critical violation",
     "axe: a ward's bed drawer when open has no serious or critical violation",
-    "axe: the page tip card when showing has no serious or critical violation",
+    // The page tip card scans went with the card (r10, audit two #46: no page tips unasked).
     ...RELEASE_DARK_CHECK_ROUTES.map((route) => `axe dark: ${route || "/"} has no serious or critical violation`),
     "axe dark: the header search palette with results open",
-    "axe dark: the page tip card when showing",
     "axe dark: the Tools sheet, or the phone Menu sheet, when open",
     ...(!phone
       ? [
