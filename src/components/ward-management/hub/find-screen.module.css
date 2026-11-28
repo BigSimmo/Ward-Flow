@@ -131,18 +131,18 @@
 /* A row cut at an edge fades into the hero there (the tab under the fade is still reachable by
    scrolling the row, which also follows focus). */
 .heroTabs[data-fade-end] {
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
-  mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - 40px), transparent);
 }
 
 .heroTabs[data-fade-start] {
-  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 40px), transparent);
-  mask-image: linear-gradient(to left, #000 calc(100% - 40px), transparent);
+  -webkit-mask-image: linear-gradient(to left, black calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to left, black calc(100% - 40px), transparent);
 }
 
 .heroTabs[data-fade-start][data-fade-end] {
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent);
-  mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 40px, black calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to right, transparent, black 40px, black calc(100% - 40px), transparent);
 }
 
 /* The row scrolls, but shows no scroll bar on the hero. */

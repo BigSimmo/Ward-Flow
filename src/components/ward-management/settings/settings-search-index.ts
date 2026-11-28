@@ -81,7 +81,6 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
     tab: "display",
     keywords: "appearance dark light night auto glare bright room sunlight contrast window",
   },
-  { id: "sidebar", label: "Sidebar", tab: "display", keywords: "rail navigation icons full compact" },
   { id: "density", label: "Row density", tab: "display", keywords: "compact comfortable" },
   { id: "reduce-motion", label: "Reduce motion", tab: "display", keywords: "animation accessibility" },
   { id: "high-contrast", label: "High contrast", tab: "display", keywords: "accessibility edges ink" },

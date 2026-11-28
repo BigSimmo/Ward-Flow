@@ -1447,7 +1447,7 @@ export function DelaysBoard({
           </div>
 
           {/* Today's follow-up as a side sheet on a laptop, opening on Escalated (Attention is pinned
-              at the top of the list). Role view (nurse in charge): the chase is the coordinator's. */}
+              above the list). Role view (nurse in charge): the chase is the coordinator's. */}
           {isPhone || portrait || wardDesk ? null : (
             <PhoneSheet
               open={followOpen}

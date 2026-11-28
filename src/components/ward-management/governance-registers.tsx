@@ -642,7 +642,12 @@ function GovernanceSession({
         // Audit three #11: Reviewed records (the toast offers Undo) and opens the next event still
         // waiting, as the phone sheet does; Follow-up stays on the event.
         onReview={(decision) => {
-          if (recordReview(decision) && decision === "reviewed") setPhoneAdvance(true);
+          if (recordReview(decision)) {
+            if (decision === "reviewed") setPhoneAdvance(true);
+          } else if (canReview) {
+            // A record that changed since it was opened is refused before dispatch: say so, never silently.
+            setAnnouncement("Review not confirmed. The record may have changed; select it again.");
+          }
         }}
         onChoose={choose}
         // Audit three #34: previous and next through the list the event was opened from.

@@ -510,6 +510,10 @@
   }
 }
 
-:global(:root[data-theme="dark"]) .wardTokens {
-  --ward-ground: var(--wf-canvas);
+/* The chosen dark theme, on screen: a conditional replacement like the block above, so it sits in a
+ * media block and the base block still declares the token once (tests/ward-token-layer.test.ts). */
+@media screen {
+  :global(:root[data-theme="dark"]) .wardTokens {
+    --ward-ground: var(--wf-canvas);
+  }
 }
