@@ -11,14 +11,10 @@ import {
   TRANSPORT_EXCEPTION_STEP_LABELS,
   type TransportBookingAnswers,
 } from "@/components/ward-management/ward-transport-checks";
-import {
-  TransportBookingForm,
-  type TransportBookingSubmission,
-} from "@/components/ward-management/transport/transport-booking-form";
+import type { TransportBookingSubmission } from "@/components/ward-management/transport/transport-booking-form";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import { CAD_TO_FOLLOW, cadNumberToFollow } from "@/components/ward-management/ward-cad-number";
-import { TransportCadToFollow } from "@/components/ward-management/transport/transport-cad-to-follow";
 import { clockOn } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { Ambulance } from "lucide-react";
@@ -27,6 +23,19 @@ import type { Dispatch, SetStateAction } from "react";
 import type { Movement, Rejection, TransportProvider } from "@/components/ward-management/ward-model";
 import type { PatientMode } from "./patient-mode";
 import type { RoleGate } from "@/components/ward-management/ward-role-gate";
+import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
+import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
+
+// Phone script budget (28 Nov 2026): the booking form draws only after Mark as Booked, and the CAD
+// to follow field only on a booking still waiting for its number, so their code (with the kit text
+// and select inputs) loads on its own and is fetched when the browser is idle. The server still
+// draws either one when it shows.
+const loadBookingForm = () => import("@/components/ward-management/transport/transport-booking-form");
+const loadCadToFollow = () => import("@/components/ward-management/transport/transport-cad-to-follow");
+const TransportBookingForm = dynamic(withLoadRetry(() => loadBookingForm().then((m) => m.TransportBookingForm)));
+const TransportCadToFollow = dynamic(withLoadRetry(() => loadCadToFollow().then((m) => m.TransportCadToFollow)));
+preloadWhenIdle(loadBookingForm, loadCadToFollow);
 
 /** The test ids the patient page's tests and release gate already use. */
 const PATIENT_PART_NAMES = {

@@ -8,7 +8,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Clock, Copy, Download, Printer, Share2, type LucideIcon } from "lucide-react";
 
-import { Menu, buttonClass, cx, folderTabClasses, type MenuItem } from "@/components/wf";
+import { buttonClass, cx, folderTabClasses, type MenuItem } from "@/components/wf";
+import { EarlyMenu } from "@/components/ward-management/menu-early";
 import { setStatisticsSamples, useStatisticsSamples } from "./statistics-samples";
 
 /** The item order in the menu: Copy, then each CSV, then Print. */
@@ -131,7 +132,7 @@ export function StatisticsShareMenu() {
     },
   ];
   return (
-    <Menu
+    <EarlyMenu
       label="Share"
       align="end"
       items={items}

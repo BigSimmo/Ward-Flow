@@ -76,16 +76,9 @@ const LEGAL_STATUS_FROM_LEGAL_NOW = false;
 /** The top line once every answer is given but the person is not medically cleared (D-211). */
 const TRANSFER_PAUSED_LINE = "Transfer paused: not medically cleared. Booking waits for re-clearance.";
 
-/** Answers before anything is chosen. Re-applied on every open, so one patient's answers never reach the next. */
-export const BLANK_TRANSPORT_BOOKING: TransportBookingAnswers = {
-  provider: undefined,
-  escortRequired: undefined,
-  cadNumber: "",
-  transportLegalStatus: undefined,
-  estimatedTime: "",
-  // Neither Today nor Tomorrow until the person picks one (Josh, 31 Oct 2026).
-  estimatedDay: undefined,
-};
+// Kept in ward-transport-checks.ts so the patient page can reset its answers without loading this form
+// (phone script budget, 28 Nov 2026); re-exported for the screens and tests that import it from here.
+export { BLANK_TRANSPORT_BOOKING } from "@/components/ward-management/ward-transport-checks";
 
 /** The fields `BOOK_TRANSPORT` takes from the form. */
 export type TransportBookingSubmission = {

@@ -13,7 +13,6 @@ import {
   HeroTop,
   IconTile,
   LiveChip,
-  Menu,
   PhoneListRow,
   PhoneSheet,
   Segmented,
@@ -24,6 +23,7 @@ import {
   ShowMoreRow,
   SrOnly,
 } from "@/components/wf";
+import { EarlyMenu } from "@/components/ward-management/menu-early";
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { formatInstant } from "@/components/ward-management/ward-clock";
@@ -496,7 +496,7 @@ function StatisticsSummaryPhoneView({
                 />
               )}
               {shareHosted ? null : (
-                <Menu
+                <EarlyMenu
                   label="Statistics tools"
                   align="end"
                   className={styles.toolsMenu}

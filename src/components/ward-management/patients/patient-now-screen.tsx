@@ -145,11 +145,11 @@ import {
   perthClock24,
   perthIsoDay,
 } from "@/components/ward-management/ward-clock";
-import type { TransportBookingAnswers } from "@/components/ward-management/ward-transport-checks";
 import {
   BLANK_TRANSPORT_BOOKING,
-  type TransportBookingSubmission,
-} from "@/components/ward-management/transport/transport-booking-form";
+  type TransportBookingAnswers,
+} from "@/components/ward-management/ward-transport-checks";
+import type { TransportBookingSubmission } from "@/components/ward-management/transport/transport-booking-form";
 import {
   currentLegalDueAt,
   formProgression,

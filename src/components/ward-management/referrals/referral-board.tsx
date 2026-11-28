@@ -12,6 +12,7 @@ import { BEDS_READY_SCOPED_TITLE } from "@/components/ward-management/ward-share
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
+import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 import Link from "next/link";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import {
@@ -45,13 +46,10 @@ import { OVERDUE_AFTER_MINUTES_BY_TIER } from "@/components/ward-management/ward
 import {
   Button,
   Card,
-  ColumnChart,
-  DrawerFootRow,
   Hero,
   JourneyStrip,
   Kbd,
   LiveChip,
-  PanelDrawer,
   Sheet,
   TabPanel,
   Tabs,
@@ -109,6 +107,19 @@ import { CommunityTeamLink, useCommunityDesk } from "./referral-community-desk";
 import { HighlightPills, MeetingPill, decisionStats, deskHeroWords } from "./referral-board-hero";
 import { ReferralCoordinatorTop } from "./referral-board-top";
 import { HIGHLIGHT_KEYS, HIGHLIGHT_LABELS, highlightTest, type HighlightKey } from "./referral-highlights";
+
+// Phone script budget (28 Nov 2026): the detail drawer opens only once a referral is chosen, and the
+// Decisions by hour chart sits in the History tab, so their kit code loads on its own and is fetched
+// when the browser is idle. The server still draws either one when it shows.
+const loadDrawer = () => import("@/components/wf/drawer");
+const loadChart = () => import("@/components/wf/chart");
+// Cast back to the generic drawer, which `next/dynamic` loses, so the tab ids keep their own type.
+const PanelDrawer = dynamic(
+  withLoadRetry(() => loadDrawer().then((m) => m.PanelDrawer)),
+) as unknown as typeof import("@/components/wf/drawer").PanelDrawer;
+const DrawerFootRow = dynamic(withLoadRetry(() => loadDrawer().then((m) => m.DrawerFootRow)));
+const ColumnChart = dynamic(withLoadRetry(() => loadChart().then((m) => m.ColumnChart)));
+preloadWhenIdle(loadDrawer, loadChart);
 
 // The bed meeting, ISBAR and shortcut sheets open only on request, so they load after first render.
 const IsbarSheet = dynamic(

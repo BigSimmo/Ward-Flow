@@ -8,14 +8,13 @@ import {
   FolderTabs,
   HeroQuickChips,
   HeroTrack,
-  Menu,
   Segmented,
-  Switch,
   buttonClass,
   cx,
   folderTabClasses,
   useIsPhone,
 } from "@/components/wf";
+import { EarlyMenu } from "@/components/ward-management/menu-early";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
@@ -34,6 +33,12 @@ import { statisticsHeldToOwnPlace } from "@/components/ward-management/ward-role
 import { useStatisticsSamples, setStatisticsSamples } from "./statistics-samples";
 import { StatisticsShareMenu, useShareMenuHosted } from "./statistics-share";
 import styles from "./statistics-nav.module.css";
+import dynamic from "next/dynamic";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
+
+// Phone script budget (28 Nov 2026): the example history switch's kit code loads on its own. The
+// server still draws the switch, so the page looks the same while it arrives.
+const Switch = dynamic(withLoadRetry(() => import("@/components/wf/form-switch").then((m) => m.Switch)));
 
 export type StatisticsNavSection = "hub" | "overview" | "compare" | "service" | "ward" | "ed" | "community" | "weekly";
 
@@ -250,7 +255,7 @@ export function StatisticsNav({
     // on a desktop and the section menu on a phone.
     <nav className={styles.navBar} aria-label="BedChart statistics sections" data-testid="ward-statistics-nav">
       {/* The phone's section picker: the kit menu, not the browser's own select (owner polish, 3 Nov 2026). */}
-      <Menu
+      <EarlyMenu
         label="Statistics section"
         className={styles.mobileSelect}
         items={items.map((item) => ({
@@ -315,7 +320,7 @@ function StatisticsFolderTabs({
         <>
           <StatisticsShareMenu />
           {rest.length === 0 ? null : (
-            <Menu
+            <EarlyMenu
               label="More"
               align="end"
               items={rest.map((item) => ({

@@ -21,7 +21,8 @@ describe("All EDs — the lazily loaded preview fails to load", () => {
         <EdIndex />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByTestId("ed-index-preview-arm-ed"));
+    // The desktop cards load on their own too (phone script budget), so wait for them.
+    fireEvent.click(await screen.findByTestId("ed-index-preview-arm-ed"));
     const notice = await screen.findByTestId("ward-ed-preview-load-failed");
     expect(notice).toHaveTextContent("The ED details did not load.");
     expect(screen.queryByTestId("ed-index-preview-body")).not.toBeInTheDocument();

@@ -4,12 +4,21 @@
 // heading, not a full-width field of its own. A tap opens the field in its place, focused; it folds
 // back to the icon when it is left empty.
 
+import dynamic from "next/dynamic";
 import { Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { Button, TextInput } from "@/components/wf";
+import { Button } from "@/components/wf";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
+import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 
 import styles from "./ward-phone-find.module.css";
+
+// Phone script budget (28 Nov 2026): the field, with the kit text input, loads on its own and is
+// fetched when the browser is idle. The server still draws it when the address holds a search.
+const loadField = () => import("./ward-phone-find-field");
+const WardPhoneFindField = dynamic(withLoadRetry(() => loadField().then((m) => m.WardPhoneFindField)));
+preloadWhenIdle(loadField);
 
 export function WardPhoneFind({
   value,
@@ -23,7 +32,6 @@ export function WardPhoneFind({
 }) {
   const [opened, setOpened] = useState(false);
   const open = opened || value !== "";
-  const inputRef = useRef<HTMLInputElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
   const refocusOpener = useRef(false);
   // Clear folds the field away, so focus moves to the search icon that replaces it.
@@ -32,30 +40,17 @@ export function WardPhoneFind({
     refocusOpener.current = false;
     rowRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
   }, [open]);
-  useEffect(() => {
-    if (opened) inputRef.current?.focus();
-  }, [opened]);
   return (
     <div ref={rowRef} className={styles.row} data-open={open ? "true" : undefined}>
       {open ? (
-        <TextInput
-          ref={inputRef}
-          type="search"
-          icon={Search}
-          boxClassName={styles.box}
-          aria-label="Find a bed or person on this ward"
-          placeholder="Find bed or person"
+        <WardPhoneFindField
           value={value}
-          onChange={(event) => onChange(event.target.value)}
-          onClear={() => {
-            onChange("");
+          onChange={onChange}
+          focusOnOpen={opened}
+          onFold={(refocus) => {
             setOpened(false);
-            refocusOpener.current = true;
+            if (refocus) refocusOpener.current = true;
           }}
-          onBlur={() => {
-            if (value === "") setOpened(false);
-          }}
-          data-testid="ward-find-input"
         />
       ) : (
         <Button

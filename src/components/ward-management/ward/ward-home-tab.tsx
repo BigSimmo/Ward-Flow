@@ -37,7 +37,7 @@ import {
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { referralFit, wardStateLine } from "./ward-referral-fit";
 import { AwaitingFitLines, AwaitingIdentity, WardReferralDetailDrawer } from "./ward-awaiting-referral";
-import { OverrideRegister, WardAcceptDialog } from "./ward-on-demand";
+import { OverrideRegister, WardAcceptDialog, WardDeclineReasons } from "./ward-on-demand";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import { useAlsoOnWardFigures, type AlsoOnWardFigure } from "../board/ward-board-also-on-ward";
@@ -46,7 +46,6 @@ import { collectedStep } from "../board/ward-board-collected-step";
 import { WardPlaceOrMove } from "./ward-place-or-move";
 import { pulledTileNote, tileStateLine, WardHomeTileText } from "./ward-home-tab-today";
 import { WardComingAndGoing } from "./ward-coming-and-going";
-import { WardDeclineReasons } from "./ward-decline-reasons";
 import {
   arrivalRows,
   arrivalsExpectedToday,

@@ -11,12 +11,12 @@ import {
   FilterChip,
   Icon,
   Legend,
-  Menu,
   Segmented,
   SrOnly,
   StatusGlyph,
   type MenuItem,
 } from "@/components/wf";
+import { EarlyMenu } from "@/components/ward-management/menu-early";
 import { BED_ALERT_THRESHOLD_PERCENT } from "../shell/ward-service-bed-alerts";
 import { bedsPendingPreparation } from "../ward-bed-availability";
 import { BED_STATE_LABELS, bedStates, readyBedsNow, type ReservationReferral } from "../ward-bed-states";
@@ -441,7 +441,7 @@ function CapacityChartView({
           />
         ) : null}
         <span className={styles.sortSlot}>
-          <Menu
+          <EarlyMenu
             label="Sort capacity"
             align="end"
             items={sortItems}

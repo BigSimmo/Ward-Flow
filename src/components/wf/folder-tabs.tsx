@@ -227,8 +227,6 @@ function FolderShape({ navRef, value }: { navRef: RefObject<HTMLElement | null>;
   );
 }
 
-export { folderTabClasses } from "./folder-tab-classes";
-
 export type FolderTabsProps = {
   /** The row's accessible name ("Home lists"). */
   label: string;
