@@ -13,6 +13,11 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  usePathname: () => "/bedchart/handover",
+  useSearchParams: () => new URLSearchParams(),
+}));
 const announced = vi.hoisted(() => [] as string[]);
 vi.mock("@/components/ward-management/shell/ward-live-region", async (original) => ({
   ...(await original<typeof import("@/components/ward-management/shell/ward-live-region")>()),
@@ -52,7 +57,7 @@ it("the chip follows the board clock, not real seconds, and matches what History
       <HandoverPage />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Start meeting" }));
+  fireEvent.click(screen.getByRole("button", { name: "Meeting timer" }));
   expect(screen.getByTestId("ward-handover-meeting").textContent).toContain("Stop 1 min");
 
   // Real time passes, the pinned board clock does not: the chip does not count it.
@@ -66,5 +71,5 @@ it("the chip follows the board clock, not real seconds, and matches what History
   expect(screen.getByTestId("ward-handover-meeting").textContent).toContain("Stop 25 min");
   fireEvent.click(screen.getByTestId("ward-handover-meeting"));
   expect(announced).toContain("Meeting took 25 min. Added to History.");
-  expect(screen.getByTestId("ward-handover-meeting").textContent).toContain("Start meeting");
+  expect(screen.getByTestId("ward-handover-meeting").textContent).toContain("Meeting timer");
 });

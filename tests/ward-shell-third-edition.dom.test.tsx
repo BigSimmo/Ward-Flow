@@ -157,7 +157,7 @@ describe("assertion 1 — owner-selected rail destinations", () => {
       within(menu)
         .getAllByTestId("ward-rail-link")
         .map((link) => link.getAttribute("aria-label")?.split(",")[0]),
-    ).toEqual(["Home", "Capacity", "Movements", "Waiting", "All EDs", "Referrals", "Handover"]);
+    ).toEqual(["Home", "Capacity", "Movements", "Waiting", "Find", "Referrals", "Handover"]);
     // A5: the open rail's countdown card opens Handover, so the menu's own item is its CSS twin,
     // hidden while the card shows.
     expect(within(menu).getByRole("link", { name: "Handover" }).closest("li")).toHaveAttribute(
@@ -174,7 +174,7 @@ describe("assertion 1 — owner-selected rail destinations", () => {
     expect(links).toHaveLength(19);
     const groups = [
       ["Today", ["Bed meeting TV"]],
-      ["Where", ["Places", "All wards", "Transport"]],
+      ["Where", ["All EDs", "All wards", "Transport"]],
       ["Work", ["Patients", "Discharges"]],
       [
         "Reports and reference",
@@ -774,9 +774,11 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     const dialog = await screen.findByRole("dialog", { name: /Tools/ });
     const withinDialog = within(dialog);
 
-    // Tools review (15 Oct 2026): one sheet, no Shift desk tab. Change view sits at the top.
+    // Tools review (15 Oct 2026): one sheet, no Shift desk tab. A27 (r10): no Change view either; the
+    // Demo region is the sheet's first section.
     expect(withinDialog.queryByRole("button", { name: /^Shift desk$/ })).toBeNull();
-    expect(await withinDialog.findByRole("button", { name: /^Change view/ }, { timeout: 15_000 })).toBeVisible();
+    expect(await withinDialog.findByRole("region", { name: "Demo" }, { timeout: 15_000 })).toBeVisible();
+    expect(withinDialog.queryByRole("button", { name: /^Change view/ })).toBeNull();
     expect(withinDialog.getByRole("region", { name: "Demo" })).toBeInTheDocument();
     expect(withinDialog.queryByRole("link", { name: "Exit to developer hub" })).not.toBeInTheDocument();
     expect(withinDialog.queryByRole("group", { name: "Appearance" })).not.toBeInTheDocument();

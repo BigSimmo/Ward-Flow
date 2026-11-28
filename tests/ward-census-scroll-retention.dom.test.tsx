@@ -283,7 +283,9 @@ describe("unrestored query choices never replay row offsets into the default cen
       const view = mount();
       if (choice === "query")
         fireEvent.change(screen.getByTestId("ward-patient-typeahead-input"), { target: { value: "a" } });
-      if (choice === "dob") fireEvent.click(screen.getByRole("button", { name: "DOB" }));
+      // Audit three #62: a date of birth is typed into the same box; the DOB toggle is gone.
+      if (choice === "dob")
+        fireEvent.change(screen.getByTestId("ward-patient-typeahead-input"), { target: { value: "14/03/1988" } });
       if (choice === "patient-state") fireEvent.click(screen.getByRole("radio", { name: /^Inpatient/ }));
       // Query/group choice must still leave rows visible; use a supported seed match in the final test.
       region().scrollTop = 211;

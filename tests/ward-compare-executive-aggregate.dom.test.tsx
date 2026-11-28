@@ -95,7 +95,7 @@ describe("Compare uses its released aggregate model", () => {
     expect(screen.getByTestId("ward-statistics-unavailable")).toBeInTheDocument();
   });
 
-  it("keeps chart, group and search controls while protecting bars, order and the complete reference", () => {
+  it("keeps chart and group controls while protecting bars, order and the complete reference", () => {
     installMatchMediaStub(false);
     const data = protectedReport();
     render(wrap(<StatisticsCompareScreen />, data));
@@ -115,9 +115,8 @@ describe("Compare uses its released aggregate model", () => {
     expect(within(wardCard()).queryByRole("radio", { name: "Lowest" })).not.toBeInTheDocument();
     fireEvent.click(within(wardCard()).getByRole("button", { name: /^Locked/ }));
     expect(within(wardCard()).getByRole("button", { name: /^Locked/ })).toHaveAttribute("aria-pressed", "true");
-    fireEvent.change(within(wardCard()).getByRole("searchbox"), { target: { value: data.wards[0].name } });
-    expect(wardCard()).toHaveTextContent("network reference are not shown");
-    fireEvent.change(within(wardCard()).getByRole("searchbox"), { target: { value: "" } });
+    // Audit two #14: the card's own name search went; the header search and Browse find a ward.
+    expect(within(wardCard()).queryByRole("searchbox")).not.toBeInTheDocument();
     fireEvent.click(within(wardCard()).getByRole("button", { name: /^All/ }));
     fireEvent.click(within(edCard()).getByRole("radio", { name: "No ward" }));
     const edFigure = chart("Emergency department placements with no ward bar chart");
@@ -128,8 +127,8 @@ describe("Compare uses its released aggregate model", () => {
   it("keeps both Data tables and exports exactly their protected cells", () => {
     installMatchMediaStub(false);
     render(wrap(<StatisticsCompareScreen />, protectedReport()));
-    fireEvent.click(within(wardCard()).getByRole("radio", { name: "Data" }));
-    fireEvent.click(within(edCard()).getByRole("radio", { name: "Data" }));
+    fireEvent.click(within(wardCard()).getByRole("radio", { name: "Table" }));
+    fireEvent.click(within(edCard()).getByRole("radio", { name: "Table" }));
     // F-55 (A9-36), D-197: when both counts are withheld the cell says "not shown" once.
     expect(screen.getByTestId("ward-statistics-compare-wards")).not.toHaveTextContent("an unstated number of an");
     expect(screen.getByTestId("ward-statistics-compare-eds")).toHaveTextContent("not shown");
@@ -162,16 +161,8 @@ describe("Compare uses its released aggregate model", () => {
     expect(vi.mocked(downloadCsv).mock.calls.at(-1)![1][1].at(-1)).toBe("Not recorded");
   });
 
-  it("uses the released bed-state ready figure rather than the separate capacity-feed available figure", () => {
-    installMatchMediaStub(true);
-    const data = protectedReport();
-    data.capacity.ready = data.network.beds.ready + 1;
-    render(wrap(<StatisticsCompareScreen />, data));
-    const main = screen.getByTestId("ward-statistics-compare-screen");
-    const ready = within(main).getByText("Ready").parentElement!;
-    expect(ready).toHaveTextContent(String(data.network.beds.ready));
-    expect(ready).not.toHaveTextContent(String(data.capacity.ready));
-  });
+  // Audit four item 49 (r10): the hero shows three comparison figures on every width, so the Ready
+  // figure this case read is gone from Compare; the released ready count is no longer drawn there.
 
   it("keeps pin, clear and unpin controls and withholds a reference whenever any ward count is protected", () => {
     installMatchMediaStub(false);
@@ -195,7 +186,7 @@ describe("Compare uses its released aggregate model", () => {
     expect(pinned).toHaveTextContent("Pin up to three wards");
   });
 
-  it("keeps the scoped eyebrow and sends Open a unit to the one finder rather than its own chooser", () => {
+  it("keeps the scoped eyebrow and draws no chooser of its own and no Open a unit link", () => {
     installMatchMediaStub(false);
     const scoped = projectExecutiveReportingFoundation(
       state,
@@ -209,10 +200,8 @@ describe("Compare uses its released aggregate model", () => {
     // D-91 (Josh, 31 Oct 2026): the per-unit links, foreign-origin EDs as plain labels included,
     // live in the one finder on the statistics home page; Compare draws no unit links of its own.
     expect(screen.queryByTestId("ward-statistics-compare-chooser")).toBeNull();
-    expect(screen.getByTestId("ward-statistics-compare-tool-open-unit")).toHaveAttribute(
-      "href",
-      "/bedchart/statistics#choose-a-unit",
-    );
+    // Audit two #118: "Open a unit" went with its finder; Browse lists every unit.
+    expect(screen.queryByTestId("ward-statistics-compare-tool-open-unit")).toBeNull();
     for (const ed of scoped.emergencyDepartments) {
       expect(document.querySelector(`a[href="${edStatisticsHref(ed.id)}"]`)).toBeNull();
     }

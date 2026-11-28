@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import { useEffect, type ReactNode } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
 // The pre-commit hook's staged-file typecheck compiles only this file (plus .d.ts roots), so it
 // never sees tests/setup/jsdom.setup.ts's global jest-dom matcher augmentation. This mirrors
@@ -10,11 +11,10 @@ import { CapacityScreen } from "@/components/ward-management/capacity/capacity-s
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { allEmergencyDepartments, allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { resetServiceScopeForTests, setServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
@@ -23,10 +23,7 @@ import {
   movementBelongsToService,
   referralBelongsToService,
   unitHealthService,
-  urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
-import { showWholeHomeQueue } from "./helpers/ward-home-queue";
-import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 
 /**
  * Build plan `docs/history/plans-2026-09/2026-09-17-build-plan-screens.md`, task B1 (item 44 — the
@@ -42,7 +39,6 @@ import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 const OPEN = wardMovements.filter(isOpen);
 const UNITS = allUnits();
 const SERVICE: HealthService = "South Metro";
-const CONFIG = defaultWardConfiguration();
 const MEMBER_OPEN = OPEN.filter((movement) => movementBelongsToService(movement, SERVICE, UNITS));
 const EXCLUDED_OPEN = OPEN.filter((movement) => !movementBelongsToService(movement, SERVICE, UNITS));
 
@@ -77,32 +73,22 @@ describe("fixture sanity: South Metro actually splits the Command populations bo
   });
 });
 
+// Audit four item 1 (r10): Flow folded into Waiting, so Home no longer lists every open movement or
+// draws the movements scope bar. Waiting's own membership, scope bar summary and urgent-outside line
+// are proven in tests/ward-delays-service-scope.dom.test.tsx; the two Home cases that read them are gone.
+/**
+ * What "Open on Home" does from Waiting's drawer: it records the movement in the provider, and Home
+ * (mounting afterwards, as it does on the route change) opens that movement's Placement drawer.
+ */
+function OpenOnHome({ movementId, children }: { movementId: string; children: ReactNode }) {
+  const { focusMovementId, setFocusMovementId } = useWardFlow();
+  useEffect(() => {
+    if (focusMovementId !== movementId) setFocusMovementId(movementId);
+  }, [focusMovementId, movementId, setFocusMovementId]);
+  return focusMovementId === movementId ? <>{children}</> : null;
+}
+
 describe("Command narrows to a chosen service (item 44, task B1)", () => {
-  it("the Patients tab holds only South Metro's own open movements", () => {
-    setServiceScope(SERVICE);
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <CoordinatorScreen />
-      </WardFlowProvider>,
-    );
-    // Home placement redesign, Josh 19 Oct 2026: desktop Home shows the queue's top 10 behind
-    // "Show all (N)"; this suite reads rows further down, so it opens the whole queue first.
-    showWholeHomeQueue();
-
-    for (const movement of MEMBER_OPEN) {
-      expect(
-        screen.getByTestId(`ward-queue-row-${movement.id}`),
-        `${movement.id} belongs to South Metro`,
-      ).toBeInTheDocument();
-    }
-    for (const movement of EXCLUDED_OPEN) {
-      expect(
-        screen.queryByTestId(`ward-queue-row-${movement.id}`),
-        `${movement.id} does not belong to South Metro`,
-      ).not.toBeInTheDocument();
-    }
-  });
-
   it("Needs you's Referrals to decide holds only South Metro's own queued referrals", () => {
     setServiceScope(SERVICE);
     render(
@@ -125,36 +111,6 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
     for (const referral of EXCLUDED_REFERRALS) {
       expect(listed(referral.id), `${referral.id} does not belong to South Metro`).toBeNull();
     }
-  });
-
-  it("shows the scope bar with the exact §3 summary, and S2's urgent-outside line", () => {
-    setServiceScope(SERVICE);
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <CoordinatorScreen />
-      </WardFlowProvider>,
-    );
-
-    // The scope bar belongs to the priority queue, behind Home's Flow list.
-    showEveryoneWaiting();
-    // The screen counts the full seeded population (seedWardFlowState().movements), not the raw
-    // wardMovements fixture array: seedWardFlowState() additively overlays demonstration movements
-    // (ward-rulings-demo.ts). Review finding 14 (12 Nov 2026): both figures count open movements,
-    // as Waiting's bar does. Computed from the current seed, not hand-derived.
-    const wholeSeedOpenMovements = seedWardFlowState().movements.filter(isOpen);
-    const memberOfWhole = wholeSeedOpenMovements.filter((movement) =>
-      movementBelongsToService(movement, SERVICE, UNITS),
-    );
-    const urgentOutside = urgentMovementsOutsideService(wholeSeedOpenMovements, SERVICE, UNITS, NOW_ANCHOR, CONFIG);
-    expect(screen.getByTestId("ward-service-scope-bar")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-service-scope-bar-summary").textContent ?? "").toContain(
-      `Showing ${memberOfWhole.length} of ${wholeSeedOpenMovements.length} movements, in South Metro.`,
-    );
-    expect(screen.getByTestId("ward-service-scope-bar-urgent")).toHaveTextContent(
-      urgentOutside.length === 0
-        ? `Nothing flagged urgent, a legal form running out, without a bed anywhere, waited past the access target, or escalated is outside ${SERVICE}.`
-        : `${urgentOutside.length} ${urgentOutside.length === 1 ? "movement" : "movements"} outside ${SERVICE}: flagged urgent, a legal form running out, without a bed anywhere, waited past the access target, or escalated.`,
-    );
   });
 
   it("the pressure strip shows only in-service EDs, with the exact §3 strip-foot sentence", () => {
@@ -200,11 +156,11 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
     setServiceScope(SERVICE);
     const { unmount } = render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <CoordinatorScreen />
+        <OpenOnHome movementId={target.id}>
+          <CoordinatorScreen />
+        </OpenOnHome>
       </WardFlowProvider>,
     );
-    showWholeHomeQueue();
-    fireEvent.click(screen.getByTestId(`ward-queue-row-${target.id}`));
     const withServiceCandidateIds = screen
       .getAllByTestId(new RegExp("^ward-shortlist-candidate-"))
       .map((el) => el.getAttribute("data-testid"))
@@ -222,11 +178,11 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
     resetServiceScopeForTests();
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <CoordinatorScreen />
+        <OpenOnHome movementId={target.id}>
+          <CoordinatorScreen />
+        </OpenOnHome>
       </WardFlowProvider>,
     );
-    showWholeHomeQueue();
-    fireEvent.click(screen.getByTestId(`ward-queue-row-${target.id}`));
     const withAllCandidateIds = screen
       .getAllByTestId(new RegExp("^ward-shortlist-candidate-"))
       .map((el) => el.getAttribute("data-testid"))
@@ -250,12 +206,6 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
     expect(screen.queryByTestId("ward-pressure-strip-service-foot")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-diagram-service-foot")).not.toBeInTheDocument();
 
-    // Home placement redesign, Josh 19 Oct 2026: desktop Home shows the queue's top 10 behind
-    // "Show all (N)"; this suite reads rows further down, so it opens the whole queue first.
-    showWholeHomeQueue();
-    for (const movement of OPEN) {
-      expect(screen.getByTestId(`ward-queue-row-${movement.id}`)).toBeInTheDocument();
-    }
     // Appraisal (Josh Q8, 3 Nov 2026): an ED with nobody waiting is named in the one "EDs clear" tile.
     const folded = (screen.queryByTestId("ward-home-ed-clear")?.dataset.edIds ?? "").split(" ");
     for (const ed of ALL_EDS) {

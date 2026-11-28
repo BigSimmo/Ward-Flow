@@ -224,8 +224,8 @@ describe("a departure is checked when it is saved (M2)", () => {
     const [stay] = occupiedStays();
     fireEvent.click(stay!.button);
     fireEvent.click(screen.getByTestId("ward-board-record-leaving-submit"));
-    const confirm = document.getElementById("ward-board-confirm-dialog")!;
-    const who = confirm.querySelector("#confirm-dialog-description strong")?.textContent ?? "";
+    const confirm = screen.getByTestId("ward-board-confirm-dialog");
+    const who = confirm.querySelector("strong")?.textContent ?? "";
     expect(who).not.toBe("");
     fireEvent.change(within(confirm).getByTestId("ward-board-confirm-destination"), {
       target: { value: LEAVING_DESTINATIONS[0]!.id },
@@ -246,7 +246,7 @@ describe("a departure is checked when it is saved (M2)", () => {
       expectedRevision: server.world.state.dischargeRevisions[stay!.admissionId] ?? 0,
     });
     const before = worldOf(server);
-    await save(within(confirm).getByTestId("ward-board-confirm-proceed"));
+    await save(within(confirm).getByRole("button", { name: /^Record discharge$/ }));
 
     await waitFor(() => expect(server.sent).toHaveLength(1));
     const said = await notRecordedSaid();
@@ -373,7 +373,7 @@ describe("confirming an arrival is checked when it is saved (M2)", () => {
     const check = screen.getByTestId("ward-arrival-identity");
     server.secondDesk({ type: "PATIENT_ARRIVED", role: "ward", now: 0, movementId: TARGET, actingUnitId: WARD });
     const before = worldOf(server);
-    await save(within(check).getByRole("button", { name: "Confirm arrival" }));
+    await save(within(check).getByRole("button", { name: "Record arrival" }));
 
     await waitFor(() => expect(server.sent).toHaveLength(1));
     const said = await notRecordedSaid();

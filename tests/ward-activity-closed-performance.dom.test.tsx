@@ -104,7 +104,7 @@ describe("closed Activity panel performance", () => {
     const reopened = await screen.findByRole("dialog", { name: "Activity · Statewide" });
     await waitFor(() => expect(within(reopened).getByText("escalated to Synthetic duty contact")).toBeInTheDocument());
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBe(stored);
-    fireEvent.click(within(reopened).getByRole("button", { name: /^Mark these \d+ reviewed$/u }));
+    fireEvent.click(within(reopened).getByRole("button", { name: /^Mark these \d+ seen$/u }));
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).not.toBe(stored);
   });
 });
@@ -208,7 +208,7 @@ describe("Activity lifetime stress", () => {
   it("undoes the reopened capture to the saved review from before a closed-time change", async () => {
     const view = render(<Fixture open />);
     let dialog = await screen.findByRole("dialog", { name: "Activity · Statewide" });
-    fireEvent.click(within(dialog).getByRole("button", { name: /^Mark these \d+ reviewed$/u }));
+    fireEvent.click(within(dialog).getByRole("button", { name: /^Mark these \d+ seen$/u }));
     const firstReview = window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY);
     expect(firstReview).not.toBeNull();
     view.rerender(<Fixture open={false} />);
@@ -228,10 +228,10 @@ describe("Activity lifetime stress", () => {
     view.rerender(<Fixture open now={NOW_ANCHOR + 1} />);
     dialog = await screen.findByRole("dialog", { name: "Activity · Statewide" });
     expect(within(dialog).getByText("escalated to Synthetic later contact")).toBeInTheDocument();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Mark these 1 reviewed" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Mark these 1 seen" }));
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).not.toBe(firstReview);
     fireEvent.click(within(dialog).getByRole("button", { name: "Undo" }));
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBe(firstReview);
-    expect(within(dialog).getByRole("button", { name: "Mark these 1 reviewed" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Mark these 1 seen" })).toBeInTheDocument();
   });
 });

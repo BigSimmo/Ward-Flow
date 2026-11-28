@@ -247,8 +247,9 @@ describe("the real layout's authenticated executive branch", () => {
     const tools = screen.getByTestId("ward-bar-tools-sheet");
     // UX review (D-270): with no search the sheet opens on Most used; this reads the full groups.
     fireEvent.click(within(tools).getByRole("button", { name: /^Show all \d+ tools$/u }));
-    fireEvent.click(within(tools).getByRole("button", { name: /^Change view$/ }));
-    expect((guard.connection as WardSharedConnection).switchRole).toHaveBeenCalledOnce();
+    // A27 (26 Nov 2026): Tools no longer repeats the desk switcher; the rail's person menu holds the one
+    // door ("Switch desk", proven in the account menu case above), so Tools shows no Change view.
+    expect(within(tools).queryByRole("button", { name: /^Change view$/ })).toBeNull();
     // Tools overhaul (2 Nov 2026): the executive desk's rows are Key figures, Find a bed, On-call,
     // Suburb lookup, Form times and Messages (link rows follow the desk's page access). Suggested chips repeat some
     // names, so each row is opened by its own toggle.

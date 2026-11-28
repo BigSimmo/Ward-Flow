@@ -240,7 +240,9 @@ describe("ward screen live unit capacity", () => {
       </WardFlowProvider>,
     );
     expect(screen.queryByText(/Rostered Capacity/)).toBeNull();
-    expect(screen.getByText("Roster not recorded")).toBeInTheDocument();
+    // Audit two #11 (P50, P51, D-270): the roster is said once, on the checks card's Not checked line,
+    // no longer on the hero line; the hero still holds no roster figure.
+    expect(screen.queryByText(/Rostered/)).toBeNull();
   });
 });
 
@@ -270,7 +272,9 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
       </WardFlowProvider>,
     );
 
-    const chipRow = screen.getByTestId("ward-unit-beds");
+    // Simplification 26 Nov 2026 (item 6): off the phone the squares strip is gone; its note line is the
+    // quiet line in the Every bed head, so the card is read here.
+    const chipRow = document.getElementById("bed-capacity")!;
 
     // The defect this suite exists to catch: the word this screen used to show for a figure the
     // capacity board no longer calls "Potential" anywhere. A chip row that still said "Potential 1"
@@ -299,12 +303,10 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     expect(screen.getByTestId("ward-hero-ready")).toHaveTextContent("1");
     // A16-13 (PR C): this ward's two seeded pulls are now people who arrived: 18 occupied, none pulled.
     expect(screen.getByRole("group", { name: "Ward capacity" })).toHaveTextContent(/18\D*20\s*Occupied · now/u);
-    // The squares' head says the ready figure in words, the same figure as the hero.
-    expect(chipRow).toHaveTextContent("1 ready of 20 beds");
-    expect(chipRow).not.toHaveTextContent("Occupied");
+    // (The squares' "1 ready of 20 beds" head went with the strip; the hero's Ready figure above says it.)
     expect(chipRow).not.toHaveTextContent(/[1-9] pulled/u);
     expect(chipRow).toHaveTextContent("1 closed");
-    expect(chipRow).not.toHaveTextContent("Held");
+    expect(chipRow).not.toHaveTextContent(/\bHeld\b(?! up)/u);
     expect(chipRow).not.toHaveTextContent("Blocked Not recorded");
   });
 
@@ -326,7 +328,7 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
       </WardFlowProvider>,
     );
 
-    const chipRow = screen.getByTestId("ward-unit-beds");
+    const chipRow = document.getElementById("bed-capacity")!;
     // CHANGED 25 September 2026: rph-adult-secure's releases are derived, and the seed's own
     // stuck-confirmed occupant (`ward-admissions-seed.ts`'s "CONFIRMED AND BLOCKED" comment)
     // already carries a non-zero blocked count here — read from `capacityBreakdown()` rather than
@@ -340,7 +342,7 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     ).length;
     expect(heldUp).toBe(breakdown.blockedToday);
     // Wave 4 (D-191): held up is said in words on the squares' note line, never as a square.
-    expect(screen.getByTestId("ward-unit-beds-note")).toHaveTextContent(`${heldUp} held up`);
+    expect(chipRow).toHaveTextContent(`${heldUp} held up`);
     // ...and nothing reads "Blocked" as a bed state beside it: the out-of-service box is gone and
     // the empty bed the ward is not offering is the separately worded "closed".
     expect(chipRow).not.toHaveTextContent(/\bBlocked\b/u);
@@ -377,7 +379,7 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
       bedReleases.filter((release) => release.unitId === unit.id),
       NOW_ANCHOR,
     ).length;
-    expect(screen.getByTestId("ward-unit-beds-note")).toHaveTextContent(`${heldBefore + 1} held up`);
+    expect(document.getElementById("bed-capacity")).toHaveTextContent(`${heldBefore + 1} held up`);
     const row = screen.getByTestId(`ward-barrier-${CONFIRMED_RELEASE!.id}`);
     expect(row).toHaveTextContent("Confirmed");
     expect(row).toHaveTextContent("Held up");
@@ -506,13 +508,13 @@ describe("ward screen bed release controls", () => {
 
     expect(screen.queryByTestId("ward-leave-bed-form")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-leave-bed-usable")).toBeNull();
-    expect(screen.getByTestId("ward-unit-beds")).toHaveTextContent("1 on leave");
+    expect(document.getElementById("bed-capacity")!).toHaveTextContent("1 on leave");
 
     fireEvent.click(screen.getByRole("button", { name: "Ended" }));
 
     expect(screen.getByText("Nobody on leave.")).toBeInTheDocument();
     // Wave 4: the note line leaves a zero out.
-    expect(screen.getByTestId("ward-unit-beds")).not.toHaveTextContent("on leave");
+    expect(document.getElementById("bed-capacity")!).not.toHaveTextContent("on leave");
   });
 
   it("records a bed on leave when an admitted patient is chosen and increments the on-leave count", () => {
@@ -525,7 +527,7 @@ describe("ward screen bed release controls", () => {
     expect(screen.queryByTestId("ward-leave-bed-form")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-leave-bed-patient")).not.toBeInTheDocument();
     expect(screen.getAllByText(/Bed on leave/).length).toBeGreaterThan(0);
-    expect(screen.getByTestId("ward-unit-beds")).toHaveTextContent("1 on leave");
+    expect(document.getElementById("bed-capacity")!).toHaveTextContent("1 on leave");
   });
 });
 
@@ -550,7 +552,7 @@ describe("ward screen incoming patient arrival confirmation", () => {
     // Walk-through WT-11: the name and UMRN are checked before the arrival is recorded.
     const check = screen.getByTestId("ward-arrival-identity");
     expect(within(check).getByTestId("ward-arrival-identity-check")).toHaveTextContent(/^Name.+UMRN.+Date of birth.+/);
-    fireEvent.click(within(check).getByRole("button", { name: "Confirm arrival" }));
+    fireEvent.click(within(check).getByRole("button", { name: "Record arrival" }));
 
     // After arrival, WF-014 closes and is no longer in the "Coming in" list
     expect(screen.queryByTestId("ward-confirm-arrival-WF-014")).not.toBeInTheDocument();
@@ -566,7 +568,7 @@ describe("ward screen incoming patient arrival confirmation", () => {
     );
     fireEvent.click(screen.getByTestId("ward-confirm-arrival-WF-014"));
     fireEvent.click(
-      within(screen.getByTestId("ward-arrival-identity")).getByRole("button", { name: "Confirm arrival" }),
+      within(screen.getByTestId("ward-arrival-identity")).getByRole("button", { name: "Record arrival" }),
     );
     expect(screen.queryByTestId("ward-confirm-arrival-WF-014")).not.toBeInTheDocument();
     const toast = screen.getByTestId("toast");

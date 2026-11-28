@@ -87,7 +87,7 @@ describe("Statistics and outage trims (UX audit 21 Oct 2026)", () => {
     expect(within(card).getByRole("button", { name: /^Show all \d+$/u })).toBeInTheDocument();
   });
 
-  it("names the downtime pack's tables in its tabs, each with its count (page-top redesign, 9 Nov 2026)", () => {
+  it("names the downtime pack's tables in its tabs (page-top redesign, 9 Nov 2026; counts dropped in r10)", () => {
     renderInProvider(<DowntimePackScreen />);
     const tabs = screen.getByRole("tablist", { name: "Downtime pack section" });
     const pack = lastDowntimePack()!;
@@ -95,12 +95,9 @@ describe("Statistics and outage trims (UX audit 21 Oct 2026)", () => {
       within(tabs)
         .getAllByRole("tab")
         .map((tab) => tab.textContent),
-    ).toEqual([
-      `Beds by ward${pack.totals.ready}`,
-      `ED queue${pack.edQueue.length}`,
-      `Pending movements${pack.pendingMoves.length}`,
-      `Legal forms${pack.legalForms.length}`,
-    ]);
+    ).toEqual(["Beds by ward", "ED queue", "Pending movements", "Legal forms"]);
+    // r10 dropped the count badges from these tabs; each table still says its own count in its body.
+    expect(pack.totals.ready).toBeGreaterThan(0);
   });
 
   it("shows one downtime table on screen at a time and keeps the rest for the printout (Josh, 31 Oct 2026)", () => {

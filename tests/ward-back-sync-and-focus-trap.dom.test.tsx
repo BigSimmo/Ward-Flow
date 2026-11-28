@@ -10,10 +10,16 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+// The movement drawer reads the router for its Open on Home and Find a bed steps (r10).
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { OfficerScreen } from "@/components/ward-management/officer/officer-screen";
-import { WardModeWorkspace } from "@/components/ward-management/ward-management-modes";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -128,7 +134,7 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
       fireEvent.click(trigger!);
 
       // Dialog opens
-      const dialog = screen.getByRole("dialog", { name: /Log transport booking/i });
+      const dialog = screen.getByRole("dialog", { name: /Record transport booking/i });
       expect(dialog).toBeInTheDocument();
 
       // Cancel button inside dialog
@@ -136,98 +142,16 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
       fireEvent.click(cancelBtn);
 
       // Dialog closed and focus restored to trigger button
-      expect(screen.queryByRole("dialog", { name: /Log transport booking/i })).toBeNull();
+      expect(screen.queryByRole("dialog", { name: /Record transport booking/i })).toBeNull();
       expect(document.activeElement).toBe(menuTrigger);
     });
   });
 
-  // Tabs build (9 Oct 2026): the hand-rolled endorse modal became the shared Sheet, which owns the
-  // focus trap and restore. These pin that the Governance call site still gets both.
-  describe("Governance Registers Endorse Sheet", () => {
-    it("captures trigger, sets initial focus, traps tab, and restores focus on close", async () => {
-      render(
-        <WardFlowProvider initialNow={NOW_ANCHOR}>
-          <WardModeWorkspace mode="governance" />
-        </WardFlowProvider>,
-      );
-
-      // Device audit (11 Oct 2026): Record review needs a chosen event, so pick the first row.
-      const firstRow = document.querySelector<HTMLButtonElement>("[data-audit-row]");
-      if (firstRow) fireEvent.click(firstRow);
-      // The row opens the kit drawer; close it (the row stays chosen) to reach Record review.
-      const drawerClose = screen.queryByTestId("wf-drawer-close");
-      if (drawerClose) fireEvent.click(drawerClose);
-      const trigger = screen.getByRole("button", { name: "Record review" });
-      trigger.focus();
-      expect(document.activeElement).toBe(trigger);
-
-      fireEvent.click(trigger);
-
-      const modal = screen.getByRole("dialog", { name: "Record a review" });
-      await waitFor(() => expect(modal.contains(document.activeElement)).toBe(true));
-
-      const focusable = Array.from(
-        modal.querySelectorAll<HTMLElement>(
-          'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])',
-        ),
-      ).filter((el) => !el.hasAttribute("disabled") && el.getAttribute("tabindex") !== "-1");
-      expect(focusable.length).toBeGreaterThanOrEqual(2);
-
-      const first = focusable[0]!;
-      const last = focusable[focusable.length - 1]!;
-
-      // The Sheet skips elements without layout boxes, which jsdom never gives, so lend them one.
-      const rects = vi
-        .spyOn(HTMLElement.prototype, "getClientRects")
-        .mockReturnValue([new DOMRect(0, 0, 1, 1)] as unknown as DOMRectList);
-      try {
-        // Shift+Tab on first element wraps to last
-        first.focus();
-        fireEvent.keyDown(window, { key: "Tab", shiftKey: true });
-        expect(document.activeElement).toBe(last);
-
-        // Tab on last element wraps to first
-        last.focus();
-        fireEvent.keyDown(window, { key: "Tab", shiftKey: false });
-        expect(document.activeElement).toBe(first);
-      } finally {
-        rects.mockRestore();
-      }
-
-      fireEvent.click(within(modal).getByRole("button", { name: "Cancel" }));
-
-      await waitFor(() => expect(screen.queryByRole("dialog", { name: "Record a review" })).not.toBeInTheDocument());
-      await waitFor(() => expect(document.activeElement).toBe(trigger));
-    });
-
-    it("restores focus on Escape key dismissal of the endorse sheet", async () => {
-      render(
-        <WardFlowProvider initialNow={NOW_ANCHOR}>
-          <WardModeWorkspace mode="governance" />
-        </WardFlowProvider>,
-      );
-
-      // Device audit (11 Oct 2026): Record review needs a chosen event, so pick the first row.
-      const firstRow = document.querySelector<HTMLButtonElement>("[data-audit-row]");
-      if (firstRow) fireEvent.click(firstRow);
-      // The row opens the kit drawer; close it (the row stays chosen) to reach Record review.
-      const drawerClose = screen.queryByTestId("wf-drawer-close");
-      if (drawerClose) fireEvent.click(drawerClose);
-      const trigger = screen.getByRole("button", { name: "Record review" });
-      trigger.focus();
-      fireEvent.click(trigger);
-      const modal = screen.getByRole("dialog", { name: "Record a review" });
-      await waitFor(() => expect(modal.contains(document.activeElement)).toBe(true));
-
-      fireEvent.keyDown(window, { key: "Escape" });
-
-      await waitFor(() => expect(screen.queryByRole("dialog", { name: "Record a review" })).not.toBeInTheDocument());
-      await waitFor(() => expect(document.activeElement).toBe(trigger));
-    });
-  });
+  // Audit four item 100 (r10): the Record review chip and sheet are gone; a review is the event
+  // drawer's own Reviewed button, so the two Governance endorse-sheet focus cases went with them.
 
   describe("Officer Screen Modals", () => {
-    it("captures trigger, sets initial focus, traps tab, and restores focus on close for formModal", () => {
+    it("captures trigger, sets initial focus, traps tab, and restores focus on close for formModal", async () => {
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <OfficerScreen />
@@ -236,6 +160,8 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
 
       // Trigger form modal. Transport page A: the job panel opens once a job is chosen.
       fireEvent.click(screen.getByTestId("ward-officer-select-WF-005"));
+      // The form check button sits in the job panel's Forms tab.
+      fireEvent.click(within(screen.getByTestId("ward-officer-detail")).getByRole("tab", { name: /^Forms/ }));
       const trigger = screen.getByTestId("ward-officer-inspect-form-WF-005");
       trigger.focus();
 
@@ -244,8 +170,8 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
       const dialog = screen.getByRole("dialog", { name: /Paperwork checks/i });
       expect(dialog).toBeInTheDocument();
 
-      // Initial focus inside modal
-      expect(dialog.contains(document.activeElement)).toBe(true);
+      // Initial focus inside modal (the kit Dialog moves it after it mounts)
+      await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
 
       const focusable = Array.from(
         dialog.querySelectorAll<HTMLElement>(
@@ -289,6 +215,8 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
       );
 
       fireEvent.click(screen.getByTestId("ward-officer-select-WF-005"));
+      // The form check button sits in the job panel's Forms tab.
+      fireEvent.click(within(screen.getByTestId("ward-officer-detail")).getByRole("tab", { name: /^Forms/ }));
       const trigger = screen.getByTestId("ward-officer-inspect-form-WF-005");
       trigger.focus();
       fireEvent.click(trigger);

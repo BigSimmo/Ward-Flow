@@ -62,10 +62,19 @@ describe("departure confirmation (DA-08)", () => {
         <WardBoard unitId="arm-adult-open" requireConfirmation={true} />
       </WardFlowProvider>,
     );
-    const leave = screen.getAllByRole("button", { name: /^They have left(, |$)/ });
-    expect(leave.length, "the seed must offer a departure on this ward").toBeGreaterThan(0);
-    fireEvent.click(leave[0]);
-    const dialog = screen.getByRole("dialog");
+    // The departure is recorded from the bed record's drawer (r10): open occupied beds until one offers it.
+    const occupied = within(screen.getByTestId("ward-board-beds"))
+      .getAllByRole("listitem")
+      .filter((tile) => tile.getAttribute("data-bed-kind") === "occupied");
+    let leave: HTMLElement | null = null;
+    for (const tile of occupied) {
+      fireEvent.click(within(tile).getByRole("button"));
+      leave = screen.queryByTestId("ward-board-record-leaving-submit");
+      if (leave) break;
+    }
+    expect(leave, "the seed must offer a departure on this ward").not.toBeNull();
+    fireEvent.click(leave!);
+    const dialog = screen.getByTestId("ward-board-confirm-dialog");
     expect(within(dialog).getByTestId("ward-board-confirm-identity").textContent).toMatch(/^Check: .+ · .+/u);
   });
 
@@ -89,7 +98,8 @@ describe("departure confirmation (DA-08)", () => {
     expect(away, "the seed must offer an ED transfer on this ward").not.toBeNull();
     fireEvent.click(away!);
     // Drawer review (6 Nov 2026): the confirmation stacks over the bed record's kit drawer.
-    const dialog = screen.getByRole("dialog", { name: "Confirm emergency department transfer" });
+    const dialog = screen.getByTestId("ward-board-confirm-dialog");
+    expect(within(dialog).getByRole("heading", { name: "Confirm emergency department transfer" })).toBeInTheDocument();
     expect(within(dialog).getByText(/has gone to an emergency/u)).toBeInTheDocument();
     expect(within(dialog).getByTestId("ward-board-confirm-identity").textContent).toMatch(/^Check: .+ · .+/u);
   });

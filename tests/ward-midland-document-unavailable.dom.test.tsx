@@ -9,21 +9,14 @@ configure({
 afterEach(cleanup);
 
 describe("Midland sample document download", () => {
-  it("explains the unavailable action to pointer, keyboard and assistive technology users", () => {
+  it("offers no download, and marks the document as a sample", () => {
     render(<ReferralPage index={0} go={vi.fn()} back={vi.fn()} />);
     fireEvent.click(screen.getAllByRole("button", { name: /^View/u })[0]!);
     const dialog = screen.getByRole("dialog");
-    const download = within(dialog).getByRole("button", { name: "Download" });
-    expect(download).toHaveAttribute("aria-disabled", "true");
-    expect(download).toHaveAccessibleDescription("Not wired in this prototype.");
-    download.focus();
-    expect(download).toHaveFocus();
-    fireEvent.click(download);
-    fireEvent.keyDown(download, { key: "Enter" });
-    fireEvent.keyUp(download, { key: "Enter" });
-    fireEvent.keyDown(download, { key: " " });
-    fireEvent.keyUp(download, { key: " " });
-    expect(dialog).toBeInTheDocument();
+    // r10 dropped the dead Download button (it only ever said "Not wired in this prototype"), so the
+    // sample document offers no download at all: no button, no link, and it says it is a sample.
+    expect(within(dialog).queryByRole("button", { name: "Download" })).toBeNull();
+    expect(within(dialog).getByText("SAMPLE · NOT A REAL RECORD")).toBeInTheDocument();
     expect(document.querySelector("a[download]")).toBeNull();
   });
 });

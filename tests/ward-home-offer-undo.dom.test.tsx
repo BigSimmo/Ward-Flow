@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import { useEffect, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 import { ToastProvider } from "@/components/wf";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { showWholeHomeQueue } from "./helpers/ward-home-queue";
 
 /**
  * v10 Home (pass 3): overriding the shortlist needs a reason and a second sign-off tick before
@@ -18,18 +18,28 @@ import { showWholeHomeQueue } from "./helpers/ward-home-queue";
 
 const MOVEMENT_ID = "WF-030";
 
+/**
+ * What "Open on Home" does from Waiting's drawer (r10, item 1: Flow folded into Waiting): it records the
+ * movement in the provider, and Home, mounting after the route change, opens its Placement drawer.
+ */
+function OpenOnHome({ movementId, children }: { movementId: string; children: ReactNode }) {
+  const { focusMovementId, setFocusMovementId } = useWardFlow();
+  useEffect(() => {
+    if (focusMovementId !== movementId) setFocusMovementId(movementId);
+  }, [focusMovementId, movementId, setFocusMovementId]);
+  return focusMovementId === movementId ? <>{children}</> : null;
+}
+
 function renderHome(movementId = MOVEMENT_ID) {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <ToastProvider>
-        <CoordinatorScreen />
+        <OpenOnHome movementId={movementId}>
+          <CoordinatorScreen />
+        </OpenOnHome>
       </ToastProvider>
     </WardFlowProvider>,
   );
-  // Home flow (Q340/Q345, 3 Nov 2026): the rows live under Flow, each stage capped at 5 behind
-  // "Show all N"; this suite reads rows further down, so it opens every stage first.
-  showWholeHomeQueue();
-  fireEvent.click(screen.getByTestId(`ward-queue-row-${movementId}`));
 }
 
 // D-86 (findings 111 and 113, Josh, 27 Oct 2026): no second approvers. The reason is the only gate.

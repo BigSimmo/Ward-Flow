@@ -108,7 +108,7 @@ describe("ward bookings and departed stay task destinations", () => {
     expect(screen.queryByTestId("ward-planned-PA-SEED-01")).toBeNull();
     fireEvent.click(within(row).getByRole("button", { name: "Arrived" }));
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Confirm arrival" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record arrival" }));
     await waitFor(() => expect(screen.queryByTestId("ward-planned-PA-SEED-03")).toBeNull());
   });
 });

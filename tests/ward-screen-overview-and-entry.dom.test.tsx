@@ -35,6 +35,10 @@ import { allUnits, NOW_ANCHOR, unitById } from "@/components/ward-management/war
  */
 const RPH_ADULT_SECURE = "rph-adult-secure";
 
+/** The ward hero's Occupied figure: its press opens the bed list filtered to occupied beds (audit two #11). */
+const bedListControl = () =>
+  within(screen.getByRole("group", { name: "Ward capacity" })).getByRole("button", { name: /Occupied/u });
+
 describe("the ward screen — the bed-list control is never gated by the confirm panel", () => {
   it("is available with zero questions answered, and the link reaches its target", () => {
     render(
@@ -52,14 +56,17 @@ describe("the ward screen — the bed-list control is never gated by the confirm
     expect(screen.queryByText(/\bof 3 confirmed\b/)).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-daily-return")).not.toBeInTheDocument();
 
-    const cta = screen.getByTestId("ward-hero-open-bed-list");
+    // Audit two #11: the "N beds" link left the hero line; the Occupied figure's press opens the bed list.
+    const cta = bedListControl();
     // ⚠️ ASSERTION 1 of 2 — THE ATTRIBUTE CHECK.
     expect(cta).not.toHaveAttribute("disabled");
     expect(cta).not.toHaveAttribute("aria-disabled");
 
-    // The current concise control remains a real link to the section it names. This checks the
-    // available route independently of the disabled-state assertions above.
-    expect(cta).toHaveAttribute("href", "#bed-capacity");
+    // The control still reaches the section it names: pressing it picks the Occupied bed filter and
+    // the bed list section is on the page. This checks the route independently of the state above.
+    expect(cta).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(cta);
+    expect(bedListControl()).toHaveAttribute("aria-pressed", "true");
     expect(document.getElementById("bed-capacity")).toBeInTheDocument();
   });
 
@@ -73,10 +80,11 @@ describe("the ward screen — the bed-list control is never gated by the confirm
     fireEvent.click(screen.getByRole("tab", { name: /^Decisions \(Ward record\), / }));
     expect(screen.queryByTestId("ward-confirm-all")).not.toBeInTheDocument();
 
-    const cta = screen.getByTestId("ward-hero-open-bed-list");
+    const cta = bedListControl();
     expect(cta).not.toHaveAttribute("disabled");
     expect(cta).not.toHaveAttribute("aria-disabled");
-    expect(cta).toHaveAttribute("href", "#bed-capacity");
+    fireEvent.click(cta);
+    expect(bedListControl()).toHaveAttribute("aria-pressed", "true");
     expect(document.getElementById("bed-capacity")).toBeInTheDocument();
   });
 
@@ -91,7 +99,7 @@ describe("the ward screen — the bed-list control is never gated by the confirm
     // Real, not invented: the same `unitCapacity()` this screen's own bed-capacity section reads.
     const available = unitCapacity(unit, []).available;
     expect(screen.getByTestId("ward-hero-ready")).toHaveTextContent(String(available));
-    expect(screen.getByTestId("ward-hero-open-bed-list")).toHaveAttribute("href", "#bed-capacity");
+    expect(bedListControl()).not.toHaveAttribute("aria-disabled");
     expect(document.getElementById("bed-capacity")).toBeInTheDocument();
   });
 
@@ -115,7 +123,7 @@ describe("the ward screen — the bed-list control is never gated by the confirm
         <WardScreen unitId={RPH_ADULT_SECURE} />
       </WardFlowProvider>,
     );
-    const cta = screen.getByTestId("ward-hero-open-bed-list");
+    const cta = bedListControl();
 
     // Proof for the control-state check: an added aria-disabled attribute turns it red.
     cta.setAttribute("aria-disabled", "true");
@@ -123,11 +131,11 @@ describe("the ward screen — the bed-list control is never gated by the confirm
     cta.removeAttribute("aria-disabled");
     expect(cta).not.toHaveAttribute("aria-disabled");
 
-    // Proof for the destination check: an altered href turns it red independently of the above.
-    cta.setAttribute("href", "#somewhere-else");
-    expect(() => expect(cta).toHaveAttribute("href", "#bed-capacity")).toThrow();
-    cta.setAttribute("href", "#bed-capacity");
-    expect(cta).toHaveAttribute("href", "#bed-capacity");
+    // Proof for the destination check: pressing it must change its state; a control that did nothing
+    // would stay unpressed, and this check would turn red independently of the above.
+    expect(cta).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(cta);
+    expect(bedListControl()).toHaveAttribute("aria-pressed", "true");
   });
 });
 
@@ -144,7 +152,10 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     // v6 (approved Wards mockup, 7 Oct 2026): service, status, cohort and order are segmented
     // radio groups rather than tabs and dropdowns. Page tops (Josh, 9 Nov 2026): the services are the
     // page's tabs, and the card or table view is one switch at the tab row's right end.
-    for (const group of ["Health service", "Status", "Cohort", "Order"]) {
+    // Audit three review: with one service the tab row is a plain count, not a "Health service" switch;
+    // the order choice is named Sort.
+    expect(screen.getByTestId("ward-index-tab-count")).toHaveTextContent(/wards$/u);
+    for (const group of ["Status", "Cohort", "Sort"]) {
       expect(screen.getByRole("radiogroup", { name: group })).toBeInTheDocument();
     }
     expect(screen.getAllByRole("radio", { name: /^All/u }).length).toBeGreaterThanOrEqual(2);
@@ -158,7 +169,9 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     // are the pill under them (the old ring and checking foot went with the old top).
     expect(screen.getByTestId("ward-index-figure-ready")).toHaveTextContent(/Ready$/u);
     expect(screen.getByTestId("ward-index-figure-discharges")).toHaveTextContent(/Expected to leave · today$/u);
-    expect(screen.getByTestId("ward-index-figure-short")).toHaveTextContent(/(Short|Spare)$/u);
+    // Audit two #55: the statewide hero no longer carries Capacity's Short figure; it ends on Wards full.
+    expect(screen.queryByTestId("ward-index-figure-short")).toBeNull();
+    expect(screen.getByTestId("ward-index-figure-full")).toHaveTextContent(/Wards? full/u);
     expect(screen.queryByTestId("ward-index-figure-ready-by")).toBeNull();
     expect(screen.getByTestId("ward-index-confirmed")).toHaveTextContent(/\d+ of \d+/u);
   });
@@ -217,9 +230,11 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     const drawer = screen.getByRole("dialog", { name: /^FSH Adult Secure/u });
     expect(within(drawer).getByText(/ready of \d+ beds/u)).toBeInTheDocument();
     expect(within(drawer).getByRole("region", { name: "Ward profile" })).toBeInTheDocument();
-    expect(within(drawer).getByRole("link", { name: "Bed board" })).toHaveAttribute(
+    // Batch 3: /board redirects to the ward page, so the Bed board link beside Open ward is gone.
+    expect(within(drawer).queryByRole("link", { name: "Bed board" })).toBeNull();
+    expect(within(drawer).getByRole("link", { name: /^Open FSH Adult Secure/u })).toHaveAttribute(
       "href",
-      "/bedchart/board/fsh-adult-secure",
+      "/bedchart/ward/fsh-adult-secure",
     );
   });
 
@@ -279,8 +294,8 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     );
     const capacity = bedsFreeingTodayTotal(seed.bedReleases, NOW_ANCHOR, new Set(["rph-adult-secure"]));
     const choices = screen.getByRole("radiogroup", { name: "Highlight beds" });
-    expect(within(choices).getByRole("radio", { name: /^Expected to leave today/u })).toHaveTextContent(
-      new RegExp(`^Expected to leave today\\D*${capacity}$`, "u"),
+    expect(within(choices).getByRole("radio", { name: /^Due out today/u })).toHaveTextContent(
+      new RegExp(`^Due out today\\D*${capacity}$`, "u"),
     );
   });
 
@@ -367,9 +382,10 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
 
     const awaiting = screen.getByRole("region", { name: "Awaiting your answer" });
     expect(awaiting).not.toHaveAttribute("data-active");
-    // Wave 4 (D-191): the This shift card went with the bottom strip; the hero's "Open this shift" opens it.
-    fireEvent.click(screen.getByTestId("ward-hero-act-now"));
-    expect(screen.getByRole("heading", { name: "Shift history" })).toBeInTheDocument();
+    // Audit two #115 (Josh decides): with decisions due the hero's one step opens the next decision, and
+    // "Open this shift" (the shift log's only door) shows only when nothing is due, so the seed's
+    // ward cannot reach Shift history from here; neither it nor Awaiting is behind a tab.
+    expect(screen.getByTestId("ward-hero-act-now")).toHaveTextContent(/^Open next/u);
     expect(screen.queryByRole("tab", { name: /Awaiting your answer/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: "Shift log" })).not.toBeInTheDocument();
   });
@@ -383,7 +399,6 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
 
     const everyBed = document.getElementById("bed-capacity")!;
     expect(within(everyBed).getByRole("heading", { name: "Every bed" })).toBeInTheDocument();
-    expect(within(everyBed).getByTestId("ward-unit-beds")).toBeInTheDocument();
     const tiles = within(everyBed).getAllByRole("button", { name: /^Bed \d{2},/ });
     expect(tiles.length).toBeGreaterThan(0);
     fireEvent.click(tiles[0]);

@@ -1,5 +1,11 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  usePathname: () => "/bedchart/home",
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
@@ -7,7 +13,6 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { isTierOneOpen } from "@/components/ward-management/ward-shared-figures";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { showEveryoneWaiting } from "./helpers/ward-home-queue";
 
 /**
  * P002 and P003 (Josh, 27 Oct 2026, "Go ahead with all recommendations"): the screens print one
@@ -49,22 +54,19 @@ describe("Home and Movements print one Tier 1 count (P002)", () => {
   });
 });
 
-describe("an ED card narrows Home and says so (P003)", () => {
-  it("names the chosen site on Home's Flow list, and Clear also resets the ED card", () => {
+describe("an ED card opens Waiting for that department (P003)", () => {
+  // Item 1 (r10): Flow is folded into Waiting, so Home no longer narrows its own list. The ED card is
+  // a link that opens Waiting already narrowed to that department.
+  it("links the ED card to Waiting for the chosen site, and Home keeps no filter of its own", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
     const edCard = screen.getByTestId("ward-ed-rph-ed");
+    expect(edCard.tagName).toBe("A");
+    expect(edCard.getAttribute("href")).toMatch(/^\/bedchart\/waiting\?.*rph-ed/u);
     fireEvent.click(edCard);
-    expect(edCard).toHaveAttribute("aria-pressed", "true");
-    showEveryoneWaiting();
-    expect(screen.getByText("Filtered to RPH")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Clear filter" }));
-
-    expect(screen.getByTestId("ward-ed-rph-ed")).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByText("Filtered to RPH")).not.toBeInTheDocument();
     expect(window.sessionStorage.length).toBe(0);
   });

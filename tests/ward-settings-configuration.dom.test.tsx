@@ -90,6 +90,12 @@ function setEdToMinimum() {
   fireEvent.keyDown(edStepper(), { key: "Home" });
 }
 
+/** Audit two #44: the rules' Restore defaults sits on the Rules tab row (This device restores only this browser). */
+function openRulesRestore() {
+  fireEvent.click(screen.getByTestId("ward-settings-jump-rules"));
+  fireEvent.click(screen.getByTestId("btn-restore-rules"));
+}
+
 describe("settings screen configuration draft", () => {
   it.each(["accepted", "refused"] as const)("consumes same-command recovery once (%s)", async (status) => {
     let resolve!: (outcome: WardCommandOutcome) => void;
@@ -136,7 +142,7 @@ describe("settings screen configuration draft", () => {
     renderSettings(() => completion);
     fireEvent.click(screen.getByRole("radio", { name: "Dark" }));
     setEdToMinimum();
-    fireEvent.click(screen.getByTestId("btn-restore-baseline"));
+    openRulesRestore();
     fireEvent.click(screen.getByRole("button", { name: /^(Restore defaults|Restoring…)$/ }));
     expect(screen.queryByText("Rules restored and recorded.")).not.toBeInTheDocument();
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
@@ -343,7 +349,7 @@ describe("settings screen configuration draft", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Save changes?$/ }));
     expect(screen.getByTestId("probe-ed-target").textContent).toBe("720");
 
-    fireEvent.click(screen.getByTestId("btn-restore-baseline"));
+    openRulesRestore();
     fireEvent.click(screen.getByRole("button", { name: "Restore defaults" }));
 
     const defaults = defaultWardConfiguration();
@@ -379,7 +385,7 @@ describe("settings screen configuration draft", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Save changes?$/ }));
     expect(screen.getByTestId("probe-ed-target").textContent).toBe("720");
 
-    fireEvent.click(screen.getByTestId("btn-restore-baseline"));
+    openRulesRestore();
     const modal = screen.getByTestId("ward-reset-baseline-modal");
     // Bug list row 1: a restore saves twelve rules, the three forecast alerts among them.
     expect(modal).toHaveTextContent("Saves all 12 rules");
@@ -431,7 +437,7 @@ describe("settings screen configuration draft", () => {
     setEdToMinimum();
     expect(screen.getByRole("button", { name: /^Save 1 change$/ })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByTestId("btn-restore-baseline"));
+    openRulesRestore();
     fireEvent.click(screen.getByRole("button", { name: "Restore defaults" }));
     const restored = within(screen.getByTestId("toast-region")).getByText("Rules restored and recorded.");
     fireEvent.click(
