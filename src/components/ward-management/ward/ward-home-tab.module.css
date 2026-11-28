@@ -2294,6 +2294,7 @@ label.todoMain:has(.todoTick:focus-visible) {
   min-width: 0;
   padding: 0 var(--wf-s-4) var(--wf-s-3);
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* Final look (26 Nov 2026): the phone's Picture or Grid switch, at the right above the bed squares,

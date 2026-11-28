@@ -1382,6 +1382,7 @@
 .findServices > :first-child {
   min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 /* Find, tablet and phone: Filters and the view switch sit on the sheet beside the pills, not on the

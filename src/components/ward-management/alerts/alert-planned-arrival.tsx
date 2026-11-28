@@ -50,7 +50,9 @@ export function AlertPlannedArrival({
   const toast = useOptionalToast();
   const patientOf = usePatientOf();
   const [asking, setAsking] = useState(false);
-  const person = booking.patientId && role !== "executive" ? patientOf({ patientId: booking.patientId }) : undefined;
+  // D-14: the booking's patient link is read through the resolver only, never off the record here.
+  const resolved = role !== "executive" ? patientOf(booking) : undefined;
+  const person = resolved?.patient ? resolved : undefined;
 
   const record = () => {
     setAsking(false);

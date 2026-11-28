@@ -9,6 +9,7 @@
   max-width: 100%;
   margin-bottom: var(--wf-s-2);
   overflow-x: auto;
+  overflow-y: hidden;
   text-transform: none;
   letter-spacing: normal;
   white-space: nowrap;

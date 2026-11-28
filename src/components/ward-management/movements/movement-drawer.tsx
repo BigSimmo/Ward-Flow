@@ -216,6 +216,11 @@ export type MovementDrawerWaiting = {
   wards?: React.ReactNode;
   /** Records the escalation from the drawer (Waiting's own write). */
   onEscalate?: () => void;
+  /**
+   * Audit four item 110: Waiting's foot "More" (Find a bed, Open on Home), so a laptop coordinator
+   * reaches Home's Placement for this person as the phone's Waiting sheet does.
+   */
+  more?: React.ReactNode;
 };
 
 export function MovementDrawer({
@@ -490,6 +495,7 @@ export function MovementDrawer({
           Patient page
         </Link>
         {escalateInRow ? escalateButton(false) : null}
+        {waiting?.more ?? null}
         {open ? <PullNowButton movement={movement} /> : null}
         {open ? (
           <Menu

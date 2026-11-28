@@ -6,7 +6,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-2) var(--wf-s-5);
+  gap: var(--wf-s-2) var(--wf-s-4);
   min-width: 0;
   padding: var(--wf-s-1) 0 var(--wf-s-1);
   color: var(--wf-ink-2);

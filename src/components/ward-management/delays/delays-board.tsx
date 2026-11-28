@@ -6,6 +6,8 @@
  * one tap away on the list head, and graphs under it (simplification mock-up, 26 Nov 2026).
  * Figures come from `delays-board-model.ts`; the one write is Escalate, which the screen dispatches.
  */
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { CoordinatorFootMenu } from "./delays-board-foot";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { holdInPlace, returnFocusInPlace, wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -188,6 +190,7 @@ export function DelaysBoard({
   // Role views (nurse in charge, ED clinician): the desk's own words and lenses (`waiting-desk-words.ts`).
   const desk = useWaitingDeskWords(units);
   const effectiveAccess = useEffectiveWardAccess();
+  const canOpenBoardHref = useCanOpenHref();
   const accessRole = effectiveAccess.role;
   const { wardDesk, edDesk } = desk;
   // The shared act-now list, as the Handover sheet reads it, so For handover matches its Act now.
@@ -1505,6 +1508,12 @@ export function DelaysBoard({
                   />
                 ),
                 onEscalate: () => onEscalate(selected.movement),
+                more: canOpenBoardHref("/bedchart") ? (
+                  <CoordinatorFootMenu
+                    movement={selected.movement}
+                    onOpenHome={() => setFocusMovementId(selected.movement.id)}
+                  />
+                ) : null,
               }}
             />
           ) : selected !== null ? (

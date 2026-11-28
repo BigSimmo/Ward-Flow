@@ -84,7 +84,7 @@ export function MissingValue({ reason, density = "inline", className }: MissingV
         density === "cell"
           ? "text-xs text-[color:var(--wf-ink-3)] whitespace-normal break-words"
           : density === "tight"
-            ? "text-[length:inherit] leading-[inherit] text-[color:var(--wf-ink-3)] whitespace-normal break-words"
+            ? "text-[length:inherit] [line-height:inherit] text-[color:var(--wf-ink-3)] whitespace-normal break-words"
             : "text-sm text-[color:var(--text-muted)]",
         className,
       )}
