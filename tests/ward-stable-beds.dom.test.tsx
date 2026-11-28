@@ -1,4 +1,4 @@
-import { getBedStep, queryBedStep } from "./helpers/ward-bed-steps";
+import { getBedStep } from "./helpers/ward-bed-steps";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";

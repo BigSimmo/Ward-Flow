@@ -1,4 +1,4 @@
-import { getBedStep, queryBedStep } from "./helpers/ward-bed-steps";
+import { getBedStep } from "./helpers/ward-bed-steps";
 import "@testing-library/jest-dom/vitest";
 import { act, fireEvent, render, screen, within, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";

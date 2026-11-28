@@ -16,9 +16,7 @@ import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/w
 import { StatisticsNav } from "@/components/ward-management/statistics/statistics-nav";
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { wardFinderEntry } from "@/components/ward-management/statistics/statistics-screen-parts";
-import { STATISTICS_UNIT_CHOOSER_ID } from "@/components/ward-management/statistics/statistics-sections";
 import { StatisticsUnitFinder } from "@/components/ward-management/statistics/statistics-unit-finder";
-import { STATISTICS_UNIT_FINDER_HREF } from "@/components/ward-management/statistics/statistics-view-switch";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR, allEmergencyDepartments, allUnits, siteByCode } from "@/components/ward-management/ward-sites";
 

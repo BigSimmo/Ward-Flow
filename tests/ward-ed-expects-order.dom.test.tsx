@@ -1,4 +1,4 @@
-import { cleanup, render as rtlRender, screen, within } from "@testing-library/react";
+import { cleanup, render as rtlRender, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 

@@ -67,7 +67,7 @@ describe("alerts: release an alert you took (P019)", () => {
   });
 
   it("Undo takes the alert back", () => {
-    const { panel, title } = openAndTake();
+    const { panel } = openAndTake();
     fireEvent.click(releaseButton(panel));
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: "Undo" }));

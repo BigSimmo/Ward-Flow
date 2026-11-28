@@ -7,7 +7,6 @@ import { describe, expect, it } from "vitest";
 import {
   statisticsSectionById,
   STATISTICS_COMMUNITY_CHOOSER_HREF,
-  STATISTICS_COMMUNITY_CHOOSER_ID,
   STATISTICS_COMPARE_HREF,
   STATISTICS_HOME_HREF,
   STATISTICS_OVERVIEW_HREF,
