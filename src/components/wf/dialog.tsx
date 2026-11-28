@@ -18,6 +18,8 @@ export type DialogAction = {
   disabledReason?: string;
   /** Focus starts here when the dialog opens (a confirm starts on its safe choice). */
   autoFocus?: boolean;
+  /** A stable test id for the button, for scripts and tests that press it. */
+  testId?: string;
 };
 
 export type DialogProps = {
@@ -165,6 +167,7 @@ export function Dialog({
                   disabledReason={action.disabledReason}
                   onClick={action.onAction}
                   data-sheet-autofocus={action.autoFocus ? "" : undefined}
+                  data-testid={action.testId}
                 >
                   {action.label}
                 </Button>
@@ -175,6 +178,7 @@ export function Dialog({
                   loading={primary.loading}
                   disabledReason={primary.disabledReason}
                   onClick={primary.onAction}
+                  data-testid={primary.testId}
                 >
                   {primary.label}
                 </Button>

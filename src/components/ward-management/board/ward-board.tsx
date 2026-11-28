@@ -1439,6 +1439,7 @@ export function WardBoard({
             primary={{
               label: ask.words.action,
               onAction: handleConfirmAction,
+              testId: "ward-board-confirm-proceed",
               disabledReason:
                 pendingConfirm.kind === "leaving" && destinationFor(confirmAdmissionId) === ""
                   ? "Choose where they went first."
