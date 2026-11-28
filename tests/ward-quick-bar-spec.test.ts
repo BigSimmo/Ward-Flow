@@ -40,7 +40,7 @@ describe("Quick bar (Josh, 8 Nov 2026)", () => {
   // Page tops v6 (Josh, 9 Nov 2026: the mock-ups are the source of truth): Home's four chips.
   it("gives the coordinator Home's mock-up chips, in order", () => {
     expect(QUICK_BAR.coordinator.map((control) => control.label)).toEqual([
-      "Ward updates",
+      "Check counts",
       "Find a bed",
       "Call and contacts",
       "Handover",

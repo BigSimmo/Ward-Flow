@@ -16,7 +16,6 @@ function renderBoard() {
 }
 
 const pressed = (testId: string) => screen.getByTestId(testId).getAttribute("aria-pressed");
-const orderButton = (name: "By hold-up" | "Longest wait") => screen.getByRole("tab", { name });
 
 describe("the Delays board keeps its filters and order in the address", () => {
   it("writes a filter to the address, and a reload opens with it on", () => {
@@ -40,22 +39,16 @@ describe("the Delays board keeps its filters and order in the address", () => {
     expect(new URLSearchParams(window.location.search).get("owner")).toBe("wards");
   });
 
-  it("opens a shared link's order, and writes the viewer's own choice", () => {
+  // Simplification mock-up (26 Nov 2026): one list, longest wait first, so there is no order tab and no
+  // order key is written; an old link's order is dropped with the first change.
+  it("drops an old link's order key with the first filter change, and never writes one", () => {
     window.history.replaceState(null, "", "/bedchart/waiting?order=blocker");
     renderBoard();
-    expect(orderButton("By hold-up")).toHaveAttribute("aria-selected", "true");
-    fireEvent.click(orderButton("Longest wait"));
-    expect(new URLSearchParams(window.location.search).get("order")).toBe("longest");
-  });
-
-  it("writes the order with a filter, so a copied link opens in the sender's order", () => {
-    window.localStorage.setItem("ward_flow_delays_order", "blocker");
-    window.history.replaceState(null, "", "/bedchart/waiting");
-    renderBoard();
-    expect(window.location.search).toBe("");
+    expect(screen.queryByRole("tab", { name: "By hold-up" })).toBeNull();
     fireEvent.click(screen.getByTestId("delays-owner-wards"));
-    expect(new URLSearchParams(window.location.search).get("order")).toBe("blocker");
-    expect(orderButton("By hold-up")).toHaveAttribute("aria-selected", "true");
+    const params = new URLSearchParams(window.location.search);
+    expect(params.get("owner")).toBe("wards");
+    expect(params.has("order")).toBe(false);
   });
 
   it("clearing the last filter from a link leaves the address bare", () => {

@@ -262,8 +262,6 @@ describe("Add patient uncertain shared save", () => {
     render(tree({ dispatch: vi.fn() }));
     fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "12/" } });
     fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
-    expect(screen.getByTestId("ward-add-patient-reset-dialog")).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId("ward-add-patient-reset-confirm"));
     expect(screen.getByLabelText("Date of birth")).toHaveValue("");
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(screen.getByLabelText("Date of birth")).toHaveValue("12/");

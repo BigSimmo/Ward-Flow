@@ -20,7 +20,7 @@ describe("Patient census place search and structured filters", () => {
         <PatientSearchPage />
       </WardFlowProvider>,
     );
-    fireEvent.change(screen.getByLabelText("Find a person by name, UMRN or place"), {
+    fireEvent.change(screen.getByLabelText("Find a person by name, UMRN, place or date of birth"), {
       target: { value: "Armadale" },
     });
     // Synthetic movement WF-001 belongs to arm-ed. A place match is useful with no conflicting filter.

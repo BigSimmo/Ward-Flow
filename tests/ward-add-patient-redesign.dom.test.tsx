@@ -41,7 +41,8 @@ describe("Add a patient redesign", () => {
     const form = screen.getByTestId("ward-add-patient-form");
     const check = within(form).getByTestId("ward-add-patient-duplicate-check");
     expect(check).toHaveTextContent("Runs as you type: a UMRN, or a name of 4 letters or more.");
-    expect(screen.getByRole("complementary", { name: "Recently added records" })).not.toContainElement(check);
+    // The side list (Just added records) only draws once someone has been added this session.
+    expect(screen.queryByRole("complementary", { name: "Just added records" })?.contains(check) ?? false).toBe(false);
   });
 
   it("names what is still needed beside the greyed Add patient button, in field order", () => {
@@ -61,7 +62,6 @@ describe("Add a patient redesign", () => {
     expect(born.value).toBe("01/01/19");
     fireEvent.change(screen.getByLabelText("Given name"), { target: { value: "Testable" } });
     fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
-    fireEvent.click(screen.getByTestId("ward-add-patient-reset-confirm"));
     expect((screen.getByLabelText("Date of birth") as HTMLInputElement).value).toBe("");
   });
 

@@ -1,6 +1,6 @@
-import { renderAllDelays, inspectDelayPerson } from "./helpers/delays-interactions";
+import { renderAllDelays, delayPersonDrawer } from "./helpers/delays-interactions";
 import { fireEvent, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { delayGroups } from "@/components/ward-management/delays/delays-derivations";
@@ -9,6 +9,20 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+
+// r10: the person drawer is the shared movement drawer, which reads the App Router.
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}));
+
 /**
  * 🔴 **A PATIENT WHOSE LEGAL AUTHORITY HAD ALREADY LAPSED GOT A CALMER CLOCK THAN ONE WHOSE
  * AUTHORITY WAS STILL RUNNING. This file exists so that cannot come back.**
@@ -88,13 +102,13 @@ function breachedMovementIds(minutes: number): string[] {
     .flatMap((group) => group.movements.map((movement) => movement.id));
 }
 
-/** The selected person's ED clock in the rail panel, and whether it is marked urgent. */
-function selectedClock(): { text: string; urgent: boolean } | undefined {
-  const panel = screen.getByRole("region", { name: "Why this person is waiting" });
-  const clock = panel.querySelector('[data-testid="delays-panel-clock"]');
-  return clock === null
-    ? undefined
-    : { text: clock.textContent ?? "", urgent: clock.getAttribute("data-urgent") === "true" };
+/**
+ * The selected person's legal clock in the Movement drawer (the person panel's own clock went with the
+ * simplification mock-up, 26 Nov 2026): the form's typed time must read as ended, with the warning
+ * word "passed", never as a calm future time.
+ */
+function selectedLegalLine(id: string): string {
+  return delayPersonDrawer(id).textContent ?? "";
 }
 
 describe("a lapsed legal authority is never quieter than one still running", () => {
@@ -125,16 +139,11 @@ describe("a lapsed legal authority is never quieter than one still running", () 
      * unchanged and stays over ALL of them: every breached row's clock is urgent, not merely one.
      */
     for (const id of breached) {
-      inspectDelayPerson(id);
-      const clock = selectedClock();
-      expect(
-        clock,
-        `${id}: no ED clock rendered once selected — the panel is not emitting delays-panel-clock`,
-      ).toBeDefined();
-      expect(
-        clock?.urgent,
-        `${id}: not urgent after its deadline has passed — the breached cause is rendering as calm`,
-      ).toBe(true);
+      const text = selectedLegalLine(id);
+      expect(text, `${id}: its legal time does not read as ended after its deadline has passed`).toMatch(/ · ended /u);
+      expect(text, `${id}: no warning word after its deadline has passed — it is rendering as calm`).toContain(
+        "passed",
+      );
     }
   });
 

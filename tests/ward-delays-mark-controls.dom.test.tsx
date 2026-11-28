@@ -1,6 +1,12 @@
-import { renderAllDelays, inspectDelayPerson, showEveryDelayRow } from "./helpers/delays-interactions";
+import {
+  filterIsOn,
+  inspectDelayPerson,
+  renderAllDelays,
+  showEveryDelayRow,
+  toggleFilter,
+} from "./helpers/delays-interactions";
 import { fireEvent, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DELAY_CAUSE_COPY, delayGroups, ownerOf } from "@/components/ward-management/delays/delays-derivations";
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
@@ -12,6 +18,20 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+
+// r10: the person drawer is the shared movement drawer, which reads the App Router.
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}));
+
 /**
  * THE DELAYS BOARD'S FILTERS NEVER LEAVE A STALE ONE PRESSED, AND THE COUNT IS ALWAYS HONEST.
  *
@@ -43,8 +63,9 @@ function causeTitle(cause: string): string {
   return entry!.title;
 }
 
+/** The list head names "N of M" only while the list is narrowed (audit four item 54); unnarrowed it reads all. */
 function shownCount(): string {
-  return screen.getByTestId("delays-shown-count").textContent ?? "";
+  return screen.queryByTestId("delays-shown-count")?.textContent ?? `${OPEN.length} of ${OPEN.length}`;
 }
 
 function listedIds(): string[] {
@@ -136,7 +157,7 @@ describe("the Delays board's filters never leave a stale one pressed", () => {
     expect(new Set(listedIds())).toEqual(new Set(OPEN.map((movement) => movement.id)));
   });
 
-  it("an owner tile and a chip narrow together, both read pressed, and both show as removable", () => {
+  it("an owner tile and a Filters item narrow together, and both read as on", () => {
     const lockedWards = GROUPS_AT_ANCHOR.filter((group) => ownerOf(group.cause) === "wards")
       .flatMap((group) => group.movements)
       .filter((movement) => movement.security === "Secure");
@@ -145,13 +166,14 @@ describe("the Delays board's filters never leave a stale one pressed", () => {
     );
     renderBoard();
 
-    fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
+    toggleFilter(/^Locked bed/u);
     fireEvent.click(screen.getByTestId("delays-owner-wards"));
     showEveryRow();
 
-    expect(screen.getByRole("button", { name: /^Locked bed \d+$/u })).toHaveAttribute("aria-pressed", "true");
+    // Simplification mock-up: Locked bed is ticked in the Filters menu and the whose-move tile shows its
+    // own pressed state, so neither repeats as a chip.
+    expect(filterIsOn(/^Locked bed/u)).toBe(true);
     expect(screen.getByTestId("delays-owner-wards")).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Remove filter Wards" })).toBeInTheDocument();
     expect(shownCount()).toBe(`${lockedWards.length} of ${OPEN.length}`);
     expect(new Set(listedIds())).toEqual(new Set(lockedWards.map((movement) => movement.id)));
   });
@@ -174,6 +196,7 @@ describe("the Delays board's filters never leave a stale one pressed", () => {
     expect(screen.getByTestId("delays-owner-yours")).toHaveAttribute("aria-pressed", "false");
     expect(shownCount()).toBe(`${OPEN.length} of ${OPEN.length}`);
     expect(screen.queryByRole("button", { name: "Clear" }), "Clear is offered with nothing to clear").toBeNull();
+    expect(screen.queryByTestId("delays-shown-count"), "a count is drawn with nothing narrowed").toBeNull();
   });
 
   it("draws no tile for an owner nothing can map to, rather than a permanent zero", () => {
@@ -184,27 +207,26 @@ describe("the Delays board's filters never leave a stale one pressed", () => {
     expect(total, "the tiles no longer partition everyone waiting").toBe(OPEN.length);
   });
 
-  it("Clear resets every filter at once, and Escape does the same", () => {
+  it("Show everyone resets every filter at once", () => {
     renderBoard();
-    fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
+    toggleFilter(/^Locked bed/u);
     fireEvent.click(screen.getByTestId("delays-owner-yours"));
-    fireEvent.click(screen.getAllByRole("button", { name: "Clear" })[0]);
+    // The Filters menu's own "Show everyone" clears every filter at once.
+    fireEvent.click(screen.getByTestId("delays-filters"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Show everyone" }));
     expect(shownCount()).toBe(`${OPEN.length} of ${OPEN.length}`);
     expect(screen.getByTestId("delays-owner-yours")).toHaveAttribute("aria-pressed", "false");
-
-    fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
-    fireEvent.keyDown(document, { key: "Escape" });
-    expect(shownCount()).toBe(`${OPEN.length} of ${OPEN.length}`);
+    expect(filterIsOn(/^Locked bed/u)).toBe(false);
   });
 
   it("closes the selected patient's panel when their movement closes", () => {
     renderBoard(<WithdrawReferralProbe movementId="WF-002" />);
     inspect("WF-002");
-    expect(screen.getByRole("region", { name: "Why this person is waiting" })).toBeInTheDocument();
+    expect(screen.getByTestId("delays-detail-WF-002")).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("test-withdraw-referral"));
 
-    expect(screen.queryByRole("region", { name: "Why this person is waiting" })).toBeNull();
+    expect(screen.queryByTestId("delays-detail-WF-002")).toBeNull();
     expect(screen.queryByTestId("delays-select-WF-002")).toBeNull();
   });
 
@@ -226,17 +248,13 @@ describe("the Delays board's filters never leave a stale one pressed", () => {
     expect(shownCount()).toBe(`1 of ${OPEN.length}`);
 
     fireEvent.click(screen.getByTestId("test-clear-urgent-flag"));
-    // The blocker groups are drawn in the By blocker order; the board opens on Longest wait.
-    fireEvent.click(
-      within(screen.getByRole("tablist", { name: "Order the table" })).getByRole("tab", { name: "By hold-up" }),
-    );
+    // Simplification mock-up: one list, longest wait first; there are no blocker groups to open.
     showEveryRow();
 
     expect(
       screen.queryByRole("button", { name: `Remove filter ${title}` }),
       "the chip still names a cause that emptied and was dropped from the board",
     ).toBeNull();
-    expect(screen.queryByTestId("delays-cause-patient_or_family")).toBeNull();
     expect(
       screen.getByTestId("delays-select-WF-018"),
       "WF-018 must stay listed: clearing its flag recategorised it, it did not close it",

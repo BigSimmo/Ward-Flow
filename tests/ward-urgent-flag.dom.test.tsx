@@ -3,11 +3,24 @@ import { describe, expect, it, vi } from "vitest";
 
 import { PriorityQueue } from "@/components/ward-management/coordinator/priority-queue";
 import { MovementDrawer } from "@/components/ward-management/movements/movement-drawer";
-import { URGENT_MARK_REASONS } from "@/components/ward-management/ward-change-reasons";
+import { URGENT_MARK_REASONS, changeReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { queueOrder } from "@/components/ward-management/ward-priority";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ED_ACCESS_TARGET_MINUTES, type Movement } from "@/components/ward-management/ward-model";
+
+// r10: the person drawer is the shared movement drawer, which reads the App Router.
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}));
 
 /**
  * The owner asked the urgent flag to do TWO things: sort to the top, and be VISIBLE.
@@ -166,58 +179,21 @@ describe("the urgent-flag reason picker in the movement drawer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Flag urgent" }));
   }
 
-  it("offers every URGENT_MARK_REASONS member as an option", () => {
+  // Audit four item 5: the flag is a reason menu, so the reason is still mandatory (the menu IS the
+  // reason) and there is no separate select or disabled button.
+  it("offers every URGENT_MARK_REASONS member as a menu item", () => {
     renderDrawer(anOpenUnflagged(), vi.fn());
-    const select = screen.getByTestId("ward-movement-drawer-urgent-reason") as HTMLSelectElement;
-    expect(select, "opening the picker moves focus into it").toHaveFocus();
-    const optionValues = Array.from(select.options)
-      .map((option) => option.value)
-      .filter((value) => value.length > 0);
-    expect(optionValues).toEqual([...URGENT_MARK_REASONS]);
+    const labels = screen.getAllByRole("menuitem").map((item) => item.textContent?.trim());
+    expect(labels).toEqual(URGENT_MARK_REASONS.map((reason) => changeReasonLabels[reason]));
   });
 
-  /**
-   * Review fix-forward item 10 (2026-09-17): the same accessible-reason discipline
-   * `ward-management-console.tsx`'s own `URGENT_FLAG_UNCHOSEN` control already holds to (an
-   * `aria-disabled` button that keeps its tab stop but stated nothing about WHY it would not
-   * respond, until a `title` and an `aria-describedby`-linked `sr-only` span gave it a reason a
-   * keyboard or screen-reader user can actually reach). The drawer's own toggle had the disabled
-   * state but neither the reachable reason nor the link to it.
-   */
-  it("states why the flag button is unavailable, reachably, until a reason is chosen", () => {
-    renderDrawer(anOpenUnflagged(), vi.fn());
-    const button = screen.getByTestId("ward-movement-drawer-urgent-toggle");
-    expect(button).toHaveAttribute("aria-disabled", "true");
-    const describedBy = button.getAttribute("aria-describedby");
-    expect(describedBy, "the disabled toggle must link to a reachable reason").toBeTruthy();
-    expect(document.getElementById(describedBy!)?.textContent).toBe(
-      "Choose why this patient is being flagged urgent first.",
-    );
-
-    const select = screen.getByTestId("ward-movement-drawer-urgent-reason");
-    fireEvent.change(select, { target: { value: "safety_of_others_in_this_setting" } });
-    expect(
-      button.getAttribute("aria-describedby"),
-      "once a reason is chosen the button is no longer disabled, so nothing explains an absent block",
-    ).toBeNull();
-  });
-
-  it("keeps the flag button disabled until a reason is chosen, and dispatches the chosen reason", () => {
-    const dispatch = vi.fn();
+  it("flags only by choosing a reason, and dispatches the chosen reason", () => {
+    const dispatch = vi.fn(() => Promise.resolve({ commandId: "c1", status: "accepted" }));
     const target = anOpenUnflagged();
     renderDrawer(target, dispatch);
 
-    const button = screen.getByTestId("ward-movement-drawer-urgent-toggle");
-    expect(button).toHaveAttribute("aria-disabled", "true");
-
-    fireEvent.click(button);
-    expect(dispatch, "clicking while no reason is chosen must not dispatch anything").not.toHaveBeenCalled();
-
-    const select = screen.getByTestId("ward-movement-drawer-urgent-reason");
-    fireEvent.change(select, { target: { value: "safety_of_others_in_this_setting" } });
-    expect(button).not.toHaveAttribute("aria-disabled");
-
-    fireEvent.click(button);
+    expect(dispatch, "opening the menu alone must not dispatch anything").not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("menuitem", { name: changeReasonLabels.safety_of_others_in_this_setting }));
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({
         type: "FLAG_MOVEMENT_URGENT",

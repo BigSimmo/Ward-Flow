@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ComponentProps, ReactNode } from "react";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -51,7 +51,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 
 // The Patients census search is the kit's one page search field (D-91, Patients redesign).
-const SEARCH_LABEL = "Find a person by name, UMRN or place";
+const SEARCH_LABEL = "Find a person by name, UMRN, place or date of birth";
 
 /** A name and a record-number-shaped fragment together, so either kind of leak the search box
  *  accepts would be caught by one query. Matches nobody and nothing near-spelt in the seed data
@@ -109,7 +109,9 @@ describe("Typed patient text never reaches a URL", () => {
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: TYPED_TEXT } });
 
     const headerAdd = screen.getByTestId("ward-patient-search-add");
-    const emptyStateAdd = screen.getByTestId("ward-patient-search-people-empty-add");
+    const emptyStateAdd = within(screen.getByTestId("ward-patient-search-results-console")).getByRole("link", {
+      name: "Add patient",
+    });
     expect(headerAdd).toHaveAttribute("href", WARD_ADD_PERSON_HREF);
     expect(emptyStateAdd).toHaveAttribute("href", WARD_ADD_PERSON_HREF);
     expectNoLeak(allHrefs());
@@ -194,7 +196,10 @@ describe("Typed patient text never reaches a URL", () => {
         </WardFlowProvider>,
       );
       fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: TYPED_TEXT } });
-      fireEvent.click(screen.getByTestId("ward-patient-search-people-empty-add"), { shiftKey: true });
+      fireEvent.click(
+        within(screen.getByTestId("ward-patient-search-results-console")).getByRole("link", { name: "Add patient" }),
+        { shiftKey: true },
+      );
       expect(takeHandedOffPatientQuery()).toBeUndefined();
     });
   });

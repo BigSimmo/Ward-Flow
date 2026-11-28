@@ -22,7 +22,7 @@ import { isOpen } from "@/components/ward-management/ward-derivations";
 import { setWardAccess, resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { renderAllDelays, inspectDelayPerson } from "./helpers/delays-interactions";
+import { delayPersonDrawer, renderAllDelays, inspectDelayPerson } from "./helpers/delays-interactions";
 import { installMatchMediaStub } from "./setup/jsdom.setup";
 const state = seedWardFlowState();
 const movement = state.movements.find((row) => isOpen(row) && !row.escalation)!;
@@ -146,29 +146,27 @@ describe("Waiting drawer footer pop-ups", () => {
   }
   const fromEd = state.movements.find((row) => isOpen(row) && !row.escalation && row.originEdId)!;
 
-  it("lets the coordinator open the Wards tab in place and keeps Home one link away", () => {
+  // Simplification mock-up (26 Nov 2026): the coordinator's person opens in the Movement drawer, which
+  // carries the wards that could take them in place, and the board links under its More menu.
+  it("shows the coordinator the wards that could take them in the drawer, with Home one link away", () => {
     renderAs({ role: "coordinator", scope: { kind: "statewide" } });
     openPerson(fromEd.id);
-    fireEvent.click(screen.getByTestId(`delays-foot-coordinator-${fromEd.id}`));
-    const menu = screen.getByRole("dialog", { name: "Coordinator actions" });
-    expect(within(menu).getByRole("link", { name: /Open on coordinator Home/u })).toHaveAttribute("href", "/bedchart");
-    expect(within(menu).getByRole("button", { name: /Find a bed/u })).toBeInTheDocument();
-    fireEvent.click(within(menu).getByRole("button", { name: /Wards that could take them/u }));
-    expect(screen.queryByRole("dialog", { name: "Coordinator actions" })).toBeNull();
-    expect(screen.getByRole("tab", { name: /Wards/u })).toHaveAttribute("aria-selected", "true");
+    const drawer = delayPersonDrawer(fromEd.id);
+    expect(within(drawer).getByText(/Open on coordinator Home/u)).toBeInTheDocument();
+    expect(within(drawer).getByText(/Find a bed in Tools/u)).toBeInTheDocument();
+    expect(drawer.textContent ?? "").toMatch(/Wards asked|Could take them|cannot take this person/u);
   });
 
-  it("shows the person's ED at a glance with a link to its board", () => {
+  it("links the person's ED board from the drawer's foot", () => {
     renderAs({ role: "coordinator", scope: { kind: "statewide" } });
     openPerson(fromEd.id);
-    fireEvent.click(screen.getByTestId(`delays-foot-ed-${fromEd.id}`));
-    const peek = screen.getByRole("dialog", { name: /at a glance$/u });
-    expect(within(peek).getByText("Waiting")).toBeInTheDocument();
-    expect(
-      within(peek)
-        .getByRole("link", { name: /Open ED board/u })
-        .getAttribute("href"),
-    ).toContain(fromEd.originEdId!);
+    const drawer = delayPersonDrawer(fromEd.id);
+    // One link stands alone in the foot; with two or more they fold into More.
+    const more = within(drawer).queryByTestId("ward-movement-drawer-more");
+    if (more !== null) fireEvent.click(more);
+    expect(screen.getByRole(more === null ? "link" : "menuitem", { name: /ED board/u }).getAttribute("href")).toContain(
+      fromEd.originEdId!,
+    );
   });
 
   it("gives the ward desk no Coordinator pop-up", () => {

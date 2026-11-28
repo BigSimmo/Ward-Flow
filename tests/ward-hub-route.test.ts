@@ -67,7 +67,8 @@ describe("Ward Flow hub route (/bedchart/hub)", () => {
   });
 
   it("exports a default component", () => {
-    expect(readRoute()).toMatch(/export default function \w+/u);
+    // Find (mock-up, 26 Nov 2026): the route is an async server component that reads ?tab=.
+    expect(readRoute()).toMatch(/export default (?:async )?function \w+/u);
   });
 
   /**
@@ -76,27 +77,27 @@ describe("Ward Flow hub route (/bedchart/hub)", () => {
    * the JSX using it is deleted or swapped — that file's own header comment explains why a scan
    * of the RENDERED body is the only version of this check an import cannot fool.
    */
-  it("renders HubScreen, and only HubScreen — no second component alongside it", () => {
+  it("renders FindScreen, and only FindScreen — no second component alongside it", () => {
     const source = readRoute();
     const body = source.slice(source.indexOf("export default"));
     expect(body.length, "no default export found to scan").toBeGreaterThan(0);
 
     const jsxTags = [...body.matchAll(/<([A-Z][A-Za-z0-9]*)/gu)].map((match) => match[1]);
     expect(jsxTags, "the default export renders no JSX component at all").not.toEqual([]);
-    expect(new Set(jsxTags), "the route renders something other than exactly HubScreen").toEqual(
-      new Set(["HubScreen"]),
+    expect(new Set(jsxTags), "the route renders something other than exactly FindScreen").toEqual(
+      new Set(["FindScreen"]),
     );
   });
 
-  it("imports HubScreen from its own module, and imports no other component", () => {
+  it("imports FindScreen from its own module, and imports no other component", () => {
     const source = readRoute();
     const componentImportLines = source.split("\n").filter((line) => /from\s*["'`]@\/components\//u.test(line));
     expect(
       componentImportLines,
-      `expected exactly one @/components import (HubScreen); found: ${JSON.stringify(componentImportLines)}`,
+      `expected exactly one @/components import (FindScreen); found: ${JSON.stringify(componentImportLines)}`,
     ).toHaveLength(1);
     expect(componentImportLines[0]).toMatch(
-      /import\s*\{\s*HubScreen\s*\}\s*from\s*["'`]@\/components\/ward-management\/hub\/hub-screen["'`]/u,
+      /import\s*\{\s*FindScreen\s*\}\s*from\s*["'`]@\/components\/ward-management\/hub\/find-screen["'`]/u,
     );
   });
 });

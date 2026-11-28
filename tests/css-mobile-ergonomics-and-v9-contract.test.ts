@@ -243,12 +243,12 @@ describe("kit chip strips fade at the start once scrolled", () => {
     expect(stops["100%"]).toMatch(/--wf-row-fade-start: 36px;/u);
     const strip = hero.match(/\.chips,\s*\.cells \{([^}]*overflow-x: auto;[^}]*)\}/u)?.[1] ?? "";
     expect(strip).toMatch(twoSidedMask);
-    expect(strip).toMatch(/black calc\(100% - 36px\)/u);
+    expect(strip).toMatch(/black calc\(100% - var\(--wf-row-fade-end\)\)/u);
     expect(strip).toMatch(/scroll-padding-right: 48px;/u);
     const scrolled =
       hero.match(/@supports \(animation-timeline: scroll\(\)\) \{\s*\.chips,\s*\.cells \{([^}]*)\}/u)?.[1] ?? "";
     expect(scrolled).toMatch(/scroll-padding-left: 48px;/u);
-    expect(scrolled).toMatch(/animation-name: wfRowFadeStart;\s*animation-duration: 1ms;/u);
+    expect(scrolled).toMatch(/animation-name: wfRowFadeStart, wfRowFadeEnd;\s*animation-duration: 1ms;/u);
     expect(scrolled).toMatch(/animation-timeline: scroll\(self inline\);/u);
   });
 

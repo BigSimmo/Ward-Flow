@@ -15,10 +15,24 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { inspectDelayPerson, showEveryDelayRow } from "./helpers/delays-interactions";
+import { delayPersonDrawer, openFollowUp, showEveryDelayRow, toggleFilter } from "./helpers/delays-interactions";
 import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+
+// r10: the person drawer is the shared movement drawer, which reads the App Router.
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}));
+
 /**
  * The Delays board's data views (approved Delays page mockup, October 2026; Waiting redesign round 8,
  * 31 Oct 2026): the waiting table with its row timeline, the search box, the Longest wait order in
@@ -123,32 +137,35 @@ describe("the Delays board's data views", () => {
     expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${listed().length} of ${OPEN.length}`);
   });
 
-  it("opens on Longest wait and remembers the viewer's choice (audit A3-14)", () => {
-    const first = render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <DelaysScreen />
-      </WardFlowProvider>,
-    );
-    expect(screen.getByRole("tab", { name: "Longest wait" })).toHaveAttribute("aria-selected", "true");
-    expect(within(waiting()).getByRole("heading", { level: 2 })).toHaveTextContent(/^Waiting$/u);
-    fireEvent.click(screen.getByRole("tab", { name: "By hold-up" }));
-    // #1476 review: the grouped heading says reason, not blocker (word list, DESIGN-SYSTEM §6).
-    expect(within(waiting()).getByRole("heading", { level: 2 })).toHaveTextContent(/^Waiting by reason$/u);
-    first.unmount();
+  // Simplification mock-up (26 Nov 2026): one list, longest wait first. The whose-move tiles do the job
+  // the "By hold-up" order did, so neither order tab remains and there is no remembered order.
+  it("opens on one list headed Waiting, with no order tabs", () => {
     renderDelays();
-    expect(screen.getByRole("tab", { name: "By hold-up" })).toHaveAttribute("aria-selected", "true");
+    expect(within(waiting()).getByRole("heading", { level: 2 })).toHaveTextContent(/^Waiting$/u);
+    expect(screen.queryByRole("tab", { name: "Longest wait" })).toBeNull();
+    expect(screen.queryByRole("tab", { name: "By hold-up" })).toBeNull();
+    expect(screen.queryByRole("tablist", { name: "Order the table" })).toBeNull();
   });
 
   // Audit 1, Josh 20 Oct (CS-04, NB-6b): a recorded form time due soon is marked, never pinned.
   it("Longest wait lists everyone longest first and marks, but does not move, a form time due soon", () => {
     renderDelays();
-    fireEvent.click(screen.getByRole("tab", { name: "Longest wait" }));
-    // Longest wait groups people in wait bands (over 24h, 8 to 24h, under 8h folded); open them all.
+    // The list is the pinned Needs attention group, then wait bands (over 24h, 8 to 24h, under 8h
+    // folded); open them all.
     showEveryRow();
     const ids = listed();
     expect(ids).toHaveLength(OPEN.length);
     const byId = new Map<string, (typeof ROWS)[number]>(ROWS.map((row) => [row.movement.id, row]));
-    const waits = ids.map((id) => byId.get(id)!.waited);
+    // Longest first within the bands: the pinned group leads, so the order is read from the first band on.
+    const inBands: string[] = [];
+    let inBand = false;
+    for (const node of waiting().querySelectorAll('[data-testid^="delays-band-"], [data-testid^="delays-select-"]')) {
+      const testId = node.getAttribute("data-testid") ?? "";
+      if (testId.startsWith("delays-band-")) inBand = true;
+      else if (inBand) inBands.push(testId.replace("delays-select-", ""));
+    }
+    expect(inBands.length, "no person sits under a wait band").toBeGreaterThan(0);
+    const waits = inBands.map((id) => byId.get(id)!.waited);
     expect(waits, "the list is not longest wait first").toEqual([...waits].sort((a, b) => b - a));
     const due = ids.filter((id) => isPinned(byId.get(id)!, DEFAULT_DUE_SOON_THRESHOLDS));
     for (const id of due) expect(screen.getByTestId(`delays-row-${id}`)).toHaveAttribute("data-form-due", "true");
@@ -199,14 +216,12 @@ describe("the Delays board's data views", () => {
 
   it("keeps the table's column headers and cell roles, which the phone card layout relies on", () => {
     renderDelays();
-    // The grouped view names its fourth column Wards; Longest wait (the default) names it Blocker.
-    fireEvent.click(screen.getByRole("tab", { name: "By hold-up" }));
     const table = within(waiting()).getByRole("table");
     expect(
       within(table)
         .getAllByRole("columnheader")
         .map((th) => th.textContent),
-    ).toEqual(["Person", "Waited", "T", "Wards", "Legal", "Last update"]);
+    ).toEqual(["T", "Person", "Waited", "Held up by", "Legal", "Last update"]);
     const people = within(table).getAllByTestId(/^delays-select-/u);
     expect(people.length).toBeGreaterThan(0);
     for (const person of people) {
@@ -228,13 +243,11 @@ describe("the Delays board's data views", () => {
 
     renderDelays();
     showEveryRow();
-    const panel = inspectDelayPerson(fresh!.id);
-    // Round 8: the panel opens on Summary; the ward lists sit behind its Wards tab.
-    fireEvent.click(within(panel).getByRole("tab", { name: /^Wards/u }));
-    expect(within(panel).getByText("No ward asked yet")).toBeVisible();
+    // The Movement drawer carries the wards in place, under its own Wards section.
+    const panel = delayPersonDrawer(fresh!.id);
     const section = within(panel).getByTestId(`delays-candidates-${fresh!.id}`);
     // Round 7: the first five, then Show more. Every offerable ward is reachable, none cut to a count.
-    const more = within(section).queryByRole("button", { name: /^Show \d+ more$/u });
+    const more = within(section).queryByRole("button", { name: /^Show (?:all )?\d+(?: more)?$/u });
     if (expected.offerable.length > 5) {
       expect(more, "more than five candidates, and no Show more").not.toBeNull();
       fireEvent.click(more!);
@@ -255,8 +268,6 @@ describe("the Delays board's data views", () => {
 
   it("a dot on the spread graph opens that person's row and panel", () => {
     renderDelays();
-    // Groups fold only in the By blocker view; Longest wait (the default) is one flat list.
-    fireEvent.click(screen.getByRole("tab", { name: "By hold-up" }));
     const target = ROWS.find((row) => row.cause === "awaiting_transport")!;
     expect(target, "nobody is awaiting transport").toBeDefined();
     openGraph("Wait spread");
@@ -267,7 +278,7 @@ describe("the Delays board's data views", () => {
     const dot = dots.find((button) => (button.getAttribute("aria-label") ?? "").startsWith(`${name}, waited`));
     expect(dot, `no spread dot names ${target.movement.id}`).toBeDefined();
     fireEvent.click(dot!);
-    expect(screen.getByRole("region", { name: "Why this person is waiting" })).toBeInTheDocument();
+    expect(screen.getByTestId(`delays-detail-${target.movement.id}`)).toBeInTheDocument();
     const opened = within(waiting())
       .getAllByTestId(/^delays-select-/u)
       .find((button) => button.getAttribute("aria-expanded") === "true");
@@ -286,7 +297,7 @@ describe("the Delays board's data views", () => {
     expect(tab, "the graphs no longer open on Next 4 hours").toHaveAttribute("aria-selected", "true");
     const crossings = within(graphs()).getByTestId("delays-next-crossings");
     expect(within(crossings).getByRole("group", { name: "Next 4 hours, if nobody moves" })).toBeInTheDocument();
-    const more = within(crossings).queryByRole("button", { name: /^Show \d+ more$/u });
+    const more = within(crossings).queryByRole("button", { name: /^Show (?:all )?\d+(?: more)?$/u });
     if (more !== null) fireEvent.click(more);
 
     const crossingIds = new Set(runwayBins(ROWS).flatMap((bin) => [...bin.ids]));
@@ -322,7 +333,7 @@ describe("the Delays board's data views", () => {
     expect(listed()).toHaveLength(count);
     expect(screen.getByRole("button", { name: "Remove filter East Metro" })).toBeInTheDocument();
     fireEvent.click(within(graphs()).getByRole("button", { name: /^East Metro, Waiting on you: \d+ waiting/u }));
-    expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${OPEN.length} of ${OPEN.length}`);
+    expect(screen.queryByTestId("delays-shown-count"), "the list still reads as narrowed").toBeNull();
   });
 
   it("opening a person the filters hide shows everyone first, so their row is there", () => {
@@ -338,9 +349,10 @@ describe("the Delays board's data views", () => {
     const name = screen.getByTestId(`delays-select-${target!.movement.id}`).querySelector("b")?.textContent ?? "";
     expect(name).not.toBe("");
 
-    fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
+    toggleFilter(/^Locked bed/u);
     expect(within(waiting()).queryByTestId(`delays-select-${target!.movement.id}`)).toBeNull();
 
+    openFollowUp();
     const rail = screen.getByRole("region", { name: "Escalations and resolved" });
     const button = within(rail)
       .getAllByRole("button")
@@ -348,7 +360,7 @@ describe("the Delays board's data views", () => {
     expect(button, "the hidden person is not in Longest quiet").toBeDefined();
     fireEvent.click(button!);
 
-    expect(screen.getByTestId("delays-shown-count").textContent).toBe(`${OPEN.length} of ${OPEN.length}`);
+    expect(screen.queryByTestId("delays-shown-count"), "Show everyone did not clear the filters").toBeNull();
     expect(screen.getByTestId(`delays-select-${target!.movement.id}`)).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByTestId(`delays-detail-${target!.movement.id}`)).toBeInTheDocument();
   });
@@ -425,10 +437,10 @@ describe("the Delays board's data views", () => {
     showEveryRow();
     fireEvent.click(screen.getByTestId(`delays-select-${open.movement.id}`));
     expect(screen.getByTestId(`delays-detail-${open.movement.id}`)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
+    toggleFilter(/^Locked bed/u);
     expect(screen.queryByTestId(`delays-detail-${open.movement.id}`)).toBeNull();
     // Clearing the filter must not quietly reopen a panel nobody chose again.
-    fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
+    toggleFilter(/^Locked bed/u);
     showEveryRow();
     expect(screen.getByTestId(`delays-select-${open.movement.id}`)).toBeInTheDocument();
     expect(screen.queryByTestId(`delays-detail-${open.movement.id}`), "the hidden panel came back").toBeNull();
@@ -472,9 +484,10 @@ describe("the Delays board's data views", () => {
       renderDelays();
       const person = within(waiting()).getAllByTestId(/^delays-select-/u)[0];
       fireEvent.click(person);
-      expect(screen.getByRole("region", { name: "Why this person is waiting" })).toBeInTheDocument();
+      const id = (person.getAttribute("data-testid") ?? "").replace("delays-select-", "");
+      expect(screen.getByTestId(`delays-detail-${id}`)).toBeInTheDocument();
       fireEvent.keyDown(document, { key: "Escape" });
-      expect(screen.queryByRole("region", { name: "Why this person is waiting" })).toBeNull();
+      expect(screen.queryByTestId(`delays-detail-${id}`)).toBeNull();
       expect(within(waiting()).getAllByTestId(/^delays-select-/u)[0]).toHaveFocus();
     } finally {
       window.requestAnimationFrame = original;

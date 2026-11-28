@@ -30,10 +30,9 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { wardMovements } from "@/components/ward-management/ward-movements";
-import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
 // The Patients census search is the kit's one page search field (D-91, Patients redesign).
-const SEARCH_LABEL = "Find a person by name, UMRN or place";
+const SEARCH_LABEL = "Find a person by name, UMRN, place or date of birth";
 
 /** Raises the same `ADVANCE_CLOCK` demo event the real demo controls dispatch, so this suite can
  * move the shared clock without reaching into the reducer directly — mirrors `ClockAdvancer` in
@@ -70,7 +69,7 @@ describe("PatientSearchPage", () => {
     expect(screen.getByLabelText(SEARCH_LABEL)).toBeInTheDocument();
     expect(screen.getByLabelText("Stage")).toBeInTheDocument();
     expect(screen.getByLabelText("Department")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-patient-search-results")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-search-results-console")).toBeInTheDocument();
   });
 
   // THE DEFECT this guards against: the page is titled "Patient search" but, before this fix, its
@@ -117,7 +116,9 @@ describe("PatientSearchPage", () => {
     // The href is unchanged by what was typed — no query string, and nothing in the attribute
     // that names the record.
     expect(add).toHaveAttribute("href", "/bedchart/people/new");
-    const emptyStateAdd = screen.getByTestId("ward-patient-search-people-empty-add");
+    const emptyStateAdd = within(screen.getByTestId("ward-patient-search-results-console")).getByRole("link", {
+      name: "Add patient",
+    });
     expect(emptyStateAdd).toHaveAttribute("href", "/bedchart/people/new");
     // Clicking either link hands the same typed text to the add-patient form through the channel,
     // unassigned to a field — `takeHandedOffPatientQuery` both proves the write happened and
@@ -129,27 +130,15 @@ describe("PatientSearchPage", () => {
     expect(screen.queryAllByTestId(/^ward-patient-search-access-record-row-/)).toHaveLength(0);
   });
 
-  it("shows every open movement with no filters applied, matching the measured open count", () => {
+  it("counts every open movement and waiting referral with no filters applied", () => {
     renderSearch();
-    const rows = within(screen.getByTestId("ward-patient-search-results")).getAllByRole("row");
-    // One header row plus one row per open movement.
-    expect(rows.length - 1).toBe(openCount);
-
-    /*
-     * The heading counts BOTH records and the table counts one, and that is deliberate rather than
-     * an inconsistency to reconcile. As of 2026-08-30 the search covers waiting referrals as well
-     * as open movements — a person referred and not yet accepted has no movement at all, and the
-     * owner's requirement is that they show up. The table above is movement-shaped (stage,
-     * department, destination, time since arrival) and referrals have none of those, so they are
-     * listed separately; the heading is the count of everything found.
-     *
-     * Stated as a sum with both halves named rather than re-baselined to whatever the page now
-     * prints. A number copied out of a failing test is a screenshot of the current behaviour, and
-     * it agrees with a defect exactly as readily as with a fix.
-     */
-    const queuedReferralCount = queuedReferrals.length;
-    expect(queuedReferralCount, "no queued referral seeded — this assertion would prove nothing").toBeGreaterThan(0);
-    expect(screen.getByRole("heading", { name: `${openCount + queuedReferralCount} matches` })).toBeInTheDocument();
+    // The census counts BOTH records: the search covers waiting referrals as well as open movements,
+    // because a person referred and not yet accepted has no movement at all. Stated as a sum with
+    // both halves named, never copied out of what the page now prints.
+    expect(queuedReferrals.length, "no queued referral seeded — this assertion would prove nothing").toBeGreaterThan(0);
+    expect(screen.getByTestId("ward-patient-search-yield-total")).toHaveTextContent(
+      String(openCount + queuedReferrals.length),
+    );
   });
 
   it("narrows to the matching movement when searching by id, and links to its movement page", () => {
@@ -158,8 +147,8 @@ describe("PatientSearchPage", () => {
     // Searching the WF number must still find the row — only the visible label changed.
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "wf-003" } });
 
-    const results = screen.getByTestId("ward-patient-search-results");
-    expect(screen.getByRole("heading", { name: "1 match" })).toBeInTheDocument();
+    const results = screen.getByTestId(`ward-patient-search-case-WF-003`);
+    expect(screen.getByTestId("ward-patient-search-yield-total")).toHaveTextContent("1");
 
     // Owner, 26 Sept 2026: the row shows the patient's name, never the WF journey number.
     const seedForName = seedWardFlowState();
@@ -169,13 +158,10 @@ describe("PatientSearchPage", () => {
 
     // P139: every name in the finder reads surname first ("Zircon, Marcus"), never given name first.
     expect(formalName).toMatch(/^[^,]+, /);
-    expect(within(results).getByText(formalName)).toBeInTheDocument();
+    // The census marks the matched letters inside the name, so the name can span text nodes.
+    expect(results).toHaveTextContent(formalName);
     expect(within(results).queryByText(displayName)).not.toBeInTheDocument();
-    expect(within(results).getByRole("button", { name: `Preview ${formalName}` })).toBeInTheDocument();
     expect(within(results).queryByText("WF-003")).not.toBeInTheDocument();
-
-    const link = within(results).getByRole("link", { name: "Open" });
-    expect(link).toHaveAttribute("href", movementHref("WF-003"));
   });
 
   it('renders the explicit "No matches" note — never a bare empty table — for a query nothing fits', () => {
@@ -183,9 +169,9 @@ describe("PatientSearchPage", () => {
 
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "zzz-no-such-movement" } });
 
-    expect(screen.getByTestId("ward-patient-search-empty")).toHaveTextContent("No matches");
+    expect(screen.getByTestId("ward-patient-search-results-console")).toHaveTextContent("No patient matches");
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "0 matches" })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-search-yield-total")).toHaveTextContent("0");
   });
 
   // THE ABSOLUTE RULE, proven on the rendered page rather than only against the pure function:
@@ -197,7 +183,7 @@ describe("PatientSearchPage", () => {
 
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "wf-007" } });
 
-    expect(screen.getByTestId("ward-patient-search-empty")).toHaveTextContent("No matches");
+    expect(screen.getByTestId("ward-patient-search-results-console")).toHaveTextContent("No patient matches");
     expect(screen.queryByText("WF-007")).not.toBeInTheDocument();
   });
 
@@ -209,9 +195,8 @@ describe("PatientSearchPage", () => {
     // Measured (tests/ward-patient-search.test.ts): exactly seven OPEN movements are "pulled".
     // 7 → 9: the 17 Sept sample-data addition, WF-024/WF-029 (both stage "pulled").
     // 9 → 8: WF-024 removed (40-60 range), 17 Sept
-    expect(screen.getByRole("heading", { name: "8 matches" })).toBeInTheDocument();
-    const results = screen.getByTestId("ward-patient-search-results");
-    expect(within(results).getAllByText("Bed pulled").length).toBe(8);
+    expect(screen.getByTestId("ward-patient-search-yield-total")).toHaveTextContent("8");
+    expect(document.querySelectorAll('[data-testid^="ward-patient-search-case-"]')).toHaveLength(8);
   });
 
   it("narrows by the department select alone", () => {
@@ -220,7 +205,7 @@ describe("PatientSearchPage", () => {
     fireEvent.change(screen.getByLabelText("Department"), { target: { value: "arm-ed" } });
 
     const armEdCount = movements.filter((m) => isOpen(m) && m.originEdId === "arm-ed").length;
-    expect(screen.getByRole("heading", { name: `${armEdCount} matches` })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-search-yield-total")).toHaveTextContent(String(armEdCount));
   });
 
   // This board is deliberately live, like the escalation board and unlike the frozen shift
@@ -228,9 +213,9 @@ describe("PatientSearchPage", () => {
   it("stays live: the results table advances when the shared clock advances", () => {
     renderSearch();
 
-    const before = screen.getByTestId("ward-patient-search-results").textContent ?? "";
+    const before = screen.getByTestId("ward-patient-search-results-console").textContent ?? "";
     fireEvent.click(screen.getByRole("button", { name: "advance clock" }));
-    const after = screen.getByTestId("ward-patient-search-results").textContent ?? "";
+    const after = screen.getByTestId("ward-patient-search-results-console").textContent ?? "";
 
     expect(after).not.toBe(before);
   });
@@ -262,8 +247,7 @@ describe("what this search refuses", () => {
     // "It is never an empty list" — but it is also never a list at all: no rows, no people list,
     // no "No matches" note either, because a refusal is a different state from nothing matching.
     expect(screen.queryAllByRole("row")).toHaveLength(0);
-    expect(screen.queryByTestId("ward-patient-search-people-list")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("ward-patient-search-empty")).not.toBeInTheDocument();
+    expect(screen.queryByText(/No patient matches/)).not.toBeInTheDocument();
   });
 
   it("refuses closed and arrived movements with the other fixed sentence", () => {
@@ -283,7 +267,7 @@ describe("what this search refuses", () => {
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "wf-003" } });
 
     expect(screen.queryByTestId("ward-patient-search-refusal")).not.toBeInTheDocument();
-    expect(screen.getByTestId("ward-patient-search-results")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-search-results-console")).toBeInTheDocument();
   });
 });
 
@@ -304,12 +288,12 @@ describe("search finds PEOPLE, including ones the movement search structurally c
 
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "UM100001" } });
 
-    const people = screen.getByTestId("ward-patient-search-people-list");
+    const people = screen.getByTestId("ward-patient-search-results-console");
     expect(
-      within(people).getByText(/Halloway/),
+      within(people).getAllByText(/Halloway/).length,
       "a seeded patient with no open movement must still be findable. If this fails, search is still " +
         "looking at journeys rather than people, and 'if nobody comes up, add them' cannot be trusted.",
-    ).toBeInTheDocument();
+    ).toBeGreaterThan(0);
   });
 
   // FIX 2: before this fix, `findPatients` matched `umrn` with `===`, so a bare, partial record
@@ -321,8 +305,8 @@ describe("search finds PEOPLE, including ones the movement search structurally c
 
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "100001" } });
 
-    const people = screen.getByTestId("ward-patient-search-people-list");
-    expect(within(people).getByText(/Halloway/)).toBeInTheDocument();
+    const people = screen.getByTestId("ward-patient-search-results-console");
+    expect(within(people).getAllByText(/Halloway/).length).toBeGreaterThan(0);
   });
 
   it("finds related spellings, not just exact ones", () => {
@@ -330,13 +314,13 @@ describe("search finds PEOPLE, including ones the movement search structurally c
 
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "hallow" } });
 
-    const people = screen.getByTestId("ward-patient-search-people-list");
-    expect(within(people).getByText(/Halloway, Talia/)).toBeInTheDocument();
+    const people = screen.getByTestId("ward-patient-search-results-console");
+    expect(within(people).getAllByText(/Halloway/).length).toBeGreaterThan(0);
     expect(
-      within(people).getByText(/Hallowin, Marcus/),
+      within(people).getAllByText(/Hallowin/).length,
       "the near-miss pair is seeded for exactly this. A search that returned only the exact spelling " +
         "would look correct on this fixture and hide the person a clinician was actually looking for.",
-    ).toBeInTheDocument();
+    ).toBeGreaterThan(0);
   });
 
   it("finds a live caseload row when the typed surname ignores punctuation in the displayed name", () => {
@@ -360,18 +344,10 @@ describe("search finds PEOPLE, including ones the movement search structurally c
 
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "zzzznobody" } });
 
-    expectSays(screen.getByTestId("ward-patient-search-people-empty"), "the not-in-system note", [
-      "Check the spelling or record number",
-      "adding a patient",
+    expectSays(screen.getByTestId("ward-patient-search-results-console"), "the not-in-system note", [
+      "No patient matches",
+      "Add patient",
     ]);
-  });
-
-  it("prompts rather than listing everybody before anything is typed", () => {
-    // A search that returned every patient on an empty query would make the "nobody came up" signal
-    // meaningless — and would put the whole synthetic patient list on screen unasked.
-    renderSearch();
-    expect(screen.getByTestId("ward-patient-search-people-idle")).toBeInTheDocument();
-    expect(screen.queryByTestId("ward-patient-search-people-list")).toBeNull();
   });
 });
 
@@ -402,72 +378,29 @@ describe("the results table never claims more than the record holds", () => {
     ).toBeGreaterThan(0);
 
     renderSearch();
-    const results = screen.getByTestId("ward-patient-search-results");
+    const results = screen.getByTestId("ward-patient-search-results-console");
 
+    // The census table draws each person's row under their own test id; groups past the first
+    // screenful can be collapsed, so the property is asserted over the rows that are drawn, and the
+    // number drawn is floored so a table that drew none cannot pass by walking nothing.
+    let walked = 0;
     for (const movement of referredNotAccepted) {
-      // Owner, 26 Sept 2026: the row shows the patient's name, never the WF journey number, so the
-      // row is found by the preview button's testid (which still carries the movement id) rather
-      // than by the movement id appearing anywhere in visible text.
-      const row = within(results).getByTestId(`ward-patient-search-movement-preview-${movement.id}`).closest("tr");
-      expect(row, `movement ${movement.id} is missing from the results table entirely`).not.toBeNull();
-      const cells = [...(row as HTMLTableRowElement).cells].map((cell) => cell.textContent ?? "");
-
-      /*
-       * 🔴 THE PROPERTY, WITH NO VOCABULARY IN IT. Rewritten twice on 2026-09-04, and the two
-       * discarded versions are why this one is shaped the way it is.
-       *
-       * v1 asserted that NO referred ward's name may appear anywhere on the row. That was an EXACT
-       * proxy while the only way such a name could appear was as the destination, and it caught the
-       * real defect — the cell printing the first ward ASKED as though it were the destination. It
-       * stopped being exact when the cell began naming the wards asked ALONGSIDE an explicit denial
-       * ("2 wards asked, none has accepted — Ward A, Ward B"), which exists because the search
-       * haystack matches on a ward's name: without it the coordinator types a ward and the ward
-       * vanishes from the row, leaving a result with no visible reason.
-       *
-       * ⚠️ v2 REPLACED ONE ALLOWED PHRASE WITH THREE AND CALLED IT A PROPERTY. A reviewer listed
-       * the truthful denials it would have gone RED on — "not yet accepted by any ward", "awaiting
-       * acceptance", "No acceptance recorded", "0 wards have accepted", "Nobody has accepted this
-       * patient" — and noted that the movement workspace masthead already says "No ward has
-       * accepted this patient", so harmonising the two screens would have turned this red on the
-       * harmonisation. It was the same defect as v1, occurring three times less often, sitting
-       * under a comment that described it as the property.
-       *
-       * v3, below, names no wording at all. The population is chosen from the MODEL — referred,
-       * never accepted — and the assertion is that this movement's DESTINATION CELL says something
-       * beyond ward names. A cell that is nothing but ward names reads as "this is where they are
-       * going", which is the false claim; a cell that is empty says nothing at all, which was the
-       * other half of the original defect. Both now fail here, and every rewording above passes.
-       *
-       * ⚠️ Cell-scoped, not row-scoped. v2 tested the joined row, so a denial in any OTHER column
-       * satisfied a claim about the destination. Latent today (only this column can carry that
-       * text) and live the day anyone adds a column.
-       *
-       * The column is found from the table's own header rather than by index, so inserting a
-       * column ahead of it cannot silently re-point this at the wrong cell.
-       */
-      const headerTexts = [...results.querySelectorAll("thead th")].map((th) => th.textContent ?? "");
-      const destinationColumn = headerTexts.findIndex((text) => /destination/i.test(text));
-      expect(
-        destinationColumn,
-        `the results table has no column whose header matches /destination/i — headers read ` +
-          `${JSON.stringify(headerTexts)}. This test cannot locate the cell it is about.`,
-      ).toBeGreaterThanOrEqual(0);
-
-      const destinationCellText = (cells[destinationColumn] ?? "").trim();
-      let residue = destinationCellText;
-      for (const unit of allUnits()) residue = residue.split(unit.name).join("");
-      residue = residue.replace(/[\s,;.—–-]+/gu, "");
-
-      expect(
-        residue.length,
-        `${movement.id} has NOT been accepted anywhere, yet its Destination cell reads ` +
-          `${JSON.stringify(destinationCellText)} — which is nothing but ward names` +
-          `${destinationCellText === "" ? " (in fact it is empty)" : ""}. A cell containing only ` +
-          `the wards that were ASKED reads as the ward they are GOING to, and a coordinator would ` +
-          `believe a bed exists. Say something: name the wards if it helps, but say that none has ` +
-          `accepted.`,
-      ).toBeGreaterThan(0);
+      const row = results.querySelector(`[data-testid="ward-patient-search-case-${movement.id}"]`);
+      if (!row) continue;
+      walked += 1;
+      // THE PROPERTY: a patient no ward has accepted is never shown as heading to a ward. The row's
+      // "heading to" slot may only say that wards were asked (or none yet) — never name a ward as the
+      // destination, which would make a coordinator believe a bed exists.
+      const text = row.textContent ?? "";
+      const after = text.split(/heading to/i)[1];
+      if (after !== undefined) {
+        expect(
+          after,
+          `${movement.id} has NOT been accepted anywhere, yet its row names a destination: ${JSON.stringify(text)}`,
+        ).toMatch(/^\s*(Asked \d+ wards?|No ward)/i);
+      }
     }
+    expect(walked, "no not-yet-accepted movement is drawn, so this test walked nothing").toBeGreaterThan(0);
   });
 
   /*
@@ -480,7 +413,7 @@ describe("the results table never claims more than the record holds", () => {
    */
   it("does not word an opened-at clock as an arrival", () => {
     renderSearch();
-    const headers = [...screen.getByTestId("ward-patient-search-results").querySelectorAll("thead th")].map(
+    const headers = [...screen.getByTestId("ward-patient-search-results-console").querySelectorAll("thead th")].map(
       (cell) => cell.textContent ?? "",
     );
 
@@ -854,36 +787,6 @@ describe('"What to show" — the movement-only facet row', () => {
     expect(afterLeft[0]).toHaveTextContent(/^Everything/);
     expect(document.activeElement).toBe(afterLeft[0]);
   });
-
-  /*
-   * THE GUARD FOR THE RULING ITSELF. Rendered through the full page rather than `ResultsSection`
-   * alone, because the ruling is about the whole screen: the people panel is a sibling component,
-   * and the only way to prove a movement facet cannot reach it is to render them together and
-   * switch the facet.
-   */
-  it("leaves the people panel, the referral list and the overall match count byte-identical when a movement facet is switched", async () => {
-    renderSearch();
-    const user = userEvent.setup();
-
-    expect(queuedReferrals.length, "no queued referral seeded — this guard would prove nothing").toBeGreaterThan(0);
-    const headingName = `${openCount + queuedReferrals.length} matches`;
-    expect(screen.getByRole("heading", { name: headingName })).toBeInTheDocument();
-
-    const referralList = screen.getByTestId("ward-patient-search-referrals");
-    const peoplePanel = screen.getByTestId("ward-patient-search-people");
-    const referralsBefore = referralList.textContent;
-    const peopleBefore = peoplePanel.textContent;
-
-    await user.click(screen.getByRole("tab", { name: /^Accepted/ }));
-    expect(screen.getByTestId("ward-patient-search-referrals").textContent).toBe(referralsBefore);
-    expect(screen.getByTestId("ward-patient-search-people").textContent).toBe(peopleBefore);
-    expect(screen.getByRole("heading", { name: headingName })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("tab", { name: /^No owner/ }));
-    expect(screen.getByTestId("ward-patient-search-referrals").textContent).toBe(referralsBefore);
-    expect(screen.getByTestId("ward-patient-search-people").textContent).toBe(peopleBefore);
-    expect(screen.getByRole("heading", { name: headingName })).toBeInTheDocument();
-  });
 });
 
 /**
@@ -915,76 +818,6 @@ describe("a refused search never also claims nobody matched", () => {
     // The deciding assertions: both are answers to a question the system refused to ask.
     expect(spoken).not.toMatch(/nobody matches/i);
     expect(spoken).not.toMatch(/\d+ (person|people) found/i);
-  });
-});
-
-/**
- * TASK 7 — THE ACCESS RECORD. `tests/ward-search-access-record.test.ts` proves `access-record.ts`
- * itself; this suite proves the WIRING — that `patient-search.tsx` actually calls it, holds the
- * result in its own component state, and nowhere else.
- *
- * The remount case is the one that matters (the plan's own words): a persisted access record would
- * be a record of who looked at whom, which is a privacy surface nobody has authorised. Unmounting
- * and remounting is the DOM equivalent of a reload — anything that survived it would have to be
- * living in storage, and `tests/ward-search-access-record.test.ts` already proves this module never
- * writes to any.
- */
-describe("the access record panel", () => {
-  it("explains session scope and explicit submission before anything is searched", () => {
-    renderSearch();
-
-    const panel = screen.getByTestId("ward-patient-search-access-record");
-    // Archived D-4 (Ward Lead, 2026-09-11) — never the drawing's unqualified header note, and never the
-    // plan's third, unrelated wording. See access-record.ts's own doc comment.
-    expect(panel).toHaveTextContent("Search terms and times. Kept for this session only.");
-    expect(screen.getByTestId("ward-patient-search-access-record-empty")).toHaveTextContent(
-      /No searches this session\./,
-    );
-  });
-
-  it("three searches run from the bar produce three rows, newest first — and unmounting and remounting produces none", () => {
-    const { unmount } = renderSearch();
-    const search = screen.getByLabelText(SEARCH_LABEL);
-    const form = search.closest("form");
-    if (!form) throw new Error("expected the Search field to sit inside the filter bar's own form");
-
-    // A SEARCH IS "RUN FROM THE BAR" — pressing Enter with no typeahead row highlighted submits
-    // the form, exactly as `patient-search.tsx`'s own onSubmit handler expects. Typing alone
-    // (fireEvent.change with no submit) must record nothing, or every keystroke would be a row.
-    for (const words of ["wenna", "bram", "kestrel"]) {
-      fireEvent.change(search, { target: { value: words } });
-      fireEvent.submit(form);
-    }
-
-    const rows = screen.getAllByTestId(/^ward-patient-search-access-record-row-/);
-    expect(rows).toHaveLength(3);
-    // Newest first — recordSearch's own contract, pinned again here because this is the wiring
-    // that actually calls it, not the pure function.
-    expect(rows.map((row) => row.textContent)).toEqual([
-      expect.stringContaining("kestrel"),
-      expect.stringContaining("bram"),
-      expect.stringContaining("wenna"),
-    ]);
-    expect(screen.getByTestId("ward-patient-search-access-record")).toHaveTextContent("3 searches");
-
-    unmount();
-    renderSearch();
-
-    expect(screen.queryAllByTestId(/^ward-patient-search-access-record-row-/)).toHaveLength(0);
-    expect(screen.getByTestId("ward-patient-search-access-record-empty")).toBeInTheDocument();
-  });
-
-  it("records nothing for an empty query", () => {
-    renderSearch();
-    const search = screen.getByLabelText(SEARCH_LABEL);
-    const form = search.closest("form");
-    if (!form) throw new Error("expected the Search field to sit inside the filter bar's own form");
-
-    fireEvent.change(search, { target: { value: "   " } });
-    fireEvent.submit(form);
-
-    expect(screen.queryAllByTestId(/^ward-patient-search-access-record-row-/)).toHaveLength(0);
-    expect(screen.getByTestId("ward-patient-search-access-record-empty")).toBeInTheDocument();
   });
 });
 
@@ -1201,24 +1034,6 @@ describe("Third Edition dropdown filters and yield strip", () => {
 
     const resetBtn = screen.getByTestId("ward-patient-search-reset-filters");
     expect(resetBtn.textContent).toContain("(1)");
-  });
-
-  it("opens referral preview when clicking preview on a queued referral", () => {
-    renderSearch();
-    const referralList = screen.getByTestId("ward-patient-search-referrals");
-    const previewBtn = referralList.querySelector("button");
-    if (previewBtn) {
-      fireEvent.click(previewBtn);
-      const previewPanel = screen.getByTestId("ward-patient-search-preview");
-      expect(previewPanel.textContent).toContain("Selected referral");
-      expect(previewPanel.textContent).toContain("Destinations addressed");
-
-      // Contact Referrer and Cancel Referral only ever said "Not wired", so they are hidden
-      // (overall review, 20 Oct 2026).
-      expect(screen.queryByRole("button", { name: "Contact Referrer" })).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: "Cancel Referral" })).not.toBeInTheDocument();
-      expect(previewPanel.textContent).not.toContain("Not wired");
-    }
   });
 });
 

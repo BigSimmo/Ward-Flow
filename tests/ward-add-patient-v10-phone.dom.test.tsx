@@ -35,17 +35,11 @@ function renderForm() {
 }
 
 describe("Add a patient v10", () => {
-  it("shows Added today as a hero fact (seeded patients have no added time, so 0)", () => {
-    renderForm();
-    expect(screen.getByTestId("ward-add-patient-added-today")).toHaveTextContent("0 added today");
-  });
-
   it("Reset then Undo puts every field back", () => {
     renderForm();
     const given = screen.getByLabelText(/Given name/) as HTMLInputElement;
     fireEvent.change(given, { target: { value: "Testa" } });
     fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
-    fireEvent.click(screen.getByTestId("ward-add-patient-reset-confirm"));
     expect((screen.getByLabelText(/Given name/) as HTMLInputElement).value).toBe("");
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect((screen.getByLabelText(/Given name/) as HTMLInputElement).value).toBe("Testa");

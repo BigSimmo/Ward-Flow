@@ -1,4 +1,10 @@
-import { renderAllDelays as renderAndShowGroups, showEveryDelayRow } from "./helpers/delays-interactions";
+import {
+  filterIsOn,
+  openFollowUp,
+  renderAllDelays as renderAndShowGroups,
+  showEveryDelayRow,
+  toggleFilter,
+} from "./helpers/delays-interactions";
 import { fireEvent, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -217,27 +223,15 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
       "the count must read against the SCOPED population, not the whole network",
     ).toBe(`${memberIdsForOwner.size} of ${MEMBER_OPEN.length}`);
 
-    // A blocker group's header folds and unfolds its own rows. Groups show in the By blocker view;
-    // the board opens on Longest wait (audit A3-14).
-    fireEvent.click(screen.getByRole("tab", { name: "By hold-up" }));
-    const groupHeader = screen.getAllByTestId(/^delays-cause-/u)[0];
-    expect(groupHeader, "no blocker group rendered under South Metro").toBeDefined();
-    const before = listedIds().length;
-    expect(before, "nobody is listed under the open blocker groups").toBeGreaterThan(0);
-    fireEvent.click(groupHeader);
-    expect(groupHeader).toHaveAttribute("aria-expanded", "false");
-    expect(listedIds().length, "folding a group left its rows listed").toBeLessThan(before);
-    fireEvent.click(groupHeader);
-    expect(groupHeader).toHaveAttribute("aria-expanded", "true");
-    expect(listedIds().length, "unfolding a group did not bring its rows back").toBe(before);
-
-    fireEvent.click(screen.getByRole("button", { name: `Remove filter ${MARKABLE_OWNER!.name}` }));
+    // Simplification mock-up (26 Nov 2026): one list, so there are no blocker groups to fold; the owner
+    // tile shows its own pressed state and pressing it again clears it.
+    fireEvent.click(ownerTile);
+    expect(ownerTile).toHaveAttribute("aria-pressed", "false");
     const locked = MEMBER_OPEN.filter((movement) => movement.security === "Secure");
     expect(locked.length, "no South Metro movement is Secure, so the locked chip proves nothing").toBeGreaterThan(0);
-    const lockedChip = screen.getByRole("button", { name: `Locked bed ${locked.length}` });
-    fireEvent.click(lockedChip);
+    toggleFilter(/^Locked bed/u);
     showEveryRow();
-    expect(lockedChip).toHaveAttribute("aria-pressed", "true");
+    expect(filterIsOn(/^Locked bed/u)).toBe(true);
     expect(listedIds().sort()).toEqual(locked.map((movement) => movement.id).sort());
   });
 
@@ -279,6 +273,8 @@ describe("WF-014 scenario — a legal form RUNNING OUT counts as urgent-outside 
     );
     fireEvent.click(screen.getByTestId("test-advance-clock"));
 
+    openFollowUp();
+    fireEvent.click(screen.getByRole("tab", { name: /Attention/u }));
     expect(screen.getByTestId("delays-attention-outside-WF-014")).toHaveTextContent(`Outside ${SERVICE}`);
 
     const now = NOW_ANCHOR + 5;
@@ -315,7 +311,8 @@ describe("WF-009 scenario — the escalations register stays whole-network (D-b,
       </WardFlowProvider>,
     );
 
-    // "Escalations" is the default-selected register tab, so its pane is already in the document.
+    openFollowUp();
+    fireEvent.click(screen.getByRole("tab", { name: /Escalated/u }));
     expect(screen.getByTestId("delays-escalation-outside-WF-009")).toHaveTextContent(`Outside ${SERVICE}`);
     expect(screen.queryByText("Nobody has been escalated today.")).not.toBeInTheDocument();
   });
@@ -349,6 +346,8 @@ describe("WF-018 scenario — flagged-urgent-but-not-severe patients outside the
       </WardFlowProvider>,
     );
 
+    openFollowUp();
+    fireEvent.click(screen.getByRole("tab", { name: /Attention/u }));
     expect(screen.getByTestId("delays-attention-outside-WF-018")).toHaveTextContent(`Outside ${SERVICE}`);
   });
 });
