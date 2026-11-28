@@ -1027,7 +1027,10 @@
     display: flex;
     flex-wrap: nowrap;
     gap: 0;
-    margin: 0 -6px;
+    /* The figure links' 12px tap padding and 4px tap cover (hero-top.module.css) sit inside the row's own 16px, so the
+       sideways row is never shorter than what it holds and cannot drag up and down on an iPhone. */
+    margin: -16px -6px;
+    padding-block: 16px;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
