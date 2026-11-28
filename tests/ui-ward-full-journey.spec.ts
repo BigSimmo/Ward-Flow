@@ -568,7 +568,7 @@ test.describe("@mockup BedChart full journey — referral to discharge planning,
     await openAllArrivals(page);
     await wardScreenAfterArrival.getByTestId(`ward-confirm-arrival-${movementId}`).click();
     // Walk-through WT-11: the ward checks the name and UMRN before the arrival is recorded.
-    await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Confirm arrival" }).click();
+    await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Record arrival" }).click();
     await expect(wardScreenAfterArrival.getByTestId(`ward-accepted-${movementId}`)).toHaveCount(0);
     await page.locator("#tabBtn-attn").click();
     await expect(wardScreenAfterArrival.getByTestId(`ward-pull-${movementId}`)).toHaveCount(0);

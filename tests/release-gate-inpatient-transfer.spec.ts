@@ -414,7 +414,7 @@ test("Inpatient transfer: a stay on one ward is referred, accepted and held at a
   await expectAccessible(page, testInfo, "receiving ward arrivals with the delivered transfer");
   await receivingScreen.getByTestId(`ward-confirm-arrival-${movementId}`).click();
   // Walk-through WT-11: the ward checks the name and UMRN before the arrival is recorded.
-  await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Confirm arrival" }).click();
+  await page.getByTestId("ward-arrival-identity").getByRole("button", { name: "Record arrival" }).click();
   await expect(receivingScreen.getByTestId(`ward-accepted-${movementId}`)).toHaveCount(0);
   await openWardHome(page);
   await expect.poll(() => wardFigure(page, "occupied")).toBe(receivingOccupiedBefore + 1);
