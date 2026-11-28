@@ -13,6 +13,12 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/bedchart/handover",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -64,9 +70,11 @@ describe("Handover page", () => {
     expect(screen.getByRole("tab", { name: /Patients/ })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: /Beds/ })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /History/ })).toBeInTheDocument();
-    // 1 Nov 2026 redesign: Print handover is the sheet bar's primary; Present sits in More.
+    // Audit three #28 / audit four item 6: the outputs sit under one Share menu; Open on TV is its own button.
+    fireEvent.click(screen.getByTestId("ward-handover-share"));
     expect(screen.getByTestId("ward-handover-print")).toHaveTextContent("Print handover");
-    expect(screen.getByRole("button", { name: "More handover actions" })).toBeInTheDocument();
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+    expect(screen.getByTestId("ward-handover-open-tv")).toHaveTextContent("Open on TV");
     expect(screen.getByTestId("ward-handover-hero-sign-off")).toBeInTheDocument();
   });
 
@@ -76,21 +84,22 @@ describe("Handover page", () => {
     expect(screen.queryByTestId("ward-handover-sign-bar")).toBeNull();
     for (const tab of [/Patients/, /Beds/, /History/]) {
       fireEvent.click(screen.getByRole("tab", { name: tab }));
-      // CB-3: the name holds the visible "Sign off 1/5" first.
-      expect(screen.getByRole("button", { name: /^Sign off \d+\/\d+, \d+ of \d+ checks clear$/ })).toBeInTheDocument();
+      // Audit four item 20: the chip says how many checks are open ("Sign off · 4 open"), never "1/5".
+      expect(screen.getByRole("button", { name: /^Sign off, \d+ checks? open$/ })).toBeInTheDocument();
     }
     const hero = screen.getByTestId("ward-handover-hero-sign-off");
-    const [, done, total] = /^Sign off \d+\/\d+, (\d+) of (\d+) checks clear$/.exec(
-      hero.getAttribute("aria-label") ?? "",
-    )!;
-    expect(hero).toHaveTextContent(`${done}/${total}`);
+    const [, openChecks] = /^Sign off, (\d+) checks? open$/.exec(hero.getAttribute("aria-label") ?? "")!;
+    expect(hero).toHaveTextContent(`${openChecks} open`);
     fireEvent.click(hero);
     expect(screen.getByRole("tab", { name: /Patients/ })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByTestId("ward-handover-sign-off")).toHaveTextContent(`${done} of ${total} clear`);
+    // Audit four item 37: Sign off opens a small kit dialog; its checks carry the same count as the chip.
+    const signOff = screen.getByTestId("ward-handover-sign-off");
+    const [, done, total] = /(\d+) of (\d+) clear/.exec(signOff.textContent ?? "")!;
+    expect(Number(total) - Number(done)).toBe(Number(openChecks));
     expect(screen.getAllByTestId("ward-handover-sign-off-checks")[0]!.querySelectorAll("li")).toHaveLength(
       Number(total),
     );
-    expect(screen.getByTestId("ward-handover-sign-off-button")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Sign off as .+ at / })).toBeInTheDocument();
   });
 
   it("groups every open patient in meeting order", () => {
@@ -184,7 +193,7 @@ describe("Handover page", () => {
 
     expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-handover-print-sheet")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Start meeting" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Meeting timer" })).toHaveAttribute("aria-pressed", "false");
   });
 
   it("can disable single-key shortcuts by keyboard, keep Escape, and enable navigation again", async () => {
@@ -205,7 +214,7 @@ describe("Handover page", () => {
       await user.keyboard(key);
       expect(screen.queryByTestId("ward-handover-flow-panel")).not.toBeInTheDocument();
       expect(screen.queryByTestId("ward-handover-print-sheet")).not.toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Start meeting" })).toHaveAttribute("aria-pressed", "false");
+      expect(screen.getByRole("button", { name: "Meeting timer" })).toHaveAttribute("aria-pressed", "false");
     }
     await user.click(firstPatientRow());
     expect(screen.getByTestId("ward-handover-flow-panel")).toBeInTheDocument();
@@ -236,9 +245,8 @@ describe("Handover page", () => {
 
   it("opens the patient drawer in presentation mode without revealing the background table row", () => {
     renderHandover();
-    // 1 Nov 2026 redesign: Present sits in the toolbar's More handover actions.
-    fireEvent.click(screen.getByRole("button", { name: "More handover actions" }));
-    fireEvent.click(screen.getByRole("button", { name: "Present on a screen" }));
+    // Audit four item 6: Open on TV is its own button in the folder tabs' tools.
+    fireEvent.click(screen.getByTestId("ward-handover-open-tv"));
     const scroll = vi.spyOn(HTMLElement.prototype, "scrollIntoView");
     scroll.mockClear();
     firstPatientRow().focus();
@@ -254,21 +262,21 @@ describe("Handover page", () => {
     const user = userEvent.setup();
     renderHandover();
     // D-179 Question 6 (untested-537 INV-SEQUENCE-005): History records the checks still open.
-    const counted = /Sign off (\d+)\/(\d+)/.exec(
+    const counted = /Sign off, (\d+) checks? open/.exec(
       screen.getByTestId("ward-handover-hero-sign-off").getAttribute("aria-label") ?? "",
     );
-    const open = Number(counted?.[2]) - Number(counted?.[1]);
+    const open = Number(counted?.[1]);
     expect(open).toBeGreaterThan(0);
     await user.click(screen.getByTestId("ward-handover-hero-sign-off"));
-    await user.click(screen.getByTestId("ward-handover-sign-off-button"));
+    await user.click(screen.getByRole("button", { name: /^Sign off as .+ at / }));
     expect(screen.getByTestId("ward-handover-sign-off-visible-status")).toHaveTextContent(
       "Signed off at 10:42 am as bed coordinator",
     );
     // 3 Nov 2026: the hero's Sign off reads the signed time.
     expect(screen.getByTestId("ward-handover-hero-sign-off")).toHaveTextContent("Signed 10:42");
     // A4-27 (audit round 2): once signed there is no second sign-off primary, only Undo.
-    expect(screen.queryByTestId("ward-handover-sign-off-button")).toBeNull();
-    expect(screen.getByTestId("ward-handover-sign-off-undo")).toHaveTextContent("Undo sign-off");
+    expect(screen.queryByRole("button", { name: /^Sign off as / })).toBeNull();
+    expect(screen.getByRole("button", { name: "Undo sign-off" })).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: /History/ }));
     expect(screen.getByTestId("ward-handover-history")).toHaveTextContent("Handover signed off as bed coordinator");
     expect(screen.getByTestId("ward-handover-history")).toHaveTextContent(`${open} check${open === 1 ? "" : "s"} open`);
@@ -278,7 +286,8 @@ describe("Handover page", () => {
     renderHandover();
     fireEvent.click(screen.getByTestId("ward-handover-hero-sign-off"));
     const signOff = screen.getByTestId("ward-handover-sign-off");
-    expect(signOff).toHaveTextContent("Handed over by");
+    // Audit three #29: who signs is named in the filled button ("Sign off as … at …"), so the record shows it.
+    expect(screen.getByRole("button", { name: /^Sign off as .+ at / })).toBeInTheDocument();
     expect(signOff).not.toHaveTextContent("Handing to");
     expect(signOff).not.toHaveTextContent("Not wired in this prototype.");
   });
@@ -314,6 +323,7 @@ describe("Handover page", () => {
   it("opens the print sheet builder from Print handover and comes back", async () => {
     const user = userEvent.setup();
     renderHandover();
+    await user.click(screen.getByTestId("ward-handover-share"));
     await user.click(screen.getByTestId("ward-handover-print"));
     const sheet = screen.getByTestId("ward-handover-print-sheet");
     expect(sheet).toBeInTheDocument();
@@ -330,16 +340,14 @@ describe("Handover page", () => {
     expect(screen.getByTestId("ward-handover-beds")).toBeInTheDocument();
   });
 
-  it("links each ward's Open ward button to that ward's page, not a missing address (DR-08)", async () => {
+  it("links the Beds tab to Capacity's beds by ward, with a real address (DR-08)", async () => {
+    // Batch 3 (r10): the per-ward table and its Open ward panel left this tab; "Beds by ward" is Capacity's.
     const user = userEvent.setup();
     renderHandover();
     await user.click(screen.getByRole("tab", { name: /Beds/ }));
     const beds = screen.getByTestId("ward-handover-beds");
-    const wardRow = beds.querySelector("tr[aria-selected]");
-    expect(wardRow).not.toBeNull();
-    await user.click(wardRow!);
-    const link = within(beds).getByRole("link", { name: "Open ward" });
-    expect(link.getAttribute("href")).toMatch(/^\/bedchart\/ward\/[^/?]+$/u);
+    const link = within(beds).getByRole("link", { name: /Beds by ward/ });
+    expect(link.getAttribute("href")).toBe("/bedchart/capacity");
   });
 });
 

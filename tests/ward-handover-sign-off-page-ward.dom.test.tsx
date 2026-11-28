@@ -54,13 +54,13 @@ function renderAtDesk(access: WardAccess, search = "") {
 describe("Handover sign-off names its ward", () => {
   it("a one-ward desk's sign-off names that ward", () => {
     renderAtDesk({ role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } });
-    fireEvent.click(screen.getByTestId("ward-handover-sign-off-button"));
+    fireEvent.click(screen.getByRole("button", { name: /^Sign off as .+ at / }));
     expect(flow.handoverSignOffs).toEqual([expect.objectContaining({ at: 600, unitId: "brm-adult-secure" })]);
   });
 
   it("a ward desk holding two wards chooses one before signing off", () => {
     renderAtDesk({ role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure", "fsh-older-adult"] } });
-    const button = screen.queryByTestId("ward-handover-sign-off-button");
+    const button = screen.queryByRole("button", { name: /^Sign off as .+ at / });
     if (button) fireEvent.click(button);
     expect(flow.handoverSignOffs).toHaveLength(0);
   });
@@ -70,7 +70,7 @@ describe("Handover sign-off names its ward", () => {
       { role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure", "fsh-older-adult"] } },
       "?scope=ward:fsh-older-adult",
     );
-    fireEvent.click(screen.getByTestId("ward-handover-sign-off-button"));
+    fireEvent.click(screen.getByRole("button", { name: /^Sign off as .+ at / }));
     expect(flow.handoverSignOffs).toEqual([expect.objectContaining({ at: 600, unitId: "fsh-older-adult" })]);
   });
 
@@ -79,7 +79,7 @@ describe("Handover sign-off names its ward", () => {
       { role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } },
       "?scope=ward:fsh-older-adult",
     );
-    fireEvent.click(screen.getByTestId("ward-handover-sign-off-button"));
+    fireEvent.click(screen.getByRole("button", { name: /^Sign off as .+ at / }));
     expect(flow.handoverSignOffs).toEqual([expect.objectContaining({ at: 600, unitId: "brm-adult-secure" })]);
   });
 
@@ -94,7 +94,7 @@ describe("Handover sign-off names its ward", () => {
 
   it("a service coordinator chooses a ward before signing off, so its sign-off is sent back to it", () => {
     renderAtDesk({ role: "coordinator", scope: { kind: "service", service: "East Metro" } });
-    const button = screen.queryByTestId("ward-handover-sign-off-button");
+    const button = screen.queryByRole("button", { name: /^Sign off as .+ at / });
     if (button) fireEvent.click(button);
     expect(flow.handoverSignOffs).toHaveLength(0);
   });

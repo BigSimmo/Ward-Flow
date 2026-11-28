@@ -32,11 +32,8 @@ function renderScreen() {
   );
 }
 
-function showRows() {
-  const tabs = screen.getByRole("radiogroup", { name: "Capacity view" });
-  fireEvent.click(within(tabs).getByRole("radio", { name: /^Wards/u }));
-  return tabs;
-}
+// Simplification 26 Nov 2026: the Wards tab is gone off-phone; the Overview's bed map holds every ward.
+function showRows() {}
 
 afterEach(() => {
   window.sessionStorage.clear();
@@ -46,9 +43,8 @@ describe("Capacity bed map, Wards tab", () => {
   it("switches to the Wards tab and keeps exactly one entry per ward", () => {
     renderScreen();
     expect(bedMapCards()).toHaveLength(rows.length);
-    const tabs = showRows();
-    expect(within(tabs).getByRole("radio", { name: /^Wards/u })).toHaveAttribute("aria-checked", "true");
-    expect(within(tabs).getByRole("radio", { name: /^Overview/u })).toHaveAttribute("aria-checked", "false");
+    showRows();
+    expect(screen.queryByRole("radio", { name: /^Wards/u })).toBeNull();
     expect(within(bedMapRegion()).queryByRole("radiogroup", { name: "Bed map layout" })).toBeNull();
     const cards = bedMapCards();
     expect(cards).toHaveLength(rows.length);
@@ -64,7 +60,7 @@ describe("Capacity bed map, Wards tab", () => {
     fireEvent.click(
       // Page tops (Josh, 9 Nov 2026): on a desktop the highlights sit in the page's tab row.
       within(screen.getByRole("group", { name: "Highlight wards" })).getByRole("button", {
-        name: `Any ready ${withReady} ${withReady === 1 ? "ward" : "wards"}`,
+        name: `Has ready ${withReady} ${withReady === 1 ? "ward" : "wards"}`,
       }),
     );
     const cards = bedMapCards();

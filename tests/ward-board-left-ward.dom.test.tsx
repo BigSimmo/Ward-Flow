@@ -74,13 +74,13 @@ describe("ward board: Left the ward, waiting for transport (item 18)", () => {
     renderBoard(unitId);
     const before = screen.queryAllByRole("button", { name: /^Collected/ }).length;
     expect(openTransportDialog()).toBe(true);
-    const dialog = screen.getByRole("dialog", { name: "Confirm left the ward" });
-    const proceed = within(dialog).getByTestId("ward-board-confirm-proceed") as HTMLButtonElement;
-    expect(proceed.disabled, "no destination is chosen for the ward").toBe(true);
+    const dialog = screen.getByRole("alertdialog", { name: "Record discharge" });
+    const proceed = within(dialog).getByRole("button", { name: "Record discharge" });
+    expect(proceed.getAttribute("aria-disabled"), "no destination is chosen for the ward").toBe("true");
     fireEvent.change(within(dialog).getByTestId("ward-board-confirm-destination"), {
       target: { value: "discharged-to-the-community" },
     });
-    expect(proceed.disabled, "transport is never defaulted").toBe(true);
+    expect(proceed.getAttribute("aria-disabled"), "transport is never defaulted").toBe("true");
     const transport = within(dialog).getByTestId("ward-board-confirm-transport");
     expect(
       within(transport)
@@ -88,7 +88,7 @@ describe("ward board: Left the ward, waiting for transport (item 18)", () => {
         .filter((radio) => (radio as HTMLInputElement).checked),
     ).toHaveLength(0);
     fireEvent.click(within(transport).getByRole("radio", { name: "Still waiting" }));
-    fireEvent.click(proceed);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Record discharge" }));
     expect(screen.getAllByRole("button", { name: /^Collected/ })).toHaveLength(before + 1);
   });
 
@@ -119,7 +119,7 @@ describe("ward board: Left the ward, waiting for transport (item 18)", () => {
         fireEvent.click(screen.getByTestId("ward-board-record-leaving-submit"));
         if (screen.queryByTestId("ward-board-confirm-transport")) {
           asked += 1;
-          fireEvent.click(screen.getByTestId("ward-board-confirm-cancel"));
+          fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Cancel" }));
           break;
         }
       }
@@ -136,8 +136,8 @@ function openTransportDialog(): boolean {
     if (!button.isConnected) continue;
     fireEvent.click(button);
     if (screen.queryByTestId("ward-board-confirm-transport")) return true;
-    const cancel = screen.queryByTestId("ward-board-confirm-cancel");
-    if (cancel) fireEvent.click(cancel);
+    const asking = screen.queryByRole("alertdialog");
+    if (asking) fireEvent.click(within(asking).getByRole("button", { name: "Cancel" }));
   }
   return false;
 }

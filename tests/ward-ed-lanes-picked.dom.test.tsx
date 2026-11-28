@@ -23,7 +23,7 @@ describe("All EDs — desktop wait lanes", () => {
     expect(mark).toBeDefined();
     fireEvent.click(mark!);
     // The strip's body loads lazily with the ED preview (phone script budget).
-    expect(await screen.findByRole("link", { name: "Open patient" })).toHaveAttribute("href");
+    expect(await screen.findByRole("link", { name: "Patient page" })).toHaveAttribute("href");
     expect(screen.getByRole("link", { name: /^Open (?!patient).+/u })).toHaveAttribute(
       "href",
       expect.stringMatching(/^\/bedchart\/ed\//u),

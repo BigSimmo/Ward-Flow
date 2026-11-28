@@ -103,13 +103,14 @@ describe("the Alerts screen reports on every condition it watches, firing or not
   it("retains visible wording in acknowledged alert action names", () => {
     renderScreen();
     fireEvent.click(screen.getAllByTestId("ward-alerts-open")[0]!);
-    const more = screen.getByTestId("alerts-more-actions");
-    more.setAttribute("open", "");
-    const acknowledge = within(more).getByRole("button", { name: /^Acknowledge / });
-    fireEvent.click(acknowledge);
-    const seen = within(more).getByRole("button", { name: /^Seen: / });
+    // Audit two #1: Acknowledge is an item in the kit More menu beside Take and Patient page.
+    fireEvent.click(screen.getByTestId("alerts-more-actions"));
+    fireEvent.click(screen.getByRole("menuitem", { name: /^Acknowledge/ }));
+    fireEvent.click(screen.getByTestId("alerts-more-actions"));
+    const seen = screen.getByRole("menuitem", { name: /^Seen/ });
     expect(seen).toHaveTextContent("Seen");
     expect(seen).toHaveAttribute("aria-disabled", "true");
+    fireEvent.keyDown(seen, { key: "Escape" });
     const take = screen.queryByRole("button", { name: /^Take / });
     if (take) {
       fireEvent.click(take);
@@ -117,7 +118,8 @@ describe("the Alerts screen reports on every condition it watches, firing or not
       expect(screen.getByRole("button", { name: /^Hand back / })).toHaveTextContent("Hand back");
     } else {
       // INV-ACTION-148 (14 Nov 2026): a row never taken has nothing to hand back, so it keeps "Yours".
-      expect(screen.getByRole("button", { name: /^Yours: / })).toHaveTextContent("Yours");
+      // Audit three #31: it shows "Yours" as a tag in the drawer head, not a button.
+      expect(screen.getAllByText("Yours").length).toBeGreaterThan(0);
     }
   });
 
@@ -493,7 +495,7 @@ describe("Josh review (4 Nov 2026): the side panel opens on the patient header",
 });
 
 describe("opening a chosen alert from the drawer (change 7, D-77)", () => {
-  it("chooses the alert named in the address and puts focus on its release reason", async () => {
+  it("chooses the alert named in the address and opens its release sheet with focus inside it", async () => {
     const inbox = buildActionInbox(wardMovements.filter(isOpen), NOW, allUnits());
     const hold = inbox.find((item) => alertKindOf(item.id) === "hold");
     if (!hold) throw new Error("fixture drifted: the seeded inbox has no expired bed hold");
@@ -511,7 +513,10 @@ describe("opening a chosen alert from the drawer (change 7, D-77)", () => {
         </WardFlowProvider>,
       );
       const reason = await screen.findByRole("combobox", { name: "Reason for release" });
-      await vi.waitFor(() => expect(reason).toHaveFocus());
+      // r10: the shared release sheet opens with focus inside it, on its title; the reason is one Tab away.
+      const sheet = screen.getByTestId("alerts-release-sheet");
+      await vi.waitFor(() => expect(sheet).toContainElement(document.activeElement as HTMLElement));
+      expect(sheet).toContainElement(reason);
       // CT-19: the reason-gated release names its patient on the button itself.
       const submits = screen
         .getAllByRole("button", { name: /^Release pulled bed/ })

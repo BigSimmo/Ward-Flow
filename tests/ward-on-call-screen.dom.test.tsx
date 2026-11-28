@@ -161,7 +161,7 @@ describe("the on-call screen", () => {
         .map((key) => key.dataset.testid?.replace("ward-on-call-key-", ""))
         .filter((id): id is string => id !== undefined);
     expect(keys()).toEqual(["nmhs-bfc", "emhs-bfc", "smhs-bfc"]);
-    fireEvent.click(screen.getByRole("button", { name: /^All 6 lines/u }));
+    fireEvent.click(screen.getByRole("button", { name: /^Show all 6/u }));
     expect(keys()).toEqual(["nmhs-bfc", "emhs-bfc", "smhs-bfc", "cahs-bfc", "wachs-bfc", "sw-mherl"]);
     expect(container.querySelector("#ward-reach-switchboard")).toBe(screen.getByTestId("ward-on-call-directory"));
     fireEvent.click(screen.getByTestId("ward-on-call-key-sw-mherl"));
@@ -192,10 +192,9 @@ describe("the on-call screen", () => {
     renderOnCall();
     const table = screen.getByTestId("ward-on-call-dir-table");
     const before = table.querySelectorAll("tbody tr[data-testid]").length;
-    fireEvent.click(screen.getByRole("button", { name: /^Has email/u }));
+    // Simplification (r10): Show offers Answering and Check due only (Ending soon and Has email went).
+    fireEvent.click(screen.getByRole("button", { name: /^Check due/u }));
     expect(table.querySelectorAll("tbody tr[data-testid]").length).toBeLessThan(before);
-    expect(row("nmhs-bfc")).toBeVisible();
-    expect(screen.queryByTestId("ward-on-call-row-nmhs-scon")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Show all" }));
     expect(table.querySelectorAll("tbody tr[data-testid]").length).toBe(before);
     expect(row("nmhs-scon")).toBeVisible();
@@ -223,12 +222,14 @@ describe("the on-call screen", () => {
     expect(number).toMatch(MOCK_NUMBER);
   });
 
-  it("names the ending-soon state one way, and says the filter counts are this tab's", () => {
+  it("names the answering state one way, and says the filter counts are this tab's", () => {
     renderOnCall();
     // Post-merge audit (4 Nov 2026): the desktop hero no longer repeats the Show chips' states.
     const hud = within(screen.getByTestId("ward-on-call-hud-island"));
     expect(hud.queryByRole("button", { name: /ending soon|check due|answering/iu })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Ending soon/u })).toBeVisible();
+    // Show offers two states now: Answering and Check due.
+    expect(screen.getByRole("button", { name: /^Answering/u })).toBeVisible();
+    expect(screen.queryByRole("button", { name: /^Ending soon/u })).not.toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Show and group rows" })).toHaveTextContent(/^Show/u);
     expect(screen.queryByText(/within the hour/iu)).not.toBeInTheDocument();
     expect(screen.queryByText("Prototype data, invented numbers")).not.toBeInTheDocument();
@@ -239,7 +240,7 @@ describe("the on-call screen", () => {
     const hud = screen.getByTestId("ward-on-call-hud-island");
     // Josh approved "all lists" (9 Nov 2026): the Show chips below count this tab only.
     expect(within(hud).getByRole("group", { name: "Figures" })).toHaveTextContent(
-      /^\d+ answering, all lists\d+ closed\d+ check due, all lists$/u,
+      /^\d+ answering, all lists\d+ check due, all lists$/u,
     );
     expect(within(hud).getByRole("button", { name: /Downtime card/u })).toHaveAttribute(
       "title",
@@ -290,10 +291,11 @@ describe("the on-call screen", () => {
     expect(screen.getByRole("searchbox")).toHaveFocus();
   });
 
-  it("picking a line that is not starred leaves My list for that line's tab", () => {
+  it("picking a key line from another tab opens that line's own tab", () => {
+    // Audit three #67: on a desktop the starred lines lead Key lines; the Mine tab is the phone's.
     renderOnCall();
-    fireEvent.click(screen.getByRole("tab", { name: /^Mine/u }));
-    fireEvent.click(screen.getByRole("button", { name: /^All 6 lines/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Teams/u }));
+    fireEvent.click(screen.getByRole("button", { name: /^Show all 6/u }));
     fireEvent.click(screen.getByTestId("ward-on-call-key-sw-mherl"));
     expect(screen.getByRole("tab", { name: /^State(?! bed)/u })).toHaveAttribute("aria-selected", "true");
     expect(row("sw-mherl")).toBeVisible();
@@ -388,35 +390,38 @@ describe("the on-call screen", () => {
     expect(panel().queryByRole("button", { name: /Report change/u })).toBeNull();
   });
 
-  it("keeps My list as contact ids only, and restores it", async () => {
+  it("keeps Mine as contact ids only, and restores it in Key lines", async () => {
     const first = renderOnCall();
-    fireEvent.click(within(row("nmhs-bfc")).getByRole("button", { name: /to My list/u }));
-    expect(JSON.parse(localStorage.getItem("ward-flow:on-call:favourites")!)).toEqual(["nmhs-bfc"]);
+    fireEvent.click(within(row("nmhs-aml")).getByRole("button", { name: /to Mine/u }));
+    expect(JSON.parse(localStorage.getItem("ward-flow:on-call:favourites")!)).toEqual(["nmhs-aml"]);
     first.unmount();
     renderOnCall();
-    await waitFor(() => expect(screen.getByRole("tab", { name: /^Mine/u })).toHaveTextContent("1"));
-    fireEvent.click(screen.getByRole("tab", { name: /^Mine/u }));
-    expect(row("nmhs-bfc")).toBeVisible();
+    // Audit three #67: a starred line leads Key lines on a desktop; the Mine tab is the phone's.
+    await waitFor(() => expect(screen.getByTestId("ward-on-call-key-nmhs-aml")).toBeVisible());
+    expect(screen.queryByRole("tab", { name: /^Mine/u })).toBeNull();
   });
 
   it("rejects unknown saved ids and malformed preferences", async () => {
-    localStorage.setItem("ward-flow:on-call:favourites", JSON.stringify(["nmhs-bfc", "not-a-contact", 7]));
+    localStorage.setItem("ward-flow:on-call:favourites", JSON.stringify(["nmhs-aml", "not-a-contact", 7]));
     const first = renderOnCall();
-    await waitFor(() => expect(screen.getByRole("tab", { name: /^Mine/u })).toHaveTextContent("1"));
+    await waitFor(() => expect(screen.getByTestId("ward-on-call-key-nmhs-aml")).toBeVisible());
+    fireEvent.click(screen.getByRole("button", { name: /^Show all/u }));
+    expect(screen.queryByTestId("ward-on-call-key-not-a-contact")).toBeNull();
     first.unmount();
     localStorage.setItem("ward-flow:on-call:favourites", "broken");
     renderOnCall();
-    expect(screen.getByRole("tab", { name: /^Mine/u })).toHaveTextContent("0");
+    expect(screen.queryByTestId("ward-on-call-key-nmhs-aml")).toBeNull();
+    expect(screen.getByRole("button", { name: /^Show all 6/u })).toBeVisible();
   });
 
-  it("keeps My list for the visit when storage fails, and says so", () => {
+  it("keeps Mine for the visit when storage fails, and says so", () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("blocked");
     });
     renderOnCall();
-    fireEvent.click(within(row("nmhs-bfc")).getByRole("button", { name: /to My list/u }));
+    fireEvent.click(within(row("nmhs-aml")).getByRole("button", { name: /to Mine/u }));
     expect(screen.getByTestId("ward-on-call-notice")).toHaveTextContent(/this visit only/u);
-    expect(screen.getByRole("tab", { name: /^Mine/u })).toHaveTextContent("1");
+    expect(screen.getByTestId("ward-on-call-key-nmhs-aml")).toBeVisible();
   });
 
   it("opens the downtime card with every key line and copies it as text", async () => {
@@ -430,13 +435,14 @@ describe("the on-call screen", () => {
     expect(await card.findByTestId("ward-on-call-notice")).toHaveTextContent("Downtime card copied");
   });
 
-  it("carries My list saved by the earlier roster page over to the same lines", async () => {
+  it("carries Mine saved by the earlier roster page over to the same lines", async () => {
     localStorage.setItem("ward-flow:on-call:favourites", JSON.stringify(["nm-coordinator", "governance-lead"]));
     renderOnCall();
-    await waitFor(() => expect(screen.getByRole("tab", { name: /^Mine/u })).toHaveTextContent("2"));
-    fireEvent.click(screen.getByRole("tab", { name: /^Mine/u }));
-    expect(row("nmhs-bfc")).toBeVisible();
-    expect(row("sw-gov")).toBeVisible();
+    // The earlier page's ids map to the same lines, which lead Key lines (audit three #67).
+    await waitFor(() => expect(screen.getByTestId("ward-on-call-key-sw-gov")).toBeVisible());
+    fireEvent.click(screen.getByRole("button", { name: /^Show all/u }));
+    expect(screen.getByTestId("ward-on-call-key-nmhs-bfc")).toBeVisible();
+    expect(screen.getByTestId("ward-on-call-key-sw-gov")).toBeVisible();
   });
 });
 
@@ -452,7 +458,7 @@ it("removes jumps to services emptied by each Show filter", () => {
   const scroll = vi.fn();
   Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: scroll });
   const initially = screen.getAllByRole("button", { name: /^Jump to/u }).length;
-  for (const name of [/^Answering/u, /^Ending soon/u, /^Has email/u, /^Check due/u]) {
+  for (const name of [/^Answering/u, /^Check due/u]) {
     fireEvent.click(screen.getByRole("button", { name }));
     const jumps = screen.queryAllByRole("button", { name: /^Jump to/u });
     expect(jumps.length).toBeLessThanOrEqual(initially);

@@ -86,16 +86,13 @@ describe("list order lines", () => {
     );
   });
 
-  it("Waiting says its order and follows the order switch", () => {
+  it("Waiting says its one order, with no order switch (26 Nov 2026)", () => {
     inProvider(<DelaysScreen />);
     const note = screen.getByTestId("delays-order-note");
-    // Page tops (9 Nov 2026): the order is the tab row's switch.
-    expect(screen.getByRole("tab", { name: "Longest wait" })).toHaveAttribute("aria-selected", "true");
+    // Simplification mock-up (26 Nov 2026): one list, longest wait first. The By hold-up order tab went
+    // (the whose-move tiles do its job), so the note names the one order and there is no switch to follow.
     expect(note).toHaveTextContent(/^Longest wait first$/u);
-    fireEvent.click(screen.getByRole("tab", { name: "By hold-up" }));
-    expect(screen.getByTestId("delays-order-note")).toHaveTextContent(
-      "Form times first, then every other reason. Longest wait first in each.",
-    );
+    expect(screen.queryByRole("tab", { name: "By hold-up" })).toBeNull();
   });
 
   it("Discharges keeps its order without the order line (Josh, 30 Oct; approved 31 Oct 2026)", () => {
@@ -123,16 +120,14 @@ describe("list order lines", () => {
     ).toBeInTheDocument();
   });
 
-  it("Alerts says the desktop Now order for each arrangement", () => {
+  it("Alerts says the desktop Now order for each arrangement (Urgency, Owner)", () => {
     inProvider(<AlertsScreen />);
-    const arrange = screen.getByRole("radiogroup", { name: "Arrange by" });
+    const arrange = screen.getByRole("radiogroup", { name: "Group by" });
     expect(screen.getByTestId("ward-alerts-order-note")).toHaveTextContent(
       "Act now first, then waiting. Oldest first in each.",
     );
-    fireEvent.click(within(arrange).getByRole("radio", { name: /Lanes/u }));
-    expect(screen.getByTestId("ward-alerts-order-note")).toHaveTextContent(
-      "Oldest first in each lane. Running targets after waiting.",
-    );
+    // The Lanes arrangement went (Urgency and Owner remain).
+    expect(within(arrange).queryByRole("radio", { name: /Lanes/u })).toBeNull();
     fireEvent.click(within(arrange).getByRole("radio", { name: /Owner/u }));
     expect(screen.getByTestId("ward-alerts-order-note")).toHaveTextContent(
       "You first, then A to Z by owner. Oldest first in each, snoozed last.",

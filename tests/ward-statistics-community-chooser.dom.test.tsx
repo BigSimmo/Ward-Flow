@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -13,8 +13,11 @@ vi.mock("next/link", () => ({
 }));
 
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
-import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
-import { STATISTICS_COMMUNITY_CHOOSER_ID } from "@/components/ward-management/statistics/statistics-sections";
+import { StatisticsTeamsIndexScreen } from "@/components/ward-management/statistics/statistics-teams-index";
+import {
+  STATISTICS_COMMUNITY_CHOOSER_HREF,
+  STATISTICS_TEAMS_HREF,
+} from "@/components/ward-management/statistics/statistics-sections";
 import { communityStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -41,14 +44,15 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 const COMMUNITY_ROUTE_PREFIX = "/bedchart/statistics/community";
 
 function renderHubMain(): HTMLElement {
-  // v6: the hub entry's fragment opens the "Open a unit" finder on this chooser's own tab, so
-  // arrive the way a person following that href does.
-  window.history.replaceState(null, "", `#${STATISTICS_COMMUNITY_CHOOSER_ID}`);
+  // The unit finder is gone (simplification 26 Nov 2026): the hub entry's href now lands on the Teams page's
+  // Browse list, which is the chooser these cases judge.
   const { container } = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <StatisticsScreen />
+      <StatisticsTeamsIndexScreen />
     </WardFlowProvider>,
   );
+  // Teams shown: All, so a team with nobody in a bed is listed too (the chooser names every team).
+  fireEvent.click(within(container).getByRole("radio", { name: /^All \d+/u }));
   const main = container.querySelector<HTMLElement>("main#main-content");
   expect(main, 'the hub rendered no <main id="main-content"> to scope to').not.toBeNull();
   return main as HTMLElement;
@@ -57,7 +61,9 @@ function renderHubMain(): HTMLElement {
 /** The chooser's own team links inside the hub's main region — scoped by containment so the rail's
  *  own seeded links (a different route entirely) can never be mistaken for one of these. */
 function teamLinksIn(main: HTMLElement): HTMLAnchorElement[] {
-  return [...main.querySelectorAll<HTMLAnchorElement>('a[data-testid^="ward-statistics-community-link-"]')];
+  const all = [...main.querySelectorAll<HTMLAnchorElement>('a[data-testid^="ward-statistics-teams-link-"]')];
+  // A team can be listed in more than one card of the page; one link per team is what the chooser promises.
+  return [...new Map(all.map((link) => [link.getAttribute("data-testid"), link])).values()];
 }
 
 describe("The community-team chooser's OWN reachability — the fifth section's hub entry", () => {
@@ -113,7 +119,10 @@ describe("The community-team chooser's OWN reachability — the fifth section's 
    * reader at the top of the statistics page, which looks like working navigation and is not.
    */
   it("renders the chooser anchor the section href points at", () => {
+    // The chooser is the Teams page itself now (the unit finder and its tab are gone), so the hub entry
+    // lands on that page, at its team list.
+    expect(STATISTICS_COMMUNITY_CHOOSER_HREF.startsWith(`${STATISTICS_TEAMS_HREF}#`)).toBe(true);
     const main = renderHubMain();
-    expect(main.querySelector(`#${STATISTICS_COMMUNITY_CHOOSER_ID}`)).not.toBeNull();
+    expect(main.querySelector('[data-testid="ward-statistics-teams-all"]')).not.toBeNull();
   });
 });

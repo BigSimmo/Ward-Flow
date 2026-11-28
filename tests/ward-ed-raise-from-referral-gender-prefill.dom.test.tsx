@@ -100,6 +100,13 @@ function ArriveButton() {
   );
 }
 
+/** The inbox sits in the ED's My list panel (r10), opened by its switch in the page top. */
+function showMyList() {
+  if (screen.queryAllByTestId(/^ward-ed-inbox-raise-/u).length === 0) {
+    fireEvent.click(screen.getByRole("radio", { name: /^My list/u }));
+  }
+}
+
 function renderEdScreen() {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -117,6 +124,7 @@ describe("ED screen: raising into a movement prefills gender from the linked ref
     fireEvent.click(screen.getByRole("button", { name: "receive referral" }));
     fireEvent.click(screen.getByRole("button", { name: "mark arrived" }));
 
+    showMyList();
     const raiseButtons = screen.getAllByTestId(/^ward-ed-inbox-raise-/);
     expect(raiseButtons).toHaveLength(1);
     fireEvent.click(raiseButtons[0]!);
@@ -159,6 +167,7 @@ describe("ED screen: raising into a movement prefills gender from the linked ref
     renderEdScreen();
     fireEvent.click(screen.getByRole("button", { name: "receive referral" }));
     fireEvent.click(screen.getByRole("button", { name: "mark arrived" }));
+    showMyList();
     fireEvent.click(screen.getAllByTestId(/^ward-ed-inbox-raise-/)[0]!);
 
     const value = edChoiceValue;

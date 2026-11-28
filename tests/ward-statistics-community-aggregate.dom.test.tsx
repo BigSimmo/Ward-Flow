@@ -106,7 +106,7 @@ describe("executive community detail aggregate", () => {
       target: { value: base.teams[0].name },
     });
     fireEvent.click(
-      within(screen.getByRole("radiogroup", { name: "Team comparison view" })).getByRole("radio", { name: "Data" }),
+      within(screen.getByRole("radiogroup", { name: "Team comparison view" })).getByRole("radio", { name: "Table" }),
     );
     expect(screen.getByTestId("ward-statistics-community-comparison-table")).toHaveTextContent(base.teams[0].name);
     fireEvent.click(screen.getByRole("button", { name: /^CSV$/ }));
@@ -134,7 +134,7 @@ describe("executive community detail aggregate", () => {
     const ranked = within(chart).getAllByRole("listitem");
     expect(ranked[0]).toHaveTextContent(selected[2].name);
     fireEvent.click(
-      within(screen.getByRole("radiogroup", { name: "Team comparison view" })).getByRole("radio", { name: "Data" }),
+      within(screen.getByRole("radiogroup", { name: "Team comparison view" })).getByRole("radio", { name: "Table" }),
     );
     expect(screen.getAllByTestId(/ward-statistics-community-compare-row-/)).toHaveLength(3);
     expect(guard.operational).not.toHaveBeenCalled();

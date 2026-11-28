@@ -310,7 +310,7 @@ export const LATE_JOBS: readonly HowTo[] = [
     title: "Undo something I just did",
     keywords: "undo mistake wrong reverse back",
     answer:
-      "Many saves show Undo in the message at the foot of the screen, and Undo works until the time shown (up to 5 minutes). After that, change the record back yourself; the history keeps both steps. Undo on Arrived can reverse a recent arrival when the normal Undo checks pass. If the person really has gone back, record that as its own step.",
+      "Many saves show Undo in the message at the foot of the screen, and Undo works until the time shown (up to 5 minutes). After that, change the record back yourself; the history keeps both. Undo on Arrived can reverse a recent arrival if the usual checks pass. If the person really has gone back, record that as its own step.",
     desks: EVERY_DESK,
   },
   {

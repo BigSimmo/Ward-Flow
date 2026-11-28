@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -57,6 +57,8 @@ describe("ED board tier key", () => {
         <EdScreen edId="rph-ed" />
       </WardFlowProvider>,
     );
+    // Audit two #77: the bars key opens from the kit's InfoTip at the list head.
+    fireEvent.click(screen.getByRole("button", { name: "About the urgency bars" }));
     const key = screen.getByTestId("ward-tier-bars-key");
     expect(key).toHaveTextContent("Most urgent");
     expect(key).toHaveTextContent("Urgent");

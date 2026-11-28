@@ -101,9 +101,9 @@ describe("recording an ED outcome clears the outbox row and the gender control",
       </WardFlowProvider>,
     );
 
-    const listsPane = screen.queryByRole("radio", { name: /^Lists/u });
+    // Still to be moved sits in My list's Referred section (Lists joined My list, 26 Nov 2026).
+    const listsPane = screen.queryByRole("radio", { name: /^(Lists|My list)/u });
     if (listsPane) fireEvent.click(listsPane);
-    fireEvent.click(screen.getByRole("tab", { name: /Still to be moved/ }));
     expect(screen.getByTestId("ward-ed-outbox-row-WF-004")).toBeInTheDocument();
     // Open while the movement is still live — RECORD_MOVEMENT_GENDER would otherwise be offered
     // on a row the reducer always refuses it for once closed.
@@ -121,7 +121,7 @@ describe("recording an ED outcome clears the outbox row and the gender control",
     // The informational label stays — only the editable control is withdrawn.
     expect(screen.getByTestId("ward-ed-gender-WF-004")).toBeInTheDocument();
     fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
-    if (listsPane) fireEvent.click(screen.getByRole("radio", { name: /^Lists/u }));
+    if (listsPane) fireEvent.click(screen.getByRole("radio", { name: /^(Lists|My list)/u }));
 
     expect(
       screen.queryByTestId("ward-ed-outbox-row-WF-004"),

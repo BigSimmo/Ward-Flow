@@ -115,8 +115,12 @@ describe("Ward command feedback", () => {
       mount(control, <WardScreen unitId={UNIT} />);
       selectOccupiedBoardBed();
       chooseCommunityDestination();
-      fireEvent.click(screen.getAllByRole("button", { name: "Record discharge" })[0]!);
-      fireEvent.click(screen.getAllByRole("button", { name: "Record discharge" }).at(-1)!);
+      fireEvent.click(getBedStep("Record discharge"));
+      fireEvent.click(
+        within(screen.getByRole("dialog", { name: "Record discharge" })).getByRole("button", {
+          name: "Record discharge",
+        }),
+      );
       expect(control.record.mock.calls[0]?.[0].type).toBe("RECORD_LEAVING");
       expect(screen.queryByText(/^Recorded: .* has left the ward/)).toBeNull();
       expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
@@ -155,15 +159,19 @@ describe("Ward command feedback", () => {
     mount(control, <WardScreen unitId={UNIT} />);
     selectOccupiedBoardBed();
     chooseCommunityDestination();
-    fireEvent.click(screen.getAllByRole("button", { name: "Record discharge" })[0]!);
-    fireEvent.click(screen.getAllByRole("button", { name: "Record discharge" }).at(-1)!);
+    fireEvent.click(getBedStep("Record discharge"));
+    fireEvent.click(
+      within(screen.getByRole("dialog", { name: "Record discharge" })).getByRole("button", {
+        name: "Record discharge",
+      }),
+    );
     await act(() => control.accept());
     expect(screen.getByTestId("toast")).toHaveTextContent(/^Recorded: .* has left the ward/);
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(control.record.mock.calls[1]?.[0]).toMatchObject({ type: "UNDO_DEPARTURE" });
-    expect(screen.queryByText(/^Undone: .* is back in their bed/)).toBeNull();
+    expect(screen.queryByText(/^Undone: Discharge/)).toBeNull();
     await act(() => control.accept());
-    expect(screen.getByText(/^Undone: .* is back in their bed/)).toBeInTheDocument();
+    expect(screen.getByText(/^Undone: Discharge/)).toBeInTheDocument();
   });
 
   it("holds board placement feedback until its command is accepted, then confirms Undo separately", async () => {

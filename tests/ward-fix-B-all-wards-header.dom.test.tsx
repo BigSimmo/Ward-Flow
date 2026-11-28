@@ -12,7 +12,6 @@ vi.mock("next/link", () => ({
 }));
 
 import { bedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
-import { bedKindGaps, bedKindTotals } from "@/components/ward-management/capacity/capacity-derivations";
 import { ClosedBedsPastReview } from "@/components/ward-management/capacity/capacity-closed-beds-review";
 import { networkNamedHolds, totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
@@ -26,7 +25,7 @@ import { WardIndex } from "@/components/ward-management/wards/ward-index";
 const figure = (testId: string) => Number.parseInt(screen.getByTestId(testId).textContent ?? "", 10);
 
 describe("All wards header (A16-05)", () => {
-  it("shows the meeting sheet's Ready and Discharges · today, and Capacity's Short", () => {
+  it("shows the meeting sheet's Ready and Discharges · today, and no Short figure", () => {
     const seed = seedWardFlowState();
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -51,12 +50,8 @@ describe("All wards header (A16-05)", () => {
     expect(figure("ward-index-figure-ready")).toBe(sheet.capacity.ready);
     // Still due later today and not held up: the sheet's own freeing-today count.
     expect(figure("ward-index-figure-discharges")).toBe(sheet.discharges.freeingToday);
-    // The same selector as Capacity's hero, so the two pages never disagree.
-    // PR C (P4-7): with the bed releases, as Capacity's hero reads it.
-    const gap = bedKindTotals(
-      bedKindGaps(seed.movements, seed.units, NOW_ANCHOR, seed.admissions, seed.referrals, seed.bedReleases),
-    ).gap;
-    expect(figure("ward-index-figure-short")).toBe(Math.abs(gap));
+    // Audit two #55: the statewide hero no longer carries Capacity's Short figure.
+    expect(screen.queryByTestId("ward-index-figure-short")).toBeNull();
     expect(screen.queryByText(/ready by/iu)).toBeNull();
   });
 });

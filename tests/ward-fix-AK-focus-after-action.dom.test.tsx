@@ -144,7 +144,7 @@ describe("F-57: Referrals Decline", () => {
     );
   }
 
-  it("Decline puts focus on the first reason, and Back returns it to Decline", () => {
+  it("Decline puts focus on the first reason, and Cancel returns it to Decline", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <Match units={allUnits()} />
@@ -158,7 +158,7 @@ describe("F-57: Referrals Decline", () => {
     expect(document.activeElement).toBe(reasons[0]);
 
     fireEvent.click(reasons[1]!);
-    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(document.activeElement).toBe(screen.getByTestId("ward-referral-match-decline-open"));
 
     // Opened again with a reason chosen, focus goes to that reason.

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -142,7 +142,14 @@ describe("the referral slide-out", () => {
       (m) => (m.id === movement.id ? { ...m, medicalClearance: { cleared: true, at: m.openedAt } } : m),
       patient.id,
     );
-    expect(screen.getAllByText("Fit for admission & travel").length).toBeGreaterThan(0);
+    // The fit-for-admission line is gone; the Clearance step reads Cleared with Yes chosen.
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", { name: /^Clearance/ }),
+    );
+    expect(screen.getByText("Cleared")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("group", { name: "Has the patient been medically cleared?" })).getByLabelText("Yes"),
+    ).toBeChecked();
   });
 
   it("on another ED's desk, keeps that desk's origin and shows the open journey (H-0973)", () => {

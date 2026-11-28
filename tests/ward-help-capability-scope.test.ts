@@ -30,7 +30,7 @@ describe("Help follows action scope as well as desk permissions", () => {
     ["ed", "book-transport-ed", "Record transport booking", "home"],
     ["community", "book-transport-community", "Record transport booking", "home"],
     ["ward", "book-transport-ward", "Record transport booking", "movements"],
-    ["coordinator", "book-transport", "Book transport", "movements"],
+    ["coordinator", "book-transport", "Record transport booking", "movements"],
   ] as const)("gives %s its own supported booking instructions and destination", (role, id, label, go) => {
     const hits = askHelp("book transport", role);
     const own = hits.find((hit) => hit.howTo.title === "Book transport");

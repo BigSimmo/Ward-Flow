@@ -89,9 +89,7 @@ describe("A9-02: Home Act now pull offers Undo for the whole window", () => {
     fireEvent.click(within(toast).getByRole("button", { name: "Undo" }));
     await waitFor(() => expect(journey().stage).not.toBe("pulled"));
     expect(current!.rejections).toEqual([]);
-    expect(
-      await screen.findByText("Bed pull undone. The referral is back, ready for Pull the bed."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/^Undone: Bed pulled at .+ for .+ · The referral is back/u)).toBeInTheDocument();
     // D-262: the Undo of a one-tap pull also ends the journey that tap started.
     expect(journey().closure?.outcome).toBe("did_not_proceed");
   });
@@ -128,6 +126,6 @@ describe("A9-02: the ward bed board pull offers the same Undo", () => {
     expect(toast.style.getPropertyValue("--wf-undo-ms")).toBe(WINDOW_MS);
     fireEvent.click(within(toast).getByRole("button", { name: "Undo" }));
     await waitFor(() => expect(stage()).not.toBe("pulled"));
-    expect(await screen.findByText(/^Bed pull undone for .+\.$/u)).toBeInTheDocument();
+    expect(await screen.findByText(/^Undone: Bed pull for .+$/u)).toBeInTheDocument();
   });
 });

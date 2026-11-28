@@ -257,7 +257,6 @@ const ALLOWED: readonly Allowed[] = [
     why: "search filter band; matches WAIT_FILTER_SHORT_MINUTES but does not read it (non-clinical)",
   },
   { file: "search/search-filters.ts", expr: "hours >= 24", n: 1, why: "search filter band 'over 24 hours'" },
-  { file: "settings/access-log.tsx", expr: "minutes >= 60", n: 1, why: "formatting: hours rather than minutes" },
   { file: "settings/access-settings.tsx", expr: "minutes >= 60", n: 1, why: "formatting: hours rather than minutes" },
   {
     file: "shell-next/next-rail-body.tsx",

@@ -286,7 +286,7 @@ describe("Handover (A4-28, A4-26, S-31)", () => {
     const checks = screen.getByTestId("ward-handover-sign-off-checks");
     expect(checks).not.toHaveTextContent("Every ward feed is current");
     expect(checks).toHaveTextContent(/counts are stale|wards with stale counts/);
-    fireEvent.click(screen.getByTestId("ward-handover-sign-off-button"));
+    fireEvent.click(screen.getByRole("button", { name: /^Sign off as .+ at / }));
     // D-192 (shared design parts item 4): the title loses its full stop; the kit adds " · Undo until HH:MM".
     expect(screen.getAllByText("Handover signed off")).toHaveLength(1);
   });

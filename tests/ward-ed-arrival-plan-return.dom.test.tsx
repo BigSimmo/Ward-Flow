@@ -24,6 +24,8 @@ const recordOpen = () => document.querySelector("dialog[open]") !== null;
 describe("ED arrival plan returns only to the record that opened it", () => {
   it("closes the record while the plan is open and reopens it when the plan closes", () => {
     renderEd();
+    // The names that open a record sit in My list (page tops, 9 Nov 2026; Lists joined it 26 Nov 2026).
+    fireEvent.click(screen.getByRole("radio", { name: /^My list/u }));
     const names = screen
       .getAllByRole("button")
       // Handover build (Josh, 1 Nov 2026): the desktop Lists card names each person in a table row.
@@ -41,9 +43,9 @@ describe("ED arrival plan returns only to the record that opened it", () => {
     expect(toggle, "a seeded ED patient offers an arrival plan from the record").not.toBeNull();
     fireEvent.click(toggle as HTMLElement);
     expect(recordOpen()).toBe(false);
-    expect(screen.getByTestId("save-arrival-plan-button")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Close dialog" }));
-    expect(screen.queryByTestId("save-arrival-plan-button")).toBeNull();
+    expect(screen.getByTestId("arrival-time-dialog")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByTestId("arrival-time-dialog")).toBeNull();
     expect(recordToggle()).not.toBeNull();
   });
 
@@ -51,9 +53,9 @@ describe("ED arrival plan returns only to the record that opened it", () => {
     renderEd();
     const [rowToggle] = screen.getAllByTestId(/^ward-ed-arrival-plan-toggle-/u);
     fireEvent.click(rowToggle);
-    expect(screen.getByTestId("save-arrival-plan-button")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Close dialog" }));
-    expect(screen.queryByTestId("save-arrival-plan-button")).toBeNull();
+    expect(screen.getByTestId("arrival-time-dialog")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByTestId("arrival-time-dialog")).toBeNull();
     expect(recordToggle()).toBeNull();
     expect(recordOpen()).toBe(false);
   });

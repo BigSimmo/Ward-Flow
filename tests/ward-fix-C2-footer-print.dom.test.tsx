@@ -107,7 +107,7 @@ describe("3.3 a pack print is recorded only when the person says it printed", ()
     const seeded = seen.prints ?? 0;
     fireEvent.click(print);
     expect(await screen.findAllByText("Did it print?")).toHaveLength(1);
-    fireEvent.click(screen.getByRole("button", { name: "Yes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record print time" }));
     expect(await screen.findByTestId("ward-downtime-last-printed")).toBeInTheDocument();
     await waitFor(() => expect(seen.prints).toBeGreaterThan(seeded));
   });

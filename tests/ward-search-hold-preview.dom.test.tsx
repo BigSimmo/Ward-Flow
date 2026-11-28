@@ -21,7 +21,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 // The Patients census search is the kit's one page search field (D-91, Patients redesign).
-const SEARCH_LABEL = "Find a person by name, UMRN or place";
+const SEARCH_LABEL = "Find a person by name, UMRN, place or date of birth";
 
 function WorkflowHarness() {
   const { dispatch, now, patients, movements, admissions, rejections } = useWardFlow();
@@ -134,15 +134,12 @@ describe("record preview shares current bed hold truth", () => {
     const id = probe.getAttribute("data-mid")!;
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: id } });
     fireEvent.click(screen.getByTestId(`ward-patient-search-case-${id}`));
-    // The imported legacy preview remains inert in this page's accepted design. Inspect its
-    // DOM projection separately from the actual visible Patient details drawer.
-    const legacy = screen.getByTestId("ward-patient-search-preview");
-    expect(legacy).toHaveTextContent("Accepted, awaiting bed");
-    expect(legacy).not.toHaveTextContent("Bed pulled");
+    // The legacy inert preview pane is gone from the page; the visible Patient details drawer is the one view.
+    expect(screen.queryByTestId("ward-patient-search-preview")).not.toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-search-details")).not.toHaveTextContent("Bed pulled");
     expect(screen.getByTestId("ward-patient-search-details")).toHaveTextContent("Accepted, awaiting bed");
     fireEvent.click(screen.getByRole("button", { name: "pull" }));
     expect(probe).toHaveAttribute("data-held", "true");
-    expect(legacy).toHaveTextContent("Bed pulled");
     expect(screen.getByTestId("ward-patient-search-details")).toHaveTextContent("Bed pulled");
   });
 
@@ -156,7 +153,6 @@ describe("record preview shares current bed hold truth", () => {
     fireEvent.click(screen.getByTestId("ward-patient-search-case-WF-318"));
     expect(screen.getByTestId("ward-patient-search-case-WF-318")).toHaveTextContent("Bed pulled");
     expect(screen.getByTestId("ward-patient-search-details")).toHaveTextContent("Bed pulled");
-    expect(screen.getByTestId("ward-patient-search-preview")).toHaveTextContent("Bed pulled");
   });
 
   it("the person preview reads the linked actual referral journey without inventing a held bed", () => {
@@ -254,6 +250,5 @@ describe("record preview shares current bed hold truth", () => {
         onClose={() => {}}
       />,
     );
-    expect(screen.getByTestId("ward-patient-search-preview")).toHaveTextContent("Bed pulled");
   });
 });

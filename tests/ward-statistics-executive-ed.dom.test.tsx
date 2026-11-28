@@ -164,7 +164,8 @@ describe("one ED on the executive desk, counts only", () => {
     expect(within(wait).queryByTestId("ward-stat-ed-wait-table")).toBeNull();
     expect(within(wait).getByTestId("ward-statistics-ed-wait-not-listed")).toBeTruthy();
     expect(screen.queryByTestId("ward-stat-ed-wait-row-WF-x1")).toBeNull();
-    expect(screen.getByTestId("ward-statistics-ed-next-not-listed")).toBeTruthy();
+    // Audit two #100: Next to cross is no longer drawn on a desktop, so there is no list to withhold.
+    expect(screen.queryByTestId("ward-statistics-ed-next-not-listed")).toBeNull();
     expect(screen.getByTestId("ward-statistics-ed-everyone-not-listed")).toBeTruthy();
     expect(
       within(screen.getByTestId("ward-statistics-ed-everyone")).queryByRole("link", { name: /Tier [123]/u }),

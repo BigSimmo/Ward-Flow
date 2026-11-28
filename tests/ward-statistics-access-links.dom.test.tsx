@@ -116,13 +116,21 @@ describe("Statistics links follow the desk's access", () => {
     for (const href of UNOPENABLE_FOR_SITE) expect(shown).not.toContain(href);
     expect(shown.filter((href) => /\/statistics\/(ed|service)\//.test(href))).toEqual([]);
     expect(within(page).queryByRole("link", { name: "Compare wards" })).toBeNull();
+    // Simplification 26 Nov 2026: Services, EDs and Teams are segments of the one Browse card, offered
+    // only to a desk that may open their pages.
+    for (const segment of [/^EDs/, /^Services/, /^Teams/])
+      expect(within(page).queryByRole("radio", { name: segment })).toBeNull();
   });
 
   it("still offers the coordinator Compare, Services, EDs and Teams", () => {
     asDesk(DESKS.coordinator!);
     withShell(<StatisticsScreen />);
-    const shown = hrefs(screen.getByTestId("ward-statistics-screen"));
-    for (const href of UNOPENABLE_FOR_SITE) expect(shown).toContain(href);
+    const page = screen.getByTestId("ward-statistics-screen");
+    const shown = hrefs(page);
+    expect(shown).toContain(STATISTICS_COMPARE_HREF);
+    // Services, EDs and Teams are segments of the one Browse card (simplification 26 Nov 2026).
+    for (const segment of [/^EDs/, /^Services/, /^Teams/])
+      expect(within(page).getByRole("radio", { name: segment })).toBeInTheDocument();
   });
 
   it("links the site bed manager's map only to its own site's wards", () => {

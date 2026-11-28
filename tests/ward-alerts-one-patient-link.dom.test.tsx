@@ -42,25 +42,21 @@ describe("selected alert: one link to the patient", () => {
       </WardFlowProvider>,
     );
     let checked = 0;
-    let retained = 0;
     for (const row of Array.from(container.querySelectorAll<HTMLElement>("li[data-alert-id]"))) {
       fireEvent.click(within(row).getByTestId("ward-alerts-open"));
       const panel = screen.getByRole("complementary", { name: "Selected alert" });
-      const action = within(panel).queryByRole("link", { name: /^Open patient/u });
-      if (!action) {
-        // An alert whose action goes elsewhere still has its Patient link.
-        if (within(panel).queryByRole("link", { name: /^Patient/ })) retained += 1;
-        continue;
-      }
+      // r10 names the patient action "Patient page" everywhere, so one link by that name is the rule.
+      const patientLinks = within(panel).queryAllByRole("link", { name: /^Patient page/u });
+      if (patientLinks.length === 0) continue;
       checked += 1;
-      const href = action.getAttribute("href");
+      const href = patientLinks[0]!.getAttribute("href");
       const same = within(panel)
         .getAllByRole("link")
         .filter((link) => link.getAttribute("href") === href);
       expect(same).toHaveLength(1);
+      expect(patientLinks).toHaveLength(1);
     }
     expect(checked).toBeGreaterThan(0);
-    expect(retained).toBeGreaterThan(0);
   });
 
   it("keeps the Patient link on a snoozed alert, which shows no action", () => {

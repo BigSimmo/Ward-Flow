@@ -23,8 +23,10 @@ describe("Alerts side panel", () => {
         expect(main.textContent).toContain(name);
         checked += 1;
       }
-      expect(within(panel).getByRole("tab", { name: "Act" })).toHaveAttribute("aria-selected", "true");
-      expect(within(panel).getByRole("tab", { name: /^Activity/u })).toBeInTheDocument();
+      // #47: the tab row shows only when the alert has activity; with none there is no Act or Activity tab.
+      const activityTab = within(panel).queryByRole("tab", { name: /^Activity/u });
+      if (activityTab) expect(within(panel).getByRole("tab", { name: "Act" })).toHaveAttribute("aria-selected", "true");
+      else expect(within(panel).queryByRole("tab", { name: "Act" })).toBeNull();
     }
     expect(checked).toBeGreaterThan(0);
   });

@@ -67,8 +67,7 @@ describe("ED board on phone", () => {
     expect(document.querySelector('[data-testid^="ward-ed-expand-"]')).toBeNull();
     for (const row of rows) {
       expect(within(row).getAllByRole("button")).toHaveLength(1);
-      // B3 (D-21): no ED bay is recorded, so the row says so instead of inventing one.
-      expect(row.textContent).toContain("Bay not recorded");
+      // B3 (D-21): no ED bay is recorded, so the row never invents one (the sheet says "bay not recorded").
       expect(row.textContent).not.toMatch(/Bay \d+/);
     }
   });
@@ -81,7 +80,8 @@ describe("ED board on phone", () => {
     fireEvent.click(within(row!).getByRole("button"));
 
     const sheet = screen.getByTestId(`ward-ed-phone-sheet-${id}`);
-    expect(within(sheet).getByRole("button", { name: "Open patient" })).toBeTruthy();
+    expect(within(sheet).getByRole("button", { name: "Patient page" })).toBeTruthy();
+    expect(sheet.textContent?.toLowerCase()).toContain("bay not recorded");
     const actions = screen.getByTestId(`ward-ed-phone-actions-${id}`);
     // Josh (31 Oct 2026): the sheet's actions take the desktop menu's groups, with the greyed ones
     // folded under "Not available yet", closed until opened.
@@ -123,7 +123,7 @@ describe("ED board on phone", () => {
     const id = rows[0].dataset.testid!.replace("ward-ed-patient-", "");
     fireEvent.click(within(rows[0]).getByRole("button"));
     fireEvent.click(
-      within(screen.getByTestId(`ward-ed-phone-sheet-${id}`)).getByRole("button", { name: "Open patient" }),
+      within(screen.getByTestId(`ward-ed-phone-sheet-${id}`)).getByRole("button", { name: "Patient page" }),
     );
     expect(screen.queryByTestId(`ward-ed-phone-sheet-${id}`)).toBeNull();
     expect(push).toHaveBeenCalledTimes(1);

@@ -66,7 +66,7 @@ function expectWholeNetworkHero() {
   expect(within(figures).getByTestId("capacity-hero-ready")).toHaveTextContent(
     // D-179 item 8: the beds still being made ready are said beside Ready.
     new RegExp(
-      `^${netTotals.ready}\\s*/ ${netTotals.beds}\\s*Ready · now${netTotals.pendingPreparation ? `, ${netTotals.pendingPreparation} being made ready` : ""}$`,
+      `^${netTotals.ready}\\s*/ ${netTotals.beds}\\s*Ready${netTotals.pendingPreparation ? `, ${netTotals.pendingPreparation} being made ready` : ""}$`,
       "u",
     ),
   );

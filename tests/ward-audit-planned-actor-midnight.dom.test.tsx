@@ -72,7 +72,7 @@ describe("planned commands retain the working desk", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(within(screen.getByTestId("ward-planned-PA-SEED-03")).getByRole("button", { name: "Arrived" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm arrival" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record arrival" }));
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({
         type: "CONVERT_PLANNED_ADMISSION",

@@ -104,12 +104,13 @@ describe("ward capacity — Ready, Empty, Allocatable", () => {
    * retired wording and must never appear. Checked against the whole capacity panel's text, not
    * just the Allocatable sentence, so a stray occurrence anywhere in the block would be caught.
    */
-  it("says 'no free bed' when allocatable is zero, and never the retired 'no bed free'", () => {
+  it("shows a bare 0 when allocatable is zero, and never the retired 'no bed free'", () => {
     const unit = unitWithCapacity(3, 0);
     renderWard(unit);
 
     const allocatableText = screen.getByTestId("ward-stat-capacity-allocatable").textContent ?? "";
-    expect(allocatableText).toContain("no free bed");
+    // The figure alone is drawn now (the sentence went with the simplification); zero is the word's meaning.
+    expect(allocatableText.trim()).toBe("0");
 
     const readyText = screen.getByTestId("ward-stat-capacity-ready").textContent ?? "";
     expect(readyText).toMatch(/^0\b/);

@@ -90,6 +90,11 @@ function openReferralForm() {
   openRaiseIntoMovementForm();
 }
 
+/** The inbox row is on My list (r10); the movement's own buttons are on the Board. */
+function showBoard() {
+  fireEvent.click(screen.getByRole("radio", { name: /^Board/u }));
+}
+
 function fillRequiredFields() {
   // A2-1: the form starts from a person; these cases raise for one not yet identified.
   markNotYetIdentified();
@@ -155,6 +160,7 @@ describe("the actions block: recording a first expiry and an extension", () => {
     // No expiry typed at raise time — the clinician does not have the form's expiry yet.
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
     const { id } = lastMovementProbeParts();
+    showBoard();
 
     const toggle = screen.getByTestId(`ward-ed-legal-form-expiry-toggle-${id}`);
     expect(toggle.textContent).toBe("Record expiry from the form");
@@ -188,6 +194,7 @@ describe("the actions block: recording a first expiry and an extension", () => {
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), { target: { value: "10:00" } });
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
     const { id } = lastMovementProbeParts();
+    showBoard();
     expect(lastMovementProbeParts().dueAt).toBe("600"); // 10:00 today
 
     const toggle = screen.getByTestId(`ward-ed-legal-form-expiry-toggle-${id}`);
@@ -232,6 +239,7 @@ describe("a past expiry only ever warns — it never blocks a clinical control",
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), { target: { value: "09:00" } });
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
     const breached = lastMovementProbeParts();
+    showBoard();
     expect(breached.dueAt).toBe("540"); // 09:00 today, before NOW_ANCHOR's 10:42 (642)
 
     const warning = screen.getByTestId(`ward-ed-form-expiry-warning-${breached.id}`);
@@ -244,6 +252,7 @@ describe("a past expiry only ever warns — it never blocks a clinical control",
     fillRequiredFields();
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
     const noForm = lastMovementProbeParts();
+    showBoard();
     expect(noForm.code).toBe("no-form");
     expect(screen.queryByTestId(`ward-ed-form-expiry-warning-${noForm.id}`)).toBeNull();
 

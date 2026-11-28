@@ -87,7 +87,7 @@ describe("Undo pull stays on the card for the whole window", () => {
     // The toast names the same clock time.
     const time = rowUndo!.textContent!.replace("Undo pull · until ", "");
     const toast = screen.getAllByTestId("toast").find((candidate) => candidate.textContent?.startsWith("Bed pulled"));
-    expect(toast).toHaveTextContent(`Bed pulled · Undo until ${time}`);
+    expect(toast).toHaveTextContent(`Bed pulled for Keira Pellingworth · Undo until ${time}`);
     expect(toast).not.toHaveTextContent("Undo within");
     await act(async () => {
       fireEvent.click(rowUndo!);

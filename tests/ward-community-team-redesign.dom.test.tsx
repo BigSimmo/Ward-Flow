@@ -198,7 +198,7 @@ describe("the redesigned pop-ups (states the sample cannot reach)", () => {
         <CommunityScreenReferralModal view={view as never} />
       </WardFlowProvider>,
     );
-    const dialog = screen.getByRole("dialog", { name: "Assign referral" });
+    const dialog = screen.getByRole("dialog", { name: "Hand to" });
     expect(dialog).toHaveTextContent("Testperson, Alex · UM900001");
     expect(within(dialog).getByText("Urgency")).toBeInTheDocument();
     expect(within(dialog).getByText("Region")).toBeInTheDocument();
@@ -237,7 +237,7 @@ describe("the redesigned pop-ups (states the sample cannot reach)", () => {
         answer({ status: "accepted" });
         await Promise.resolve();
       });
-      const dialog = screen.getByRole("dialog", { name: "Assign referral" });
+      const dialog = screen.getByRole("dialog", { name: "Hand to" });
       expect(dialog).toHaveTextContent("Testperson, RF-TB");
       expect(within(dialog).queryByRole("status")).toBeNull();
       expect(dialog).not.toHaveTextContent("Assigned to this team's desk.");

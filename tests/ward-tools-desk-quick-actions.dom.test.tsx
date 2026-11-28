@@ -22,12 +22,9 @@ function tilesAt(access: WardAccess, isPhone = false): string[] {
       <WardToolsSheet isPhone={isPhone} roleLabel="Desk" onNavigate={vi.fn()} onNewReferral={vi.fn()} />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByTestId("ward-tools-toggle-quick-actions"));
-  const grid = screen.getByRole("group", { name: "Quick actions" });
-  // Tiles that work here lead; shortcuts that leave Tools sit apart as pill links (round 3).
-  const here = [...grid.querySelectorAll("button")].map((tile) => tile.querySelector("strong")?.textContent ?? "");
-  const away = [...grid.querySelectorAll("a")].map((link) => link.querySelector("span")?.textContent ?? "");
-  return [...here, ...away];
+  // Audit two #117 (27 Nov 2026): the Quick actions tile grid is gone for every desk but the coordinator's;
+  // each desk's tools stay as rows, so what a desk is given is read from the rows' names.
+  return [...document.querySelectorAll("strong")].map((name) => (name.textContent ?? "").trim());
 }
 
 // Quick actions for every desk (Josh approved the mock-up and all 7 recommendations, 4 Nov 2026).
@@ -37,36 +34,37 @@ describe("Quick actions for every desk", () => {
     resetWardAccessStoreForTests();
   });
 
-  it("gives the nurse in charge Confirm beds first, then Due back and the ward's own rows", () => {
+  // Audit two #117 (27 Nov 2026): the tiles that were only borrowed into the grid (Confirm beds, Referrals in,
+  // My jobs, Alerts, Broadcast) went with it; each desk keeps its own rows, which are checked here.
+  it("gives the nurse in charge Due back and the ward's own rows", () => {
     const tiles = tilesAt({ role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } });
     expect(tiles).toEqual(
-      expect.arrayContaining(["Confirm beds", "Due back", "Update a bed", "Record a delay", "Remind me"]),
+      expect.arrayContaining(["Due back", "Update a bed", "Record a delay", "Remind me", "Record transport booking"]),
     );
     expect(tiles).not.toContain("Broadcast");
   });
 
-  it("gives the ED New referral and Find a bed", () => {
+  it("gives the ED Find a bed, transport booking and form times", () => {
     const tiles = tilesAt({ role: "ed", scope: { kind: "ed", edId: "rph-ed" } });
-    expect(tiles).toEqual(
-      expect.arrayContaining(["New referral", "Find a bed", "Book transport", "Form times", "On-call"]),
-    );
+    expect(tiles).toEqual(expect.arrayContaining(["Find a bed", "Record transport booking", "Form times", "On-call"]));
   });
 
-  it("gives the community team Referrals in and Suburb lookup", () => {
+  it("gives the community team Suburb lookup and legal forms", () => {
     const tiles = tilesAt({ role: "community", scope: { kind: "team", teamName: "Midland" } });
-    expect(tiles).toEqual(expect.arrayContaining(["Referrals in", "New referral", "Suburb lookup"]));
+    expect(tiles).toEqual(expect.arrayContaining(["Suburb lookup", "Legal forms"]));
   });
 
-  it("gives the transport officer My jobs and Alerts, and no network bed figures", () => {
+  it("gives the transport officer On-call and Remind me, and no network bed figures", () => {
     const tiles = tilesAt({ role: "officer", scope: { kind: "jobs" } });
-    expect([...tiles].sort()).toEqual(["Alerts", "My jobs", "On-call", "Remind me"]);
+    expect(tiles).toEqual(expect.arrayContaining(["On-call", "Remind me"]));
     expect(tiles).not.toContain("Find a bed");
+    expect(tiles).not.toContain("Key figures");
   });
 
-  it("gives the site bed manager Broadcast for its wards", () => {
+  it("gives the site bed manager its wards' rows, without Record a delay", () => {
     const tiles = tilesAt({ role: "bed_manager", scope: { kind: "site", siteCode: "FSH" } });
-    expect(tiles).toEqual(expect.arrayContaining(["Update a bed", "Due back", "Broadcast"]));
-    // The bed manager may not record a delay (Q97), so that tile drops out with its row.
+    expect(tiles).toEqual(expect.arrayContaining(["Update a bed", "Due back", "Hospital feed"]));
+    // The bed manager may not record a delay (Q97), so that row drops out.
     expect(tiles).not.toContain("Record a delay");
   });
 
@@ -78,10 +76,9 @@ describe("Quick actions for every desk", () => {
         <WardToolsSheet isPhone roleLabel="Desk" onNavigate={vi.fn()} onNewReferral={vi.fn()} />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByTestId("ward-tools-toggle-quick-actions"));
-    const grid = screen.getByRole("group", { name: "Quick actions" });
-    for (const line of within(grid).getAllByText((_t, el) => el?.tagName === "EM")) {
-      expect((line.textContent ?? "").trim().split(/\s+/u).length).toBeLessThanOrEqual(4);
+    // Audit two #117: with no tile grid, a row's second line is its own short detail.
+    for (const line of [...document.querySelectorAll("em")]) {
+      expect((line.textContent ?? "").trim().split(/\s+/u).length).toBeLessThanOrEqual(6);
     }
   });
 });

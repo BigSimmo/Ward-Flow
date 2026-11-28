@@ -26,8 +26,9 @@ describe("the community team's More menu", () => {
         <CommunityScreen teamId={COMMUNITY_TEAM_PAGES[0]!.id} />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "More" }));
-    expect(screen.getByRole("menuitem", { name: "Alerts sample" })).toBeInTheDocument();
+    // Audit two #19 (27 Nov 2026): the More menu and its Alerts sample item are gone from the team row.
+    expect(screen.queryByRole("button", { name: "More" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Alerts sample" })).not.toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: "Tasks sample" })).not.toBeInTheDocument();
   });
 });

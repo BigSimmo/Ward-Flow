@@ -108,7 +108,7 @@ describe("Alerts redesign: the coordinator's page", () => {
     renderAs({ role: "coordinator", scope: { kind: "statewide" } });
     expect(screen.queryByRole("combobox", { name: "Highlight by owner" })).not.toBeInTheDocument();
     expect(screen.queryByRole("group", { name: "Highlight by owner" })).not.toBeInTheDocument();
-    expect(within(screen.getByRole("radiogroup", { name: "Arrange by" })).getByRole("radio", { name: /Owner/u }));
+    expect(within(screen.getByRole("radiogroup", { name: "Group by" })).getByRole("radio", { name: /Owner/u }));
   });
 
   it("names its one action row Hand back after Take, beside More actions", () => {
@@ -122,7 +122,8 @@ describe("Alerts redesign: the coordinator's page", () => {
     } else {
       // INV-ACTION-148 (14 Nov 2026): a row that is the coordinator's by default was never taken, so
       // there is nothing to hand back; it shows the greyed "Yours" rather than a refused Hand back.
-      expect(within(panel()).getByRole("button", { name: /^Yours: / })).toHaveTextContent("Yours");
+      // Audit three #31: it shows "Yours" as a tag in the drawer head, not a button.
+      expect(within(panel()).getAllByText("Yours").length).toBeGreaterThan(0);
       expect(within(panel()).queryByRole("button", { name: /^Hand back / })).not.toBeInTheDocument();
     }
     expect(within(panel()).getByTestId("alerts-more-actions")).toBeInTheDocument();
@@ -146,7 +147,7 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
     expect(screen.queryByRole("button", { name: /^Checking \d+ flagged/u })).not.toBeInTheDocument();
     expect(screen.queryByText("Pick an alert to see it here")).not.toBeInTheDocument();
     // One ward needs no arrange-by or owner lens, and a quiet ward has no Today to chart.
-    expect(screen.queryByRole("radiogroup", { name: "Arrange by" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radiogroup", { name: "Group by" })).not.toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "Highlight by owner" })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Today" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-alerts-order-note")).not.toBeInTheDocument();
@@ -155,7 +156,7 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
   it("keeps the queue and Today for a ward with alerts, without the arrange-by lens", () => {
     renderAs({ role: "ward", scope: { kind: "ward", unitIds: [ward.id] } });
     expect(screen.queryByTestId("ward-alerts-calm")).not.toBeInTheDocument();
-    expect(screen.queryByRole("radiogroup", { name: "Arrange by" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radiogroup", { name: "Group by" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Today" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Checking \d+ flagged/u })).toBeInTheDocument();
   });
@@ -224,9 +225,7 @@ describe("Alerts redesign: transport officer (ROLE BRANCH officer)", () => {
     // AL2 (3 Nov 2026): Broadcasts shows only on a desk with a broadcast or that can send one.
     const tabs = within(screen.getByRole("tablist", { name: "Alerts views" })).getAllByRole("tab");
     expect(tabs.map((tab) => (tab.textContent ?? "").replace(/\d+/gu, "").trim())).toEqual(["Open", "Cleared"]);
-    expect(
-      within(screen.getByRole("radiogroup", { name: "Arrange by" })).queryByRole("radio", { name: /Owner/u }),
-    ).toBeNull();
+    expect(screen.queryByRole("radio", { name: /Owner/u })).toBeNull();
     expect(screen.queryByRole("combobox", { name: "Highlight by owner" })).not.toBeInTheDocument();
   });
 });

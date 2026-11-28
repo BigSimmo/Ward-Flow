@@ -289,14 +289,14 @@ describe("recording a departure from the ward board", () => {
     selectAnOccupiedBed();
     fireEvent.click(screen.getByTestId("ward-board-record-leaving-submit"));
 
-    const dialog = screen.getByRole("dialog", { name: "Confirm discharge" });
-    const proceed = within(dialog).getByTestId("ward-board-confirm-proceed");
-    expect(proceed).toBeDisabled();
+    const dialog = screen.getByRole("alertdialog", { name: "Record discharge" });
+    const proceed = within(dialog).getByRole("button", { name: "Record discharge" });
+    expect(proceed).toHaveAttribute("aria-disabled", "true");
     expect(departures()).toBe(before);
     const chosen = LEAVING_DESTINATIONS[1];
     fireEvent.change(within(dialog).getByTestId("ward-board-confirm-destination"), { target: { value: chosen.id } });
     expect(within(dialog).getByTestId("ward-board-confirm-destination-text")).toHaveTextContent(chosen.label);
-    fireEvent.click(proceed);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Record discharge" }));
     expect(departures()).toBe(before + 1);
   });
 });

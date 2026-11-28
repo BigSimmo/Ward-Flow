@@ -187,6 +187,14 @@ const CHECKED_TOGGLES = [
   "ward-ed-withdraw-referral-toggle",
 ] as const;
 
+/** The row's Form cell, found by its column head, since the optional tier column moves the index. */
+function formCellOf(id: string): HTMLElement {
+  const row = screen.getByTestId(`ward-ed-patient-${id}`);
+  const heads = [...row.closest("table")!.querySelectorAll("th")];
+  const index = heads.findIndex((head) => /^Form/u.test(head.textContent ?? ""));
+  return row.querySelectorAll("td")[index] as HTMLElement;
+}
+
 describe("the ED screen's form-expiry line reads only the typed expiry", () => {
   afterEach(cleanup);
 
@@ -256,7 +264,7 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
     expect(within(screen.getByRole("menu")).getByText(full)).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
     // The danger triangle, never the amber dot that "close" uses.
-    const formCell = screen.getByTestId(`ward-ed-patient-${PAST_DUE_ID}`).querySelectorAll("td")[4];
+    const formCell = formCellOf(PAST_DUE_ID);
     expect(formCell.querySelector("svg path")).not.toBeNull();
     expect(formCell.querySelector("svg circle")).toBeNull();
     expect(screen.queryByTestId(`ward-ed-form-passed-${CLOSE_DUE_ID}`)).toBeNull();
@@ -271,7 +279,7 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
 
   it("no form recorded reads 'Not recorded' unless the person is voluntary (CS-14)", () => {
     render(<EdScreen edId="arm-ed" />);
-    const formCell = (id: string) => screen.getByTestId(`ward-ed-patient-${id}`).querySelectorAll("td")[4];
+    const formCell = formCellOf;
     expect(formCell(noFormDetained.id)).toHaveTextContent(/^Not recorded$/);
     expect(formCell(noFormVoluntary.id)).toHaveTextContent(/^None$/);
   });

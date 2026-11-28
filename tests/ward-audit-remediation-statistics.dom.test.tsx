@@ -132,14 +132,14 @@ describe("audit remediation: live phone statistics sheets", () => {
     expect(within(screen.getByRole("dialog")).queryByText("1")).toBeNull();
   });
 
-  it("applies the offered team sort to Data rows without dropping unavailable teams", () => {
+  it("applies the offered team sort to Table rows without dropping unavailable teams", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <StatisticsCommunityScreen teamId="midland" />
       </WardFlowProvider>,
     );
     fireEvent.click(
-      within(screen.getByRole("radiogroup", { name: "Team comparison view" })).getByRole("radio", { name: "Data" }),
+      within(screen.getByRole("radiogroup", { name: "Team comparison view" })).getByRole("radio", { name: "Table" }),
     );
     const highest = within(screen.getByTestId("ward-statistics-community-comparison-table"))
       .getAllByRole("row")

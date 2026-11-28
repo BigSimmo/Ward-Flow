@@ -17,6 +17,11 @@ vi.mock("@/components/wf", async (importOriginal) => ({
   useIsPhone: () => true,
 }));
 
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+}));
+
 beforeEach(() => {
   window.sessionStorage.clear();
   resetWardAccessStoreForTests();

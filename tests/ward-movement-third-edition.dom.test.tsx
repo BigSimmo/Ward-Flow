@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { panelTitlesInOrder } from "./helpers/ward-panels";
 
@@ -45,6 +45,11 @@ import { dayOf } from "@/components/ward-management/ward-clock";
  * rendered in any sequence at all, including one that puts the summary above the board it summarises.
  */
 
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+}));
+
 const NOW = NOW_ANCHOR;
 
 function renderScreen() {
@@ -86,12 +91,8 @@ function renderScreen() {
  * Josh, 9 Nov 2026 (Movements audit item 8, approved on the review page): Transport now, the live
  * list with Check in, moves up to follow Today's traffic, before the worklist's backlog.
  */
-const EXPECTED_PANELS: readonly RegExp[] = [
-  /^The day$/u,
-  /^Today’s traffic$/u,
-  /^Transport right now$/u,
-  /^Movement worklist$/u,
-] as const;
+// Simplification (26 Nov 2026): Today's traffic is drawn only while Graph is chosen, and the screen opens on Table.
+const EXPECTED_PANELS: readonly RegExp[] = [/^The day$/u, /^Transport right now$/u, /^Movement worklist$/u] as const;
 
 describe("the Movements screen's panels, in the order a coordinator meets them", () => {
   it("renders every panel exactly once, in order, and no others", () => {
@@ -133,7 +134,7 @@ describe("the Movements screen's panels, in the order a coordinator meets them",
     expect(
       glance,
       "Shape of the day no longer sits in the Transport now panel's place before the board (audit item 8)",
-    ).toBe(2);
+    ).toBe(1);
     expect(glance, "the summary moved below the board it shares a place with").toBeLessThan(board);
   });
 

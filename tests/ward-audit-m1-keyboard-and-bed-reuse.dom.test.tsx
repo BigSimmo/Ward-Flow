@@ -354,8 +354,8 @@ describe("a bed vacated and refilled while its confirm is open (M1b)", () => {
     );
     fireEvent.click(document.getElementById(`ward-board-tile-${leaving.id}`)!);
     fireEvent.click(screen.getByTestId("ward-board-record-leaving-submit"));
-    const dialog = () => document.getElementById("ward-board-confirm-dialog");
-    const who = dialog()!.querySelector("#confirm-dialog-description strong")?.textContent ?? "";
+    const dialog = () => screen.queryByTestId("ward-board-confirm-dialog");
+    const who = dialog()!.querySelector("strong")?.textContent ?? "";
     const identity = within(dialog()!).getByTestId("ward-board-confirm-identity").textContent ?? "";
     expect(who).not.toBe("");
 
@@ -368,14 +368,15 @@ describe("a bed vacated and refilled while its confirm is open (M1b)", () => {
     // Either the confirm closed because its person left, or it still names the person it opened
     // for. It must never switch to the new occupant.
     if (dialog()) {
-      expect(dialog()!.querySelector("#confirm-dialog-description strong")).toHaveTextContent(who);
+      expect(dialog()!.querySelector("strong")).toHaveTextContent(who);
       expect(within(dialog()!).getByTestId("ward-board-confirm-identity")).toHaveTextContent(identity);
       expect(dialog()).not.toHaveTextContent(refillName);
       fireEvent.change(within(dialog()!).getByTestId("ward-board-confirm-destination"), {
         target: { value: LEAVING_DESTINATIONS[0]!.id },
       });
-      const proceed = within(dialog()!).getByTestId("ward-board-confirm-proceed");
-      if (!proceed.hasAttribute("disabled")) fireEvent.click(proceed);
+      const proceed = within(dialog()!).getByRole("button", { name: "Record discharge" });
+      if (!proceed.hasAttribute("disabled") && proceed.getAttribute("aria-disabled") !== "true")
+        fireEvent.click(proceed);
     }
     expect(departures).not.toContain(REFILL_ADMISSION_ID);
     expect(departures.every((id) => id === leaving.id)).toBe(true);

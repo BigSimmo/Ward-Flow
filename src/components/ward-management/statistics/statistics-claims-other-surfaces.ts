@@ -781,6 +781,11 @@ export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
   },
   {
     id: "community-index/enumeration/the-vocabulary-comes-from-one-source-document",
+    retiredPageProse: {
+      date: "2026-11-26",
+      reason:
+        "Simplification of 26 Nov 2026: the Community index no longer prints its source-document sentence. The model evidence and falsifier stay checked.",
+    },
     renderedIn: COMMUNITY_INDEX,
     rendered: "Every team listed here comes from one extracted source",
     claim: "The team vocabulary is read out of the extracted catchment rows of one source document.",

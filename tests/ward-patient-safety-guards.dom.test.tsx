@@ -51,27 +51,27 @@ describe("WardBoard Patient Safety Confirmations", () => {
     const dialog = screen.getByRole("alertdialog");
     expect(dialog).toBeInTheDocument();
     expect(dialog).toHaveAttribute("aria-modal", "true");
-    expect(screen.getByText("Confirm discharge")).toBeInTheDocument();
+    expect(within(dialog).getByRole("heading", { name: "Record discharge" })).toBeInTheDocument();
 
     // No departure toast before confirmation
     expect(screen.queryByTestId("ward-board-toast")).not.toBeInTheDocument();
 
     // Cancel closes dialog without dispatching
-    const cancelBtn = screen.getByTestId("ward-board-confirm-cancel");
+    const cancelBtn = within(dialog).getByRole("button", { name: "Cancel" });
     fireEvent.click(cancelBtn);
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-board-toast")).not.toBeInTheDocument();
 
     // Re-open and confirm departure
     fireEvent.click(leaveBtn);
-    const proceedBtn = screen.getByTestId("ward-board-confirm-proceed");
-    expect(proceedBtn).toHaveTextContent("Record discharge");
+    const reopened = screen.getByRole("alertdialog");
+    const proceedBtn = within(reopened).getByRole("button", { name: "Record discharge" });
     // Audit CS3-07: where they went starts blank and must be chosen before the departure records.
-    expect(proceedBtn).toBeDisabled();
+    expect(proceedBtn).toHaveAttribute("aria-disabled", "true");
     fireEvent.change(screen.getByTestId("ward-board-confirm-destination"), {
       target: { value: "discharged-to-the-community" },
     });
-    fireEvent.click(proceedBtn);
+    fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Record discharge" }));
 
     // Dialog closes and toast appears confirming departure
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
@@ -123,8 +123,7 @@ describe("WardBoard Patient Safety Confirmations", () => {
     expect(screen.getByText("Confirm emergency department transfer")).toBeInTheDocument();
 
     // Confirm transfer
-    const proceedBtn = screen.getByTestId("ward-board-confirm-proceed");
-    expect(proceedBtn).toHaveTextContent("Record ED transfer");
+    const proceedBtn = within(dialog).getByRole("button", { name: "Record ED transfer" });
     fireEvent.click(proceedBtn);
 
     // The confirmation closes (the bed's record stays open under it) and a toast reports the transfer.

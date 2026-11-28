@@ -198,8 +198,8 @@ describe("confirmation age", () => {
   it("reads two recorded times, never a judgement", () => {
     expect(ageText(100, 100)).toBe("just now");
     expect(ageText(100, 145)).toBe("45 min ago");
-    expect(ageText(100, 100 + 185)).toBe("3 h ago");
-    expect(ageText(0, MINUTES_PER_DAY * 2 + 5)).toBe("2 days ago");
+    expect(ageText(100, 100 + 185)).toBe("3 h 05 min ago");
+    expect(ageText(0, MINUTES_PER_DAY * 2 + 5)).toBe("2 d 0 h ago");
     expect(confirmationAge(0, 180, "NUM Ward 4A")).toBe("confirmed 3 h ago by NUM Ward 4A");
   });
 });

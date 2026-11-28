@@ -28,10 +28,10 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * nothing chosen (Josh, 31 Oct 2026). The heading counts the teams live. Synthetic catchment data
  * only; the typed words stay in the box.
  */
-function renderIndex(teams?: Parameters<typeof CommunityIndex>[0]["teams"]) {
+function renderIndex(teams?: Parameters<typeof CommunityIndex>[0]["teams"], pageSwitch?: ReactNode) {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <CommunityIndex teams={teams} />
+      <CommunityIndex teams={teams} pageSwitch={pageSwitch} />
     </WardFlowProvider>,
   );
 }
@@ -45,10 +45,9 @@ function suburbField(): HTMLInputElement {
   return screen.getByRole("searchbox", { name: "Suburb or postcode" }) as HTMLInputElement;
 }
 
-/** Chooses a suburb from the quick picks, the way a reader would. */
+/** Looks a suburb up by typing it. The quick picks now hold only suburbs looked up recently in the session. */
 function pickSuburb(name: string) {
-  const picks = within(lookupCard()).getByRole("group", { name: "Suburbs whose row names more than one team" });
-  fireEvent.click(within(picks).getByRole("button", { name }));
+  fireEvent.change(suburbField(), { target: { value: name } });
 }
 
 afterEach(() => {
@@ -59,18 +58,19 @@ describe("Community heading — a live count of community teams", () => {
   // Page-top redesign (Josh, 9 Nov 2026): the title asks the page's question and the live count is
   // the first figure, with the source line beside the search.
   it('reads "N community teams" from the list it is given, with the source line under it', () => {
-    renderIndex();
+    // #88 (audit two, 27 Nov 2026): the Teams figure shows on the Find page, which carries the page switch.
+    renderIndex(undefined, <span>Find</span>);
     expect(screen.getByRole("heading", { level: 1 }).textContent?.replace(/\s+/gu, " ").trim()).toBe(
-      "Which team covers a suburb",
+      "Community teams A to Z",
     );
     const figure = screen.getByTestId("community-figure-teams");
     expect(figure.querySelector("b")?.textContent).toBe(String(COMMUNITY_TEAM_PAGES.length));
     expect(within(figure).getByText("community teams")).toBeInTheDocument();
-    expect(screen.getByText("From referral catchment documents")).toBeInTheDocument();
+    expect(screen.getByText(/comes from the referral catchment documents/)).toBeInTheDocument();
   });
 
   it("follows the list, not a fixed number", () => {
-    renderIndex(COMMUNITY_TEAM_PAGES.slice(0, 5));
+    renderIndex(COMMUNITY_TEAM_PAGES.slice(0, 5), <span>Find</span>);
     expect(screen.getByTestId("community-figure-teams").querySelector("b")?.textContent).toBe("5");
   });
 });
@@ -79,10 +79,9 @@ describe("Community suburb lookup — a shared suburb warns first, then every te
   it("opens empty: no suburb typed, no quick pick pressed, no warning and no team", () => {
     renderIndex();
     expect(suburbField().value).toBe("");
-    const picks = within(lookupCard()).getByRole("group", { name: "Suburbs whose row names more than one team" });
-    const buttons = within(picks).getAllByRole("button");
-    expect(buttons.length, "no quick picks to check").toBeGreaterThan(0);
-    for (const button of buttons) expect(button).toHaveAttribute("aria-pressed", "false");
+    // The quick picks hold recent suburbs only, so a fresh session offers none and nothing is pressed.
+    expect(within(lookupCard()).queryByRole("group", { name: /Suburbs looked up recently/ })).toBeNull();
+    expect(within(lookupCard()).queryAllByRole("button", { pressed: true })).toHaveLength(0);
     expect(within(lookupCard()).queryByTestId("suburb-lookup-shared-warning")).toBeNull();
     expect(within(lookupCard()).queryByRole("link", { name: /^Open / })).toBeNull();
   });

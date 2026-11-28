@@ -1,5 +1,5 @@
 // DA-15: the All EDs status and service filters live in the web address, so a reload keeps them.
-import { act, cleanup, render } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { EdIndex } from "@/components/ward-management/ed/ed-index";
@@ -38,13 +38,17 @@ describe("All EDs filters in the address (DA-15)", () => {
     window.history.replaceState(null, "", "/bedchart/ed?status=past-target&service=South+Metro");
     const { container } = renderIndex();
     await settle();
-    expect(checked(container)).toEqual(expect.arrayContaining(["Past target", "South"]));
+    expect(checked(container)).toEqual(expect.arrayContaining(["South"]));
+    // Audit three #15: the status radiogroup is gone from the row; the address still narrows the list and
+    // the count line names the filter it applied.
+    expect(screen.getByTestId("ed-index-match-count")).toHaveTextContent(/Over target/u);
   });
 
   it("ignores a value it does not know rather than guessing", async () => {
     window.history.replaceState(null, "", "/bedchart/ed?status=Smith");
     const { container } = renderIndex();
     await settle();
-    expect(checked(container)).toEqual(expect.arrayContaining(["All EDs", "All"]));
+    expect(checked(container)).toEqual(expect.arrayContaining(["All EDs"]));
+    expect(screen.queryByTestId("ed-index-match-count")).toBeNull();
   });
 });

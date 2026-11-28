@@ -212,18 +212,18 @@ function renderModal() {
       <RejectionCount />
     </WardFlowProvider>,
   );
-  return screen.getByTestId("save-arrival-plan-button");
+  return screen.getByRole("button", { name: "Save arrival plan" });
 }
 
 describe("actions limited by the route's role (feature 11)", () => {
   it("disables an action the route's role may not take, with a short visible reason", () => {
     navigation.pathname = "/bedchart/transport/officer";
     const save = renderModal();
-    expect(save).toBeDisabled();
+    expect(save).toHaveAttribute("aria-disabled", "true");
     const reason = screen.getByText("Coordinator, ED, ward or community team only");
     expect(save.getAttribute("aria-describedby")).toBe(reason.closest("[id]")?.id);
     const before = screen.getByTestId("probe").textContent;
-    fireEvent.submit(save.closest("form")!);
+    fireEvent.submit(screen.getByRole("dialog").querySelector("form")!);
     // Nothing is dispatched, so nothing is recorded or refused.
     expect(screen.getByTestId("probe").textContent).toBe(before);
   });
@@ -231,7 +231,7 @@ describe("actions limited by the route's role (feature 11)", () => {
   it("leaves the same action available on a route whose role may take it", () => {
     navigation.pathname = "/bedchart/ward/rph-adult-secure";
     const save = renderModal();
-    expect(save).toBeEnabled();
+    expect(save).not.toHaveAttribute("aria-disabled", "true");
     expect(save.hasAttribute("aria-describedby")).toBe(false);
     expect(screen.queryByText("Coordinator, ED, ward or community team only")).toBeNull();
   });

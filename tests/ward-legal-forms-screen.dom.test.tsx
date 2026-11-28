@@ -392,7 +392,7 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     const undoBtn = screen.getByRole("button", { name: "Undo" });
     fireEvent.click(undoBtn);
     expect(within(panel).getByText(/^Ended/u)).toBeInTheDocument();
-    expect(screen.getByText(`Form extension undone for ${name}.`)).toBeInTheDocument();
+    expect(screen.getByText(`Undone: Form extension for ${name}`)).toBeInTheDocument();
   });
 
   it("blocks Form 3C on a movement that arrived on Form 3D in Record a form and keeps the sheet open", () => {

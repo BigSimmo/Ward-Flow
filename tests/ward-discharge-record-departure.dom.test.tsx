@@ -93,7 +93,9 @@ describe("Record departure from the release sheet", () => {
     const destination = screen.getByTestId("ward-discharge-departure-destination");
     // F-45 (Josh, 13 Nov 2026): no destination starts selected, and the record waits for one.
     expect(destination).toHaveValue("");
-    expect(screen.getByTestId("ward-discharge-record-departure")).toBeDisabled();
+    // Audit three #32: with no destination, Record discharge asks where in a menu and records nothing.
+    expect(screen.getByTestId("ward-discharge-record-departure")).toHaveAttribute("aria-haspopup", "menu");
+    expect(probe()).toEqual([before, 0]);
     fireEvent.change(destination, { target: { value: "transferred-to-a-general-hospital" } });
     fireEvent.click(screen.getByTestId("ward-discharge-record-departure"));
 
@@ -182,16 +184,16 @@ describe("Record discharge asks about transport while it is still to come (item 
     expect(releaseId, "the seed has a confirmed release still waiting on transport").toBeDefined();
     const row = document.querySelector(`[data-release-id="${releaseId}"]`) as HTMLElement;
     fireEvent.click(row);
-    const record = screen.getByTestId("ward-discharge-record-departure");
-    // Nothing is chosen for them: no destination (F-45), and then the transport answer.
-    expect(record).toBeDisabled();
+    // Nothing is chosen for them: no destination (F-45, the step asks in a menu), then the transport answer.
+    expect(screen.getByTestId("ward-discharge-record-departure")).toHaveAttribute("aria-haspopup", "menu");
     fireEvent.change(screen.getByTestId("ward-discharge-departure-destination"), {
       target: { value: "discharged-to-the-community" },
     });
-    expect(record).toBeDisabled();
+    expect(screen.getByTestId("ward-discharge-record-departure")).toHaveAttribute("aria-disabled", "true");
     const transport = screen.getByTestId("ward-discharge-departure-transport");
     fireEvent.click(within(transport).getByRole("radio", { name: "Still waiting" }));
-    expect(record).toBeEnabled();
+    const record = screen.getByTestId("ward-discharge-record-departure");
+    expect(record).not.toHaveAttribute("aria-disabled", "true");
     const waitingBefore = screen.getByTestId("transport-probe").textContent!.split("|")[1]!;
     fireEvent.click(record);
     const waitingAfter = screen.getByTestId("transport-probe").textContent!.split("|")[1]!;
@@ -211,6 +213,6 @@ describe("Record discharge asks about transport while it is still to come (item 
       target: { value: "did-not-return" },
     });
     expect(screen.queryByTestId("ward-discharge-departure-transport")).toBeNull();
-    expect(screen.getByTestId("ward-discharge-record-departure")).toBeEnabled();
+    expect(screen.getByTestId("ward-discharge-record-departure")).not.toHaveAttribute("aria-disabled", "true");
   });
 });

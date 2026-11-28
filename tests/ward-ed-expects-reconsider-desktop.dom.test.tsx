@@ -30,7 +30,8 @@ describe("ED desktop Expected list", () => {
           <EdScreen edId={department.id} />
         </WardFlowProvider>,
       );
-      const option = screen.queryByRole("radio", { name: /^Expected/u });
+      // Expected is a section of My list now (batch 1 item 14, 26 Nov 2026), not a Lists tab.
+      const option = screen.queryByRole("radio", { name: /^My list/u });
       if (option) {
         fireEvent.click(option);
         const table = screen.queryByRole("table", { name: "Expected" });

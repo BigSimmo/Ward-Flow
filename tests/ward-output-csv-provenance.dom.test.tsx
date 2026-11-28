@@ -61,14 +61,19 @@ it("capacity CSV retains the held snapshot time across the new year and preserve
 it("directory CSV explicitly stamps a Perth generation time and distinguishes reference data", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date("2026-12-31T16:05:00Z"));
-  render(<CommunityIndex teams={[]} />);
+  render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <CommunityIndex teams={[]} />
+    </WardFlowProvider>,
+  );
   fireEvent.click(screen.getByTestId("community-action-catchment-guide"));
   const csv = await captureCsv(() => fireEvent.click(screen.getByRole("button", { name: "Export team list" })));
   const lines = csv.split("\r\n");
-  expect(lines[1]).toContain("2027");
-  expect(lines[1]).toContain("00:05 AWST");
+  // The export is stamped with the board's time, with the year and zone (time audit D8); the community
+  // index now reads the board clock, so it must sit in the provider.
+  expect(lines[1]).toMatch(/^"As at","[A-Z][a-z]{2} \d{1,2} [A-Z][a-z]{2} \d{4}, \d{2}:\d{2} (demo time|AWST)"$/u);
   expect(lines[3]).toBe('"Period","Reference directory at export time; not a clinical snapshot"');
-  expect(lines[5]).toBe('"Team","Health service","Catchment suburbs","Reads like another name"');
+  expect(lines[5]).toBe('"Team","Health service","Catchment suburbs","Similar names"');
 });
 
 it("quotes metadata through the same formula-safe CSV path as the untouched data schema", async () => {
@@ -107,9 +112,12 @@ it("searched roster export names matching rows without repeating the typed searc
       <StatisticsWardScreen unitId={admission.unitId} />
     </WardFlowProvider>,
   );
+  // The roster folds under "More figures" (26 Nov 2026), and its CSV is an item of the page's Share menu when one is hosted.
+  fireEvent.click(screen.getByTestId("ward-statistics-more-figures-toggle"));
   fireEvent.change(screen.getByRole("searchbox", { name: "Filter recorded admission roster" }), {
     target: { value: admission.id },
   });
+  // Outside the Statistics tab row there is no Share menu, so the card keeps its own CSV button.
   const roster = screen.getByTestId("ward-statistics-ward-roster");
   const csv = await captureCsv(() => fireEvent.click(within(roster).getByRole("button", { name: "CSV" })));
   const lines = csv.split("\r\n");
@@ -133,7 +141,11 @@ it("out-of-area export names the complete current ledger rather than the visible
       <OutOfAreaBoard />
     </WardFlowProvider>,
   );
-  const csv = await captureCsv(() => fireEvent.click(screen.getByRole("button", { name: "Export list as CSV" })));
+  // Audit two #28: Copy summary and Export are one Share menu.
+  const csv = await captureCsv(() => {
+    fireEvent.click(screen.getByTestId("ward-out-of-area-share"));
+    fireEvent.click(screen.getByTestId("ward-out-of-area-export"));
+  });
   const scope = csv.split("\r\n").find((line) => line.startsWith('"Scope"'));
   expect(scope).toContain("complete current ledger");
   expect(scope).not.toContain("matching rows");

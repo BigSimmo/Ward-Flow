@@ -31,7 +31,7 @@ function openReferral(referralId: string) {
   // Home flow (Q340, Q345, 3 Nov 2026): referrals are listed only under the default "Needs you"
   // list, in its "Referrals to decide" group, which shows a few rows then "Show N more".
   const decide = screen.getByRole("region", { name: "Referrals to decide" });
-  const more = within(decide).queryByRole("button", { name: /^Show \d+ more/u });
+  const more = within(decide).queryByRole("button", { name: /^Show all \d+/u });
   if (more) fireEvent.click(more);
   const row = decide.querySelector<HTMLElement>(`[data-referral-id="${referralId}"]`);
   if (!row) throw new Error(`${referralId} is not listed under Referrals to decide`);

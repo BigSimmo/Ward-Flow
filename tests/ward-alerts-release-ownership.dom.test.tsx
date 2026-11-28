@@ -49,15 +49,15 @@ const releaseButton = (panel: HTMLElement) =>
   within(panel).getByRole("button", { name: (name) => name.startsWith("Hand back ") });
 
 describe("alerts: release an alert you took (P019)", () => {
-  it("offers Hand back after Take, asks first, and records Released by", () => {
+  // Simplification R2 (26 Nov 2026): Hand back is one tap; the toast's Undo takes the alert again.
+  it("offers Hand back after Take, hands back in one tap, and records Released by", () => {
     const { panel, title } = openAndTake();
     expect(title.length).toBeGreaterThan(0);
     const release = releaseButton(panel);
     expect(release).toHaveTextContent(/^Hand back$/);
 
     fireEvent.click(release);
-    const dialog = screen.getByRole("dialog", { name: `Hand ${title} back to the queue?` });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Hand back" }));
+    expect(screen.queryByRole("dialog", { name: /back to the queue/u })).toBeNull();
 
     expect(within(panel).getByRole("button", { name: /^Take / })).toBeInTheDocument();
     expect(screen.getByText(`Released ${title}`)).toBeInTheDocument();
@@ -69,21 +69,11 @@ describe("alerts: release an alert you took (P019)", () => {
   it("Undo takes the alert back", () => {
     const { panel, title } = openAndTake();
     fireEvent.click(releaseButton(panel));
-    const dialog = screen.getByRole("dialog", { name: `Hand ${title} back to the queue?` });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Hand back" }));
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     });
     expect(releaseButton(panel)).toBeInTheDocument();
     expect(within(panel).queryByRole("button", { name: /^Take / })).toBeNull();
-  });
-
-  it("Cancel keeps the alert yours", () => {
-    const { panel, title } = openAndTake();
-    fireEvent.click(releaseButton(panel));
-    const dialog = screen.getByRole("dialog", { name: `Hand ${title} back to the queue?` });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
-    expect(releaseButton(panel)).toBeInTheDocument();
   });
 });
 
@@ -116,7 +106,6 @@ function confirmSyntheticRelease(dispatch: WardCommandDispatch) {
     </ToastProvider>,
   );
   fireEvent.click(screen.getByRole("button", { name: "Hand back Synthetic alert" }));
-  fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Hand back" }));
 }
 
 describe("shared Release confirmation and Undo lifetime", () => {

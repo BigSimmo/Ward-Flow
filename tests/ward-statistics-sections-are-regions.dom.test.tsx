@@ -61,10 +61,14 @@ import { allEmergencyDepartments, allUnits, NOW_ANCHOR } from "@/components/ward
  */
 
 function headingsOutsideTheFootnote(container: HTMLElement): string[] {
-  return [...container.querySelectorAll("h2")]
-    .filter((heading) => heading.closest('[data-ward-primitive="stat-footnote"]') === null)
-    .map((heading) => (heading.textContent ?? "").trim())
-    .filter((text) => text.length > 0);
+  return (
+    [...container.querySelectorAll("h2")]
+      .filter((heading) => heading.closest('[data-ward-primitive="stat-footnote"]') === null)
+      // A card folded away under "More figures" is out of the page until opened, so it names no landmark yet.
+      .filter((heading) => heading.closest("[hidden]") === null)
+      .map((heading) => (heading.textContent ?? "").trim())
+      .filter((text) => text.length > 0)
+  );
 }
 
 /**

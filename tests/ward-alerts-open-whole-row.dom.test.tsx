@@ -39,7 +39,7 @@ describe("alert rows: the Open button covers the row", () => {
     expect(row).not.toBeNull();
     const open = within(row!).getByTestId("ward-alerts-open");
     expect(open.tagName).toBe("BUTTON");
-    expect(open.getAttribute("aria-label")).toMatch(/^Open /);
+    expect(open.getAttribute("aria-label")).toMatch(/, open /);
     fireEvent.click(open);
     expect(row).toHaveAttribute("data-selected", "true");
     expect(open).toHaveAttribute("aria-current", "true");

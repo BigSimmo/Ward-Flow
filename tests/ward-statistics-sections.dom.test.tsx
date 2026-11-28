@@ -349,12 +349,10 @@ describe("ward and ED comparisons — the way into one unit", () => {
    * other "choose a ward" link uses. The finder's own tests (every ward and ED, an unknown site, an
    * empty network) live with the finder.
    */
-  it("links Open a unit to the one unit finder rather than drawing a second chooser", () => {
+  it("draws no Open a unit tool or second chooser; the Browse card is the way into a unit (audit two #118)", () => {
     renderInProvider(<StatisticsCompareScreen />);
 
-    const open = screen.getByTestId("ward-statistics-compare-tool-open-unit");
-    expect(open.getAttribute("href")).toBe(STATISTICS_UNIT_CHOOSER_HREF);
-    expect(open.getAttribute("href")).toBe("/bedchart/statistics#choose-a-unit");
+    expect(screen.queryByTestId("ward-statistics-compare-tool-open-unit")).toBeNull();
     expect(document.getElementById(STATISTICS_UNIT_CHOOSER_ID)).toBeNull();
     expect(screen.queryByTestId("ward-statistics-compare-chooser")).toBeNull();
   });
@@ -426,8 +424,8 @@ describe("every link that offers the chooser lands on the chooser", () => {
     },
   );
 
-  it("points those links at the one unit finder on the statistics home page (D-91)", () => {
-    expect(STATISTICS_UNIT_CHOOSER_HREF).toBe(`/bedchart/statistics#${STATISTICS_UNIT_CHOOSER_ID}`);
+  it("points those links at the Wards segment of the Browse card", () => {
+    expect(STATISTICS_UNIT_CHOOSER_HREF).toBe("/bedchart/statistics/wards#browse");
   });
 });
 
@@ -558,7 +556,9 @@ describe("StatisticsScreen interactive controls and table sorting accessibility"
     // 5 ward-pressure columns + 6 emergency-department columns. v6 (7 Oct 2026): the approved
     // "Where the pressure is" table shows the hospital as a site code beside the ward name, so the
     // separate Hospital column went; the test name keeps its original count wording.
-    expect(sortableThs.length).toBe(11);
+    // 26 Nov 2026: the ED table moved into the Browse card's EDs segment, so the board draws only
+    // the 5 ward-pressure columns.
+    expect(sortableThs.length).toBe(5);
 
     // Each sortable th must contain a <button type="button">
     for (const th of Array.from(sortableThs)) {

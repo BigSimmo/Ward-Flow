@@ -1,3 +1,4 @@
+import { getBedStep, queryBedStep } from "./helpers/ward-bed-steps";
 import "@testing-library/jest-dom/vitest";
 import { act, fireEvent, render, screen, within, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -347,7 +348,7 @@ describe("completion does not dismiss a newer placement or bed visit", () => {
     fireEvent.click(document.querySelector(`[data-admission-id="${id}"]`)!);
     fireEvent.click(screen.getByRole("tab", { name: "Leaving" }));
     chooseChip("Where are they going?", "Discharged to the community");
-    fireEvent.click(screen.getByRole("button", { name: /Record discharge/u }));
+    fireEvent.click(getBedStep(/Record discharge/u));
     fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
     expect(recordDeparture).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole("button", { name: "Next bed" }));

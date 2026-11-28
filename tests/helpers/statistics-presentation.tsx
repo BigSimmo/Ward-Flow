@@ -30,7 +30,9 @@ export function assertStatisticsPresentation(mode: Mode, retiredId?: string) {
   expect(page.getAllByRole("heading", { level: 1 })).toHaveLength(1);
   expect(container.querySelectorAll("details")).toHaveLength(0);
   for (const panel of container.querySelectorAll('[data-ward-primitive="panel"]')) {
-    expect(panel).toBeVisible();
+    // Simplification 26 Nov 2026: "More figures" folds its cards away until opened (a hidden
+    // ancestor on purpose), so only a panel outside such a fold must be showing.
+    if (!panel.closest("[hidden]")) expect(panel).toBeVisible();
     const body = panel.cloneNode(true) as HTMLElement;
     body.querySelector('[data-ward-primitive="panel-header"]')?.remove();
     expect(body.textContent?.trim(), "Statistics cards must contain useful content").not.toBe("");

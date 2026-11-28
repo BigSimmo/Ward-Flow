@@ -135,7 +135,10 @@ describe("greyed actions on the ED board", () => {
     const note = screen.getByTestId("ward-ed-unavailable-handover-WF-011");
     expect(note.textContent).toContain("Transport not logged");
     fireEvent.click(within(note).getByRole("button", { name: "Record transport booking" }));
-    expect(screen.getByTestId("ward-ed-book-transport-toggle-WF-011").getAttribute("aria-expanded")).toBe("true");
+    // The booking opens in its own popup (A12-08), titled for the step.
+    expect(screen.getByRole("dialog", { name: "Record transport booking" })).toBe(
+      screen.getByTestId("ward-ed-book-transport-WF-011"),
+    );
     // The community referral waits on an examination. H-0974 (26 Oct 2026): with the bed pulled,
     // Transport booked is this sheet's pinned next step, not Record exam, so the note offers
     // Record examination beside its words.

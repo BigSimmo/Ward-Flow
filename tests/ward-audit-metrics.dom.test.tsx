@@ -8,6 +8,7 @@ import { WardFlowProvider, WardFlowOverride, useWardFlow } from "@/components/wa
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { CensusDetail } from "@/components/ward-management/search/patient-census-view";
 import { buildCensus } from "@/components/ward-management/search/patient-census";
+import { wardStatistics } from "@/components/ward-management/ward-statistics";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
@@ -62,7 +63,7 @@ function ArrivalFixture({ stage, eta }: { stage: Movement["stage"]; eta: number 
 }
 
 describe("audit metrics rendered regressions", () => {
-  it("R03 sorts by occupied plus pulled, matching displayed occupancy", () => {
+  it("R03 sorts by occupied plus pulled, matching displayed occupancy", async () => {
     const alpha = unit("Alpha", 1); // 9 in use: 6 occupied + 3 pulled.
     const beta = unit("Beta", 2); // 8 occupied.
     const pulled = Array.from({ length: 3 }, (_, index): Admission => ({
@@ -74,7 +75,8 @@ describe("audit metrics rendered regressions", () => {
     }));
     render(<StatisticsCapacityChart units={[alpha, beta]} bedReleases={[]} admissions={pulled} initialGroup="ward" />);
     fireEvent.click(screen.getByRole("button", { name: "Most ready" }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "Highest occupancy" }));
+    // The Sort menu loads its code on first use (menu-early), so the item arrives a moment after the press.
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Highest occupancy" }));
     const rows = screen.getAllByRole("button", { name: /occupied of 10 beds/ });
     expect(rows.map((row) => row.getAttribute("aria-label")?.split(":")[0])).toEqual(["Alpha", "Beta"]);
   });
@@ -113,9 +115,15 @@ describe("audit metrics rendered regressions", () => {
         <StatisticsCompareScreen units={[alpha, beta]} admissions={admissions} emergencyDepartments={[]} />
       </WardFlowProvider>,
     );
-    expect(screen.getByText("Average completed stay", { selector: "span" }).parentElement).toHaveTextContent(
-      "3.0 days",
-    );
+    // Audit two #119: the hero no longer carries the pooled "Average completed stay" figure, so the
+    // pooling is pinned where the page computes it: one pool of the compared wards' completed stays
+    // (3 one-day stays and one nine-day stay is 3.0 days, not the 5.0 of a mean of ward means), and
+    // the ward outside the comparison is left out of the page.
+    const pooled = admissions
+      .filter((admission) => admission.unitId === alpha.id || admission.unitId === beta.id)
+      .map((admission) => ({ ...admission, unitId: "pooled" }));
+    expect(wardStatistics("pooled", pooled, NOW_ANCHOR).averageCompletedStayDays).toBe(3);
+    expect(screen.queryByText(outside.name)).toBeNull();
   });
 
   it.each([

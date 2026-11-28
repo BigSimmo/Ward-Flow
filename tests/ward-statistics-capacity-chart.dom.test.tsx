@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { WardFlowOverride, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { StatisticsCapacityChart } from "@/components/ward-management/statistics/statistics-capacity-chart";
 import { allUnits } from "@/components/ward-management/ward-sites";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -26,6 +27,12 @@ const units = [unit("Alpha", "RPH", 10, 4, 3), unit("Beta", "RPH", 10, 2, 1), un
 
 function chart() {
   render(<StatisticsCapacityChart units={units} bedReleases={[]} />);
+}
+
+/** The Browse EDs segment reads the live movements, so the figures under test hold exactly the ones passed in. */
+function OnlyMovements({ movements, children }: { movements: Movement[]; children: ReactNode }) {
+  const value = useWardFlow();
+  return <WardFlowOverride value={{ ...value, movements }}>{children}</WardFlowOverride>;
 }
 
 describe("current-capacity explorer", () => {
@@ -198,10 +205,17 @@ it("derives the network ED median from individual waits, including an even popul
   }));
   const { container } = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <StatisticsScreen movements={movements} />
+      <OnlyMovements movements={movements}>
+        <StatisticsScreen movements={movements} />
+      </OnlyMovements>
     </WardFlowProvider>,
   );
-  const table = container.querySelector<HTMLTableElement>("#edPressureTable")!;
+  // The ED table is the EDs segment of the one Browse card now (simplification 26 Nov 2026).
+  fireEvent.click(within(container).getByRole("radio", { name: /^EDs/u }));
+  for (const more of within(container).queryAllByRole("button", { name: /^Show all/u })) fireEvent.click(more);
+  const table = [...container.querySelectorAll<HTMLTableElement>('[data-testid="ward-statistics-browse"] table')].find(
+    (candidate) => [...candidate.tHead!.rows[0].cells].some((cell) => cell.textContent?.trim().startsWith("Median")),
+  )!;
   const row = [...table.tBodies[0].rows].find((row) => row.textContent?.includes(ed.siteCode))!;
   const medianColumn = [...table.tHead!.rows[0].cells].findIndex((cell) =>
     cell.textContent?.trim().startsWith("Median"),
@@ -287,10 +301,17 @@ it("gives the network ED median to the minute, the same figure All EDs shows (de
   }));
   const { container } = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <StatisticsScreen movements={movements} />
+      <OnlyMovements movements={movements}>
+        <StatisticsScreen movements={movements} />
+      </OnlyMovements>
     </WardFlowProvider>,
   );
-  const table = container.querySelector<HTMLTableElement>("#edPressureTable")!;
+  // The ED table is the EDs segment of the one Browse card now (simplification 26 Nov 2026).
+  fireEvent.click(within(container).getByRole("radio", { name: /^EDs/u }));
+  for (const more of within(container).queryAllByRole("button", { name: /^Show all/u })) fireEvent.click(more);
+  const table = [...container.querySelectorAll<HTMLTableElement>('[data-testid="ward-statistics-browse"] table')].find(
+    (candidate) => [...candidate.tHead!.rows[0].cells].some((cell) => cell.textContent?.trim().startsWith("Median")),
+  )!;
   const row = [...table.tBodies[0].rows].find((row) => row.textContent?.includes(ed.siteCode))!;
   const medianColumn = [...table.tHead!.rows[0].cells].findIndex((cell) =>
     cell.textContent?.trim().startsWith("Median"),

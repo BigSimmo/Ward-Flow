@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
@@ -35,26 +35,18 @@ afterEach(() => {
   window.history.replaceState(null, "", "/");
 });
 
-describe("Statistics phone Summary unit finder", () => {
-  it("shows the one finder at its anchor when a link arrives at #choose-a-unit, and Close shuts it", () => {
+describe("Statistics phone Summary with the unit finder retired (26 Nov 2026)", () => {
+  it("draws no finder or Browse card on the phone Summary, whatever anchor the address carries", () => {
     phoneViewport();
     window.history.replaceState(null, "", "/bedchart/statistics#choose-a-unit");
     const result = renderSummary();
 
-    const finder = screen.getByTestId("ward-statistics-phone-unit-finder");
-    expect(finder).toHaveAttribute("id", "choose-a-unit");
-    expect(result.container.querySelector("#choose-a-unit")).toBe(finder);
-    // The same finder the desktop shows, with its lists filled.
-    expect(within(finder).getByPlaceholderText("Find a ward")).toBeInTheDocument();
-    expect(within(finder).getAllByRole("link").length).toBeGreaterThan(0);
-
-    act(() => {
-      fireEvent.click(within(finder).getByRole("button", { name: "Close" }));
-    });
+    expect(screen.getByTestId("ward-statistics-screen")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-statistics-phone-unit-finder")).not.toBeInTheDocument();
+    expect(result.container.querySelector("#choose-a-unit")).toBeNull();
   });
 
-  it("draws no finder on the phone Summary without the anchor", () => {
+  it("draws no finder on the phone Summary without an anchor", () => {
     phoneViewport();
     window.history.replaceState(null, "", "/bedchart/statistics");
     const result = renderSummary();
@@ -64,22 +56,16 @@ describe("Statistics phone Summary unit finder", () => {
     expect(result.container.querySelector("#choose-a-unit")).toBeNull();
   });
 
-  it("lists the Wards tab A to Z by ward name, not most ready beds first (D-126)", () => {
+  it("still lists units with their ready beds on the phone Summary", () => {
     phoneViewport();
-    window.history.replaceState(null, "", "/bedchart/statistics#choose-a-unit");
+    window.history.replaceState(null, "", "/bedchart/statistics");
     renderSummary();
 
-    const list = within(screen.getByTestId("ward-statistics-phone-unit-finder")).getByRole("list", { name: "wards" });
-    const rows = within(list)
-      .getAllByRole("link")
-      .map((link) => ({
-        name: link.querySelector("span")?.firstChild?.textContent ?? "",
-        ready: Number(/(\d+) ready/.exec(link.textContent ?? "")?.[1]),
-      }));
-    const names = rows.map((row) => row.name);
-    expect(names.length).toBeGreaterThan(1);
-    expect(names).toEqual(names.toSorted((a, b) => a.localeCompare(b)));
-    // The synthetic seed has a ward with more ready beds after one with fewer.
-    expect(rows.some((row, index) => rows.slice(index + 1).some((later) => later.ready > row.ready))).toBe(true);
+    const list =
+      screen.queryByRole("list", { name: "Wards A to Z" }) ??
+      screen.getByRole("list", { name: "Hospitals by beds ready" });
+    const rows = within(list).getAllByRole("listitem");
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.some((row) => /\d+\s*ready/.test(row.textContent ?? ""))).toBe(true);
   });
 });

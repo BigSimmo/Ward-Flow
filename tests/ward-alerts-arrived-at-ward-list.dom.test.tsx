@@ -94,9 +94,13 @@ describe("Arrived at ward from the real Alerts list (P069)", () => {
 
     fireEvent.click(within(row!).getByTestId("ward-alerts-open"));
     const panel = screen.getByRole("complementary", { name: "Selected alert" });
-    fireEvent.click(within(panel).getByRole("button", { name: "Arrived at ward" }));
+    fireEvent.click(within(panel).getByRole("button", { name: "Record arrival" }));
     await act(async () => {
-      fireEvent.click(within(panel).getByRole("button", { name: "Mark arrived" }));
+      fireEvent.click(
+        within(within(panel).getByRole("group", { name: "Record arrival at the ward?" })).getByRole("button", {
+          name: "Record arrival",
+        }),
+      );
     });
 
     // The arrival is recorded and the alert has left the list, taking its detail with it.
@@ -112,6 +116,6 @@ describe("Arrived at ward from the real Alerts list (P069)", () => {
     });
     expect(screen.getByTestId("stage")).toHaveTextContent("pulled");
     expect(alertRow()).not.toBeNull();
-    expect(await screen.findByText("Undone. Back as it was.")).toBeInTheDocument();
+    expect(await screen.findByText("Undone: Back as it was")).toBeInTheDocument();
   });
 });

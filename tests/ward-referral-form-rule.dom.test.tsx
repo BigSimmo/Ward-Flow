@@ -72,6 +72,8 @@ describe("New referral form rule (FORM-REF)", () => {
     // The catchment is not confirmed: the next step opens anyway.
     next("Next, referral");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    // The patient story sits in the collapsed "More clinical detail" fold.
+    fireEvent.click(within(screen.getByTestId("ward-referral-fold-clinical")).getByText("More clinical detail"));
     expect(screen.getByLabelText(/Patient story/)).toBeVisible();
     fillOrigin();
     expect(screen.getByTestId("ward-referral-send-warnings")).toHaveTextContent(

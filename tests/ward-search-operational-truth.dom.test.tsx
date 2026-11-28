@@ -20,7 +20,7 @@ import { isOpen } from "@/components/ward-management/ward-derivations";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
 // The Patients census search is the kit's one page search field (D-91, Patients redesign).
-const SEARCH_LABEL = "Find a person by name, UMRN or place";
+const SEARCH_LABEL = "Find a person by name, UMRN, place or date of birth";
 const seed = seedWardFlowState();
 function search(movementId: string) {
   render(

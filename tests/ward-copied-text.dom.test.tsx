@@ -63,6 +63,8 @@ describe("copied text from Ward Flow screens opens with the synthetic line and c
         <DischargeBoard />
       </WardFlowProvider>,
     );
+    // Audit two #28: Copy counts sits in the desktop Share menu.
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
     fireEvent.click(screen.getByTestId("ward-discharge-copy"));
     const text = await copied();
     expectSafeCopy(text);

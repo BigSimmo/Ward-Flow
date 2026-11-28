@@ -353,7 +353,7 @@ describe("bed meeting agenda filtered headline counts", () => {
   /** Every row the list's card shows once it is unfolded. */
   function listedRows(id: string): number {
     const card = screen.getByTestId(`bed-meeting-agenda-${id}`);
-    const more = within(card).queryByRole("button", { name: /^Show \d+ more$/u });
+    const more = within(card).queryByRole("button", { name: /^Show all \d+$/u });
     if (more) fireEvent.click(more);
     return card.querySelector("ul")?.children.length ?? 0;
   }

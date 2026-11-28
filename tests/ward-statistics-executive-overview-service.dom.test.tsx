@@ -122,7 +122,7 @@ describe("Overview on the executive desk, counts only", () => {
   it("words the admission stages table, whose parts add up to its total row", () => {
     asDesk("executive", true);
     renderScreen(<StatisticsOverviewScreen />);
-    fireEvent.click(screen.getByRole("radio", { name: "Data" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Table" }));
     expect(text("ward-statistics-overview-stage-no-bed-yet")).toBe("fewer than 5");
   });
 
@@ -216,6 +216,10 @@ describe("one health service on the executive desk, counts only", () => {
     expect(screen.getByTestId("ward-statistics-service-ed-swarm-not-listed")).toHaveTextContent(
       "people are not listed",
     );
+    // The out-of-area ledger sits behind the People view of "Far from home and out of area".
+    fireEvent.click(
+      within(screen.getByRole("radiogroup", { name: "Far from home view" })).getByRole("radio", { name: "People" }),
+    );
     const repatriation = within(screen.getByTestId("ward-statistics-service-repatriation"));
     expect(repatriation.queryByRole("table")).toBeNull();
     expect(repatriation.getByTestId("ward-statistics-service-repatriation-not-listed")).toBeInTheDocument();
@@ -248,6 +252,9 @@ describe("one health service on the executive desk, counts only", () => {
     // 15 -> 17 (3 Nov 2026): two S6 example referrals from East Metro sites, declined, not placed.
     // 17 -> 16 (A16-14, 13 Nov 2026): the Armadale legal-form worked examples are off by default.
     expect(text("ward-statistics-service-placement-not-yet")).toBe("16");
+    fireEvent.click(
+      within(screen.getByRole("radiogroup", { name: "Far from home view" })).getByRole("radio", { name: "People" }),
+    );
     expect(within(screen.getByTestId("ward-statistics-service-repatriation")).getByRole("table")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-statistics-people-not-listed")).toBeNull();
   });

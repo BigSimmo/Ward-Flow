@@ -20,17 +20,15 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     return screen.getByRole("complementary", { name: "Selected alert" });
   }
 
-  it("arranges the queue by urgency, lanes or owner", () => {
+  it("arranges the queue by urgency or owner", () => {
     renderScreen();
-    const arrange = screen.getByRole("radiogroup", { name: "Arrange by" });
+    const arrange = screen.getByRole("radiogroup", { name: "Group by" });
     expect(within(arrange).getByRole("radio", { name: /Urgency/ })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("region", { name: "Act now" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Waiting" })).toBeInTheDocument();
 
-    fireEvent.click(within(arrange).getByRole("radio", { name: /Lanes/ }));
-    expect(screen.getByRole("region", { name: "Snoozed" })).toHaveTextContent(
-      "A snoozed act-now alert also stays listed in Act now.",
-    );
+    // r10: the Lanes arrangement is gone from the switch; Urgency and Owner remain.
+    expect(within(arrange).queryByRole("radio", { name: /Lanes/ })).toBeNull();
 
     fireEvent.click(within(arrange).getByRole("radio", { name: /Owner/ }));
     expect(screen.getByRole("region", { name: "Bed coordinator" })).toBeInTheDocument();
@@ -71,7 +69,7 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     expect(firstName).toBeTruthy();
     expect(within(selectedPanel()).getByText(/UM\d{6}/)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /Next alert/ }));
+    fireEvent.click(screen.getAllByRole("button", { name: /Next alert/ }).at(-1)!);
     expect(within(selectedPanel()).getByRole("heading", { level: 2 }).textContent).not.toBe(firstName);
 
     const open = screen.getAllByTestId("ward-alerts-open").at(-1)!;
@@ -87,8 +85,12 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     // Drawer review (6 Nov 2026): the alert opens in the kit drawer once a row is chosen.
     fireEvent.click(screen.getAllByTestId("ward-alerts-open")[0]!);
     const panel = selectedPanel();
-    fireEvent.click(within(panel).getByRole("button", { name: /^Acknowledge / }));
-    expect(within(panel).getByRole("button", { name: /^Seen: / })).toHaveTextContent("Seen");
+    // Audit two #1: Acknowledge sits in the kit More menu.
+    fireEvent.click(within(panel).getByTestId("alerts-more-actions"));
+    fireEvent.click(screen.getByRole("menuitem", { name: /^Acknowledge/ }));
+    fireEvent.click(within(panel).getByTestId("alerts-more-actions"));
+    expect(screen.getByRole("menuitem", { name: /^Seen/ })).toHaveTextContent("Seen");
+    fireEvent.keyDown(screen.getByRole("menuitem", { name: /^Seen/ }), { key: "Escape" });
     expect(within(panel).getByText(/Seen by Bed coordinator/)).toBeInTheDocument();
   });
 

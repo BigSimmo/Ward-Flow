@@ -59,7 +59,7 @@ describe.each([
 ])("ED board, %s", (_where, isPhone) => {
   it("Open patient goes to the patient page, never the ED record panel", () => {
     const sheet = openSheet(isPhone);
-    fireEvent.click(within(sheet).getByRole("button", { name: "Open patient" }));
+    fireEvent.click(within(sheet).getByRole("button", { name: "Patient page" }));
     expect(push).toHaveBeenCalledTimes(1);
     const href = push.mock.calls[0][0] as string;
     expect(href).toMatch(/^\/bedchart\/people\/[^/]+$/u);
@@ -87,7 +87,7 @@ describe("ED board Needs you", () => {
         </WardFlowProvider>,
       );
       for (const list of screen.queryAllByTestId("ward-ed-needs-you")) {
-        expect(within(list).queryByRole("button", { name: "Open patient", hidden: true })).toBeNull();
+        expect(within(list).queryByRole("button", { name: "Patient page", hidden: true })).toBeNull();
       }
       unmount();
     }

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { expect, it, vi } from "vitest";
 import { UploadFormsModal } from "@/components/ward-management/referrals/upload-forms-modal";
@@ -39,7 +39,13 @@ function setup(dispatch: WardCommandDispatch) {
     close,
     type,
     tree,
-    submit: () => fireEvent.click(screen.getByTestId("confirm-upload-form-button")),
+    // The kit Dialog's one filled button; it reads "Saving…" while a save is out.
+    submit: () =>
+      fireEvent.click(
+        within(screen.getByTestId("upload-forms-dialog")).getByRole("button", {
+          name: /^(Record document details|Saving…)$/u,
+        }),
+      ),
   };
 }
 

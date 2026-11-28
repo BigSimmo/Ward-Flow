@@ -676,7 +676,9 @@ describe("the hub's two lists", () => {
   const BUSY_ED = "peel-ed";
 
   function openOutbox(): HTMLElement {
-    fireEvent.click(screen.getByRole("tab", { name: /Still to be moved/ }));
+    // Still to be moved is a part of the Referred section of My list now (batch 1 item 14, 26 Nov 2026).
+    const myList = screen.queryByRole("radio", { name: /^My list/u });
+    if (myList) fireEvent.click(myList);
     const outbox = screen.getByTestId("ward-ed-outbox");
     return outbox;
   }
@@ -710,11 +712,15 @@ describe("the hub's two lists", () => {
     }
   });
 
-  it("says the inbox is empty rather than showing nothing at all", () => {
+  it("shows no empty inbox block for a quiet department; My list says what is on it instead", () => {
     renderHub(QUIET_ED);
-    const inbox = screen.getByTestId("ward-ed-inbox");
-    expect(within(inbox).getByTestId("ward-ed-inbox-empty")).toBeInTheDocument();
-    expect(within(inbox).queryAllByRole("listitem")).toEqual([]);
+    const myList = screen.queryByRole("radio", { name: /^My list/u });
+    if (myList) fireEvent.click(myList);
+    // Batch 1 item 14 (26 Nov 2026): My list leaves out a section with nothing in it, so a department
+    // with no referral waiting shows no inbox at all, and the card is never left blank.
+    expect(screen.queryByTestId("ward-ed-inbox")).not.toBeInTheDocument();
+    expect(screen.queryAllByTestId(/^ward-ed-inbox-row-/u)).toEqual([]);
+    expect(screen.getByTestId("ward-ed-my-list")).toHaveTextContent(/\S/u);
   });
 
   /**

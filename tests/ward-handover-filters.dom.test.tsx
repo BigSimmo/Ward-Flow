@@ -3,6 +3,11 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/bedchart/handover",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
     <a href={href} {...rest}>
@@ -41,14 +46,14 @@ async function selectScope(user: ReturnType<typeof userEvent.setup>, label: stri
 }
 
 describe("Handover scope control", () => {
-  it("defaults to Whole network, grouped by service, ward, emergency department and community team", async () => {
+  it("defaults to Statewide, grouped by service, ward, emergency department and community team", async () => {
     const user = userEvent.setup();
     renderHandover();
-    const trigger = screen.getByRole("button", { name: "Show: Whole network" });
+    const trigger = screen.getByRole("button", { name: "Show: Statewide" });
     expect(trigger).toHaveAttribute("data-value", "network");
     await user.click(trigger);
     const menu = screen.getByRole("menu", { name: "Show" });
-    expect(within(menu).getByRole("menuitemradio", { name: "Whole network" })).toHaveAttribute("aria-checked", "true");
+    expect(within(menu).getByRole("menuitemradio", { name: "Statewide" })).toHaveAttribute("aria-checked", "true");
     const groups = Array.from(menu.querySelectorAll('[role="presentation"]')).map((node) => node.textContent);
     expect(groups).toEqual(["Service", "Ward", "Emergency department", "Community team"]);
   });
@@ -58,7 +63,7 @@ describe("Handover scope control", () => {
     // 1 Nov 2026 redesign: the whole network needs no scope line; the control and the Patients tab
     // name the scope and its real open count.
     expect(screen.queryByTestId("ward-handover-scope-summary")).toBeNull();
-    expect(screen.getByTestId("ward-handover-scope-select")).toHaveAccessibleName("Show: Whole network");
+    expect(screen.getByTestId("ward-handover-scope-select")).toHaveAccessibleName("Show: Statewide");
     expect(screen.getByRole("tab", { name: /Patients/ })).toHaveTextContent(String(realOpen.length));
   });
 

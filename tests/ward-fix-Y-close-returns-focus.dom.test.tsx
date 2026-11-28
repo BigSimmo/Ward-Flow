@@ -78,10 +78,10 @@ describe("F-57: closing a detail gives focus back to what opened it", () => {
     expect(row).not.toBeNull();
     row.focus();
     fireEvent.click(row);
-    const close = screen.getByRole("button", { name: "Close event" });
+    const close = screen.getByRole("button", { name: "Close" });
     close.focus();
     fireEvent.click(close);
-    expect(screen.queryByRole("button", { name: "Close event" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Close" })).toBeNull();
     expect(document.activeElement).toBe(row);
   });
 });

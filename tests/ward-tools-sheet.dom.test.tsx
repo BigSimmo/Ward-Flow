@@ -267,7 +267,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     ).toBeTruthy();
   });
 
-  it("adds Find a patient, Bed meeting agenda and TV board for the coordinator", () => {
+  it("adds Find a patient, Bed meeting agenda and Open on TV for the coordinator", () => {
     renderSheet(true);
     expect(screen.getByRole("link", { name: /Find a patient.*opens its page/u }).getAttribute("href")).toBe(
       "/bedchart/search",
@@ -275,7 +275,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(screen.getByRole("link", { name: /Bed meeting agenda/u }).getAttribute("href")).toBe(
       "/bedchart/bed-meeting/agenda",
     );
-    expect(screen.getByRole("link", { name: /TV board/u }).getAttribute("href")).toBe("/bedchart/bed-meeting");
+    expect(screen.getByRole("link", { name: /Open on TV/u }).getAttribute("href")).toBe("/bedchart/bed-meeting");
   });
 
   it("shows five rows of a long group in two panes, then Show more", async () => {

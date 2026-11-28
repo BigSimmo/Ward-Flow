@@ -1494,8 +1494,8 @@ describe("ReferralBoard — a refusal shows on the board while the referral is s
     const cardRefusalsText = screen.queryByTestId(`ward-referral-board-card-refusals-${referralId}`)?.textContent ?? "";
     expect(
       cardRefusalsText,
-      "a coordinator working from a phone must see the same refusal the table shows, or the phone view silently hides who has already said no",
-    ).toBe(tableRefusalsText);
+      "a coordinator working from a phone must see the refusal (audit four 48: said once as a count, the reasons open in the drawer), or the phone view silently hides who has already said no",
+    ).toBe("Declined by 1 ward");
 
     // The trap this feature sits right next to: a `<button>`'s content model is phrasing content
     // only, and the queued table's select button carries no test of its own for that elsewhere in
@@ -2239,11 +2239,10 @@ describe("OutOfAreaBoard — two counts that share no denominator", () => {
     // Count and claim, not the causal clause — see the note on the seeded-records case above. The
     // property here is that the figure is STATED AT ALL when it is the only non-zero number, since
     // a silent gap reads as no gap.
-    expect(screen.getByTestId("ward-out-of-area-count-not-banded")).toHaveTextContent(
-      `${unclassifiable.length} more could not be placed in a band`,
-    );
-    expect(screen.getByTestId("ward-out-of-area-count-people")).toHaveTextContent(
-      "0 people are recorded as being in a bed far from home.",
+    // Audit three #68: with nobody away the screen gives way to one empty state that still says how many
+    // have no travel time recorded (D-174), so the gap is stated, never silent.
+    expect(screen.getByTestId("ward-out-of-area-empty")).toHaveTextContent(
+      `${unclassifiable.length} ${unclassifiable.length === 1 ? "person has" : "people have"} no travel time recorded`,
     );
   });
 
@@ -2328,14 +2327,13 @@ describe("OutOfAreaBoard — two counts that share no denominator", () => {
 
     renderLedger(withoutRegion);
 
-    expect(screen.getByTestId("ward-out-of-area-count-not-banded")).toHaveTextContent(
-      `${withoutRegion.length} more could not be placed in a band`,
+    expect(screen.getByTestId("ward-out-of-area-empty")).toHaveTextContent(
+      `${withoutRegion.length} ${withoutRegion.length === 1 ? "person has" : "people have"} no travel time recorded`,
     );
     // The band table cannot place a person with no home, so they must not appear as out of area
     // either — counted in one bucket, and only one.
-    expect(screen.getByTestId("ward-out-of-area-count-people")).toHaveTextContent(
-      "0 people are recorded as being in a bed far from home.",
-    );
+    expect(screen.queryByTestId("ward-out-of-area-table")).not.toBeInTheDocument();
+    expect(screen.getByTestId("ward-out-of-area-empty-state")).toBeInTheDocument();
   });
 
   it("presents neither number as a share, a fraction or a percentage of the other", () => {
@@ -2451,6 +2449,8 @@ describe("OutOfAreaBoard — the entries", () => {
      */
     installMatchMediaStub(true);
     renderLedger();
+    // The phone leads with the people who need a plan; the full list opens behind one link row.
+    fireEvent.click(screen.getByRole("button", { name: /show everyone/i }));
     expect(screen.queryByTestId("ward-out-of-area-table")).not.toBeInTheDocument();
     const subject = outOfAreaAdmissions()[0];
     expect(subject, "the seed no longer holds an out-of-area admission; this test proves nothing").toBeDefined();
@@ -2523,6 +2523,7 @@ describe("OutOfAreaBoard — the entries", () => {
     cleanup();
     installMatchMediaStub(true);
     renderLedger();
+    fireEvent.click(screen.getByRole("button", { name: /show everyone/i }));
     for (const admission of subjects) {
       expect(
         screen.getByTestId(`ward-out-of-area-card-${admission.id}`).textContent ?? "",
@@ -2533,9 +2534,7 @@ describe("OutOfAreaBoard — the entries", () => {
 
   it("says plainly that nobody is out of area rather than showing an empty region", () => {
     renderLedger([]);
-    expect(screen.getByTestId("ward-out-of-area-empty")).toHaveTextContent(
-      "Nobody on these records is in a bed far from home.",
-    );
+    expect(screen.getByTestId("ward-out-of-area-empty-state")).toHaveTextContent("Nobody is in a bed far from home");
     expect(screen.queryByTestId("ward-out-of-area-table")).not.toBeInTheDocument();
   });
 });

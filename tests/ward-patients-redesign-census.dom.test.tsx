@@ -3,7 +3,7 @@
 // (The date of birth is typed into the one search box since audit four, so the old separate DD/MM/YYYY
 // box and its switch are no longer tested here.)
 import "@testing-library/jest-dom/vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -40,17 +40,20 @@ describe("Patients redesign: the census page", () => {
     expect(header).toHaveTextContent(/^Where$/u);
   });
 
-  it("on a phone each highlight chip shows its count before its words", () => {
+  it("on a phone the highlights are one menu, each choice carrying its count", () => {
+    // Audit four #107: the five highlight chips fold into one Highlight menu on a phone, counts in the menu.
     installMatchMediaStub(true);
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <PatientSearchPage />
       </WardFlowProvider>,
     );
-    const chips = within(screen.getByRole("group", { name: "Highlight" })).getAllByRole("button");
-    expect(chips.length).toBeGreaterThan(0);
-    for (const chip of chips) {
-      expect(chip.textContent ?? "").toMatch(/^\d+\D/u);
+    expect(screen.queryByRole("group", { name: "Highlight" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /^Highlight/u }));
+    const choices = within(screen.getByRole("menu", { name: "Highlight" })).getAllByRole("menuitemcheckbox");
+    expect(choices.length).toBeGreaterThan(0);
+    for (const choice of choices) {
+      expect(choice.textContent ?? "").toMatch(/\d/u);
     }
   });
 });

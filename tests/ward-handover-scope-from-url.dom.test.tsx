@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("next/navigation", () => ({
   usePathname: () => "/bedchart/handover",
   useSearchParams: () => new URLSearchParams(window.location.search),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
 }));
 
 vi.mock("next/link", () => ({
@@ -81,15 +82,15 @@ describe("the handover sheet takes its scope from the URL", () => {
     expect(WARD.name.length, "no ward name to scope to").toBeGreaterThan(0);
     expect(
       WARD.name,
-      "the ward is literally called 'Whole network', so a scoped sheet and an unscoped one would " +
+      "the ward is literally called 'Statewide', so a scoped sheet and an unscoped one would " +
         "read identically and every case below would pass on either",
-    ).not.toBe("Whole network");
+    ).not.toBe("Statewide");
   });
 
   it("opens on the whole network when no scope is given, exactly as before", () => {
     renderAt("");
     expect(scopeSummary(), "the default changed — an unscoped visit must still be the whole network").toContain(
-      "Whole network",
+      "Statewide",
     );
   });
 
@@ -102,7 +103,7 @@ describe("the handover sheet takes its scope from the URL", () => {
       `the sheet did not open scoped to ${WARD.name} — the link named it and the page ignored the URL`,
     ).toContain(WARD.name);
     expect(scopeSummary(), "the sheet is still showing the whole network despite a ward scope").not.toContain(
-      "Whole network",
+      "Statewide",
     );
   });
 
@@ -130,7 +131,7 @@ describe("the handover sheet takes its scope from the URL", () => {
         summary,
         `a malformed scope (${JSON.stringify(bad)}) narrowed the sheet. On a handover, hiding movements ` +
           "because a URL was malformed reads to a coordinator as a quiet shift. It must show MORE, not less.",
-      ).toContain("Whole network");
+      ).toContain("Statewide");
       cleanup();
     }
   });
@@ -166,7 +167,7 @@ describe("handover output evidence boundaries", () => {
     fireEvent.click(screen.getByTestId("ward-handover-phone-since"));
     fireEvent.click(
       within(screen.getByTestId("ward-handover-phone-since-sheet")).getByRole("button", {
-        name: "Copy as handover text",
+        name: "Copy for handover",
       }),
     );
     expect(writeText).toHaveBeenCalledOnce();
@@ -180,6 +181,7 @@ describe("handover output evidence boundaries", () => {
   it("records preparation, never successful printing, when the native dialog returns without confirmation", () => {
     const print = vi.spyOn(window, "print").mockImplementation(() => {});
     renderAt("");
+    fireEvent.click(screen.getByTestId("ward-handover-share"));
     fireEvent.click(screen.getByTestId("ward-handover-print"));
     fireEvent.click(screen.getByRole("button", { name: "Print or save PDF" }));
     expect(print).toHaveBeenCalledOnce();

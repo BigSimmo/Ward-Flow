@@ -30,7 +30,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  */
 
 const TYPE_KEYS = ["ward", "ed", "both", "community"] as const;
-const LABELS = ["Ward bed", "ED", "More than one", "Community", "Declined once"];
+const LABELS = ["Ward bed", "ED review", "More than one", "Community", "Declined once"];
 
 function setPhone(phone: boolean) {
   const mm = (query: string) => ({
@@ -110,7 +110,7 @@ describe("P154: one type chip set on phone and desktop, each referral counted on
     // are the slate's quick chips, the same set as the phone's (hidden, like the rest, while nobody is in it).
     const group = screen.getByRole("list", { name: "Referral highlights" });
     const pills = within(group).getAllByRole("button").map(split);
-    const order = ["Tier 1", "Ward bed", "ED", "More than one", "Community", "Declined once"];
+    const order = ["Tier 1", "Ward bed", "ED review", "More than one", "Community", "Declined once"];
     expect(pills.map(([label]) => label)).toEqual(order.filter((label) => pills.some(([shown]) => shown === label)));
     expect(pills.every(([, n]) => n > 0)).toBe(true);
     const types = pills.filter(([label]) => !["Decision overdue", "Tier 1", "Declined once"].includes(label));

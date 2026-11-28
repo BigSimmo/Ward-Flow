@@ -8,6 +8,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * (D-76): the team's eyebrow, no officers' Transport board or coordinator queue, and one empty
  * panel when the team has no journey at all.
  */
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+}));
+
 const desk = vi.hoisted(() => ({
   access: { role: "coordinator", scope: { kind: "statewide" } } as {
     role: string;
@@ -82,33 +87,34 @@ describe("Movements: the phone eyebrow names a placed desk's own place (Q84)", (
 });
 
 describe("Movements redesign: the coordinator's board", () => {
-  // M1 (3 Nov 2026): a stage opens its patients in the list pop-up; "Show in worklist" keeps the highlight.
-  it("draws one stage pipeline whose stages open their patients, in place of the hero's stage chips", () => {
+  // Simplification (26 Nov 2026): a stage toggles the worklist to that stage alone; pressing it again, or
+  // removing the applied filter, shows every stage. (It opened a people pop-up before.)
+  it("draws one stage pipeline whose stages filter the worklist to their people, in place of the hero's stage chips", () => {
     renderScreen();
     const pipeline = screen.getByRole("navigation", { name: "Stages" });
     const stages = within(pipeline).getAllByRole("button");
     expect(stages.length).toBe(6);
     for (const stage of stages) {
-      expect(stage).not.toHaveAttribute("aria-pressed");
-      expect(stage).toHaveAttribute("aria-haspopup", "dialog");
+      expect(stage).toHaveAttribute("aria-pressed", "false");
       expect(stage).not.toHaveAttribute("data-highlighted");
       expect(stage.textContent).toMatch(/None waiting|longest /u);
     }
+    const worklist = screen.getByRole("region", { name: "Movement worklist" });
+    const rowCount = () => worklist.querySelectorAll("[data-ward-primitive='record-row'][data-record-key]").length;
+    const allRows = rowCount();
     fireEvent.click(stages[0]!);
-    const sheet = screen.getByTestId("movement-people-sheet");
-    const peopleCount = within(sheet).getAllByRole("listitem").length;
-    expect(peopleCount).toBeGreaterThan(0);
-    expect(sheet).toHaveAttribute("role", "dialog");
-    fireEvent.click(within(sheet).getByRole("button", { name: "Show in worklist" }));
-    expect(screen.queryByTestId("movement-people-sheet")).not.toBeInTheDocument();
+    expect(stages[0]).toHaveAttribute("aria-pressed", "true");
     expect(stages[0]).toHaveAttribute("data-highlighted", "true");
-    expect(stages[0]).not.toHaveAttribute("aria-pressed");
+    const filtered = rowCount();
+    expect(filtered).toBeGreaterThan(0);
+    expect(filtered).toBeLessThan(allRows);
+    fireEvent.click(within(worklist).getByRole("button", { name: /^Show every stage, not only /u }));
+    expect(stages[0]).toHaveAttribute("aria-pressed", "false");
+    expect(rowCount()).toBe(allRows);
     fireEvent.click(stages[0]!);
-    const reopened = screen.getByTestId("movement-people-sheet");
-    expect(reopened).toHaveAttribute("role", "dialog");
-    expect(within(reopened).getAllByRole("listitem")).toHaveLength(peopleCount);
-    expect(stages[0]).toHaveAttribute("data-highlighted", "true");
-    expect(stages[0]).not.toHaveAttribute("aria-pressed");
+    fireEvent.click(stages[0]!);
+    expect(stages[0]).toHaveAttribute("aria-pressed", "false");
+    expect(rowCount()).toBe(allRows);
     expect(screen.queryByRole("group", { name: "Highlight a stage" })).not.toBeInTheDocument();
   });
 
@@ -138,8 +144,8 @@ describe("Movements redesign: the coordinator's board", () => {
 
   it("says in one line why the queue differs from the open count (live walk 16 Nov 2026)", () => {
     renderScreen();
-    const open = Number(screen.getAllByTestId("movements-day-metric")[0]!.textContent!.match(/\d+/u)![0]);
-    expect(screen.getByTestId("movements-queue")).toHaveTextContent(`Waiting on you, of ${open} open`);
+    // r10: the line leads with the queue's own count; "of N open" went from it.
+    expect(screen.getByTestId("movements-queue")).toHaveTextContent(/^\d+ in your queueWaiting on you/u);
   });
 });
 

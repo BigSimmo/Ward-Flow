@@ -26,9 +26,11 @@ export function atPhoneWidthForEachTest() {
   });
 }
 
-/** Chooses the phone's Lists pane, if the board offers one. */
+/** Chooses the phone's list pane, if the board offers one (Lists joined My list on 26 Nov 2026). */
 export function showPhoneLists() {
-  const pane = screen.queryByRole("radio", { name: /^Lists/u });
+  // On a desktop width My list replaces the board, so only a phone width is switched across here.
+  const phone = typeof window.matchMedia === "function" && window.matchMedia("(max-width: 46.4375rem)").matches;
+  const pane = screen.queryByRole("radio", { name: phone ? /^(Lists|My list)/u : /^Lists/u });
   if (pane && pane.getAttribute("aria-checked") !== "true") fireEvent.click(pane);
 }
 

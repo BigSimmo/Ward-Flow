@@ -76,7 +76,7 @@ describe("ward answer view: a request that leaves elsewhere is named, not swappe
     act(() => setAdjust((movements) => withSecond(movements).filter((movement) => movement.id !== id)));
 
     expect(screen.getByTestId("ward-answer-selection-left")).toHaveTextContent(
-      `${name}’s request was answered or withdrawn elsewhere.`,
+      `${name}’s request was answered, withdrawn or has gone.`,
     );
     expect(screen.queryByTestId(/^ward-incoming-/)).not.toBeInTheDocument();
     expect(screen.queryByTestId(/^ward-accept-/)).not.toBeInTheDocument();
@@ -94,13 +94,17 @@ describe("ward answer view: a request that leaves elsewhere is named, not swappe
       withSecond(movements).map((movement) => (movement.id === left ? { ...movement, referredUnitIds: [] } : movement));
     renderAnswer(UNIT, answered, left);
     expect(screen.getByTestId("ward-answer-selection-left")).toHaveTextContent(
-      `${nameOf(left)}’s request was answered or withdrawn elsewhere.`,
+      `${nameOf(left)}’s request was answered, withdrawn or has gone.`,
     );
     expect(screen.queryByTestId(/^ward-accept-/)).not.toBeInTheDocument();
   });
 
-  it("still lands on the oldest when a link names no record", () => {
+  it("shows nobody when a link names no record, and Show request lands on the oldest", () => {
+    // r10: a link to a request that is not here is said plainly rather than swapped for someone else.
     renderAnswer(UNIT, withSecond, "not-a-record");
+    expect(screen.getByTestId("ward-answer-selection-left")).toHaveTextContent("This request was answered");
+    expect(screen.queryByTestId(/^ward-accept-/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^Show request 1 of / }));
     expect(screen.queryByTestId("ward-answer-selection-left")).not.toBeInTheDocument();
     expect(screen.getByTestId(/^ward-incoming-/)).toBeInTheDocument();
   });
@@ -227,6 +231,6 @@ describe("ward answer view: the Accept in principle toast names the person (B-08
     const name = nameOf(id);
     choosePullTimeLimit();
     fireEvent.click(screen.getByTestId(`ward-accept-${id}`));
-    expect(await screen.findByText(`Accepted ${name} in principle.`)).toBeInTheDocument();
+    expect(await screen.findByText(`Accepted in principle for ${name}`)).toBeInTheDocument();
   });
 });

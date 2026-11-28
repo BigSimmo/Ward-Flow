@@ -108,10 +108,10 @@ describe("decision 41: a handover sign-off names its ward", () => {
   });
 });
 
-describe("Q67: a whole-network sign-off reads Whole network, an older one keeps Ward not recorded", () => {
+describe("Q67: a whole-network sign-off reads Statewide, an older one keeps Ward not recorded", () => {
   it("labels each sign-off only from what its record holds", () => {
     expect(handoverSignOffPlace({ unitId: wardA!.id }, seed.units)).toBe(wardA!.name);
-    expect(handoverSignOffPlace({ network: true }, seed.units)).toBe("Whole network");
+    expect(handoverSignOffPlace({ network: true }, seed.units)).toBe("Statewide");
     // A sign-off saved before 31 Oct 2026 holds no ward and no mark, whoever signed it.
     expect(handoverSignOffPlace({}, seed.units)).toBe("Ward not recorded");
     expect(handoverSignOffPlace({ unitId: "no-such-ward" }, seed.units)).toBe("Ward not recorded");

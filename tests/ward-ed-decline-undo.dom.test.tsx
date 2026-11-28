@@ -58,7 +58,7 @@ describe("ED page — decline with Undo", () => {
     const who = toast.textContent!.match(/^Referral declined for (.+?)(Undo|$)/u)?.[1] ?? "";
     fireEvent.click(within(toast.parentElement as HTMLElement).getByRole("button", { name: /Undo/u }));
     expect(screen.getByTestId(`ward-ed-inbox-decline-${referralId}`)).toBeInTheDocument();
-    expect(screen.getByText(/^Decline undone for \S.*, \S/u)).toBeInTheDocument();
-    expect(screen.getByText(/^Decline undone for /u).textContent).toContain(who.trim().split(",")[0]);
+    expect(screen.getByText(/^Undone: Decline for \S.*, \S/u)).toBeInTheDocument();
+    expect(screen.getByText(/^Undone: Decline for /u).textContent).toContain(who.trim().split(",")[0]);
   });
 });

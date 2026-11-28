@@ -33,7 +33,12 @@ describe("Discharges charts under the table (direction A)", () => {
   // a wide screen and under it on a tablet, and CSS shows one pair. jsdom applies no media queries, so
   // both pairs are in the document here; the first of each is read.
   const dayChart = () => screen.getAllByTestId("ward-discharge-day-chart")[0]!;
-  const barrierBars = () => screen.getAllByTestId("ward-discharge-barrier-bars")[0]!;
+  // Audit three #61: the reasons strip shows with the Held up tab (the one list it narrows), so open that first.
+  const barrierBars = () => {
+    if (!screen.queryByTestId("ward-discharge-barrier-bars"))
+      fireEvent.click(screen.getByTestId("ward-discharge-kpi-blocked"));
+    return screen.getAllByTestId("ward-discharge-barrier-bars")[0]!;
+  };
 
   it("labels the first bar Overdue, and a day click lights that day's people and adds the unlisted to Expected", () => {
     renderBoard();

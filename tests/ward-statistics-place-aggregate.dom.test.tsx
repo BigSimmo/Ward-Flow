@@ -157,7 +157,7 @@ describe("public place aggregate views", () => {
         ]) {
           expect(screen.getByTestId(id)).toBeInTheDocument();
         }
-        fireEvent.click(screen.getByRole("radio", { name: "Data" }));
+        fireEvent.click(screen.getByRole("radio", { name: "Table" }));
         expect(screen.getByRole("region", { name: "Admission stay bands, scrollable table" })).toBeInTheDocument();
       }
       expect(document.body.textContent).not.toContain("[object Object]");
@@ -185,10 +185,14 @@ describe("public place aggregate views", () => {
         "ward-statistics-service-ready-beds",
         "ward-statistics-service-out-of-area",
         "ward-statistics-service-ed-waits",
-        "ward-statistics-service-repatriation",
       ]) {
         expect(screen.getByTestId(id)).toBeInTheDocument();
       }
+      // The ledger sits behind the People view of "Far from home and out of area".
+      fireEvent.click(
+        within(screen.getByRole("radiogroup", { name: "Far from home view" })).getByRole("radio", { name: "People" }),
+      );
+      expect(screen.getByTestId("ward-statistics-service-repatriation")).toBeInTheDocument();
       const capacity = screen.getByTestId("ward-statistics-capacity-chart");
       for (const ward of base.wards) {
         if (ward.service === "North Metro") expect(capacity).toHaveTextContent(ward.name);
@@ -196,7 +200,7 @@ describe("public place aggregate views", () => {
       }
       fireEvent.click(
         within(screen.getByRole("radiogroup", { name: "Where referrals landed view" })).getByRole("radio", {
-          name: "Data",
+          name: "Table",
         }),
       );
       expect(

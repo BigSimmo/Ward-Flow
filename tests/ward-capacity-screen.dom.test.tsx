@@ -189,15 +189,14 @@ describe("the Capacity screen", () => {
     const totalReady = netTotals.ready;
     expect(totalReady, "no ready bed in the fixture — this guard proved nothing").toBeGreaterThan(0);
     renderScreen();
-    // Wave 4 (D-191): the count label carries its window, "Ready · now". D-179 item 8: the beds
+    // Wave 4 (D-191): the count label is "Ready" (r10 dropped "· now"). D-179 item 8: the beds
     // still being made ready are said beside it, as the Ward hero says them.
     expect(heroReady()).toBe(
-      `${totalReady}/ ${netTotals.beds} Ready · now${netTotals.pendingPreparation ? `, ${netTotals.pendingPreparation} being made ready` : ""}`,
+      `${totalReady}/ ${netTotals.beds} Ready${netTotals.pendingPreparation ? `, ${netTotals.pendingPreparation} being made ready` : ""}`,
     );
     if (netTotals.pendingPreparation) {
-      // A phone wraps this label: the comma rides with the window word ("· now,"), so no line starts with it.
-      const word = screen.getByTestId("capacity-hero-ready").querySelector("[data-wf-window]");
-      expect(word?.parentElement?.textContent?.trim()).toMatch(/now,$/u);
+      // The window word went from the label (r10); the comma rides with "Ready,", so no line starts with it.
+      expect(heroReady()).toMatch(/Ready, \d+ being made ready$/u);
       expect(screen.getByTestId("capacity-hero-being-made-ready").textContent).toMatch(/^ \d+ being made ready$/u);
     }
   });
@@ -255,13 +254,9 @@ describe("the Capacity screen", () => {
     expect(now.sub).toBe(`${gapTotals.waiting} waiting for ${gapTotals.bedsThatFit} beds that fit`);
   });
 
-  // Page tops (Josh, 9 Nov 2026): the ward count moved from the hero's eyebrow to the Wards tab.
-  it("draws every network ward exactly once on the bed map, with an honest ward count on the Wards tab", () => {
+  // Simplification (26 Nov 2026): off the phone the Wards tab is gone; the Overview's bed map draws every ward.
+  it("draws every network ward exactly once on the bed map", () => {
     renderScreen();
-    expect(
-      within(screen.getByTestId("capacity-tabs")).getByRole("radio", { name: /^Wards/u }),
-      "the Wards tab does not say how many wards it counts",
-    ).toHaveTextContent(new RegExp(`^Wards\\s*${networkRows.length}$`, "u"));
     expect(wardCards()).toHaveLength(networkRows.length);
     for (const row of networkRows) {
       expect(cardsOf(row.unit), `${row.unit.id} is not on the bed map exactly once`).toHaveLength(1);
@@ -414,7 +409,7 @@ describe("the Capacity screen", () => {
       const drawer = openWardDrawer(row.unit);
       // The kit drawer (PanelDrawer) shows the place as the quiet line under the ward's name.
       const place = drawer.querySelector("[data-drawer-head] h2 + p");
-      expect(place).toHaveTextContent(new RegExp(` · ${escapeRegExp(site!.service)}$`, "u"));
+      expect(place).toHaveTextContent(new RegExp(`${escapeRegExp(site!.name)}.*${escapeRegExp(site!.service)}$`, "u"));
       expect(place).not.toHaveTextContent(/No site matches|Service not recorded/u);
     }
   });
@@ -662,7 +657,7 @@ describe("the Capacity screen never labels a bed count and a ward count with the
  * carry the same ruling: a chip dims the wards that do not match and never removes one.
  */
 describe("the Capacity bed map's highlight chips mark the matching wards and never remove one", () => {
-  it("clicking 'Any ready' marks exactly its own population and leaves every ward, including the excluded one, on the map", () => {
+  it("clicking 'Has ready' marks exactly its own population and leaves every ward, including the excluded one, on the map", () => {
     const readyRows = networkRows.filter((row) => row.ready > 0);
     // Anti-vacuity floor: the chip must both have something to mark AND leave something
     // unmarked, or this test cannot tell a wired handler from a dead one that marks everything or
@@ -674,9 +669,9 @@ describe("the Capacity bed map's highlight chips mark the matching wards and nev
     ).toBeLessThan(networkRows.length);
 
     renderScreen();
-    const chip = highlightChips().find((candidate) => /^Any ready \d/u.test(candidate.textContent ?? ""))!;
+    const chip = highlightChips().find((candidate) => /^Has ready \d/u.test(candidate.textContent ?? ""))!;
     // The chip states how many wards it matches, never a bed count standing in for it.
-    expect(chip).toHaveTextContent(`Any ready ${readyRows.length} ${readyRows.length === 1 ? "ward" : "wards"}`);
+    expect(chip).toHaveTextContent(`Has ready ${readyRows.length} ${readyRows.length === 1 ? "ward" : "wards"}`);
     fireEvent.click(chip);
     expect(chip).toHaveAttribute("aria-pressed", "true");
 

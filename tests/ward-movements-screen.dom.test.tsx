@@ -9,6 +9,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { causeOf, MovementsScreen } from "@/components/ward-management/movements/movements-screen";
 import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { changeReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import {
   corridorCounts,
   journeyStages,
@@ -20,6 +21,7 @@ import {
 import { departmentLabel, wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { wardMovements } from "@/components/ward-management/ward-movements";
+import { stageGroupLabel } from "@/components/ward-management/ward-stage-copy";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edById, NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
@@ -37,7 +39,14 @@ import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-obse
  * arguments from the caller tests a configuration nothing ships — the exact defect the Capacity
  * screen's own test file records having hit once already.
  */
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+}));
+
 const NOW = NOW_ANCHOR;
+// r10: the worklist's Open tab lists open movements only, and Arrived ones move to Resolved today.
+const onWorklist = (movement: Movement) => isOpen(movement) && movement.stage !== "arrived";
 const units = allUnits();
 const seededMovements = seedWardFlowState().movements;
 const stages = journeyStages(seededMovements, NOW, DEFAULT_DUE_SOON_THRESHOLDS);
@@ -70,6 +79,17 @@ function findRecordRow(container: HTMLElement, id: string): HTMLElement {
   const rows = container.querySelectorAll<HTMLElement>(`[data-ward-primitive='record-row'][data-record-key='${id}']`);
   expect(rows.length, `exactly one row for ${id}`).toBe(1);
   return rows[0];
+}
+
+// Simplification (26 Nov 2026): the worklist's order is one Sort menu on the list head, not a radio row.
+function chooseSort(scope: HTMLElement, label: "Stage" | "Transport" | "Longest wait") {
+  fireEvent.click(within(scope).getByTestId("ward-movements-sort"));
+  fireEvent.click(screen.getByRole("menuitemradio", { name: new RegExp(`^${label}`, "u") }));
+}
+
+// r10: closed movements sit on the Resolved today tab, not among the open stages.
+function openResolvedTab() {
+  fireEvent.click(screen.getByRole("tab", { name: /^Resolved today/u }));
 }
 
 function openShapeOfTheDay(): HTMLElement {
@@ -128,8 +148,10 @@ describe("the Movements screen", () => {
     // Scoped to the board panel: the same stage label is repeated verbatim in the "Every stage, at
     // a glance" panel below, so an unscoped `getByText` would match both and throw.
     const board = screen.getByRole("region", { name: /Movement worklist/u });
-    for (const stage of stages) {
-      const heading = within(board).getByRole("heading", { level: 3, name: stage.label });
+    for (const stage of journeyStages(seededMovements.filter(onWorklist), NOW, DEFAULT_DUE_SOON_THRESHOLDS).filter(
+      (candidate) => candidate.id !== "arrived",
+    )) {
+      const heading = within(board).getByRole("heading", { level: 3, name: stageGroupLabel(stage.id) });
       expect(heading, `stage "${stage.label}" is not on screen at all`).toBeInTheDocument();
       if (stage.movements.length === 0) {
         // An empty stage must say so in words — never a heading followed by nothing (design rule:
@@ -161,9 +183,8 @@ describe("the Movements screen", () => {
     const ids = Array.from(document.querySelectorAll("[data-ward-primitive='record-row'][data-record-key]")).map(
       (node) => node.getAttribute("data-record-key") ?? "",
     );
-    const stageMovementIds = stages.flatMap((stage) => stage.movements.map((movement) => movement.id));
+    const stageMovementIds = seededMovements.filter(onWorklist).map((movement) => movement.id);
     expect(stageMovementIds.length, "no movement rendered — this guard proved nothing").toBeGreaterThan(0);
-    expect(stageMovementIds.length).toBe(seededMovements.length);
 
     for (const id of stageMovementIds) {
       expect(
@@ -180,7 +201,7 @@ describe("the Movements screen", () => {
   it("gives every stage row the movement's real urgency tier as its state word", () => {
     renderScreen();
     const board = screen.getByRole("region", { name: /Movement worklist/u });
-    for (const movement of wardMovements) {
+    for (const movement of wardMovements.filter(onWorklist)) {
       const row = findRecordRow(board, movement.id);
       expect(row, `no row for ${movement.id}`).not.toBeNull();
       expect(row).toHaveTextContent(urgencyTierLabel(movement.urgency));
@@ -199,7 +220,7 @@ describe("the Movements screen", () => {
     expect(wardMovements.length, "no movements in the fixture — this guard proved nothing").toBeGreaterThan(0);
     renderScreen();
     const board = screen.getByRole("region", { name: /Movement worklist/u });
-    for (const movement of wardMovements) {
+    for (const movement of wardMovements.filter(onWorklist)) {
       const row = findRecordRow(board, movement.id);
       const link = within(row).getByRole("link", { name: /Review patient/u });
       expect(link, `movement ${movement.id} has no "Review patient" link on its stage row`).toBeInTheDocument();
@@ -239,7 +260,7 @@ describe("the Movements screen", () => {
   it("names every stage row's real origin department, by name and never by a bare id", () => {
     renderScreen();
     const board = screen.getByRole("region", { name: /Movement worklist/u });
-    for (const movement of wardMovements) {
+    for (const movement of wardMovements.filter(onWorklist)) {
       const row = findRecordRow(board, movement.id);
       const originEd = edById(movement.originEdId);
       const expected = departmentLabel(movement.originEdId!, originEd?.name);
@@ -342,7 +363,7 @@ describe("the Movements screen", () => {
       // Not a leg, so Transport now never shows it with a booked time it does not have.
       expect(transportPanel.querySelector(`[data-transport-key='${movement!.id}']`)).toBeNull();
       const worklist = screen.getByRole("region", { name: "Movement worklist" });
-      fireEvent.click(within(worklist).getByRole("radio", { name: "Transport" }));
+      chooseSort(worklist, "Transport");
       const requestGroup = within(worklist).getByRole("heading", { name: "Transport not accepted" }).parentElement!
         .parentElement!;
       expect(findRecordRow(requestGroup, movement!.id)).toBeInTheDocument();
@@ -442,7 +463,7 @@ describe("the Movements screen", () => {
     try {
       renderScreen();
       const board = screen.getByRole("region", { name: "Movement worklist" });
-      fireEvent.click(within(board).getByRole("radio", { name: "Longest wait" }));
+      chooseSort(board, "Longest wait");
       const rows = board.querySelectorAll("[data-ward-primitive='record-row'][data-record-key]");
       const keys = [...rows].map((row) => row.getAttribute("data-record-key")!);
       const byId = new Map<string, (typeof wardMovements)[number]>(
@@ -459,36 +480,29 @@ describe("the Movements screen", () => {
     }
   });
 
-  it("selects an order with arrows and keeps its visible text as the accessible name", () => {
+  it("changes the order from the Sort menu and says the chosen order on its button", () => {
     renderScreen();
-    const group = screen.getByRole("radiogroup", { name: /Order/u });
-    const stage = within(group).getByRole("radio", { name: "Stage" });
-    const transport = within(group).getByRole("radio", { name: "Transport" });
-    stage.focus();
-    fireEvent.keyDown(stage, { key: "ArrowRight" });
-    expect(transport).toHaveFocus();
-    expect(transport).toHaveAttribute("aria-checked", "true");
-    expect(transport).toHaveAttribute("title", "By transport leg, and what has none");
-    expect(
-      within(group)
-        .getAllByRole("radio")
-        .filter((radio) => radio.tabIndex === 0),
-    ).toEqual([transport]);
-    fireEvent.keyDown(transport, { key: "End" });
-    expect(within(group).getByRole("radio", { name: "Longest wait" })).toHaveFocus();
+    const board = screen.getByRole("region", { name: "Movement worklist" });
+    const sort = within(board).getByTestId("ward-movements-sort");
+    expect(sort).toHaveTextContent("Sort: Stage");
+    fireEvent.click(sort);
+    expect(screen.getByRole("menuitemradio", { name: /^Stage/u })).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(screen.getByRole("menuitemradio", { name: /^Transport/u }));
+    expect(within(board).getByTestId("ward-movements-sort")).toHaveTextContent("Sort: Transport");
+    fireEvent.click(within(board).getByTestId("ward-movements-sort"));
+    expect(screen.getByRole("menuitemradio", { name: /^Transport/u })).toHaveAttribute("aria-checked", "true");
   });
 
-  it("offers the three orders as a radiogroup, not as filter pills that would imply removal", () => {
+  it("offers the three orders as one radio menu, not as filter pills that would imply removal", () => {
     renderScreen();
-    const group = screen.getByRole("radiogroup", { name: /Order/u });
-    expect(
-      within(group)
-        .getAllByRole("radio")
-        .map((option) => option.textContent),
-    ).toEqual(["Stage", "Transport", "Longest wait"]);
-    for (const option of within(group).getAllByRole("radio")) {
-      expect(option).toHaveAccessibleName(option.textContent ?? "");
-    }
+    const board = screen.getByRole("region", { name: "Movement worklist" });
+    fireEvent.click(within(board).getByTestId("ward-movements-sort"));
+    const options = screen.getAllByRole("menuitemradio");
+    expect(options.map((option) => option.textContent ?? "")).toEqual([
+      expect.stringMatching(/^Stage/u),
+      expect.stringMatching(/^Transport/u),
+      expect.stringMatching(/^Longest wait/u),
+    ]);
   });
 });
 
@@ -540,6 +554,7 @@ describe("the movements board never shows a closed movement as a person still wa
      */
     renderScreen();
     const board = screen.getByRole("region", { name: /Movement worklist/u });
+    openResolvedTab();
 
     for (const movement of closedInAStageGroup) {
       const row = findRecordRow(board, movement.id);
@@ -566,6 +581,7 @@ describe("the movements board never shows a closed movement as a person still wa
      */
     renderScreen();
     const board = screen.getByRole("region", { name: /Movement worklist/u });
+    openResolvedTab();
 
     for (const movement of closedInAStageGroup) {
       const row = findRecordRow(board, movement.id);
@@ -603,7 +619,7 @@ describe("the movements board never shows a closed movement as a person still wa
    * rather than being text present on every row regardless.
    */
   it("keeps a closed row's 'Did not proceed' distinction even once it also carries the review link", () => {
-    const openInAStageGroup = wardMovements.filter((movement) => movement.closure === undefined);
+    const openInAStageGroup = wardMovements.filter(onWorklist);
     expect(
       openInAStageGroup.length,
       "no open movement in the fixture — nothing to contrast the closed rows against",
@@ -611,6 +627,7 @@ describe("the movements board never shows a closed movement as a person still wa
 
     renderScreen();
     const board = screen.getByRole("region", { name: /Movement worklist/u });
+    openResolvedTab();
 
     for (const movement of closedInAStageGroup) {
       const row = findRecordRow(board, movement.id);
@@ -626,6 +643,7 @@ describe("the movements board never shows a closed movement as a person still wa
       );
     }
 
+    fireEvent.click(screen.getByRole("tab", { name: /^Open/u }));
     for (const movement of openInAStageGroup) {
       const row = findRecordRow(board, movement.id);
       expect(
@@ -637,7 +655,7 @@ describe("the movements board never shows a closed movement as a person still wa
 
   it("selects and focuses either movement tab using arrows, Home and End", async () => {
     renderScreen();
-    const open = screen.getByRole("tab", { name: /^All\b/u });
+    const open = screen.getByRole("tab", { name: /^Open\b/u });
     const resolved = screen.getByRole("tab", { name: /Resolved today/u });
     open.focus();
     for (const [key, expected] of [
@@ -846,11 +864,18 @@ describe("the movement detail drawer", () => {
     return screen.getByRole("dialog");
   }
 
-  it("opens from a row and carries the five sections that are built", () => {
+  // Simplification mock-up: the drawer has no "Person" section (its head says it), and a section with
+  // nothing recorded is left out, so a drawer carries only the sections its record fills.
+  it("opens from a row and carries only the sections its record fills", () => {
     const dialog = openFirstDrawer();
-    for (const section of ["Person", "Movement", "Wards asked", "Escalation", "Transport leg"]) {
-      expect(within(dialog).getByRole("heading", { name: section })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("heading", { name: "Person" })).toBeNull();
+    const sections = within(dialog)
+      .queryAllByRole("heading", { level: 3 })
+      .map((heading) => heading.textContent);
+    for (const section of sections) {
+      expect(["Movement", "Wards asked", "Could take them", "Escalation", "Transport leg"]).toContain(section);
     }
+    expect(within(dialog).getByRole("heading", { level: 2 })).toHaveTextContent(/what is recorded/u);
   });
 
   /**
@@ -896,13 +921,16 @@ describe("the movement detail drawer", () => {
  * which reads as a broken test rather than a missing case.
  */
 describe("the movement drawer's one action — the urgent flag", () => {
-  const openUnflagged = wardMovements.filter((movement) => isOpen(movement) && !movement.flaggedUrgent);
-  const flagged = wardMovements.filter((movement) => movement.flaggedUrgent);
-  const closedUnflagged = wardMovements.filter((movement) => !isOpen(movement) && !movement.flaggedUrgent);
+  const openUnflagged = wardMovements.filter((movement) => onWorklist(movement) && !movement.flaggedUrgent);
+  const flagged = wardMovements.filter((movement) => movement.flaggedUrgent && onWorklist(movement));
+  const closedUnflagged = wardMovements.filter(
+    (movement) => !isOpen(movement) && !movement.flaggedUrgent && dayOf(movement.closure!.at) === dayOf(NOW),
+  );
 
   /** Opens the drawer for ONE named movement — the stage board renders every movement, closed included. */
-  function openDrawerFor(id: string): HTMLElement {
+  function openDrawerFor(id: string, resolved = false): HTMLElement {
     renderScreen();
+    if (resolved) openResolvedTab();
     const rowNodes = document.querySelectorAll(`[data-ward-primitive='record-row'][data-record-key='${id}']`);
     for (const node of rowNodes) {
       const row = node;
@@ -928,23 +956,22 @@ describe("the movement drawer's one action — the urgent flag", () => {
     );
   });
 
-  it("flags an open movement, and the drawer then says the patient leads the queue", () => {
+  it("flags an open movement from the reason menu, and the drawer then says the patient is flagged", () => {
     const dialog = openDrawerFor(openUnflagged[0].id);
-    // Movements redesign (1 Nov 2026): the picker opens from "Flag urgent" in the foot band.
-    fireEvent.click(within(dialog).getByRole("button", { name: "Flag urgent" }));
-    expect(dialog).toHaveTextContent(/Not flagged: ordered by urgency tier/u);
-
-    // Item 37 (2026-09-17): a reason must be chosen before the button does anything.
-    fireEvent.change(within(dialog).getByTestId("ward-movement-drawer-urgent-reason"), {
-      target: { value: "cannot_safely_prevent_leaving" },
-    });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Flag this patient as urgent" }));
+    // Simplification (26 Nov 2026): "Flag urgent" is a menu of reasons, so a reason is chosen to flag at all.
+    const toggle = within(dialog).getByTestId("ward-movement-drawer-urgent-toggle");
+    expect(toggle).toHaveTextContent("Flag urgent");
+    expect(toggle).not.toHaveAttribute("data-flagged");
+    fireEvent.click(toggle);
+    fireEvent.click(screen.getByRole("menuitem", { name: changeReasonLabels.cannot_safely_prevent_leaving }));
 
     expect(
-      screen.getByRole("dialog"),
-      "the button toggled but the drawer still reads as unflagged — the click changed the label and " +
-        "not the record",
-    ).toHaveTextContent(/Flagged urgent: leads the queue ahead of every tier/u);
+      within(screen.getByRole("dialog")).getByTestId("ward-movement-drawer-urgent-toggle"),
+      "the reason was chosen but the drawer still reads as unflagged — the click did not reach the record",
+    ).toHaveAttribute("data-flagged", "true");
+    expect(within(screen.getByRole("dialog")).getByTestId("ward-movement-drawer-urgent-toggle")).toHaveTextContent(
+      "Flagged urgent",
+    );
   });
 
   /**
@@ -954,12 +981,16 @@ describe("the movement drawer's one action — the urgent flag", () => {
    */
   it("clears a flag that was already set, so the seeded one is not permanent", () => {
     const dialog = openDrawerFor(flagged[0].id);
-    expect(dialog).toHaveTextContent(/Flagged urgent/u);
-    fireEvent.click(within(dialog).getByRole("button", { name: "Flagged urgent" }));
+    const toggle = within(dialog).getByTestId("ward-movement-drawer-urgent-toggle");
+    expect(toggle).toHaveTextContent("Flagged urgent");
+    fireEvent.click(toggle);
 
-    fireEvent.click(within(dialog).getByRole("button", { name: "Remove the urgent flag" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
 
-    expect(screen.getByRole("dialog"), "the flag survived its own remove button").toHaveTextContent(/Not flagged/u);
+    expect(
+      within(screen.getByRole("dialog")).getByTestId("ward-movement-drawer-urgent-toggle"),
+      "the flag survived its own remove item",
+    ).toHaveTextContent("Flag urgent");
   });
 
   /**
@@ -970,9 +1001,9 @@ describe("the movement drawer's one action — the urgent flag", () => {
   // Movements redesign (1 Nov 2026): the foot band offers only actions that can work, so a closed
   // movement has no Flag urgent or Pull now; its closure outcome heads the pop-up instead.
   it("offers no urgent flag on a closed movement", () => {
-    const dialog = openDrawerFor(closedUnflagged[0].id);
+    const dialog = openDrawerFor(closedUnflagged[0].id, true);
     expect(within(dialog).queryByRole("button", { name: /urgent/iu })).toBeNull();
-    expect(within(dialog).getByRole("link", { name: /Patient record/u })).toBeInTheDocument();
+    expect(within(dialog).getByRole("link", { name: /Patient page/u })).toBeInTheDocument();
   });
 });
 
@@ -1004,33 +1035,29 @@ describe("the movement drawer resets its urgent-flag reason between patients (P2
     throw new Error(`no row for ${id} offers the drawer, so this case could not be reached at all`);
   }
 
-  it("choosing a reason on WF-001, closing, and opening WF-002 leaves WF-002's reason empty and its flag button unavailable", () => {
+  it("opening the flag menu on WF-001, closing, and opening WF-002 leaves WF-002 unflagged with no reason carried over", () => {
     renderScreen();
 
     const wf001Dialog = openDrawerInPlace("WF-001");
-    fireEvent.click(within(wf001Dialog).getByRole("button", { name: "Flag urgent" }));
-    const wf001Select = within(wf001Dialog).getByTestId("ward-movement-drawer-urgent-reason") as HTMLSelectElement;
-    fireEvent.change(wf001Select, { target: { value: "cannot_safely_prevent_leaving" } });
-    expect(wf001Select.value, "precondition: the reason was actually chosen on WF-001").toBe(
-      "cannot_safely_prevent_leaving",
-    );
-    const wf001Button = within(wf001Dialog).getByTestId("ward-movement-drawer-urgent-toggle");
-    expect(wf001Button, "precondition: choosing a reason enables the button").not.toHaveAttribute("aria-disabled");
+    const wf001Toggle = within(wf001Dialog).getByTestId("ward-movement-drawer-urgent-toggle");
+    fireEvent.click(wf001Toggle);
+    // Simplification (26 Nov 2026): a reason is a menu item that flags at once, so no draft reason exists
+    // to carry across; the menu offers every reason unchosen.
+    const reasons = screen.getAllByRole("menuitem");
+    expect(reasons.length, "precondition: the flag menu offered reasons on WF-001").toBeGreaterThan(0);
+    fireEvent.keyDown(document.activeElement ?? wf001Toggle, { key: "Escape" });
 
     fireEvent.click(within(wf001Dialog).getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("dialog"), "the drawer did not actually close").toBeNull();
 
     const wf002Dialog = openDrawerInPlace("WF-002");
-    fireEvent.click(within(wf002Dialog).getByRole("button", { name: "Flag urgent" }));
-    const wf002Select = within(wf002Dialog).getByTestId("ward-movement-drawer-urgent-reason") as HTMLSelectElement;
+    const wf002Toggle = within(wf002Dialog).getByTestId("ward-movement-drawer-urgent-toggle");
+    expect(wf002Toggle, "WF-002 must open unflagged").not.toHaveAttribute("data-flagged");
+    fireEvent.click(wf002Toggle);
     expect(
-      wf002Select.value,
-      "WF-002's reason picker carried WF-001's choice across — the drawer did not remount",
-    ).toBe("");
-    expect(
-      within(wf002Dialog).getByTestId("ward-movement-drawer-urgent-toggle"),
-      "WF-002's flag button must be unavailable again until its own reason is chosen",
-    ).toHaveAttribute("aria-disabled", "true");
+      document.querySelectorAll('[role="menuitem"][aria-checked="true"]'),
+      "WF-002's flag menu carried a chosen reason across from WF-001",
+    ).toHaveLength(0);
   });
 });
 
@@ -1144,10 +1171,10 @@ describe("movements board tab in the address", () => {
     await act(async () => {});
     expect(screen.getByRole("tab", { name: /Resolved today/u })).toHaveAttribute("aria-selected", "true");
 
-    fireEvent.click(screen.getByRole("tab", { name: /^All\b/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /^Open\b/u }));
     await act(async () => {});
     expect(new URLSearchParams(window.location.search).get("tab")).toBeNull();
-    expect(screen.getByRole("tab", { name: /^All\b/u })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /^Open\b/u })).toHaveAttribute("aria-selected", "true");
 
     fireEvent.click(screen.getByRole("tab", { name: /Resolved today/u }));
     await act(async () => {});
@@ -1162,7 +1189,7 @@ describe("movements board tab in the address", () => {
       </WardFlowProvider>,
     );
     await act(async () => {});
-    expect(screen.getByRole("tab", { name: /^All\b/u })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /^Open\b/u })).toHaveAttribute("aria-selected", "true");
   });
 });
 
@@ -1170,30 +1197,32 @@ describe("M3: the worklist leads and check in lives on Transport (3 Nov 2026)", 
   it("swaps the timeline for the worklist with a Graph or Table switch (Table by default since 20 Nov 2026, D-270)", () => {
     window.localStorage.removeItem("ward-flow-movements-timeline");
     renderScreen();
-    const panel = screen.getByRole("region", { name: "Today’s traffic" });
-    expect(within(panel).getByRole("heading", { level: 2, name: "Today’s traffic" })).toBeInTheDocument();
-    const view = within(panel).getByRole("radiogroup", { name: "Show today’s traffic as" });
+    // Simplification (26 Nov 2026): the switch sits on the worklist head; with Table chosen nothing is
+    // drawn in the timeline's place, so there is no traffic bar and no "Table: ..." line.
+    const worklist = screen.getByRole("region", { name: "Movement worklist" });
+    const view = within(worklist).getByRole("radiogroup", { name: "Show today’s traffic as" });
     const graph = within(view).getByRole("radio", { name: "Graph" });
     const table = within(view).getByRole("radio", { name: "Table" });
-    if (graph.getAttribute("aria-checked") !== "true") fireEvent.click(graph);
+    // The view is remembered for the page's life, so an earlier case may have left Graph on.
+    if (table.getAttribute("aria-checked") !== "true") fireEvent.click(table);
+    expect(table).toHaveAttribute("aria-checked", "true");
+    expect(screen.queryByRole("region", { name: "Today’s traffic" })).toBeNull();
+
+    fireEvent.click(graph);
+    const panel = screen.getByRole("region", { name: "Today’s traffic" });
+    expect(graph).toHaveAttribute("aria-checked", "true");
+    expect(within(panel).getByRole("heading", { level: 2, name: "Today’s traffic" })).toBeInTheDocument();
     expect(within(panel).getByRole("heading", { name: "48 hour timeline" })).toBeInTheDocument();
     expect(panel).toHaveTextContent(/\d+ active corridors?/u);
+    expect(window.localStorage.getItem("ward-flow-movements-timeline")).toBe("graph");
 
-    fireEvent.click(table);
+    fireEvent.click(within(panel).getByRole("button", { name: "Hide graph" }));
+    expect(screen.queryByRole("region", { name: "Today’s traffic" })).toBeNull();
     expect(table).toHaveAttribute("aria-checked", "true");
-    expect(graph).toHaveAttribute("aria-checked", "false");
-    expect(within(panel).queryByRole("heading", { name: /hour timeline$/u })).toBeNull();
-    expect(panel).toHaveTextContent(/Table: (?:all \d+, )?\d+ open, grouped by stage/u);
-    // The Table line follows the tab the table shows (audit, 17 Nov 2026).
-    fireEvent.click(screen.getByRole("tab", { name: /Resolved today/u }));
-    expect(panel).toHaveTextContent(/Table: \d+ resolved today, most recent first/u);
-    fireEvent.click(screen.getByRole("tab", { name: /^All\b/u }));
-    expect(panel).toHaveTextContent(/Table: (?:all \d+, )?\d+ open, grouped by stage/u);
     expect(window.localStorage.getItem("ward-flow-movements-timeline")).toBe("table");
 
     fireEvent.click(graph);
     expect(graph).toHaveAttribute("aria-checked", "true");
-    expect(within(panel).getByRole("heading", { name: "48 hour timeline" })).toBeInTheDocument();
     expect(window.localStorage.getItem("ward-flow-movements-timeline")).toBe("graph");
   });
 
@@ -1207,10 +1236,8 @@ describe("M3: the worklist leads and check in lives on Transport (3 Nov 2026)", 
     const drawer = await screen.findByTestId("movement-check-in-drawer");
     expect(within(drawer).getByRole("list", { name: "Transport steps" })).toBeInTheDocument();
     expect(within(drawer).getByRole("region", { name: "Next step" })).toBeInTheDocument();
-    expect(within(drawer).getByRole("link", { name: /Open full job on Transport/u })).toHaveAttribute(
-      "href",
-      expect.stringMatching(/^\/bedchart\/transport\/officer\?job=/u),
-    );
+    // r10 removed the drawer's "Open full job on Transport" link; the job stays on the Transport page.
+    expect(within(drawer).queryByRole("link", { name: /Open full job on Transport/u })).toBeNull();
   });
 });
 
@@ -1235,7 +1262,7 @@ describe("movement detail browser history", () => {
     const row = findRecordRow(screen.getByRole("region", { name: /Movement worklist/u }), "WF-001");
     fireEvent.click(within(row).getByRole("button", { name: /What is recorded/u }));
     const detailState = window.history.state;
-    expect(detailState).toEqual({ ...nextState, wardMovementDetail: "WF-001" });
+    expect(detailState).toMatchObject({ ...nextState, wardMovementDetail: "WF-001" });
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     act(() => window.dispatchEvent(new PopStateEvent("popstate", { state: nextState })));
     expect(screen.queryByRole("dialog")).toBeNull();

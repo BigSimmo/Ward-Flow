@@ -68,22 +68,17 @@ function boardFilter(label: string): HTMLElement {
 }
 
 describe("ward board page", () => {
-  it("No discharge due shows only arrived occupants with no expected departure", () => {
-    const { container } = renderWardBoard(UNIT_ID);
-    const expected = occupantsFor(UNIT_ID).filter(
-      (admission) => daysInBed(admission, WARD_ADMISSIONS_ANCHOR) !== null && admission.expectedDischargeAt === null,
-    );
-    expect(expected.length).toBeGreaterThan(0);
-    const filter = boardFilter("No discharge due");
-    expect(filter).toHaveTextContent(`No discharge due${expected.length}`);
-    fireEvent.click(filter);
-    const visibleTiles = [...container.querySelectorAll<HTMLElement>("[data-bed-kind]")].filter((tile) => !tile.hidden);
-    expect(visibleTiles).toHaveLength(expected.length);
-    for (const tile of visibleTiles) {
-      expect(tile).toHaveAttribute("data-bed-kind", "occupied");
-      fireEvent.click(within(tile).getByRole("button"));
-      expect(screen.getByTestId("ward-board-detail")).toHaveTextContent("No expected date set");
-    }
+  // r10: the No discharge due filter is gone; the board narrows by All, To check, Due out today and Ready.
+  it("offers no No discharge due filter", () => {
+    renderWardBoard(UNIT_ID);
+    const group = within(screen.getByRole("radiogroup", { name: "Narrow Bed board" }));
+    expect(group.queryByRole("radio", { name: /^No discharge due/u })).toBeNull();
+    expect(group.getAllByRole("radio").map((radio) => radio.textContent?.replace(/\d+|none/u, ""))).toEqual([
+      "All",
+      "To check",
+      "Due out today",
+      "Ready",
+    ]);
   });
 
   it("clears an excluded selection while keeping every filtered bed mounted", () => {
@@ -107,7 +102,7 @@ describe("ward board page", () => {
     expect(ready).toHaveFocus();
     fireEvent.keyDown(ready, { key: "Escape" });
     expect(ready).toHaveFocus();
-    fireEvent.click(boardFilter("All beds"));
+    fireEvent.click(boardFilter("All"));
     expect(tile).toBeVisible();
   });
 

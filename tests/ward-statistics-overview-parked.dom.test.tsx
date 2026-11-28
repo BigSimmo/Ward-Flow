@@ -69,7 +69,7 @@ function renderOverview() {
 /** The page's own body text, tags stripped, so a CSS Module class hash cannot pass as a figure. */
 /** v6: the admission stages card opens on its chart; its Data view is the exact table. */
 function showStageData() {
-  fireEvent.click(screen.getByRole("radio", { name: "Data" }));
+  fireEvent.click(screen.getByRole("radio", { name: "Table" }));
 }
 
 /** A v6 bar list writes a nought as "none"; read it back as the number it stands for. */

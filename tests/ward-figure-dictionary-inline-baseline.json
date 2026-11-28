@@ -59,6 +59,7 @@
       "src/components/ward-management/ward-decision-targets.ts": 1,
       "src/components/ward-management/ward-flow-reducer.ts": 1,
       "src/components/ward-management/ward-flow-referral-answer-events.ts": 1,
+      "src/components/ward-management/ward-stage-copy.ts": 1,
       "src/components/ward-management/ward-model-vocabulary.ts": 1,
       "src/components/ward-management/ward-movements.ts": 1,
       "src/components/ward-redesign/pop-search/search-preview.tsx": 1
@@ -97,7 +98,7 @@
       "src/components/ward-management/statistics/executive-statistics-derivations.ts": 3,
       "src/components/ward-management/statistics/executive-statistics-projector.ts": 2,
       "src/components/ward-management/statistics/statistics-ed-journeys-card.tsx": 3,
-      "src/components/ward-management/statistics/statistics-ed-screen.tsx": 12,
+      "src/components/ward-management/statistics/statistics-ed-screen.tsx": 10,
       "src/components/ward-management/statistics/statistics-ed-swarm.tsx": 4,
       "src/components/ward-management/statistics/statistics-ed-waits.ts": 2,
       "src/components/ward-management/statistics/statistics-eds-index.tsx": 3,
@@ -137,7 +138,7 @@
       "src/components/ward-management/ward/ward-screen.tsx": 1
     },
     "occupancy-tone": {
-      "src/components/ward-management/wards/ward-index.tsx": 1
+      "src/components/ward-management/wards/ward-index-card.tsx": 1
     },
     "alerts": {
       "src/components/ward-management/alerts/alerts-model.ts": 1

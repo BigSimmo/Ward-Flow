@@ -84,6 +84,8 @@ describe("approved four-tab referral drawer journey", () => {
     tab("Patient");
     confirmCatchment();
     next("Next, referral");
+    // The story sits in the "More clinical detail" fold, closed until something is in it.
+    fireEvent.click(within(screen.getByTestId("ward-referral-fold-clinical")).getByText("More clinical detail"));
     expect(screen.getByLabelText(/Patient story/)).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Medical clearance" })).not.toBeInTheDocument();
     expect(screen.queryByText(/Mental State Examination/)).not.toBeInTheDocument();
@@ -196,14 +198,16 @@ describe("errors mark and move to the field at fault (DA-12)", () => {
       </WardFlowProvider>,
     );
     fireEvent.change(screen.getByLabelText("Age band"), { target: { value: "Adult" } });
-    // Gender (WS-01) and urgency block too; answer them so the legal status is the one thing left.
-    fireEvent.change(screen.getByTestId("ward-referral-gender"), { target: { value: "not_recorded" } });
+    // Gender (WS-01) now sits on the Referral step, with urgency; answer both so the legal status is the one thing left.
+    next("Next, referral");
+    // A person whose gender is on the record is not asked again (the question sits behind "Change").
+    const gender = screen.queryByTestId("ward-referral-gender");
+    if (gender) fireEvent.change(gender, { target: { value: "not_recorded" } });
     fireEvent.click(document.querySelector<HTMLInputElement>('input[type="radio"][name$="-urgency"][value="2"]')!);
   }
 
   it("marks a missing field, names its error and moves focus to it", async () => {
     setupUnanswered();
-    next("Next, referral");
     expect(legal()).not.toHaveAttribute("aria-invalid");
     // The location and referring service block too when no desk fills them, and are listed in the
     // summary; give them so the legal status is the one thing to fix.

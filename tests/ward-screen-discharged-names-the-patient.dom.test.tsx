@@ -1,3 +1,4 @@
+import { getBedStep } from "./helpers/ward-bed-steps";
 import { fireEvent, screen, within } from "@testing-library/react";
 import { renderWithToasts as render } from "./helpers/with-toasts";
 import type { ReactNode } from "react";
@@ -28,7 +29,7 @@ function showLeaving() {
   const leaving = screen.queryByRole("tab", { name: "Leaving" });
   if (leaving) fireEvent.click(leaving);
   // The less common places fold behind one button.
-  const all = screen.queryByRole("button", { name: /^All \d+ places$/ });
+  const all = screen.queryByRole("button", { name: /^Show all \d+$/ });
   if (all) fireEvent.click(all);
 }
 
@@ -114,7 +115,7 @@ function perthLocalBefore(dayZero: Date, minutes: number): string {
 
 function openAndChoose(admissionId: string, destination: string) {
   openAndPick(admissionId, destination);
-  fireEvent.click(screen.getByRole("button", { name: /Record discharge/i }));
+  fireEvent.click(getBedStep(/Record discharge/i));
   fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
 }
 
@@ -235,7 +236,7 @@ describe("the ward screen's Discharged step names its patient and never guesses 
     expect(screen.getByTestId("ward-drawer-leave-paper")).toHaveTextContent(
       `${name} is recorded as involuntary. Record the revocation, Form 5A or Form 5B from the paper`,
     );
-    expect(screen.getByRole("button", { name: /Record discharge/i })).toHaveAttribute("aria-disabled", "true");
+    expect(getBedStep(/Record discharge/i)).toHaveAttribute("aria-disabled", "true");
     expect(screen.queryByRole("button", { name: "Record discharge" })).toBeNull();
     expect(screen.getByTestId("rejections")).toHaveTextContent("0");
     expect(screen.getByTestId("named-state")).toHaveTextContent(/^occupied\|$/u);
@@ -274,7 +275,7 @@ describe("the ward screen's Discharged step names its patient and never guesses 
 
     expect(screen.getByTestId("rejections")).toHaveTextContent("0");
     expect(screen.queryByTestId("ward-drawer-leave-paper")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /Record discharge/i }));
+    fireEvent.click(getBedStep(/Record discharge/i));
     fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
     expect(screen.getByTestId("rejections")).toHaveTextContent("0");
     expect(screen.getByTestId("named-state")).toHaveTextContent("departed|discharged-to-the-community");
@@ -313,7 +314,7 @@ describe("the ward screen's Discharged step names its patient and never guesses 
     fireEvent.click(within(form).getByRole("button", { name: "Record the paper" }));
 
     expect(screen.getByTestId("rejections")).toHaveTextContent("0");
-    fireEvent.click(screen.getByRole("button", { name: /Record discharge/i }));
+    fireEvent.click(getBedStep(/Record discharge/i));
     fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
     expect(screen.getByTestId("rejections")).toHaveTextContent("0");
     expect(screen.getByTestId("named-state")).toHaveTextContent("departed|left-against-advice");

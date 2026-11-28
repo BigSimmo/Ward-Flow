@@ -177,8 +177,8 @@ describe("community team Assign", () => {
         <Owner />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getAllByRole("button", { name: "Assign" })[0]!);
-    const dialog = within(screen.getByRole("dialog", { name: /^Assign referral/u }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Hand to" })[0]!);
+    const dialog = within(screen.getByRole("dialog", { name: /^Hand to/u }));
     expect(dialog.queryByText(/Not wired in this prototype/u)).not.toBeInTheDocument();
     fireEvent.click(dialog.getByRole("button", { name: "Take for this team" }));
     expect(screen.getByTestId("owner")).toHaveTextContent("community");

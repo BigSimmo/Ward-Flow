@@ -150,14 +150,18 @@ describe("Weekly executive aggregate adoption", () => {
         "Pilot measures",
         "Where the time goes",
         "Supporting figures",
-        "Pressure this week",
-        "Request to bed pulled",
         "Same person raised twice",
         "Bed pulls ran out",
         "Records complete",
       ])
         expect(screen.getByText(title, { exact: true })).toBeInTheDocument();
-      expect(screen.getAllByText("Recorded occupied bed time").length).toBeGreaterThan(0);
+      // Audit two (#98): the Pressure this week card stays on a phone only; a desktop shows those figures in its hero.
+      expect(screen.queryByText("Pressure this week", { exact: true }) !== null).toBe(phone);
+      // Audit two (#66, D-218): a supporting row with no figure and no rate hides, and the card's foot says so once.
+      expect(screen.queryByText("Request to bed pulled", { exact: true })).toBeNull();
+      expect(screen.getByText("Not enough this week")).toBeInTheDocument();
+      // The occupancy meter sits in the phone's pressure card; a desktop shows occupancy in its hero.
+      expect(screen.queryAllByText("Recorded occupied bed time").length > 0).toBe(phone);
       fireEvent.click(screen.getByTestId("ward-weekly-print"));
       expect(print).toHaveBeenCalledOnce();
       expect(guard.operational).not.toHaveBeenCalled();
@@ -197,8 +201,9 @@ describe("Weekly executive aggregate adoption", () => {
     selected.report.edWaits.longestMinutes = 0;
     report(data);
     expect(screen.getByTestId("ward-weekly-ed-count")).toHaveTextContent("0");
-    const card = screen.getByRole("region", { name: "Pressure this week" });
-    expect(within(card).getByText("—", { exact: true })).toBeInTheDocument();
+    // Audit two (#98): the count and longest wait moved from the pressure card to the ED waits card's meta line.
+    const card = screen.getByRole("region", { name: /^ED waits first passing/u });
+    expect(card).toHaveTextContent("0 in the week · longest —");
     expect(guard.operational).not.toHaveBeenCalled();
   });
 

@@ -55,9 +55,13 @@ it("names identified release rows and distinguishes aggregate copying from print
     expect(screen.getByRole("tab", { name: /^Now, \d+ to work now$/ })).toBeInTheDocument();
     expect(screen.getByText(/Discharges by bed, held up first/)).toBeInTheDocument();
     expect(screen.getByText(/Discharges by bed · Identifiers may be included/)).toBeInTheDocument();
+    // Share is a menu (audit three): its Copy counts, Export list and Print list open from the one chip.
+    fireEvent.click(screen.getByTestId("ward-discharge-share"));
     expect(screen.getByTestId("ward-discharge-copy")).toHaveTextContent("Copy counts");
     // Page tops (9 Nov 2026): Print list is a hero chip whose spoken name keeps the privacy cue.
-    expect(screen.getByTestId("ward-discharge-print")).toHaveAccessibleName("Print list (may include identifiers)");
+    expect(screen.getByTestId("ward-discharge-print").closest('[role="menuitem"]')).toHaveAccessibleName(
+      /^Print list\s*\(may include identifiers\)$/u,
+    );
     expect(screen.queryByText(/anonymous releases|Bed frees \(no name\)/i)).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-discharge-copy"));
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
@@ -95,6 +99,7 @@ it("copies Recorded's own seven-day figures, matching its headline (Codex review
     const recorded = Number(
       /^(\d+)\s*recorded$/u.exec(screen.getByTestId("ward-discharge-figure-recorded").textContent ?? "")?.[1],
     );
+    fireEvent.click(screen.getByTestId("ward-discharge-share"));
     fireEvent.click(screen.getByTestId("ward-discharge-copy"));
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
     const copied = String(writeText.mock.calls[0][0]);
@@ -477,10 +482,12 @@ describe("DischargeBoard", () => {
     const confirmedBlockedRow = blockedRowByStage("Confirmed");
     fireEvent.click(rowOpener(confirmedBlockedRow));
     const detail = screen.getByRole("region", { name: "Selected discharge details" });
-    const stamp = within(detail).getByText(/^Confirmed \d{1,2}:\d{2} [ap]m · .+$/);
+    // Audit three: the freshness stamp sits in the drawer head as "Last reported ...", above the details.
+    const drawer = detail.closest('[role="dialog"], aside') ?? document.body;
+    const stamp = within(drawer as HTMLElement).getByText(/^Confirmed \d{1,2}:\d{2} [ap]m · .+$/);
     const role = stamp.textContent?.replace(/^Confirmed \d{1,2}:\d{2} [ap]m · /, "") ?? "";
     expect(role.length).toBeGreaterThan(0);
-    expect(detail.textContent?.match(new RegExp(escapeRegExp(role), "g")) ?? []).toHaveLength(1);
+    expect((drawer.textContent ?? "").match(new RegExp(escapeRegExp(role), "g")) ?? []).toHaveLength(1);
   });
 
   it("states the excluded-beyond-today count as the number the live seed actually produces", () => {

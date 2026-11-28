@@ -241,7 +241,7 @@ describe("Community gateway — live search narrows to exactly the matching set"
     renderGateway();
     // v6 (7 Oct 2026): the service filter is a segmented control, one radio per service.
     fireEvent.click(
-      within(screen.getByRole("radiogroup", { name: "Filter team names" })).getByRole("radio", { name: /^EMHS/ }),
+      within(screen.getByRole("radiogroup", { name: "Filter team names" })).getByRole("radio", { name: /^East/ }),
     );
 
     expect(screen.getAllByTestId("community-index-link")).toHaveLength(COMMUNITY_TEAM_PAGES.length);
@@ -477,7 +477,7 @@ describe("Community gateway — directory header layout and service filtering", 
     expect(resultLine.textContent).toBe("");
 
     const serviceGroup = screen.getByRole("radiogroup", { name: "Filter team names" });
-    fireEvent.click(within(serviceGroup).getByRole("radio", { name: /^NMHS/ }));
+    fireEvent.click(within(serviceGroup).getByRole("radio", { name: /^North/ }));
 
     expect(resultLine).toHaveTextContent("6 of 64 synthetic team names, all names stay");
     expect(solidTeamLinks()).toHaveLength(6);

@@ -122,6 +122,9 @@ describe("WS-01: gender on a ward referral", () => {
   it("offers Not yet recorded as an answer, kept apart from unanswered, and says the ward cannot accept yet", () => {
     const journey = wardMovements.find((movement) => isWaitingInEd(movement) && movement.patientId !== undefined)!;
     openReferral(journey.patientId!);
+    // A gender on record sits behind Change.
+    const change = screen.queryByRole("button", { name: "Change" });
+    if (change) fireEvent.click(change);
     const gender = screen.getByTestId("ward-referral-gender") as HTMLSelectElement;
     expect([...gender.options].slice(0, 2).map((option) => option.text)).toEqual([
       "Choose a gender",

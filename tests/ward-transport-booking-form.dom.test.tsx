@@ -95,9 +95,9 @@ describe("the one transport booking form", () => {
     // one of the answers left; the day is asked once a time is typed.
     expect(left).toHaveTextContent("3 answers left: provider, escort answer, legal status");
     expect(left.parentElement?.firstElementChild).toBe(left);
-    expect(screen.getByTestId(`${id("left")}-warnings`)).toHaveTextContent(
-      "Not recorded: estimated time. You can still save.",
-    );
+    // Audit three #37: one status line at a time, so the estimated-time warning waits until the
+    // required answers are given (it is asserted after answering in the cases below).
+    expect(screen.queryByTestId(`${id("left")}-warnings`)).not.toBeInTheDocument();
     expect(screen.getByTestId(id("confirm"))).toHaveAttribute(
       "title",
       expect.stringContaining("choose who is collecting the patient"),

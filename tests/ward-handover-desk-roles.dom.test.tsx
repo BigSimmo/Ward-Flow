@@ -40,13 +40,13 @@ describe("Handover role branches", () => {
     // Page tops (9 Nov 2026): the top's figures are act now, urgent and due by; no bed search count.
     const counts = within(screen.getByTestId("ward-handover-hero"));
     expect(counts.queryByText("Finding a ward")).toBeNull();
-    // 1 Nov 2026 redesign: the highlight chips sit in the sheet's one Highlight menu.
-    fireEvent.click(within(screen.getByTestId("ward-handover-sheet")).getByRole("button", { name: /^Highlight/ }));
-    const menu = within(screen.getByRole("menu", { name: "Highlight rows" }));
+    // Audit three #59: the highlight chips sit under Arrange, as pressed chips.
+    fireEvent.click(within(screen.getByTestId("ward-handover-sheet")).getByTestId("ward-handover-arrange"));
+    const menu = within(screen.getByText("Highlight rows").parentElement as HTMLElement);
     // FD-23: Declined and Escalated belong to the coordinator's bed search.
-    expect(menu.queryByRole("menuitemcheckbox", { name: /^Declined/ })).toBeNull();
-    expect(menu.queryByRole("menuitemcheckbox", { name: /^Escalated/ })).toBeNull();
-    expect(menu.getByRole("menuitemcheckbox", { name: /^Constant obs/ })).toBeInTheDocument();
+    expect(menu.queryByRole("button", { name: /^Declined/ })).toBeNull();
+    expect(menu.queryByRole("button", { name: /^Escalated/ })).toBeNull();
+    expect(menu.getByRole("button", { name: /^Constant obs/ })).toBeInTheDocument();
   });
 
   it("the ED clinician's desk names its own department, has no Beds tab and never signs off", () => {

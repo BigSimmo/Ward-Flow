@@ -260,6 +260,8 @@ describe("the New referral sheet on a ward page", () => {
       target: { value: NOT_ON_SENDING_WARD_REASONS[0] },
     });
     next("Next, referral");
+    // The story sits in the "More clinical detail" fold, closed until something is in it.
+    fireEvent.click(within(screen.getByTestId("ward-referral-fold-clinical")).getByText("More clinical detail"));
     expect(screen.getByLabelText(/Patient story/)).toBeVisible();
   });
 

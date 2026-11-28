@@ -204,8 +204,8 @@ describe("a discharge stays with the person whose confirm opened (Audit 1, #1564
     fireEvent.click(a!.button);
     fireEvent.click(screen.getByTestId("ward-board-record-leaving-submit"));
 
-    const confirm = () => document.getElementById("ward-board-confirm-dialog")!;
-    const who = confirm().querySelector("#confirm-dialog-description strong")?.textContent ?? "";
+    const confirm = () => screen.getByTestId("ward-board-confirm-dialog");
+    const who = confirm().querySelector("strong")?.textContent ?? "";
     expect(who).not.toBe("");
     // DA-08: a second identifier (record number, and bed where recorded) beside the name.
     const identity = within(confirm()).getByTestId("ward-board-confirm-identity").textContent ?? "";
@@ -215,12 +215,12 @@ describe("a discharge stays with the person whose confirm opened (Audit 1, #1564
     fireEvent.click(occupiedStays().find((stay) => stay.admissionId === b!.admissionId)!.button);
     act(() => reorder.lists());
 
-    expect(confirm().querySelector("#confirm-dialog-description strong")).toHaveTextContent(who);
+    expect(confirm().querySelector("strong")).toHaveTextContent(who);
     expect(within(confirm()).getByTestId("ward-board-confirm-identity")).toHaveTextContent(identity);
     fireEvent.change(within(confirm()).getByTestId("ward-board-confirm-destination"), {
       target: { value: LEAVING_DESTINATIONS[0]!.id },
     });
-    fireEvent.click(within(confirm()).getByTestId("ward-board-confirm-proceed"));
+    fireEvent.click(within(confirm()).getByRole("button", { name: "Record discharge" }));
 
     // The departure was sent for A, and the model shows A left and B still in their bed.
     expect(departures).toEqual([a!.admissionId]);

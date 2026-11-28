@@ -236,7 +236,7 @@ describe("booking transport from the sending emergency department", () => {
     expect(dialog).toHaveAttribute("aria-modal", "true");
     // Redesign (pop-log-transport, Josh 31 Oct 2026): the kit dialog names itself with its
     // one-line title, and the person, surname first, is named once under it.
-    expect(screen.getByRole("dialog", { name: "Log transport booking" })).toBe(dialog);
+    expect(screen.getByRole("dialog", { name: "Record transport booking" })).toBe(dialog);
     expect(document.getElementById(dialog.getAttribute("aria-describedby")!)?.textContent).toMatch(
       /^[^,]+, .+ · booked by phone$/,
     );

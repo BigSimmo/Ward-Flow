@@ -2,6 +2,12 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/bedchart/movements",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), back: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 import { LeaveScreen } from "@/components/ward-management/leave/leave-screen";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
@@ -29,7 +35,7 @@ function wrap(children: ReactNode) {
 }
 
 /** Clicks Export and returns the downloaded CSV's text. */
-async function exportedCsv(testId: string): Promise<string> {
+async function exportedCsv(testId: string | (() => void)): Promise<string> {
   let file: Blob | undefined;
   URL.createObjectURL = (blob: Blob) => {
     file = blob;
@@ -37,7 +43,8 @@ async function exportedCsv(testId: string): Promise<string> {
   };
   URL.revokeObjectURL = vi.fn();
   vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
-  fireEvent.click(screen.getByTestId(testId));
+  if (typeof testId === "function") testId();
+  else fireEvent.click(screen.getByTestId(testId));
   await waitFor(() => expect(file).toBeDefined(), { timeout: 10_000 });
   return file!.text();
 }
@@ -93,8 +100,8 @@ describe("Leave page", () => {
     expect(
       within(screen.getByTestId("ward-leave-row-l-later")).queryByRole("link", { name: /^Open ward/u }),
     ).toBeNull();
-    // 16 Nov walk: the hero's quiet meta line says how fresh the list is, on the am/pm clock.
-    expect(screen.getByTestId("ward-leave-hero")).toHaveTextContent(/Updated \d{1,2}:\d{2} [ap]m/u);
+    // Audit two #22 and #71: the "Updated hh:mm" stamp is gone; the hero names the list and its counts.
+    expect(screen.getByTestId("ward-leave-hero")).toHaveTextContent("2 overdue or absent");
   });
 
   it("prints with the browser's own print and says on paper what the list holds", () => {
@@ -215,8 +222,15 @@ describe("Legal forms Print and Export", () => {
 describe("Movements Print and Export", () => {
   it("exports the worklist without names", async () => {
     wrap(<MovementsScreen />);
-    expect(screen.getByTestId("ward-movements-print")).toBeTruthy();
-    const csv = await exportedCsv("ward-movements-export");
+    // Audit four #79: Print list and Export list sit under the one Share menu.
+    const share = () => fireEvent.click(screen.getByRole("button", { name: /^Share/u }));
+    share();
+    expect(screen.getByRole("menuitem", { name: /^Print list/u })).toBeTruthy();
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+    const csv = await exportedCsv(() => {
+      if (!screen.queryByRole("menuitem", { name: /^Export list/u })) share();
+      fireEvent.click(screen.getByRole("menuitem", { name: /^Export list/u }));
+    });
     const lines = csv.split("\r\n");
     expect(lines.some((line) => line.startsWith('"Record","UMRN","Stage","ED"'))).toBe(true);
     expect(lines.length).toBeGreaterThan(8);

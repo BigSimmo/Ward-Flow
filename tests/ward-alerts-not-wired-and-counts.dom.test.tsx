@@ -50,26 +50,32 @@ describe("Alerts — confirm controls (F3.1)", () => {
   it("Escalate is a working control that records escalation and updates button state", () => {
     renderScreen();
     // A placement alert: no ward in the network is eligible, so the bed search really is exhausted.
-    fireEvent.click(screen.getAllByRole("button", { name: /^Open No eligible bed/ })[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: /, open No eligible bed/ })[0]!);
     const panel = screen.getByRole("complementary", { name: "Selected alert" });
-    const escalate = within(panel).getByRole("button", { name: /Escalate/ });
-    expect(escalate).not.toHaveAttribute("aria-disabled");
-    expect(escalate).not.toBeDisabled();
+    // Audit two #1: Escalate sits in the kit More menu.
+    fireEvent.click(within(panel).getByTestId("alerts-more-actions"));
+    const escalate = screen.getByRole("menuitem", { name: /^Escalate/ });
+    expect(escalate).not.toHaveAttribute("aria-disabled", "true");
     fireEvent.click(escalate);
-    expect(within(panel).getByRole("button", { name: /^Escalated/ })).toBeInTheDocument();
+    fireEvent.click(within(panel).getByTestId("alerts-more-actions"));
+    expect(screen.getByRole("menuitem", { name: /^Escalated/ })).toBeInTheDocument();
   });
 
   // PR #349 review: Escalate stamps "bed search exhausted" on the movement, so an alert about
   // something else (here an expired bed pull) must not offer it, and a click must change nothing.
   it("Escalate is unavailable for an alert that is not about the bed search and records nothing", () => {
     renderScreen();
-    fireEvent.click(screen.getAllByRole("button", { name: /^Open Pull expired, bed still pulled/ })[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: /, open Pull expired, bed still pulled/ })[0]!);
     const panel = screen.getByRole("complementary", { name: "Selected alert" });
-    const escalate = within(panel).getByRole("button", { name: /^Escalate / });
-    expect(escalate).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(within(panel).getByTestId("alerts-more-actions"));
+    const escalate = screen.getByRole("menuitem", { name: /^Escalate/ });
+    expect(escalate.getAttribute("aria-disabled") === "true" || escalate.hasAttribute("disabled")).toBe(true);
     fireEvent.click(escalate);
-    expect(within(panel).queryByRole("button", { name: /^Escalated/ })).not.toBeInTheDocument();
-    expect(within(panel).getByRole("button", { name: /^Escalate / })).toBeInTheDocument();
+    // A disabled item leaves the menu open; open it only if the click closed it.
+    if (!screen.queryByRole("menuitem", { name: /^Escalate/ }))
+      fireEvent.click(within(panel).getByTestId("alerts-more-actions"));
+    expect(screen.queryByRole("menuitem", { name: /^Escalated/ })).toBeNull();
+    expect(screen.getByRole("menuitem", { name: /^Escalate/ })).toBeInTheDocument();
   });
 });
 
