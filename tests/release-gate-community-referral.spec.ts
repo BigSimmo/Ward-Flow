@@ -185,6 +185,10 @@ test("Community referral: a community team refers from its own desk, the ward it
   await sheet.getByLabel("Recorded sex", { exact: true }).selectOption("Male");
   await sheet.getByLabel("Gender identity", { exact: true }).selectOption("Male");
   await expect(sheet.getByRole("switch", { name: "High-acuity nursing" })).toHaveAttribute("aria-checked", "false");
+  // r10: the patient story sits in the "More clinical detail" fold, closed until something is in it.
+  const moreClinical = sheet.getByTestId("ward-referral-fold-clinical");
+  if (!(await moreClinical.evaluate((fold) => (fold as HTMLDetailsElement).open)))
+    await moreClinical.locator("summary").click();
   await sheet
     .getByLabel("Patient story", { exact: true })
     .fill("Synthetic story: known to the community team, relapse over two weeks.");

@@ -39,14 +39,15 @@ export async function showEveryoneWaitingOn(page: Page): Promise<void> {
 
 /**
  * Switches Home's list to Needs you, where referrals to decide are listed (Home flow, Q340), and
- * opens that group's "Show N more" so every referral row shows. On desktop Needs you is Home's only
+ * opens that group's "Show all N" so every referral row shows. On desktop Needs you is Home's only
  * list (no switch), so there is nothing to choose.
  */
 export async function showNeedsYouReferrals(page: Page): Promise<Locator> {
   if ((await page.getByRole("radio", { name: /^Needs you/u }).count()) > 0) await chooseHomeList(page, /^Needs you/u);
   const group = page.getByTestId("home-my-list").getByRole("region", { name: "Referrals to decide", exact: true });
   await expect(group).toBeVisible();
-  const more = group.getByRole("button", { name: /^Show \d+ more$/u });
+  // r10: the group's expander reads "Show all N" (my-list-card.tsx).
+  const more = group.getByRole("button", { name: /^Show all \d+$/u });
   if ((await more.count()) > 0 && (await more.getAttribute("aria-expanded")) !== "true") await more.click();
   return group;
 }

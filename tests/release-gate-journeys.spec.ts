@@ -106,7 +106,8 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   await openEdLists(page);
   await page
     .getByTestId("ward-ed-inbox-row-RF-009")
-    .getByRole("button", { name: /View referral/u })
+    // r10: the My list inbox row's details toggle reads "Open referral" (ed-screen-inbox.tsx).
+    .getByRole("button", { name: /^Open referral/u })
     .click();
   await page.getByTestId("ward-ed-inbox-raise-RF-009").click();
   await expect(page.getByRole("region", { name: "Ask for a bed" })).toBeVisible();
@@ -300,8 +301,9 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   await expectAccessible(page, testInfo, "ED transport booking, filled");
   await page.getByTestId(`ward-ed-book-transport-confirm-${movementId}`).click();
   await expect(booking).toHaveCount(0);
-  // The next step is now the handover, pinned the same way ("Handover ready").
-  await personSheet.getByRole("button", { name: "Handover ready", exact: true }).click();
+  // WF-004 has no examination yet, so once the booking is in the sheet pins "Record exam" as its next
+  // step and the handover stays in its Actions list, worded "Mark handover ready" (ed-screen-row-menu).
+  await personSheet.getByRole("button", { name: "Mark handover ready", exact: true }).click();
   await expectAccessible(page, testInfo, "ED person sheet after handover ready");
   await page.keyboard.press("Escape");
   await expect(personSheet).toHaveCount(0);
@@ -411,13 +413,16 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   // on the phone (where it replaces the bed grid). They have left records the departure.
   const workBand = page.getByTestId("ward-board-work-band-list");
   const shiftItem = workBand.getByTestId(`ward-board-shift-discharge-${release.admissionId}`);
-  const showMore = page.getByTestId("ward-board-work-band").getByRole("button", { name: /^Show \d+ more$/u });
+  // r10: the band's expander reads "Show all N" (ward-board-work-band.tsx).
+  const showMore = page.getByTestId("ward-board-work-band").getByRole("button", { name: /^Show all \d+$/u });
   if (!(await shiftItem.isVisible()) && (await showMore.isVisible())) await showMore.click();
   // The ward's confirmation reaches the board: one discharge, one answer.
   await expect(shiftItem).toBeVisible();
   await expect(shiftItem).toContainText("Confirmed discharge");
   await shiftItem.getByRole("button", { name: /^They have left, / }).click();
-  const departure = page.getByRole("dialog", { name: "Confirm discharge" });
+  // r10: the confirm is the kit Dialog as an alertdialog, titled "Record discharge"
+  // (ward-board.tsx, leavingConfirmWords in ward-board-transport-wait.tsx); its identity check stays.
+  const departure = page.getByRole("alertdialog", { name: "Record discharge" });
   await expect(departure).toBeVisible();
   await expectAccessible(page, testInfo, "confirm patient departure dialog");
   // Audit CS3-07: where they went starts blank and must be chosen.
