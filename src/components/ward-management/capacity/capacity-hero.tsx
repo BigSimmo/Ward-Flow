@@ -461,8 +461,9 @@ function OccupancyBands({ percent }: { percent: number }) {
       {code === "green" ? (
         <>
           {/* Under the band there is nothing to warn of: the sentence stays for a screen reader and the
-              line keeps its height, so the four figures stay level. */}
-          <SrOnly>{words}</SrOnly>
+              line keeps its height, so the four figures stay level. The leading space keeps "In use"
+              a word of its own in the link's name (axe label-content-name-mismatch). */}
+          <SrOnly>{` ${words}`}</SrOnly>
           <span className={`${styles.occBandsWords} ${styles.occBandsQuiet}`} aria-hidden="true">
             {"\u00a0"}
           </span>

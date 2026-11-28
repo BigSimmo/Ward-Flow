@@ -1,6 +1,20 @@
-import { durMinutes } from "@/components/wf";
-
 const MINUTES_PER_HOUR = 60;
+const MINUTES_PER_DAY = 24 * MINUTES_PER_HOUR;
+
+/**
+ * Whole minutes of an hour or more in the kit's duration words ("1 h 05 min", "5 h", "2 d 3 h"), as
+ * `durMinutes` in src/components/wf/format.ts says them. Kept here, not imported from the kit, because
+ * the backend engine bundles this file and the kit is outside its redeploy watch paths
+ * (backend.test.mjs, audit F-07).
+ */
+function durMinutes(minutes: number): string {
+  if (minutes < MINUTES_PER_DAY) {
+    const rest = minutes % MINUTES_PER_HOUR;
+    const hours = Math.floor(minutes / MINUTES_PER_HOUR);
+    return rest === 0 ? `${hours} h` : `${hours} h ${String(rest).padStart(2, "0")} min`;
+  }
+  return `${Math.floor(minutes / MINUTES_PER_DAY)} d ${Math.floor((minutes % MINUTES_PER_DAY) / MINUTES_PER_HOUR)} h`;
+}
 
 /**
  * Audit two #23 (K26): the one "how long ago" phrase. Under a minute reads "just now"; after that
