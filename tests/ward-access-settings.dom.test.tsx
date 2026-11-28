@@ -82,11 +82,7 @@ function AdvanceClock() {
   );
 }
 
-function sharedSettings(
-  api: SharedAccessApi,
-  reauthenticate: (password: string) => Promise<void>,
-  withLog = false,
-) {
+function sharedSettings(api: SharedAccessApi, reauthenticate: (password: string) => Promise<void>, withLog = false) {
   return render(
     <ToastProvider>
       <WardFlowProvider initialNow={NOW_ANCHOR}>

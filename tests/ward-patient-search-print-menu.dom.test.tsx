@@ -69,9 +69,11 @@ describe("Patients Print menu", () => {
     const trigger = screen.getByTestId("ward-census-share");
     expect(trigger).toHaveAttribute("aria-haspopup", "menu");
     const menu = openPrintMenu(trigger);
-    expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual(
-      expect.arrayContaining(["Copy list", "Export list"]),
-    );
+    expect(
+      within(menu)
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
+    ).toEqual(expect.arrayContaining(["Copy list", "Export list"]));
     const items = printItems(menu);
     expect(items).toHaveLength(2);
     expect(items[0]).toHaveTextContent(/^Whole list\d+ people$/u);
