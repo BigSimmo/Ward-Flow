@@ -45,7 +45,9 @@ describe("ward decisions cockpit", () => {
     expect(screen.queryByRole("region", { name: "Staffing" })).not.toBeInTheDocument();
     expect(leaveStep).toHaveAttribute("aria-pressed", "true");
 
-    fireEvent.click(screen.getByRole("button", { name: "Open Staffing window" }));
+    // Audit two #58 (P55, r10): the "Still to decide" side list is gone; the phase strip's cells switch windows.
+    fireEvent.click(staffingStep);
+    expect(staffingStep).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("region", { name: "Staffing" })).toBeInTheDocument();
     expect(screen.queryByText(/Immediate Actions/i)).not.toBeInTheDocument();
   });

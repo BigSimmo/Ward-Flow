@@ -34,7 +34,6 @@ const KNOWN_DROPDOWNS: Readonly<Record<string, number>> = {
   "src/components/ward-management/community/team-2026/team-caseload.tsx": 1,
   "src/components/ward-management/community/team-2026/team-referrals.tsx": 2,
   "src/components/ward-management/coordinator/call-sheet.tsx": 1,
-  "src/components/ward-management/coordinator/home-release-sheet.tsx": 1,
   "src/components/ward-management/coordinator/shortlist-panel.tsx": 13,
   "src/components/ward-management/discharges/discharge-care-journey.tsx": 5,
   "src/components/ward-management/discharges/discharge-dependencies-panel.tsx": 4,
@@ -72,6 +71,9 @@ const KNOWN_DROPDOWNS: Readonly<Record<string, number>> = {
   "src/components/ward-management/referrals/ward-referral-drawer-placement-step.tsx": 1,
   "src/components/ward-management/referrals/ward-referral-drawer-referral-step.tsx": 6,
   "src/components/ward-management/referrals/ward-referral-inbox.tsx": 2,
+  // Moved, not added (28 Nov 2026, r10 build): the one Release pulled bed sheet's reason drop-down
+  // replaces the one that lived in coordinator/home-release-sheet.tsx, whose line is gone.
+  "src/components/ward-management/release-pulled-bed-sheet.tsx": 1,
   "src/components/ward-management/reports/patient-chronology-screen.tsx": 1,
   "src/components/ward-management/restrictive-practice/seclusion-screen.tsx": 3,
   "src/components/ward-management/search/patient-search.tsx": 8,

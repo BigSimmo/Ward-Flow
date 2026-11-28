@@ -57,12 +57,15 @@ describe("wired controls and audit-code hygiene across owned screens", () => {
       </WardFlowProvider>,
     );
 
-    fireEvent.click(screen.getAllByRole("button", { name: /^Open No eligible bed/ })[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: /open No eligible bed/i })[0]!);
     const panel = screen.getByRole("complementary", { name: "Selected alert" });
-    const escalateBtn = within(panel).getByRole("button", { name: /Escalate/i });
-    expect(escalateBtn).not.toBeDisabled();
+    // Audit two #1 (r10): Escalate sits in the kit More menu.
+    fireEvent.click(within(panel).getByTestId("alerts-more-actions"));
+    const escalateBtn = screen.getByRole("menuitem", { name: /^Escalate/i });
+    expect(escalateBtn).not.toHaveAttribute("aria-disabled", "true");
     fireEvent.click(escalateBtn);
-    expect(within(panel).getByRole("button", { name: /Escalated/i })).toHaveTextContent("Escalated");
+    fireEvent.click(within(panel).getByTestId("alerts-more-actions"));
+    expect(screen.getByRole("menuitem", { name: /^Escalated/i })).toHaveTextContent("Escalated");
   });
 
   it("shows no ReplyBoardList Chase button until a follow-up action exists", () => {

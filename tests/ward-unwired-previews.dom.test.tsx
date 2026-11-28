@@ -159,9 +159,9 @@ describe.each(BUILDS)("a %s build", (build, shown) => {
         <CommunityScreen teamId={communityTeamSlug(teamName)} referrals={communityScopedReferrals([referral])} />
       </WardFlowProvider>,
     );
-    // Fix plan item 4 (21 Oct 2026): Assign is wired (the team takes the referral for its desk), so
+    // Fix plan item 4 (21 Oct 2026; r10 wording "Hand to"): the hand-to step is wired (the team takes the referral for its desk), so
     // it shows in every build. Assigning a clinician is still not built.
-    expect(screen.queryAllByRole("button", { name: "Assign" }).length).toBeGreaterThan(0);
+    expect(screen.queryAllByRole("button", { name: "Hand to" }).length).toBeGreaterThan(0);
     act(() => (window as unknown as { openReferralDrawer(id: string): void }).openReferralDrawer("unwired-test"));
     const dossier = screen.getByRole("dialog", { name: /^Referral triage: / });
     expect(dossier).toHaveTextContent("It does not assign a clinician or confirm an appointment.");
@@ -226,7 +226,8 @@ describe.each(BUILDS)("deleted unwired controls, a %s build", (build) => {
       />,
     );
     const panel = screen.getByTestId("ward-handover-sign-off");
-    expect(panel).toHaveTextContent("Handed over by");
+    // Audit three #29 (r10): the button names who signs, "Sign off as ... at ...", in place of "Handed over by".
+    expect(panel).toHaveTextContent(/Sign off as .+ at /u);
     expect(within(panel).queryByText(/^Handing to/u)).toBeNull();
     expect(panel).not.toHaveTextContent("Not wired in this prototype.");
   });

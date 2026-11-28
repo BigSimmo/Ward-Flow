@@ -1,12 +1,20 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
-import { inspectDelayPerson } from "./helpers/delays-interactions";
+import { delayPersonDrawer, inspectDelayPerson } from "./helpers/delays-interactions";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
+import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { movementById } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+
+// r10: the movement drawer reads the router (to open a patient), so the screen needs one mounted.
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/bedchart/delays",
+  useRouter: () => ({ back: vi.fn(), push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 /**
  * 🔴 **RE-POINTED AT `DelaysScreen` ON 2026-09-05, AND THE OBVIOUS CALL — "retire it, the bug it
@@ -74,10 +82,15 @@ function selectPatient(id: string) {
   inspectDelayPerson(id);
 }
 
-/** The stage line in the selected patient's panel. */
+/**
+ * The status line in the selected patient's drawer. Simplification mock-up (26 Nov 2026): on a laptop
+ * the coordinator's person opens in the Movement drawer, whose status line states the stage in its
+ * own words (`movementStatusLabel`).
+ */
 function detailRow(): HTMLElement {
-  const panel = screen.getByRole("region", { name: "Why this person is waiting" });
-  return within(panel).getByTestId("delays-panel-stage");
+  const status = delayPersonDrawer("WF-004").querySelector<HTMLElement>("[class*=statusLine] strong");
+  if (status === null) throw new Error("the drawer does not state WF-004's status");
+  return status;
 }
 
 describe("the Delays screen reflects a dispatch made after mount, not the records it first rendered", () => {
@@ -101,7 +114,7 @@ describe("the Delays screen reflects a dispatch made after mount, not the record
     );
 
     selectPatient("WF-004");
-    expect(detailRow()).toHaveTextContent(stageCopy.pulled.label);
+    expect(detailRow()).toHaveTextContent(movementStatusLabel(SUBJECT!));
 
     fireEvent.click(screen.getByRole("button", { name: "release the pull" }));
 
@@ -113,7 +126,7 @@ describe("the Delays screen reflects a dispatch made after mount, not the record
       row,
       "WF-004's pull was released and its detail row still reads the stage it carried at mount — the " +
         "screen is rendering a record it captured rather than the live one",
-    ).toHaveTextContent(stageCopy.accepted_awaiting_bed.label);
-    expect(row).not.toHaveTextContent(stageCopy.pulled.label);
+    ).toHaveTextContent(movementStatusLabel({ ...SUBJECT!, stage: "accepted_awaiting_bed", transport: undefined }));
+    expect(row).not.toHaveTextContent(movementStatusLabel(SUBJECT!));
   });
 });

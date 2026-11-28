@@ -51,7 +51,7 @@ describe("the patient page saves the arrival plan as the desk's own role", () =>
     const dialog = await screen.findByRole("dialog", { name: "Update arrival time & transport" });
     fireEvent.change(within(dialog).getByLabelText("How they are travelling"), { target: { value: "ambulance" } });
     fireEvent.click(within(dialog).getByRole("button", { name: /^\+1h/u }));
-    fireEvent.click(within(dialog).getByTestId("save-arrival-plan-button"));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save arrival plan" }));
     expect(screen.getByTestId("arrival-plan-by")).toHaveTextContent("ed");
   });
 });

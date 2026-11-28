@@ -160,7 +160,7 @@ describe("the downtime pack screen", () => {
     fireEvent.click(print);
     // Root-cause fix 3.3: nothing is recorded until the person says it printed.
     expect(screen.queryByTestId("ward-downtime-last-printed")).toBeNull();
-    fireEvent.click(await screen.findByRole("button", { name: "Yes" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Record print time" }));
     expect(await screen.findByTestId("ward-downtime-last-printed")).toHaveTextContent(
       `Last printed ${formatInstant(NOW_ANCHOR)}`,
     );

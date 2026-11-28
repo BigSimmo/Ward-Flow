@@ -104,6 +104,8 @@ describe("Transport desk redesign", () => {
     const panel = screen.getByTestId("ward-officer-detail");
     // TR2 (3 Nov 2026): the header falls back to Legal now rather than a blank.
     expect(panel).toHaveTextContent(legalNowText(unrecorded));
+    // r10: the booking facts (with "Transport logged as") sit in the job panel's Forms tab.
+    fireEvent.click(within(panel).getByRole("tab", { name: /^Forms/ }));
     // Transport redesign (Josh, 1 Nov 2026): a gap says "Not recorded" in place in the booking facts.
     expect(within(panel).getByTestId(`ward-officer-transport-legal-status-${unrecorded.id}`)).toHaveTextContent(
       /Transport logged as\s*Not recorded/,
@@ -138,8 +140,11 @@ describe("Transport desk redesign", () => {
   it("lists every job and the Providers row on the coordinator's view", () => {
     renderDesk();
     expect(screen.getByTestId("ward-officer-joblist").querySelectorAll("tr")).toHaveLength(jobs.length);
-    expect(screen.queryByRole("button", { name: /^Show all \d+ jobs$/ })).toBeNull();
-    expect(screen.getByText("Choose a patient to open their job")).toBeInTheDocument();
+    // r10: the kit's "Show all N" (the Needs transport card has its own), so look inside the Jobs card.
+    const jobsCard = screen.getByTestId("ward-officer-joblist").closest<HTMLElement>('[aria-label="Jobs"]')!;
+    expect(within(jobsCard).queryByRole("button", { name: /^Show all \d+( jobs)?$/ })).toBeNull();
+    // r10 (ROLE BRANCH note, officer-screen.tsx): no "Choose a patient" hint over a list that says it already.
+    expect(screen.queryByText("Choose a patient to open their job")).toBeNull();
   });
 });
 
@@ -151,7 +156,7 @@ describe("Transport desk, the transport officer's own view (as-officer-home)", (
     expect(screen.getByRole("heading", { level: 1, name: "Transport desk right now" })).toBeInTheDocument();
     const list = screen.getByTestId("ward-officer-joblist");
     expect(list.querySelectorAll("tr")).toHaveLength(8);
-    fireEvent.click(screen.getByRole("button", { name: `Show all ${jobs.length} jobs` }));
+    fireEvent.click(screen.getByRole("button", { name: `Show all ${jobs.length}` }));
     expect(screen.getByTestId("ward-officer-joblist").querySelectorAll("tr")).toHaveLength(jobs.length);
     expect(screen.queryByText("Choose a patient to open their job")).toBeNull();
   });
@@ -163,13 +168,13 @@ describe("Transport desk, the transport officer's own view (as-officer-home)", (
     expect(screen.getByTestId("ward-officer-joblist").querySelectorAll("tr")).toHaveLength(jobs.length);
   });
 
-  it("keeps one Copy handover on a phone, as the top's first chip", () => {
+  it("keeps one Copy for handover on a phone, as the top's first chip", () => {
     installMatchMediaStub(true);
     asOfficerDesk();
     renderDesk();
-    // Page tops (Josh, 9 Nov 2026): the desk's own actions are the top's chips, so Copy handover
+    // Page tops (Josh, 9 Nov 2026): the desk's own actions are the top's chips, so Copy for handover
     // moved from under the list to the chip row. There is still only one.
-    const copies = screen.getAllByRole("button", { name: "Copy handover" });
+    const copies = screen.getAllByRole("button", { name: "Copy for handover" });
     expect(copies).toHaveLength(1);
     expect(copies[0]!.closest("[data-wf-hero]")).not.toBeNull();
   });

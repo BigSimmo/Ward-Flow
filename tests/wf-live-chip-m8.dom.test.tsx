@@ -28,9 +28,17 @@ function asPhone() {
 const pill = (container: HTMLElement) => container.querySelector('[aria-hidden="true"]');
 
 describe("Live chip, one clock (M8)", () => {
-  it("shows nothing on tablet and desktop while live, but keeps the status line", () => {
-    const { container } = render(<LiveChip state="live" age="10:42" onHero />);
+  it("shows nothing on tablet and desktop while live off a hero, but keeps the status line", () => {
+    const { container } = render(<LiveChip state="live" age="10:42" />);
     expect(pill(container)).toBeNull();
+    expect(container).not.toHaveTextContent("10:42");
+    expect(screen.getByRole("status")).toHaveTextContent(/^Demo$/);
+  });
+
+  // Audit three #50 (Josh, 28 Nov 2026): on a page hero the pill always shows, at every size, with no age.
+  it("always shows the Demo pill on a page hero, without an age", () => {
+    const { container } = render(<LiveChip state="live" age="10:42" onHero />);
+    expect(pill(container)).toHaveTextContent(/^Demo$/);
     expect(container).not.toHaveTextContent("10:42");
     expect(screen.getByRole("status")).toHaveTextContent(/^Demo$/);
   });

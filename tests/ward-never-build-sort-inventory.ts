@@ -62,15 +62,6 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
       "D-126 (10 Nov 2026): the Wards index Order choice keeps only neutral orders, Service (default) and A to Z; 'Most ready' and 'Fullest' were removed, and the hero's 'Most ready: <ward>' chip and its sort became a 'Has ready' filter chip counting the wards with a ready bed.",
   },
   {
-    file: "statistics/statistics-screen.tsx",
-    match: "left.name.localeCompare(right.name)",
-    list: "wards",
-    key: "ward name, A to Z",
-    order: "fixed order",
-    reason:
-      "D-126 (10 Nov 2026): the Statistics finder's Wards tab, where a person picks a ward to open, lists wards A to Z by name, not most ready beds first.",
-  },
-  {
     file: "night-view-figures.ts",
     match: "serviceRank(a.unit) - serviceRank(b.unit) || a.unit.name.localeCompare(b.unit.name)",
     list: "wards",
@@ -706,7 +697,7 @@ export const SORT_INVENTORY: readonly SortInventoryEntry[] = [
   {
     file: "delays/delays-board.tsx",
     match: "byWait",
-    occurrences: 4,
+    occurrences: 5,
     list: "patients",
     key: "wait",
     order: "wait order",

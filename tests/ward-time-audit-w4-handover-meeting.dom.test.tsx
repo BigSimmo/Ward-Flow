@@ -12,6 +12,11 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/bedchart/handover",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 const announced = vi.hoisted(() => [] as string[]);
 vi.mock("@/components/ward-management/shell/ward-live-region", async (original) => ({
   ...(await original<typeof import("@/components/ward-management/shell/ward-live-region")>()),
@@ -38,7 +43,8 @@ it("times the meeting on the board clock", () => {
       <HandoverPage />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Start meeting" }));
+  // r10: the hero chip is the one control; it starts and then stops the timer.
+  fireEvent.click(screen.getByTestId("ward-handover-meeting"));
   act(() => fireEvent.click(screen.getByRole("button", { name: "Advance the demo clock" })));
   fireEvent.click(screen.getByTestId("ward-handover-meeting"));
   expect(announced).toContain("Meeting took 25 min. Added to History.");

@@ -125,14 +125,16 @@ describe("the ward screen's word for min(allocatable, empty)", () => {
 
     // The breakdown is the screen's own vocabulary. Integration QA (3 Nov 2026): Ready itself sits
     // once, in the hero, so the breakdown no longer repeats it.
-    const breakdown = screen.getByTestId("ward-unit-beds");
+    // 28 Nov 2026 (r10): off the phone the squares strip is gone; its notes are one quiet line in the
+    // Every bed head, so the breakdown is read from the screen's own text.
+    const breakdown = document.body;
     expect(breakdown).not.toHaveTextContent(`Ready ${capacity.available}`);
     // The empty bed the ward is not offering is "Closed" (2026-09-01 ruling 5), never "Held".
     const seed = seedWardFlowState();
     const closed = bedStates(unit, seed.admissions, seed.bedReleases, seed.leaveBeds, []).closed;
     // Wave 4 (D-191): the bed squares' note line words it "N closed".
     expect(breakdown).toHaveTextContent(`${closed} closed`);
-    expect(breakdown).not.toHaveTextContent("Held");
+    expect(breakdown.textContent).not.toMatch(/\bHeld\b(?! up)/);
 
     // The hero must agree with it — same value, same word, one screen.
     const heroLabel = screen.getByTestId("ward-hero").textContent?.toLowerCase() ?? "";
@@ -157,11 +159,11 @@ describe("the ward screen's word for min(allocatable, empty)", () => {
     // suite is floored on `held > 0`, and `beds - available === held + blocked + occupied`, so the
     // inequality is entailed by the filter that selected the unit. A filter and an assertion over
     // the same predicate is a tautology wearing the clothes of a guard.
-    const cta = screen.getByTestId("ward-hero-open-bed-list");
-    expect(cta.textContent?.toLowerCase()).not.toContain("free");
-    expect(cta).toHaveTextContent(`${unit.beds} beds`);
-    // Integration QA (3 Nov 2026): the ready figure is the hero's alone, never repeated here.
-    expect(cta.textContent?.toLowerCase()).not.toContain("ready");
+    // 28 Nov 2026 (r10): the hero's "Open bed list" call to action is gone (the Every bed card and
+    // its "Full bed list" link carry it), so the whole hero is checked for the ratio wording instead.
+    const hero = screen.getByTestId("ward-hero");
+    expect(hero.textContent?.toLowerCase()).not.toContain("free");
+    expect(hero.textContent).not.toMatch(/\d+\s*(of|\/)\s*\d+\s*beds/i);
     expect(screen.getByTestId("ward-hero-ready")).toHaveTextContent(String(capacity.available));
   });
 });

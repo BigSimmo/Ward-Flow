@@ -26,8 +26,11 @@ describe("design audit report entry states", () => {
     fireEvent.focus(search);
     fireEvent.change(search, { target: { value: "zzzz" } });
     expect(screen.getByText("No patient with records matches")).toBeInTheDocument();
-    const first = screen.getAllByTestId("ward-chronology-start-patient")[0]!;
-    const umrn = first.children[1]?.textContent ?? "";
+    // Thread C (26 Nov 2026, r10): the start page lists only people opened this session, so the
+    // person comes from the search itself: the first match for a UMRN prefix.
+    fireEvent.change(search, { target: { value: "UM" } });
+    const umrn = screen.getAllByRole("option")[0]!.textContent?.match(/UM\d{6}/)?.[0] ?? "";
+    expect(umrn).not.toBe("");
     fireEvent.change(search, { target: { value: umrn } });
     const option = screen.getAllByRole("option").find((item) => item.textContent?.includes(umrn));
     expect(option).toBeDefined();

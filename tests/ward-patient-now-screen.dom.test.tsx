@@ -100,9 +100,9 @@ describe("the patient-now screen", () => {
     fireEvent.click(arrivalAction);
     const arrivalDialog = await screen.findByRole("dialog", { name: "Update arrival time & transport" });
     // The shared modal contract enters the first control after the lazy chunk mounts.
-    await waitFor(() => expect(within(arrivalDialog).getByRole("button", { name: "Close dialog" })).toHaveFocus());
+    await waitFor(() => expect(within(arrivalDialog).getByRole("button", { name: "Close" })).toHaveFocus());
     expect(within(arrivalDialog).getByRole("button", { name: "Save arrival plan" })).toBeInTheDocument();
-    fireEvent.click(within(arrivalDialog).getByRole("button", { name: "Close dialog" }));
+    fireEvent.click(within(arrivalDialog).getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("dialog", { name: "Update arrival time & transport" })).not.toBeInTheDocument();
     await waitFor(() => expect(arrivalAction).toHaveFocus());
 
@@ -110,12 +110,12 @@ describe("the patient-now screen", () => {
     documentAction.focus();
     fireEvent.click(documentAction);
     const documentDialog = await screen.findByRole("dialog", { name: "Record document details" });
-    await waitFor(() => expect(within(documentDialog).getByRole("button", { name: "Close dialog" })).toHaveFocus());
+    await waitFor(() => expect(within(documentDialog).getByRole("button", { name: "Close" })).toHaveFocus());
     expect(within(documentDialog).getByRole("button", { name: "Record document details" })).toHaveAttribute(
       "aria-disabled",
       "true",
     );
-    fireEvent.click(within(documentDialog).getByRole("button", { name: "Close dialog" }));
+    fireEvent.click(within(documentDialog).getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("dialog", { name: "Record document details" })).not.toBeInTheDocument();
     await waitFor(() => expect(documentAction).toHaveFocus());
   });

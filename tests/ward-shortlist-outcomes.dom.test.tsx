@@ -79,13 +79,13 @@ describe("shortlist confirmed outcomes", () => {
       target: { value: ESCALATION_CONTACTS[0] },
     });
     fireEvent.click(screen.getByTestId("ward-shortlist-escalation-submit"));
-    expect(screen.queryByText("Escalation recorded.")).toBeNull();
+    expect(screen.queryByText("Escalation recorded")).toBeNull();
     await act(async () => {
       result.finish({ commandId: "mine", status, message: "This escalation was refused." });
       await result.promise;
     });
     expect(screen.getByRole("status").textContent).toContain(
-      status === "accepted" ? "Escalation recorded." : "This escalation was refused.",
+      status === "accepted" ? "Escalation recorded" : "This escalation was refused.",
     );
   });
   it("retains an escalation choice after refusal and while uncertain", async () => {

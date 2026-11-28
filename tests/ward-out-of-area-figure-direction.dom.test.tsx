@@ -11,8 +11,13 @@ vi.mock("next/link", () => ({
 }));
 
 import { OutOfAreaBoard } from "@/components/ward-management/out-of-area/out-of-area-board";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+
+// A16-04: the app shows only travel bands someone has checked (none yet), and a person is away from
+// home only with a band, so the tests' own invented table gives the board people to list.
+import "./helpers/ward-test-travel-bands";
 
 /**
  * A SENTENCE THAT POINTS AT ANOTHER PART OF THE PAGE MUST POINT THE RIGHT WAY.
@@ -35,6 +40,8 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * failure and both moving together is not.
  */
 
+// Audit three #68 (r10): with nobody away the register gives way to one empty state, so the board is
+// rendered with the fixture's admissions, which hold people away.
 function renderBoard() {
   // `initialNow`, pinned — the provider seeds itself and only takes a clock. An earlier draft
   // here passed `initialState`, which this component does not accept: every assertion below still
@@ -43,7 +50,7 @@ function renderBoard() {
   // part of any focused run.
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <OutOfAreaBoard />
+      <OutOfAreaBoard admissions={wardAdmissions} />
     </WardFlowProvider>,
   );
 }

@@ -70,17 +70,13 @@ function setUp() {
   });
 }
 
-// WH2 (3 Nov 2026): This shift's To do list sits in a sheet opened from its summary on Ward home.
-const openThisShift = () => {
-  if (!screen.queryByTestId("ward-shift-sheet")) fireEvent.click(screen.getByTestId("ward-hero-act-now"));
-};
-
-const reminderButtons = () => {
-  openThisShift();
-  return screen
+// r10 (28 Nov 2026): the hero's step opens the next decision while any is due, so the This shift list
+// (and its "Check bed" row) is not the way in on a ward with decisions due. The Every bed list is:
+// the bed being made ready opens the same bed panel, which carries the cleaning reminder.
+const reminderButtons = () =>
+  screen
     .queryAllByRole("button")
-    .filter((button) => /^Check bed Bed \d+ still being made ready/.test(button.textContent ?? ""));
-};
+    .filter((button) => /^Bed \d+, Being made ready/.test(button.getAttribute("aria-label") ?? ""));
 
 describe("cleaning reminder on the ward screen", () => {
   it("asks the ward to confirm the bed and opens it only on Ready", () => {

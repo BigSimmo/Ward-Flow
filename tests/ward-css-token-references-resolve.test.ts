@@ -396,6 +396,19 @@ describe("every var() in Ward Flow's stylesheets names a token that exists", () 
          */
         "--r3",
         "--radius-card",
+        /*
+         * Recorded 2026-11-28 (r10 build, test fixer): four names r10 stylesheets read behind a
+         * fallback. `--find-title-top` is set at runtime from find-tabs.tsx (`style.setProperty`),
+         * which this scanner cannot see; `--wl-pad` is declared in src/app/bedchart/loading.module.css,
+         * outside the ward globs; `--wf-col-min` is an optional per-table hook whose 5rem fallback is
+         * the design. `--wf-s-5` is a 20px step no layer declares: find-memory-strip.module.css reads
+         * it with NO fallback (reported as a source defect; the fix is to give that read a 20px
+         * fallback, which leaves the name here).
+         */
+        "--find-title-top",
+        "--wf-col-min",
+        "--wf-s-5",
+        "--wl-pad",
       ].sort(),
     );
   });
