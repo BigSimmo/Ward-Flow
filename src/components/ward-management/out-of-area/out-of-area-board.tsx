@@ -856,6 +856,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             }
             people={phonePeople}
             emptyLine={outOfAreaEmptyLine(notBanded)}
+            notBanded={notBanded}
             query={searchQuery}
             onQuery={setSearchQuery}
             anyHighlight={anyHighlight}

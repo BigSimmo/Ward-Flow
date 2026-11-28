@@ -191,6 +191,7 @@ export function OutOfAreaPhone({
   hero,
   people,
   emptyLine,
+  notBanded,
   query,
   onQuery,
   anyHighlight,
@@ -214,6 +215,8 @@ export function OutOfAreaPhone({
   people: PhonePerson[];
   /** D-193: read out in Everyone when it lists nobody, the same words as the desktop list. */
   emptyLine: string;
+  /** D-174 / D-193: how many have no travel time recorded, said even when nobody is away. */
+  notBanded: number;
   query: string;
   onQuery: (value: string) => void;
   anyHighlight: boolean;
@@ -349,7 +352,17 @@ export function OutOfAreaPhone({
           {people.length === 0 ? (
             // Gate r10 FIX 8: the same glyph card as History and the desktop's Away now.
             <div className={styles.noMatches} data-testid="ward-out-of-area-phone-needs-empty">
-              <EmptyState icon={MapIcon} title="Nobody is in a bed far from home" />
+              <EmptyState
+                icon={MapIcon}
+                title="Nobody is in a bed far from home"
+                meta={
+                  <span data-testid="ward-out-of-area-phone-empty">
+                    {notBanded > 0
+                      ? `${notBanded} ${notBanded === 1 ? "person has" : "people have"} no travel time recorded.`
+                      : "Every record has a travel time."}
+                  </span>
+                }
+              />
             </div>
           ) : (
             <section className={styles.phoneSection} aria-label="Ready to go home">
