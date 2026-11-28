@@ -231,8 +231,8 @@
         },
         {
           "path": "src/components/ward-management/ed/ed-lists-desktop.tsx",
-          "line": 224,
-          "sha256": "8e834d5fdce90119ba24141b27c2d35e14d152a080e73fad37ad26a9e5b39db2"
+          "line": 193,
+          "sha256": "4622c88b27fc8385bee1cafcc5489de41db4ee3ef2c8f0953a1d8262848da7a4"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -287,8 +287,8 @@
         },
         {
           "path": "src/components/ward-management/ed/ed-lists-desktop.tsx",
-          "line": 423,
-          "sha256": "8e834d5fdce90119ba24141b27c2d35e14d152a080e73fad37ad26a9e5b39db2"
+          "line": 392,
+          "sha256": "4622c88b27fc8385bee1cafcc5489de41db4ee3ef2c8f0953a1d8262848da7a4"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -396,8 +396,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1319,
-          "sha256": "07395589414f1a3a0f1181c54c56d808788aec5e4d5818c0899266456e3f3b9d"
+          "line": 1320,
+          "sha256": "7c7cbba9960cdbe86ef619df045ad922845bb0f181d5445a5d5dcda974cc8d2b"
         },
         {
           "path": "src/components/ward-management/referrals/referral-match.tsx",
@@ -1044,8 +1044,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1281,
-          "sha256": "07395589414f1a3a0f1181c54c56d808788aec5e4d5818c0899266456e3f3b9d"
+          "line": 1282,
+          "sha256": "7c7cbba9960cdbe86ef619df045ad922845bb0f181d5445a5d5dcda974cc8d2b"
         },
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
@@ -1136,8 +1136,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1372,
-          "sha256": "07395589414f1a3a0f1181c54c56d808788aec5e4d5818c0899266456e3f3b9d"
+          "line": 1373,
+          "sha256": "7c7cbba9960cdbe86ef619df045ad922845bb0f181d5445a5d5dcda974cc8d2b"
         },
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
@@ -1283,7 +1283,7 @@
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
           "line": 1804,
-          "sha256": "4c45f20ac669561ce03ab8c8340b8ba7befe0249679631aacd282c5335c15b78"
+          "sha256": "4b9436a70b225b31a5299b1626a43b630b213f1e63c90b6fcb1c2e17ad1882d2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -1757,7 +1757,7 @@
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
           "line": 1912,
-          "sha256": "4c45f20ac669561ce03ab8c8340b8ba7befe0249679631aacd282c5335c15b78"
+          "sha256": "4b9436a70b225b31a5299b1626a43b630b213f1e63c90b6fcb1c2e17ad1882d2"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -1858,8 +1858,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1418,
-          "sha256": "07395589414f1a3a0f1181c54c56d808788aec5e4d5818c0899266456e3f3b9d"
+          "line": 1419,
+          "sha256": "7c7cbba9960cdbe86ef619df045ad922845bb0f181d5445a5d5dcda974cc8d2b"
         },
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
@@ -1950,8 +1950,8 @@
       }
     ],
     "screen": {
-      "screen": "release-pulled-bed-sheet.tsx; alerts/alerts-screen.tsx; ward/ward-screen.tsx; patients/patient-transit-operations.tsx; referrals/pull-accepted-referral.tsx",
-      "control": "Release the pulled bed M9 (D-210): a ward desk acts as its own ward; the patient page offers Release pull only when the pulled bed is at one of the desk's wards. The Alerts release opens the one shared Release pulled bed sheet (release-pulled-bed-sheet.tsx, r10 build, 28 Nov 2026) instead of a reason box in the alert drawer: the reason is chosen in the sheet, its button names the patient, and the toast’s Undo (UNDO_RELEASE_STEP) brings the pull back. The dispatch and its payload are unchanged."
+      "screen": "release-pulled-bed-sheet.tsx (+ release-pulled-bed-sheet-lazy.tsx); alerts/alerts-screen.tsx; ward/ward-screen.tsx; patients/patient-transit-operations.tsx; referrals/pull-accepted-referral.tsx",
+      "control": "Release the pulled bed M9 (D-210): a ward desk acts as its own ward; the patient page offers Release pull only when the pulled bed is at one of the desk's wards. The Alerts release opens the one shared Release pulled bed sheet (release-pulled-bed-sheet.tsx, r10 build, 28 Nov 2026; the screens import it through release-pulled-bed-sheet-lazy.tsx, which loads the sheet when the browser is idle or the sheet is first opened and changes no dispatch) instead of a reason box in the alert drawer: the reason is chosen in the sheet, its button names the patient, and the toast’s Undo (UNDO_RELEASE_STEP) brings the pull back. The dispatch and its payload are unchanged."
     },
     "review": {
       "reviewedOn": "2026-11-28",
@@ -1973,8 +1973,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1817,
-          "sha256": "07395589414f1a3a0f1181c54c56d808788aec5e4d5818c0899266456e3f3b9d"
+          "line": 1818,
+          "sha256": "7c7cbba9960cdbe86ef619df045ad922845bb0f181d5445a5d5dcda974cc8d2b"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2005,6 +2005,11 @@
           "path": "src/components/ward-management/release-pulled-bed-sheet.tsx",
           "line": 88,
           "sha256": "37ef8f4311184163ecf8c9c52b8a10acaf42b2720afa56d09e89e2c58257ff3d"
+        },
+        {
+          "path": "src/components/ward-management/release-pulled-bed-sheet-lazy.tsx",
+          "line": 28,
+          "sha256": "276fc0b888a3b647352f61a022047b4c29e1aa90ace8fd9caa39cdb4ea90f0c3"
         }
       ]
     }
@@ -2047,8 +2052,8 @@
       }
     ],
     "screen": {
-      "screen": "release-pulled-bed-sheet.tsx; movements/movement-workspace-cockpit.tsx; ward/ward-arrivals-corridor.tsx",
-      "control": "Release the held bed M9 (D-210): in the movement workspace a ward desk acts for the holding ward only when it is one of its own, and is not offered the release otherwise. Both doors open the one shared Release pulled bed sheet (release-pulled-bed-sheet.tsx, r10 build, 28 Nov 2026), which states the reason recorded with the stop, names the patient on its button and returns through the toast’s Undo (UNDO_RELEASE_STEP). It replaces the two separate confirm dialogs; the dispatch and its payload are unchanged."
+      "screen": "release-pulled-bed-sheet.tsx (+ release-pulled-bed-sheet-lazy.tsx); movements/movement-workspace-cockpit.tsx; ward/ward-arrivals-corridor.tsx",
+      "control": "Release the held bed M9 (D-210): in the movement workspace a ward desk acts for the holding ward only when it is one of its own, and is not offered the release otherwise. Both doors open the one shared Release pulled bed sheet (release-pulled-bed-sheet.tsx, r10 build, 28 Nov 2026; the screens import it through release-pulled-bed-sheet-lazy.tsx, which loads the sheet when the browser is idle or the sheet is first opened and changes no dispatch), which states the reason recorded with the stop, names the patient on its button and returns through the toast’s Undo (UNDO_RELEASE_STEP). It replaces the two separate confirm dialogs; the dispatch and its payload are unchanged."
     },
     "review": {
       "reviewedOn": "2026-11-28",
@@ -2066,12 +2071,12 @@
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
           "line": 1168,
-          "sha256": "4c45f20ac669561ce03ab8c8340b8ba7befe0249679631aacd282c5335c15b78"
+          "sha256": "4b9436a70b225b31a5299b1626a43b630b213f1e63c90b6fcb1c2e17ad1882d2"
         },
         {
           "path": "src/components/ward-management/ward/ward-arrivals-corridor.tsx",
           "line": 619,
-          "sha256": "bdbfd257495503f08fbb56f679927ab31ec030d3056563ea4a52ccb2ee95bba9"
+          "sha256": "68e9f8abfb38656a891f36971199a0aedfaa3813710146ac208368e406f4c2e9"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -2092,6 +2097,11 @@
           "path": "src/components/ward-management/release-pulled-bed-sheet.tsx",
           "line": 90,
           "sha256": "37ef8f4311184163ecf8c9c52b8a10acaf42b2720afa56d09e89e2c58257ff3d"
+        },
+        {
+          "path": "src/components/ward-management/release-pulled-bed-sheet-lazy.tsx",
+          "line": 28,
+          "sha256": "276fc0b888a3b647352f61a022047b4c29e1aa90ace8fd9caa39cdb4ea90f0c3"
         }
       ]
     }
@@ -2170,7 +2180,7 @@
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
           "line": 921,
-          "sha256": "386650cc651325b7d76803fca23c4059c73576e00aad642cc4d76ad75ab270e1"
+          "sha256": "08ebf122d63b2c8dce291a97f194d09c9a04f5f3027fa0fe2f9f8ee6222b6f9c"
         }
       ]
     }
@@ -2276,7 +2286,7 @@
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
           "line": 557,
-          "sha256": "386650cc651325b7d76803fca23c4059c73576e00aad642cc4d76ad75ab270e1"
+          "sha256": "08ebf122d63b2c8dce291a97f194d09c9a04f5f3027fa0fe2f9f8ee6222b6f9c"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
@@ -2770,7 +2780,7 @@
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
           "line": 1450,
-          "sha256": "4c45f20ac669561ce03ab8c8340b8ba7befe0249679631aacd282c5335c15b78"
+          "sha256": "4b9436a70b225b31a5299b1626a43b630b213f1e63c90b6fcb1c2e17ad1882d2"
         },
         {
           "path": "src/components/ward-management/community/use-community-screen-overlays.ts",
@@ -2867,7 +2877,7 @@
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
           "line": 1563,
-          "sha256": "4c45f20ac669561ce03ab8c8340b8ba7befe0249679631aacd282c5335c15b78"
+          "sha256": "4b9436a70b225b31a5299b1626a43b630b213f1e63c90b6fcb1c2e17ad1882d2"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
@@ -3144,7 +3154,7 @@
         {
           "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
           "line": 396,
-          "sha256": "8d6e2c9643747f986365fae0fd5f8861838621c1f48c8c132d1913f172cb0dd8"
+          "sha256": "eb1c638b744b4a87ab7e247c97d412b70d1a974211d4b669974f7d31d9c430e7"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -3305,8 +3315,8 @@
         },
         {
           "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
-          "line": 1371,
-          "sha256": "8d6e2c9643747f986365fae0fd5f8861838621c1f48c8c132d1913f172cb0dd8"
+          "line": 1376,
+          "sha256": "eb1c638b744b4a87ab7e247c97d412b70d1a974211d4b669974f7d31d9c430e7"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
@@ -3451,8 +3461,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1714,
-          "sha256": "07395589414f1a3a0f1181c54c56d808788aec5e4d5818c0899266456e3f3b9d"
+          "line": 1715,
+          "sha256": "7c7cbba9960cdbe86ef619df045ad922845bb0f181d5445a5d5dcda974cc8d2b"
         },
         {
           "path": "src/components/ward-management/tools/ward-tool-feed.tsx",
@@ -3551,7 +3561,7 @@
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
           "line": 770,
-          "sha256": "386650cc651325b7d76803fca23c4059c73576e00aad642cc4d76ad75ab270e1"
+          "sha256": "08ebf122d63b2c8dce291a97f194d09c9a04f5f3027fa0fe2f9f8ee6222b6f9c"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
@@ -3630,7 +3640,7 @@
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
           "line": 787,
-          "sha256": "386650cc651325b7d76803fca23c4059c73576e00aad642cc4d76ad75ab270e1"
+          "sha256": "08ebf122d63b2c8dce291a97f194d09c9a04f5f3027fa0fe2f9f8ee6222b6f9c"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
@@ -3694,7 +3704,7 @@
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
           "line": 748,
-          "sha256": "386650cc651325b7d76803fca23c4059c73576e00aad642cc4d76ad75ab270e1"
+          "sha256": "08ebf122d63b2c8dce291a97f194d09c9a04f5f3027fa0fe2f9f8ee6222b6f9c"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
@@ -3757,8 +3767,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1740,
-          "sha256": "07395589414f1a3a0f1181c54c56d808788aec5e4d5818c0899266456e3f3b9d"
+          "line": 1741,
+          "sha256": "7c7cbba9960cdbe86ef619df045ad922845bb0f181d5445a5d5dcda974cc8d2b"
         },
         {
           "path": "src/components/ward-management/board/ward-board.tsx",
@@ -3768,7 +3778,7 @@
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
           "line": 679,
-          "sha256": "386650cc651325b7d76803fca23c4059c73576e00aad642cc4d76ad75ab270e1"
+          "sha256": "08ebf122d63b2c8dce291a97f194d09c9a04f5f3027fa0fe2f9f8ee6222b6f9c"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -3898,8 +3908,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1649,
-          "sha256": "07395589414f1a3a0f1181c54c56d808788aec5e4d5818c0899266456e3f3b9d"
+          "line": 1650,
+          "sha256": "7c7cbba9960cdbe86ef619df045ad922845bb0f181d5445a5d5dcda974cc8d2b"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -4111,8 +4121,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1668,
-          "sha256": "07395589414f1a3a0f1181c54c56d808788aec5e4d5818c0899266456e3f3b9d"
+          "line": 1669,
+          "sha256": "7c7cbba9960cdbe86ef619df045ad922845bb0f181d5445a5d5dcda974cc8d2b"
         },
         {
           "path": "src/components/ward-management/discharges/discharge-board.tsx",
@@ -4244,8 +4254,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1557,
-          "sha256": "07395589414f1a3a0f1181c54c56d808788aec5e4d5818c0899266456e3f3b9d"
+          "line": 1558,
+          "sha256": "7c7cbba9960cdbe86ef619df045ad922845bb0f181d5445a5d5dcda974cc8d2b"
         },
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
@@ -4503,7 +4513,7 @@
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
           "line": 1267,
-          "sha256": "4c45f20ac669561ce03ab8c8340b8ba7befe0249679631aacd282c5335c15b78"
+          "sha256": "4b9436a70b225b31a5299b1626a43b630b213f1e63c90b6fcb1c2e17ad1882d2"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -4572,7 +4582,7 @@
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
           "line": 1217,
-          "sha256": "4c45f20ac669561ce03ab8c8340b8ba7befe0249679631aacd282c5335c15b78"
+          "sha256": "4b9436a70b225b31a5299b1626a43b630b213f1e63c90b6fcb1c2e17ad1882d2"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -4636,7 +4646,7 @@
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
           "line": 1310,
-          "sha256": "4c45f20ac669561ce03ab8c8340b8ba7befe0249679631aacd282c5335c15b78"
+          "sha256": "4b9436a70b225b31a5299b1626a43b630b213f1e63c90b6fcb1c2e17ad1882d2"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -4700,7 +4710,7 @@
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
           "line": 1371,
-          "sha256": "4c45f20ac669561ce03ab8c8340b8ba7befe0249679631aacd282c5335c15b78"
+          "sha256": "4b9436a70b225b31a5299b1626a43b630b213f1e63c90b6fcb1c2e17ad1882d2"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -4781,8 +4791,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1120,
-          "sha256": "07395589414f1a3a0f1181c54c56d808788aec5e4d5818c0899266456e3f3b9d"
+          "line": 1121,
+          "sha256": "7c7cbba9960cdbe86ef619df045ad922845bb0f181d5445a5d5dcda974cc8d2b"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
@@ -5435,7 +5445,7 @@
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
           "line": 1684,
-          "sha256": "4c45f20ac669561ce03ab8c8340b8ba7befe0249679631aacd282c5335c15b78"
+          "sha256": "4b9436a70b225b31a5299b1626a43b630b213f1e63c90b6fcb1c2e17ad1882d2"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -5503,8 +5513,8 @@
       }
     ],
     "screen": {
-      "screen": "release-pulled-bed-sheet.tsx; movements/movement-workspace-cockpit.tsx; ward/ward-arrivals-corridor.tsx; ed/ed-screen-referred.tsx",
-      "control": "Release the diverted bed M9 (D-210): in the movement workspace a ward desk acts for the holding ward only when it is one of its own, and is not offered the release otherwise. All three doors open the one shared Release pulled bed sheet (release-pulled-bed-sheet.tsx, r10 build, 28 Nov 2026), which states that the move was diverted and that releasing also closes the journey, names the patient on its button and returns through the toast’s Undo (UNDO_RELEASE_STEP). It replaces the three separate confirm dialogs; the dispatch and its payload are unchanged."
+      "screen": "release-pulled-bed-sheet.tsx (+ release-pulled-bed-sheet-lazy.tsx); movements/movement-workspace-cockpit.tsx; ward/ward-arrivals-corridor.tsx; ed/ed-screen-referred.tsx",
+      "control": "Release the diverted bed M9 (D-210): in the movement workspace a ward desk acts for the holding ward only when it is one of its own, and is not offered the release otherwise. All three doors open the one shared Release pulled bed sheet (release-pulled-bed-sheet.tsx, r10 build, 28 Nov 2026; the screens import it through release-pulled-bed-sheet-lazy.tsx, which loads the sheet when the browser is idle or the sheet is first opened and changes no dispatch), which states that the move was diverted and that releasing also closes the journey, names the patient on its button and returns through the toast’s Undo (UNDO_RELEASE_STEP). It replaces the three separate confirm dialogs; the dispatch and its payload are unchanged."
     },
     "review": {
       "reviewedOn": "2026-11-28",
@@ -5522,17 +5532,17 @@
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
           "line": 1168,
-          "sha256": "4c45f20ac669561ce03ab8c8340b8ba7befe0249679631aacd282c5335c15b78"
+          "sha256": "4b9436a70b225b31a5299b1626a43b630b213f1e63c90b6fcb1c2e17ad1882d2"
         },
         {
           "path": "src/components/ward-management/ward/ward-arrivals-corridor.tsx",
           "line": 619,
-          "sha256": "bdbfd257495503f08fbb56f679927ab31ec030d3056563ea4a52ccb2ee95bba9"
+          "sha256": "68e9f8abfb38656a891f36971199a0aedfaa3813710146ac208368e406f4c2e9"
         },
         {
           "path": "src/components/ward-management/ed/ed-screen-referred.tsx",
           "line": 303,
-          "sha256": "d118ce1da6e27dc84be99bcdb6c1376a1d00b34f24a70f527c18836f3bf70394"
+          "sha256": "cdd2a75a4b8d3e98dc2a7999bbc061c2a885c6014eaa932d556c2ff1fb85ed2e"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -5553,6 +5563,11 @@
           "path": "src/components/ward-management/release-pulled-bed-sheet.tsx",
           "line": 91,
           "sha256": "37ef8f4311184163ecf8c9c52b8a10acaf42b2720afa56d09e89e2c58257ff3d"
+        },
+        {
+          "path": "src/components/ward-management/release-pulled-bed-sheet-lazy.tsx",
+          "line": 28,
+          "sha256": "276fc0b888a3b647352f61a022047b4c29e1aa90ace8fd9caa39cdb4ea90f0c3"
         }
       ]
     }
@@ -5982,7 +5997,7 @@
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
           "line": 803,
-          "sha256": "386650cc651325b7d76803fca23c4059c73576e00aad642cc4d76ad75ab270e1"
+          "sha256": "08ebf122d63b2c8dce291a97f194d09c9a04f5f3027fa0fe2f9f8ee6222b6f9c"
         },
         {
           "path": "src/components/ward-management/discharges/discharge-detail-panes.tsx",
@@ -6206,7 +6221,7 @@
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
           "line": 1551,
-          "sha256": "386650cc651325b7d76803fca23c4059c73576e00aad642cc4d76ad75ab270e1"
+          "sha256": "08ebf122d63b2c8dce291a97f194d09c9a04f5f3027fa0fe2f9f8ee6222b6f9c"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -6363,7 +6378,7 @@
         {
           "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
           "line": 566,
-          "sha256": "8d6e2c9643747f986365fae0fd5f8861838621c1f48c8c132d1913f172cb0dd8"
+          "sha256": "eb1c638b744b4a87ab7e247c97d412b70d1a974211d4b669974f7d31d9c430e7"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
@@ -6881,8 +6896,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1100,
-          "sha256": "07395589414f1a3a0f1181c54c56d808788aec5e4d5818c0899266456e3f3b9d"
+          "line": 1101,
+          "sha256": "7c7cbba9960cdbe86ef619df045ad922845bb0f181d5445a5d5dcda974cc8d2b"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -7079,7 +7094,7 @@
         {
           "path": "src/components/ward-management/out-of-area/out-of-area-board.tsx",
           "line": 448,
-          "sha256": "fc80d21c59cdee19c462f38bcdb28eab2eae2ad062d8972cba07c1fabb9f1996"
+          "sha256": "4e5e30fa236a05050f5bf1a5be21ef9466a384573f3b4764a30050cd8cbf93d4"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
