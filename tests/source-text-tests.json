@@ -5,6 +5,7 @@
     "tests/agent-scopes.test.ts",
     "tests/brand-copy.test.ts",
     "tests/ckb-v2-token-contract.test.ts",
+    "tests/clinical-separation.test.ts",
     "tests/coverage-inventory.test.ts",
     "tests/css-mobile-ergonomics-and-v9-contract.test.ts",
     "tests/dead-code-candidate.test.ts",
