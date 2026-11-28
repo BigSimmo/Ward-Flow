@@ -1439,9 +1439,12 @@ function usePhoneChipFit(barRef: RefObject<HTMLElement | null>, isPhone: boolean
     const shortNode = bar.querySelector<HTMLElement>(`.${styles.scopeBadgeShort}`);
     const chipNode = shortNode?.closest<HTMLElement>(`.${styles.scopeBadgeBtn}`) ?? null;
     // Look check F3: a title that still clips beside the short code takes a second line (up to two,
-    // in the same bar height) and keeps the code; the dot comes only if two lines still clip.
+    // in the same bar height) and keeps the code; the dot comes only if two lines still clip. A name
+    // that fits on one line beside the dot alone (Mental Health Unit) keeps that r10 look instead.
     let titleClips = clips(titleSelector);
     if (titleClips) {
+      bar.setAttribute("data-long-title", "dot");
+      if (!clips(titleSelector)) return;
       bar.setAttribute("data-long-title", "wrap");
       bar.setAttribute("data-title-wrap", "");
       const titleNode = bar.querySelector<HTMLElement>(titleSelector);

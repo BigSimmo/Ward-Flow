@@ -1769,6 +1769,14 @@
   .scopeBadgeBtn > * {
     transition: none;
   }
+
+  /* Look check F3: the global reduced-motion rule turns every element's 0s transitions into a
+     0.01ms one, so the chip's flex-shrink lagged and usePhoneChipFit measured the old layout. */
+  .titleGroup,
+  .scopeBadgeContainer,
+  .scopeBadgeBtn {
+    transition: none;
+  }
 }
 
 @media (forced-colors: active) {
@@ -4278,6 +4286,11 @@
     font-size: var(--wf-fs-16);
     line-height: 1.15;
     text-wrap: balance;
+  }
+
+  /* The wrapping title gives up width before the short code chip does, so the code is kept. */
+  .bar[data-long-title="wrap"] .scopeBadgeContainer.scopeBadgeContainer {
+    flex-shrink: 0;
   }
 
   /* Gate r10 F3: chip gives way by fit (next-bar.tsx usePhoneChipFit); last step is the dot alone. */
