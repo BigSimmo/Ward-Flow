@@ -11,6 +11,7 @@
  * other, so a phone is never walked to a part only a computer draws. Words describe what the screen
  * shows; nothing here ranks, suggests or places, or works out a legal time.
  */
+import { SILENT_WARD_FIRST_REMINDER_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { HowTo, ShowMeStep } from "./ward-help-howto";
 import { type Around, HERO, id, MORE_PAGES, named, starts } from "./ward-help-screen-tours-pages";
 
@@ -568,7 +569,7 @@ const AROUND: readonly Around[] = [
       }),
       step(id("delays-filters"), {
         title: "Filters",
-        body: "Due soon or on you, Form due, For handover, Locked bed and No update 2h+ each narrow the list. Show everyone clears them.",
+        body: `Due soon or on you, Form due, For handover, Locked bed and No update ${SILENT_WARD_FIRST_REMINDER_MINUTES / 60}h+ each narrow the list. Show everyone clears them.`,
       }),
       step([id("delays-waiting-list"), id("delays-phone-cards")], {
         title: "The waiting list",

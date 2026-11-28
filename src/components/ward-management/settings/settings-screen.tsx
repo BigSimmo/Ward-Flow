@@ -754,7 +754,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       // admin's or an Executive desk's Settings, nor any desk while Role access is off.
       (entry.id !== "cover" || (accessOn && role !== "admin")) &&
       // A phone's Display sheet leaves out the keyboard shortcuts row.
-      !(isPhone && entry.id === "character-shortcuts"),
+      !(isPhone && entry.id === "character-shortcuts") &&
+      // Audit two #68: the changed-only switch shows only once a rule differs, so Find offers it only then.
+      (entry.id !== "changed-only" || awayFromDefault > 0 || changedOnly),
   );
 
   useEffect(() => {

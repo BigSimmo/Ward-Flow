@@ -265,7 +265,11 @@ function EdCard({
 function CardTrend({ values, name }: { values: readonly number[]; name: string }) {
   const change = values.length < 2 ? 0 : values[values.length - 1] - values[0];
   const words =
-    change === 0 ? "same as 12h ago" : change > 0 ? `${change} more than 12h ago` : `${-change} fewer than 12h ago`;
+    change === 0
+      ? `same as ${trendSpanHours}h ago`
+      : change > 0
+        ? `${change} more than ${trendSpanHours}h ago`
+        : `${-change} fewer than ${trendSpanHours}h ago`;
   return (
     <span className={styles.cardTrend}>
       <RowSpark values={values} name={name} testId="ed-row-spark" />

@@ -233,18 +233,18 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role: sentRole }: 
       title="Update arrival time & transport"
       closable={!saving}
       data-testid="arrival-time-dialog"
+      // The patient's identity is the dialog's description, so it is announced with the title.
+      description={identity}
       secondary={[{ label: "Cancel", onAction: dismiss }]}
       primary={{
         label: saving ? "Saving…" : "Save arrival plan",
         onAction: submit,
+        testId: "save-arrival-plan-button",
         loading: saving,
         disabledReason: saveGate.allowed ? undefined : saveGate.reason,
       }}
     >
       <form onSubmit={handleSubmit} className={styles.form}>
-        <p id={`${baseId}-arrival-patient`} className={styles.note}>
-          {identity}
-        </p>
         <fieldset disabled={saving} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
           <legend className="sr-only">Arrival plan</legend>
           <div className={styles.note}>

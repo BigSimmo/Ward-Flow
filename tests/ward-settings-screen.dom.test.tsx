@@ -185,7 +185,9 @@ describe("the settings screen", () => {
     // Try another desk (demo) is an action, not a row: choosing it opens the desk drawer (the case above).
     // Open Help is one too: Help moved out of Settings, and Find sends someone who looks for it there.
     expect(offered.has("go-to-desk")).toBe(true);
-    const actions = new Set(["go-to-desk", "open-help"]);
+    // Audit two #68: with every rule at its default the changed-only switch is hidden, and the
+    // screen's Find leaves it out until a rule differs (settings-screen.tsx results filter).
+    const actions = new Set(["go-to-desk", "open-help", "changed-only"]);
     expect([...offered].filter(([id]) => !actions.has(id) && !targets.has(id))).toEqual([]);
   });
 

@@ -7,7 +7,7 @@ import { confirmLeavingShell } from "../shell/ward-leave-guard";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { isOfficerJob } from "./officer-jobs";
+import { isOfficerJob, officerCancellationNotices } from "./officer-jobs";
 import { useOfficerDiversionSave } from "./use-officer-diversion-save";
 import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/return-early-alerts";
 import { useTransportCommandFeedback } from "./use-transport-command-feedback";
@@ -162,7 +162,8 @@ const CHIP_ICON = { size: 16, strokeWidth: 1.75, "aria-hidden": true } as const;
  * forms pack yet.
  */
 export function OfficerScreen() {
-  const { movements, units, rejections, patients, referrals, admissions, dayZero } = useWardFlowSelect(
+  const { movements, units, rejections, patients, referrals, admissions, dayZero, notices } = useWardFlowSelect(
+    "notices",
     "movements",
     "admissions",
     "units",
@@ -428,7 +429,7 @@ export function OfficerScreen() {
     .reverse()
     .filter((rejection) => OFFICER_ACTION_REJECTION_LABELS[rejection.attempted] !== undefined);
 
-  const cancelledTransports = movements.flatMap((m) =>
+  const unwoundCancellations = movements.flatMap((m) =>
     (m.unwinds ?? [])
       .filter((u) => u.kind === "transport_cancelled")
       .map((u) => ({
@@ -441,8 +442,25 @@ export function OfficerScreen() {
         note:
           (u.reason ? (changeReasonLabels[u.reason as keyof typeof changeReasonLabels] ?? u.reason) : undefined) ??
           "Cancelled transport / stand-down",
+        sentence: undefined as string | undefined,
       })),
   );
+  // Owner ruling 2026-10-13 (PR #279): a withdrawal that cancels a booked job closes the movement and
+  // records no unwind, so its officer notice still says why the job went. One line per movement.
+  const unwoundIds = new Set(unwoundCancellations.map((item) => item.movementId));
+  const cancelledTransports = [
+    ...unwoundCancellations,
+    ...officerCancellationNotices(notices ?? [], now)
+      .filter((notice) => !notice.about.movementId || !unwoundIds.has(notice.about.movementId))
+      .map((notice) => ({
+        movementId: notice.about.movementId ?? notice.id,
+        patientName: "",
+        cadNumber: "",
+        at: notice.raisedAt,
+        note: "",
+        sentence: notice.sentence as string | undefined,
+      })),
+  ];
 
   const deliveredToday = deliveredSinceStartOfDay(movements, now);
 
@@ -970,8 +988,12 @@ export function OfficerScreen() {
                   .sort((x, y) => y.at - x.at)
                   .map((item, idx) => (
                     <li key={`${item.movementId}-${idx}`}>
-                      Transport for {item.patientName} was cancelled ({item.note}). CAD (dispatch) number:{" "}
-                      {item.cadNumber}.
+                      {item.sentence ?? (
+                        <>
+                          Transport for {item.patientName} was cancelled ({item.note}). CAD (dispatch) number:{" "}
+                          {item.cadNumber}.
+                        </>
+                      )}
                     </li>
                   ))}
               </ul>
@@ -1337,11 +1359,15 @@ export function OfficerScreen() {
                           {cancelledTransports.map((item, idx) => (
                             <li key={`${item.movementId}-${idx}`} className={styles.plainItem}>
                               <StatusGlyph tone="closed" size={9} />
-                              <span>
-                                {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                                <strong>{item.patientName}</strong> &mdash; stand-down, CAD (dispatch) number:{" "}
-                                <code>{item.cadNumber}</code> <span className={styles.muted}>({item.note})</span>
-                              </span>
+                              {item.sentence ? (
+                                <span>{item.sentence}</span>
+                              ) : (
+                                <span>
+                                  {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
+                                  <strong>{item.patientName}</strong> &mdash; stand-down, CAD (dispatch) number:{" "}
+                                  <code>{item.cadNumber}</code> <span className={styles.muted}>({item.note})</span>
+                                </span>
+                              )}
                             </li>
                           ))}
                         </ul>
