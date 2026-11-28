@@ -297,6 +297,7 @@ Checked 9 November 2026 (D-107 audit). "Partly replaced" means part of the entry
 | [D-281](#d-281-names-that-read-alike-are-called-similar-names-28-november-2026)                                                                                | Names that read alike are called "Similar names"                                                              | Active                                           |
 | [D-282](#d-282-leaving-a-ward-is-record-discharge-28-november-2026)                                                                                            | Leaving a ward is "Record discharge"                                                                          | Active                                           |
 | [D-283](#d-283-code-the-audit-four-cuts-left-unused-is-deleted-28-november-2026)                                                                               | Code the audit four cuts left unused is deleted                                                               | Active                                           |
+| [D-284](#d-284-three-kit-leaf-imports-join-the-ward-flow-seams-approved-list-28-november-2026)                                                                 | Three kit leaf imports join the Ward Flow seam's approved list                                                | Active                                           |
 
 ---
 
