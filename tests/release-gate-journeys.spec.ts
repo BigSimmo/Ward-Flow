@@ -319,7 +319,9 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
   }).toPass({ timeout: 15_000 });
   const detail = page.getByTestId("ward-officer-detail");
   await expectAccessible(page, testInfo, "officer job detail");
-  await expect(detail.getByTestId(`ward-officer-transport-legal-status-${movementId}`)).not.toContainText("Legal now");
+  // Audit three #9 (r10): the transport-logged status shows on Details only when it clashes with the
+  // legal status now ("…, Legal now …"); with no clash it sits on the Forms tab. So none here means no clash.
+  await expect(detail.getByTestId(`ward-officer-transport-legal-status-${movementId}`)).toHaveCount(0);
 
   for (const stage of ["accept", "enroute", "collect", "arrive"] as const) {
     const button = detail.getByTestId(`ward-officer-${stage}-${movementId}`);
@@ -409,9 +411,15 @@ test("Discharge with bed release: a ward confirms a release, the person leaves, 
   // profile on desktop, the ward's sheet on a phone.
   await openBedBoardFromWards(page, unitName, unitId);
   await expectAccessible(page, testInfo, "ward bed board");
-  // The board's Needs you this shift list carries every discharge due or overdue, on desktop and
-  // on the phone (where it replaces the bed grid). They have left records the departure.
-  const workBand = page.getByTestId("ward-board-work-band-list");
+  // r10 (bed board folded into Ward, 26 Nov 2026): the board's Before handover list is the last group
+  // of the ward page's Decisions tab (ward-screen-tab-sections.tsx), on desktop and on the phone.
+  // It carries every discharge due or overdue; They have left records the departure.
+  await page
+    .getByRole("tab", { name: /^Decisions/u })
+    .filter({ visible: true })
+    .first()
+    .click();
+  const workBand = page.getByTestId("ward-decisions-before-handover").getByTestId("ward-board-work-band-list");
   const shiftItem = workBand.getByTestId(`ward-board-shift-discharge-${release.admissionId}`);
   // r10: the band's expander reads "Show all N" (ward-board-work-band.tsx).
   const showMore = page.getByTestId("ward-board-work-band").getByRole("button", { name: /^Show all \d+$/u });

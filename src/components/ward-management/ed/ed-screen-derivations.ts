@@ -418,7 +418,7 @@ export function deriveEdScreen({
         when: `waiting ${splitDuration(Math.max(now - m.openedAt, 0))}`,
         // Audit four item 71 (gate r10 FIX 6): the row title already says "Transport not booked".
         actionLabel: "Record booking",
-        actionAriaLabel: `Record transport booking for ${flagPatientInfo.formalName}`,
+        actionAriaLabel: `Record booking: transport for ${flagPatientInfo.formalName}`,
         onAction: () => toggleBookTransport(m.id),
       });
     }
