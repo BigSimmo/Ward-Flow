@@ -150,6 +150,10 @@ async function raiseReferralInSlideOut(page: Page, referral: SlideOutReferral) {
   await newPatient.getByLabel("Date of birth", { exact: true }).fill("02/01/1990");
   await newPatient.getByLabel("UMRN", { exact: true }).fill(referral.patient.umrn);
   // A real suburb from the catchment table, so the slide-out suggests its catchment team.
+  // r10: recorded sex, gender and suburb sit in the "More about this person" fold.
+  const moreAboutPerson = newPatient.getByTestId("ward-referral-fold-new-patient");
+  if (!(await moreAboutPerson.evaluate((fold) => (fold as HTMLDetailsElement).open)))
+    await moreAboutPerson.locator("summary").click();
   await newPatient.getByLabel("Suburb", { exact: true }).fill("Albany");
   await newPatient.getByRole("button", { name: "Add and use for this referral" }).click();
   await expect(newPatient).toHaveCount(0);
@@ -204,7 +208,7 @@ async function raiseReferralInSlideOut(page: Page, referral: SlideOutReferral) {
   await sheet.getByLabel("Transport", { exact: true }).selectOption(referral.transport);
 
   // Send, then confirm with the sender's contact details. Nothing is sent before Confirm and send.
-  await sheet.getByRole("button", { name: "Send referral", exact: true }).click();
+  await sheet.getByRole("button", { name: "Review and send", exact: true }).click();
   await expect(sheet.getByRole("heading", { name: "Confirm and send" })).toBeVisible();
   await sheet.getByLabel("Your name", { exact: true }).fill("Synthetic Referrer");
   await sheet.getByLabel("Email address", { exact: true }).fill("referrer@example.org");

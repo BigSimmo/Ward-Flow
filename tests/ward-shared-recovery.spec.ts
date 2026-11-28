@@ -254,7 +254,8 @@ test("sign-out return: cancelling preserves a waiting change and confirmed sign-
     await status.getByRole("button", { name: "Sign out", exact: true }).click();
     const confirm = page.getByRole("alertdialog", { name: "Sign out with changes waiting?" });
     await expect(confirm).toContainText("A change already sent may still have been saved");
-    await confirm.getByRole("button", { name: "Stay here", exact: true }).click();
+    // r10 dialog words: the quiet way out is "Cancel" (was "Stay here").
+    await confirm.getByRole("button", { name: "Cancel", exact: true }).click();
     await expect(confirm).toBeHidden();
     await expect(status).toContainText("Not confirmed yet");
     await expectAccessible(page, info, "voluntary sign-out cancelled, pending command retained");

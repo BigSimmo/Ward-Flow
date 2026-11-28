@@ -6,7 +6,13 @@ import {
   type Locator,
   type Page,
 } from "playwright/test";
-import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./ward-home-page";
+import {
+  homeFlowCard,
+  openPlacementFromWaiting,
+  revealWaitingRow,
+  showEveryoneWaitingOn,
+  waitingRow,
+} from "./ward-home-page";
 
 const supabaseOrigin = process.env.WARD_E2E_SUPABASE_ORIGIN ?? "";
 const authOrigin = process.env.WARD_E2E_AUTH_ORIGIN ?? "";
@@ -18,7 +24,7 @@ export const READY = "Coordinator · shared synthetic workspace";
 export const POLL = { timeout: 15_000 };
 /**
  * A seeded accepted movement with transport booked, so it cannot be referred. Wait order (Audit 1,
- * D-71) can put it past the queue's first rows, so `revealRow` opens "Show all" when needed.
+ * D-71) can put it past Waiting's first rows, so `revealRow` opens its folded groups when needed.
  */
 export const MOVEMENT = "WF-030";
 
@@ -87,13 +93,22 @@ export function placement(page: Page): Locator {
   return page.getByRole("complementary", { name: "Placement", exact: true });
 }
 
+/**
+ * Where this desk shows the movement's tier now: its Waiting row's tier mark when Waiting is showing,
+ * or the tier tag in Placement's head when Placement is open for it on Home. r10 folded Home's Flow
+ * card into Waiting (`delays-row-<id>`), and Placement opens from Waiting's drawer (Open on Home).
+ * Both marks read "T<tier>" (the Waiting tile's spoken words, "Tier <n> · …", come first there).
+ */
 export function queueRow(page: Page, movement = MOVEMENT): Locator {
-  return homeFlowCard(page).getByTestId(`ward-queue-row-${movement}`);
+  return waitingRow(page, movement)
+    .locator("td")
+    .first()
+    .or(page.locator(`[data-testid="ward-home-placement"][data-subject-movement="${movement}"] [data-tier]`).first());
 }
 
 /**
  * Placement is the patient drawer over Home on every screen size (H7, Josh 3 Nov 2026), so a drawer
- * left open by an earlier step covers the queue. Close it, as a coordinator would, before choosing.
+ * left open by an earlier step covers the page. Close it, as a coordinator would, before choosing.
  */
 export async function closePlacement(page: Page) {
   const close = page.getByRole("button", { name: "Close placement and clear selection" });
@@ -102,22 +117,25 @@ export async function closePlacement(page: Page) {
   await expect(placement(page)).toHaveCount(0);
 }
 
-/** Show the movement's Flow row, opening each stage's "Show all N" when the row is past its first rows. */
+/**
+ * Show the movement's Waiting row (r10: Flow folded into Waiting), opening Waiting and any folded
+ * group or "Show all N" when the row is past the first rows. Returns its tier mark.
+ */
 export async function revealRow(page: Page, movement = MOVEMENT): Promise<Locator> {
   await closePlacement(page);
-  await showEveryoneWaitingOn(page);
-  const queue = homeFlowCard(page);
-  const row = queueRow(page, movement);
-  await expect(queue.locator('[data-testid^="ward-queue-row-"]').first()).toBeVisible();
-  if (!(await row.isVisible())) await showAllFlowRows(queue);
-  await expect(row).toBeVisible();
-  return row;
+  await revealWaitingRow(page, movement);
+  return queueRow(page, movement);
 }
 
-/** Select the movement on the queue, so Placement is about it whatever is now top of the queue. */
+/**
+ * Open Placement about the movement, whatever is top of the list: its Waiting row, the person's
+ * drawer, then the drawer foot's Open on Home (r10). A Placement already open for it is kept.
+ */
 export async function selectMovement(page: Page, movement = MOVEMENT): Promise<Locator> {
-  const row = await revealRow(page, movement);
-  await row.click();
+  const open = placement(page);
+  if ((await open.count()) > 0 && (await open.getAttribute("data-subject-movement")) === movement) return open;
+  await revealRow(page, movement);
+  await openPlacementFromWaiting(page, movement);
   await expect(placement(page)).toHaveAttribute("data-subject-movement", movement);
   return placement(page);
 }
@@ -134,14 +152,15 @@ export async function openUrgencyForm(page: Page, movement = MOVEMENT): Promise<
   return panel.getByRole("combobox", { name: /^Urgency tier for / });
 }
 
-/** The tier the queue row shows for the movement ("1", "2" or "3"). */
+/** The tier this desk shows for the movement ("1", "2" or "3"), from its Waiting row or Placement. */
 export async function shownTier(page: Page, movement = MOVEMENT): Promise<string> {
-  return /^Tier (\d)/u.exec((await queueRow(page, movement).textContent()) ?? "")?.[1] ?? "";
+  return /T(\d)(?!\d)/u.exec((await queueRow(page, movement).textContent()) ?? "")?.[1] ?? "";
 }
 
 /**
- * Choose, with a reason, a tier other than the one this desk's queue shows (and other than
- * `avoid`); returns the option's label. The picker's own value is the form's state, not the record.
+ * Choose, with a reason, a tier other than the one this desk shows (and other than `avoid`); returns
+ * the tier's mark as both the Waiting row and Placement show it ("T2"). The picker's own value is
+ * the form's state, not the record.
  */
 export async function chooseOtherTier(page: Page, tier: Locator, avoid?: string, movement = MOVEMENT): Promise<string> {
   const current = await shownTier(page, movement);
@@ -152,24 +171,27 @@ export async function chooseOtherTier(page: Page, tier: Locator, avoid?: string,
     );
   // "Urgent" heads the picker (finding 156) but raises the urgent flag, not a tier, and asks its own reason.
   const next = options.find(
-    (option) => option.value !== "urgent" && option.value !== current && option.label !== avoid,
+    (option) => option.value !== "urgent" && option.value !== current && `T${option.value}` !== avoid,
   )!;
   await tier.selectOption(next.value);
   await placement(page).getByRole("combobox", { name: "Reason" }).selectOption({ label: "Reassessed" });
-  return next.label;
+  return `T${next.value}`;
 }
 
-/** A queued movement other than MOVEMENT, for a second record to change. */
+/** A waiting movement other than MOVEMENT, for a second record to change. */
 export async function anotherMovement(page: Page): Promise<string> {
   await closePlacement(page);
   await showEveryoneWaitingOn(page);
-  const rows = homeFlowCard(page).locator('[data-testid^="ward-queue-row-"]');
+  const rows = homeFlowCard(page).locator('[data-testid^="delays-row-"]');
   await expect(rows.first()).toBeVisible();
   const ids = await rows.evaluateAll((list) =>
-    list.map((row) => row.getAttribute("data-testid")!.replace("ward-queue-row-", "")),
+    list
+      .map((row) => row.getAttribute("data-testid")!)
+      .filter((id) => !id.startsWith("delays-row-timeline-"))
+      .map((id) => id.replace("delays-row-", "")),
   );
   const other = ids.find((id) => id !== MOVEMENT);
-  expect(other, "the queue needs a second movement").toBeTruthy();
+  expect(other, "Waiting needs a second movement").toBeTruthy();
   return other!;
 }
 

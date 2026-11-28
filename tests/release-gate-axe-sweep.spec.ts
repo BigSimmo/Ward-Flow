@@ -27,18 +27,21 @@ const ROUTES = [
   ["/alerts", "ward-alerts-page"],
   ["/bed-meeting", "bed-meeting-tv-off"],
   ["/bed-meeting/agenda", "bed-meeting-agenda"],
-  ["/board/rph-adult-secure", "ward-board"],
+  // r10: the old bed board address opens the ward page on its Grid view.
+  ["/board/rph-adult-secure", "ward-unit-screen", "/ward/rph-adult-secure?view=grid"],
   ["/capacity", "ward-capacity-screen"],
-  ["/hub/catchments", "community-index"],
+  // Find (26 Nov 2026 mock-up, r10): the old index pages hand over to their Find tab.
+  ["/hub/catchments", "community-index", "/hub?tab=suburbs"],
   ["/community/midland", "ward-community-screen"],
   ["/waiting", "ward-delays-page"],
   ["/discharges", "ward-discharge-board"],
-  ["/ed", "ward-ed-index"],
+  ["/ed", "ward-ed-index", "/hub?tab=eds"],
   ["/ed/peel-ed", "ward-ed-screen"],
   ["/governance", "ward-mode-governance"],
   ["/handover", "ward-handover-page"],
   ["/help", "ward-coordinator", ""],
-  ["/hub", "ward-hub-page"],
+  // Find: /hub opens on its People tab, the person search.
+  ["/hub", "ward-patient-search"],
   ["/leave", "ward-leave-screen"],
   ["/legal-forms", "ward-legal-forms-page"],
   ["/movements", "ward-movements-page"],
@@ -52,8 +55,9 @@ const ROUTES = [
   ["/referrals/new", "ward-referral-board-screen"],
   ["/reports/chronology", "ward-patient-chronology"],
   ["/reports/downtime", "ward-downtime-pack"],
-  ["/review", "ward-todays-review"],
-  ["/search", "ward-patient-search"],
+  // Batch 3 (one Handover): /review opens Governance's Review tab.
+  ["/review", "ward-mode-governance", "/governance?tab=review"],
+  ["/search", "ward-patient-search", "/hub"],
   // FS3 (3 Nov 2026): Seclusion opens as a view in Forms for every desk that has Forms.
   ["/seclusion", "seclusion-forms-view", "/legal-forms?view=seclusion"],
   ["/settings", "ward-settings-screen"],
@@ -75,7 +79,7 @@ const ROUTES = [
   ["/triage/new", "triage-start"],
   ["/ward/rph-adult-secure", "ward-unit-screen"],
   ["/ward/rph-adult-secure/answer", "ward-unit-screen"],
-  ["/wards", "ward-index"],
+  ["/wards", "ward-index", "/hub?tab=wards"],
 ] as const;
 
 test.describe.configure({ timeout: 60_000 });
@@ -85,19 +89,13 @@ test.describe.configure({ timeout: 60_000 });
  * each page offers its tip card 1.5s after it settles: sometimes before the scan, sometimes during
  * it, and on a phone sometimes over the button a test is about to press. Whether it showed was
  * timing, so the same scan could pass or fail. Tips are turned off for this device here, as Settings
- * does, and the tip card is scanned on purpose in its own light and dark tests below, once it is
- * showing. Motion is pinned off here too (the suite default), so nothing is scanned mid-transition.
+ * does (r10 no longer offers them unasked; the setting stays, so a returning card cannot race a
+ * scan). Motion is pinned off here too (the suite default), so nothing is scanned mid-transition.
  */
 test.use({ reducedMotion: "reduce" });
 test.beforeEach(async ({ page }) => {
   await page.addInitScript((key) => window.localStorage.setItem(key, "yes"), HELP_TIPS_OFF_KEY);
 });
-
-/** For the tip card tests: undo the device setting above (init scripts run in the order added). */
-async function allowTips(page: Page) {
-  // Tips start off on the demo site, so turn them on as Settings does.
-  await page.addInitScript((key) => window.localStorage.setItem(key, "no"), HELP_TIPS_OFF_KEY);
-}
 
 /**
  * Sideways rows slide only sideways (Josh, 10 Nov 2026). iPhone Safari lets a row that scrolls
@@ -175,7 +173,7 @@ const DESK_SWEEPS = [
     access: { role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } },
     routes: [
       ["/ward/rph-adult-secure", "ward-unit-screen"],
-      ["/board/rph-adult-secure", "ward-board"],
+      ["/board/rph-adult-secure", "ward-unit-screen", "/ward/rph-adult-secure?view=grid"],
       ["/discharges", "ward-discharge-board"],
       ["/referrals", "ward-referral-board-screen"],
       ["/referrals/new", "ward-referral-board-screen"],
@@ -227,10 +225,11 @@ const DESK_SWEEPS = [
     access: { role: "bed_manager", scope: { kind: "site", siteCode: "FSH" } },
     routes: [
       ["/capacity", "ward-capacity-screen"],
-      ["/wards", "ward-index"],
-      ["/hub", "ward-hub-page"],
+      // Find (r10): the old index pages hand over to their Find tab; /hub opens on People.
+      ["/wards", "ward-index", "/hub?tab=wards"],
+      ["/hub", "ward-patient-search"],
       ["/ward/fsh-adult-secure", "ward-unit-screen"],
-      ["/board/fsh-adult-secure", "ward-board"],
+      ["/board/fsh-adult-secure", "ward-unit-screen", "/ward/fsh-adult-secure?view=grid"],
       ["/discharges", "ward-discharge-board"],
       ["/bed-meeting/agenda", "bed-meeting-agenda"],
       ["/referrals", "ward-referral-board-screen"],
@@ -238,7 +237,7 @@ const DESK_SWEEPS = [
       ["/waiting", "ward-delays-page"],
       ["/handover", "ward-handover-page"],
       ["/leave", "ward-leave-screen"],
-      ["/search", "ward-patient-search"],
+      ["/search", "ward-patient-search", "/hub"],
       ["/statistics", "ward-statistics-screen"],
       ["/alerts", "ward-alerts-page"],
       ["/on-call", "ward-on-call-screen"],
@@ -276,9 +275,10 @@ for (const { desk, access, routes } of DESK_SWEEPS) {
       }, access);
     });
 
-    for (const [route, screenId] of routes) {
+    for (const [route, screenId, destination = route] of routes as readonly (readonly [string, string, string?])[]) {
       test(`axe ${desk} desk: ${route} has no serious or critical violation`, async ({ page }, testInfo) => {
-        const expectedUrl = new URL(`/bedchart${route}`, testInfo.project.use.baseURL).href;
+        // A route the desk may open must stay put; an address r10 moved lands on its one new home.
+        const expectedUrl = new URL(`/bedchart${destination}`, testInfo.project.use.baseURL).href;
         await openShell(page, route, screenId);
         await expect(page.getByTestId("ward-access-own-home"), "the desk may open this page").toHaveCount(0);
         await expect(page).toHaveURL(expectedUrl);
@@ -360,20 +360,8 @@ test("axe: a ward's bed drawer when open has no serious or critical violation", 
   await expectAccessible(page, testInfo, "ward bed drawer open");
 });
 
-/**
- * The page tip card, scanned on purpose now that the sweeps turn tips off. The Ward page offers its
- * tip 1.5s after it settles; the scan waits until the card is showing.
- */
-async function openWithTip(page: Page) {
-  await allowTips(page);
-  await openShell(page, "/ward/rph-adult-secure", "ward-unit-screen");
-  await expect(page.getByTestId("ward-help-hint")).toBeVisible({ timeout: 15_000 });
-}
-
-test("axe: the page tip card when showing has no serious or critical violation", async ({ page }, testInfo) => {
-  await openWithTip(page);
-  await expectAccessible(page, testInfo, "page tip card");
-});
+// The page tip card's light and dark scans went with the card: r10 (audit two #46, ward-help-host.tsx)
+// no longer offers page tips unasked, so no tip card is drawn to scan.
 
 /**
  * NC-05 (design reassessment 20 Oct 2026, H-0168): everything above runs in the light theme. This
@@ -424,12 +412,6 @@ test.describe("dark theme", () => {
     await page.locator('[data-testid^="ward-ed-unfold-"]:visible').first().click();
     await expect(page.getByRole("menu")).toBeVisible();
     await expectAccessible(page, testInfo, "dark ED actions menu open");
-  });
-
-  test("axe dark: the page tip card when showing", async ({ page }, testInfo) => {
-    await openWithTip(page);
-    await expect(page.locator("html.dark"), "the device asks for dark, so the app must draw dark").toHaveCount(1);
-    await expectAccessible(page, testInfo, "dark page tip card");
   });
 
   test("axe dark: the Tools sheet, or the phone Menu sheet, when open", async ({ page }, testInfo) => {

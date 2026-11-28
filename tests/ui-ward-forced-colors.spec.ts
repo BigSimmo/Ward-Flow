@@ -232,7 +232,7 @@ test("@mockup printing the patient search keeps every census row on the sheet", 
   // field is the kit's SearchField, a searchbox named for what it finds.
   await page
     .getByTestId("ward-patient-search")
-    .getByRole("searchbox", { name: "Find a person by name, UMRN or place" })
+    .getByRole("searchbox", { name: "Find a person by name, UMRN, place or date of birth" })
     .fill("a");
   await page.keyboard.press("Escape");
 

@@ -158,6 +158,10 @@ test("Community referral: a community team refers from its own desk, the ward it
   await newPatient.getByLabel("Given name", { exact: true }).fill(PERSON.givenName);
   await newPatient.getByLabel("Date of birth", { exact: true }).fill("02/01/1990");
   await newPatient.getByLabel("UMRN", { exact: true }).fill(PERSON.umrn);
+  // r10: recorded sex, gender and suburb sit in the "More about this person" fold.
+  const moreAboutPerson = newPatient.getByTestId("ward-referral-fold-new-patient");
+  if (!(await moreAboutPerson.evaluate((fold) => (fold as HTMLDetailsElement).open)))
+    await moreAboutPerson.locator("summary").click();
   await newPatient.getByLabel("Suburb", { exact: true }).fill("Albany");
   await newPatient.getByRole("button", { name: "Add and use for this referral" }).click();
   await expect(newPatient).toHaveCount(0);
@@ -202,7 +206,7 @@ test("Community referral: a community team refers from its own desk, the ward it
   await sheet.getByLabel("Transport", { exact: true }).selectOption("Family or carer");
   await expectAccessible(page, testInfo, "referral slide-out, ward and transport chosen");
 
-  await sheet.getByRole("button", { name: "Send referral", exact: true }).click();
+  await sheet.getByRole("button", { name: "Review and send", exact: true }).click();
   await expect(sheet.getByRole("heading", { name: "Confirm and send" })).toBeVisible();
   // The sheet moves focus to this heading a frame later. A fill that starts first loses its text when it lands.
   await expect(sheet.getByRole("heading", { name: "Confirm and send" })).toBeFocused();
@@ -302,7 +306,7 @@ test("Community referral: a community team refers from its own desk, the ward it
   await freeBed.click();
   // WH8: the lit bed asks one confirm before the referral is accepted into it.
   await page.getByTestId("ward-board-confirm-send").click();
-  await expect(page.getByTestId("ward-board-say")).toContainText("Referral accepted.");
+  await expect(page.getByTestId("ward-board-say")).toContainText("Referral accepted");
   await expect(page.getByTestId(bedTestId)).toHaveAttribute("data-state", "held");
   // H-0893: an answered referral folds behind "Show N answered" below the waiting ones, on the
   // ward's Referrals tab. Page tops (9 Nov 2026): the phone's view tabs now sit under the hero

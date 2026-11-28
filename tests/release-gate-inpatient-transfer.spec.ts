@@ -58,28 +58,47 @@ import { escapeForRegExp } from "./helpers/ward-place-names";
 
 test.describe.configure({ timeout: 240_000 });
 
-/** Open a ward's bed board from the Wards index: the ward's profile on desktop, its sheet on a phone. */
+/**
+ * Open a ward's bed board from the Wards index: the ward's panel on desktop, its sheet on a phone.
+ * r10: the Wards index is Find's Wards tab, the panel's one filled step is "Open <ward>", and the
+ * bed board is that ward page's Grid view (`/board` redirects there).
+ */
 async function openBedBoardFromWards(page: Page, unitName: string, unitId: string): Promise<void> {
   // The Wards index belongs to the coordinator; a ward desk cannot navigate to it.
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
-  await goViaNav(page, "/bedchart/wards", "ward-index");
+  await goViaNav(page, "/bedchart/hub", "ward-patient-search");
+  await page.locator('a[href="/bedchart/hub?tab=wards"]:visible').first().click();
+  await page.waitForURL((url) => url.pathname === "/bedchart/hub" && url.searchParams.get("tab") === "wards");
+  await waitForScreen(page, "ward-index");
   if (isPhoneLayout(page)) {
     await page
       .getByRole("region", { name: "Wards", exact: true })
       .getByRole("button", { name: new RegExp(`^${escapeForRegExp(unitName)}`, "u") })
       .first()
       .click();
-    await page.getByTestId("ward-index-phone-sheet").getByRole("button", { name: "Bed board", exact: true }).click();
+    await page
+      .getByTestId("ward-index-phone-sheet")
+      .getByRole("button", { name: `Open ${unitName}`, exact: true })
+      .click();
   } else {
-    // The ward card's name opens its side panel, which links to the Bed board (#1360).
+    // The ward card's name opens its side panel, whose foot opens the ward.
     await page
       .getByRole("button", { name: unitName.split(" — ")[0], exact: true })
       .first()
       .click();
-    await page.getByRole("dialog").getByRole("link", { name: "Bed board", exact: true }).click();
+    await page
+      .getByRole("dialog")
+      .getByRole("link", { name: `Open ${unitName}`, exact: true })
+      .click();
   }
-  await page.waitForURL(`**/bedchart/board/${unitId}`);
-  await waitForScreen(page, "ward-board");
+  await page.waitForURL((url) => url.pathname === `/bedchart/ward/${unitId}`);
+  await waitForScreen(page, "ward-unit-screen");
+  // The bed board is the ward page's Grid view.
+  const grid = page.getByRole("radio", { name: "Grid", exact: true }).filter({ visible: true }).first();
+  if ((await grid.getAttribute("aria-checked")) !== "true") await grid.click();
+  await expect(grid).toHaveAttribute("aria-checked", "true");
+  await page.waitForURL((url) => url.searchParams.get("view") === "grid");
+  await expect(page.getByTestId("ward-board-beds").filter({ visible: true }).first()).toBeVisible();
 }
 
 /** As the coordinator: the Out of area page, this person's return plan, on either layout. */

@@ -7,19 +7,22 @@ import { clearToasts } from "./helpers/clear-toasts";
 import { openWardList } from "./helpers/ward-release-gate";
 
 import { openEdLists } from "./helpers/ward-ed-lists";
-import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
+import {
+  homeFlowCard,
+  openPlacementFromWaiting,
+  showAllFlowRows,
+  showEveryoneWaitingOn,
+  waitingRow,
+} from "./helpers/ward-home-page";
 
 /**
- * Home placement redesign (Josh, 19 Oct 2026), then Home flow (Q340, Q345, 3 Nov 2026): each Flow
- * stage lists its oldest 5 and its own "Show all N" reveals the rest in place. Pick a row the way a
- * coordinator would: open the stages first when the row is further down.
+ * Home placement redesign (Josh, 19 Oct 2026), then r10 (28 Nov 2026): Flow folded into Waiting. Pick
+ * a movement the way a coordinator now does: its Waiting row (opening folded groups when it sits
+ * further down), the person's drawer, then the drawer's Open on Home, which opens Placement over Home.
+ * Returns the Placement drawer.
  */
 async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator> {
-  await showEveryoneWaitingOn(queue.page());
-  const row = queue.getByTestId(`ward-queue-row-${movementId}`);
-  if (!(await row.isVisible())) await showAllFlowRows(queue);
-  await row.click();
-  return row;
+  return openPlacementFromWaiting(queue.page(), movementId);
 }
 
 /**
@@ -92,15 +95,10 @@ async function gotoWard(page: Page, unitId: string): Promise<Locator> {
  * rather than leaving that to every call site.
  */
 async function ensureToolsOpen(page: Page): Promise<void> {
-  const trigger = page.getByTestId("ward-bar-tools-trigger");
-  if ((await trigger.getAttribute("aria-expanded")) !== "true") {
-    await trigger.click();
-  }
-  // Tools review (15 Oct 2026): one sheet, Change view at its top, so no tab to pick.
-  await page
-    .getByRole("dialog", { name: "Tools" })
-    .getByRole("button", { name: /^Change view/ })
-    .waitFor();
+  // One door to Go to a desk (A27, 26 Nov 2026, r10): Tools no longer holds Change view; the rail's
+  // person button opens Go to a desk. So "open the switcher's home" now means a closed Tools sheet,
+  // whose backdrop would otherwise cover the rail.
+  await ensureToolsClosed(page);
 }
 
 /**
@@ -1285,7 +1283,8 @@ test.describe("@mockup Role switcher — the loop", () => {
     expect(destinationUnit, "fixture assumption: rph-adult-secure resolves to a real unit").toBeDefined();
 
     function switcherTrigger() {
-      return page.getByRole("button", { name: "Change view" });
+      // r10 (A27): the rail's person button is the one door to Go to a desk.
+      return page.getByTestId("ward-rail-persona-trigger");
     }
 
     /**
@@ -1559,9 +1558,10 @@ test.describe("@mockup Role switcher — the loop", () => {
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
     await showEveryoneWaitingOn(page);
-    // Open every Flow stage first, so a missing row means gone, not merely below a stage's top 5.
+    // r10: Flow folded into Waiting. Open every Waiting group first, so a missing row means gone,
+    // not merely folded or below a group's first rows.
     await showAllFlowRows(homeFlowCard(page));
-    await expect(homeFlowCard(page).getByTestId("ward-queue-row-WF-315")).toHaveCount(0);
+    await expect(waitingRow(homeFlowCard(page), "WF-315")).toHaveCount(0);
   });
 });
 
@@ -1590,7 +1590,8 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     await page.setViewportSize({ width: 1600, height: 1100 });
 
     function switcherTrigger() {
-      return page.getByRole("button", { name: "Change view" });
+      // r10 (A27): the rail's person button is the one door to Go to a desk.
+      return page.getByTestId("ward-rail-persona-trigger");
     }
     // `ensureToolsOpen`/`ensureToolsClosed` bracket the switch: the switcher lives inside
     // `WardBar`'s Tools drawer now (Task 8, 2026-09-11) — see those helpers' own header.

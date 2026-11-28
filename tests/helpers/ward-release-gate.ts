@@ -352,17 +352,6 @@ export async function goViaNav(page: Page, href: string, screenTestId: string) {
   await waitForScreen(page, screenTestId);
 }
 
-/** Desktop: the Go to a desk drawer opens from Tools, then Change view. */
-async function ensureToolsOpen(page: Page) {
-  const trigger = page.getByTestId("ward-bar-tools-trigger");
-  if ((await trigger.getAttribute("aria-expanded")) !== "true") await trigger.click();
-  // Tools review (15 Oct 2026): one sheet, Change view at its top, so no tab to pick.
-  await page
-    .getByRole("dialog", { name: "Tools" })
-    .getByRole("button", { name: /^Change view/ })
-    .waitFor();
-}
-
 async function ensureToolsClosed(page: Page) {
   const trigger = page.getByTestId("ward-bar-tools-trigger");
   if ((await trigger.isVisible()) && (await trigger.getAttribute("aria-expanded")) === "true") {
@@ -392,8 +381,10 @@ export async function goToDesk(
     await page.getByTestId("ward-bar-phone-menu").click();
     await page.getByTestId("ward-phone-menu-switch-workstation").click();
   } else {
-    await ensureToolsOpen(page);
-    await page.getByRole("button", { name: /^Change view/ }).click();
+    // One door to Go to a desk (A27, 26 Nov 2026, r10): the rail's person button opens it; Tools no
+    // longer repeats Change view.
+    await ensureToolsClosed(page);
+    await page.getByTestId("ward-rail-persona-trigger").click();
   }
   const drawer = page.getByRole("dialog", { name: "Go to a desk" });
   await expect(drawer).toBeVisible();
@@ -449,7 +440,11 @@ export async function openWardFlow(page: Page, pane: "Referrals" | "Admissions" 
     Admissions: "ward-coming-arrivals",
     Discharges: "ward-coming-out",
   }[pane];
-  await card.locator(`#${heading}`).scrollIntoViewIfNeeded();
+  // Audit three #23 (r10): a part with nothing in it today is left out of the card, so an empty
+  // part leaves the card itself in view (its foot keeps All arrivals and All discharges).
+  const part = card.locator(`#${heading}`);
+  if ((await part.count()) > 0) await part.scrollIntoViewIfNeeded();
+  else await card.scrollIntoViewIfNeeded();
 }
 
 /** Back to the ward's Home tab, where its bed figures live. */
